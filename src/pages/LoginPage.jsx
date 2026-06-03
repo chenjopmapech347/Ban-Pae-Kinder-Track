@@ -1,0 +1,217 @@
+import { useState } from 'react';
+import { useApp } from '../context/AppContext';
+
+const STAFF_TABS = [
+  { id: 'teacher', label: 'ครู',     icon: '👨‍🏫', color: '#7c3aed' },
+  { id: 'admin',   label: 'แอดมิน', icon: '🛡️', color: '#f43f5e' },
+];
+
+export default function LoginPage() {
+  const { login, loginWithFirebase, students, teachers, authConfig, isFirebaseConfigured } = useApp();
+
+  const [roleTab, setRoleTab]     = useState('teacher');
+  const [username, setUsername]   = useState('');
+  const [pin, setPin]             = useState('');
+  const [studentId, setStudentId] = useState(String(students[0]?.id ?? ''));
+  const [mode, setMode]           = useState('staff'); // 'staff' | 'parent'
+  const [error, setError]         = useState('');
+  const [loading, setLoading]     = useState(false);
+
+  const activeTab = STAFF_TABS.find(t => t.id === roleTab) ?? STAFF_TABS[0];
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    let result;
+
+    if (mode === 'parent') {
+      result = login('parent', { pin, studentId });
+    } else {
+      // Admin และ Teacher ใช้ username + PIN
+      result = login(roleTab, { username, pin });
+    }
+
+    setLoading(false);
+    if (!result.ok) setError(result.message);
+  };
+
+  return (
+    <div className="flex-center animate-fade" style={{ minHeight: '90vh', padding: '1rem' }}>
+      <div className="login-card animate-pop">
+
+        {/* Logo */}
+        <div className="text-center mb-6">
+          <div style={{ fontSize: '4rem', lineHeight: 1, marginBottom: '.75rem' }}>🏫</div>
+          <h1 style={{
+            fontSize: '2rem',
+            background: 'linear-gradient(135deg,#7c3aed,#ec4899,#f59e0b)',
+            WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
+            marginBottom: '.25rem',
+          }}>KinderTrack</h1>
+          <p className="text-muted" style={{ fontSize: '.88rem' }}>ระบบบันทึกพัฒนาการเด็กปฐมวัย</p>
+          {isFirebaseConfigured && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '.35rem',
+              background: '#d1fae5', color: '#065f46', borderRadius: '999px',
+              padding: '.2rem .75rem', fontSize: '.72rem', fontWeight: 700, marginTop: '.5rem',
+            }}>
+              ☁️ Cloud Sync พร้อม
+            </div>
+          )}
+        </div>
+
+        {/* Mode switch: staff / parent */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.5rem',
+          marginBottom: '1.25rem', background: '#f5f3ff', padding: '.4rem', borderRadius: '16px',
+        }}>
+          {[
+            { id: 'staff',  label: '🏫 ครู / แอดมิน' },
+            { id: 'parent', label: '👨‍👩‍👧 ผู้ปกครอง' },
+          ].map(m => (
+            <button key={m.id} type="button"
+              onClick={() => { setMode(m.id); setError(''); setPin(''); setUsername(''); }}
+              style={{
+                padding: '.6rem', borderRadius: '12px', border: 'none',
+                fontFamily: 'inherit', fontWeight: 700, fontSize: '.82rem', cursor: 'pointer',
+                transition: 'all .2s',
+                background: mode === m.id ? 'white' : 'transparent',
+                color: mode === m.id ? '#7c3aed' : 'var(--text-muted)',
+                boxShadow: mode === m.id ? '0 2px 8px rgba(0,0,0,.1)' : 'none',
+              }}>
+              {m.label}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+          {/* ─── Staff mode ─── */}
+          {mode === 'staff' && (
+            <>
+              {/* Role tabs (teacher / admin) */}
+              <div style={{
+                display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '.5rem',
+                background: '#faf9ff', padding: '.35rem', borderRadius: '12px',
+              }}>
+                {STAFF_TABS.map(tab => (
+                  <button key={tab.id} type="button"
+                    onClick={() => { setRoleTab(tab.id); setError(''); }}
+                    style={{
+                      padding: '.5rem', borderRadius: '10px', border: 'none',
+                      fontFamily: 'inherit', fontWeight: 700, fontSize: '.82rem', cursor: 'pointer',
+                      transition: 'all .2s',
+                      background: roleTab === tab.id ? 'white' : 'transparent',
+                      color: roleTab === tab.id ? tab.color : 'var(--text-muted)',
+                      boxShadow: roleTab === tab.id ? '0 2px 6px rgba(0,0,0,.1)' : 'none',
+                    }}>
+                    {tab.icon} {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Username + PIN */}
+              <div>
+                <label style={{ display: 'block', marginBottom: '.35rem' }}>
+                  👤 ชื่อผู้ใช้ (Username)
+                </label>
+                <input
+                  className="input"
+                  type="text"
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  placeholder={roleTab === 'admin' ? 'admin' : 'เช่น chalada, somchai'}
+                  required
+                  autoComplete="username"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '.35rem' }}>🔑 รหัสผ่าน (PIN)</label>
+                <input className="input" type="password" value={pin}
+                  onChange={e => setPin(e.target.value)}
+                  placeholder={roleTab === 'admin' ? 'รหัสแอดมิน' : 'เช่น kru01, kru02'}
+                  required
+                  style={{ fontSize: '1.1rem', letterSpacing: '.15em' }} />
+                {isFirebaseConfigured && (
+                  <div className="text-xs text-muted mt-2">
+                    ☁️ Cloud Sync พร้อม — ข้อมูลจะถูกบันทึกขึ้น Cloud
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* ─── Parent mode ─── */}
+          {mode === 'parent' && (
+            <>
+              <div>
+                <label style={{ display: 'block', marginBottom: '.35rem' }}>เลือกบุตรหลาน</label>
+                <select className="input" value={studentId}
+                  onChange={e => setStudentId(e.target.value)} required>
+                  {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '.35rem' }}>🔑 รหัส PIN ผู้ปกครอง</label>
+                <input className="input" type="password" value={pin}
+                  onChange={e => setPin(e.target.value)}
+                  placeholder="รหัส 4 หลัก" required
+                  style={{ fontSize: '1.1rem', letterSpacing: '.2em' }} />
+                <div className="text-xs text-muted mt-2">
+                  💡 ถ้าไม่รู้ PIN ให้แอดมินดูได้ที่เมนู "นักเรียน"
+                </div>
+              </div>
+            </>
+          )}
+
+          {error && (
+            <div className="alert alert-error animate-slide">❌ {error}</div>
+          )}
+
+          <button type="submit" className="btn btn-lg w-full" disabled={loading}
+            style={{
+              background: mode === 'parent'
+                ? 'linear-gradient(135deg,#f59e0b,#fbbf24)'
+                : 'linear-gradient(135deg,' + activeTab.color + ',' + activeTab.color + 'cc)',
+              color: 'white',
+              boxShadow: '0 6px 20px ' + (mode === 'parent' ? '#f59e0b' : activeTab.color) + '40',
+              marginTop: '.25rem',
+            }}>
+            {loading ? '⏳ กำลังเข้าสู่ระบบ...' : '🚀 เข้าสู่ระบบ'}
+          </button>
+        </form>
+
+        {/* PIN hint (ถ้า Firebase ยังไม่ได้ตั้งค่า) */}
+        {!isFirebaseConfigured && (
+          <details className="mt-5" style={{ fontSize: '.78rem', color: 'var(--text-muted)' }}>
+            <summary style={{ cursor: 'pointer', userSelect: 'none', fontWeight: 600 }}>
+              🔑 รหัสปัจจุบัน (ตั้งค่า Firebase เพื่อใช้อีเมลแทน)
+            </summary>
+            <div style={{
+              marginTop: '.75rem', background: '#f5f3ff', borderRadius: '12px',
+              padding: '.75rem', display: 'flex', flexDirection: 'column', gap: '.35rem',
+            }}>
+              <div>🛡️ แอดมิน: <code style={{ background: '#ffe4e6', padding: '.1rem .4rem', borderRadius: '6px' }}>{authConfig.admin.pin}</code></div>
+              <div style={{ fontWeight: 700, marginTop: '.5rem', color: '#7c3aed' }}>👨‍🏫 ครู (PIN รายคน):</div>
+              {teachers.map(t => (
+                <div key={t.id} style={{ paddingLeft: '1rem' }}>
+                  {t.name} ({t.level}):{' '}
+                  <code style={{ background: '#ede9fe', padding: '.1rem .4rem', borderRadius: '6px' }}>{t.pin}</code>
+                </div>
+              ))}
+              <div style={{ fontWeight: 700, marginTop: '.5rem', color: '#b45309' }}>👨‍👩‍👧 ผู้ปกครอง (PIN รายนักเรียน):</div>
+              {students.map(s => (
+                <div key={s.id} style={{ paddingLeft: '1rem' }}>
+                  {s.name.split(' ').slice(-1)[0]}:{' '}
+                  <code style={{ background: '#fef3c7', padding: '.1rem .4rem', borderRadius: '6px' }}>{s.parentPin}</code>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
+      </div>
+    </div>
+  );
+}

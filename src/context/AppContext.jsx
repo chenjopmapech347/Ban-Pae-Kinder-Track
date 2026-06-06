@@ -329,7 +329,9 @@ export function AppProvider({ children }) {
         return { ok: true };
       }
       if (nextRole === 'parent') {
-        const student = students.find((s) => s.id === Number(credentials.studentId));
+        const student = students.find(
+          (s) => String(s.id) === String(credentials.studentId)
+        );
         if (!student) {
           return { ok: false, message: 'ไม่พบนักเรียน' };
         }

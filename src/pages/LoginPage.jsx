@@ -18,8 +18,11 @@ export default function LoginPage() {
   const [error, setError]           = useState('');
   const [loading, setLoading]       = useState(false);
 
-  // ค้นหานักเรียนจากรหัสประจำตัว
-  const foundStudent = students.find(s => s.code === studentCode.trim()) ?? null;
+  // ค้นหานักเรียนจากรหัสประจำตัว (code) หรือ parentPin (fallback)
+  const foundStudent = students.find(s => {
+    const q = studentCode.trim();
+    return (s.code && s.code === q) || (s.parentPin && s.parentPin === q);
+  }) ?? null;
 
   const activeTab = STAFF_TABS.find(t => t.id === roleTab) ?? STAFF_TABS[0];
 

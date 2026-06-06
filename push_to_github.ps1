@@ -9,7 +9,7 @@ if (Test-Path $lock) {
 }
 
 git add -A
-git commit -m "feat: teacher profile - show username readonly + student list for teacher class"
+git commit -m "feat: add students tab to teacher dashboard - manage class students"
 git push origin main
 
 Write-Host "Done!" -ForegroundColor Green

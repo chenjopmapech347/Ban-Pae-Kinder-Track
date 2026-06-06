@@ -64,7 +64,10 @@ const TEACHER_TAB_GROUPS = [
   {
     label: 'ทั่วไป',
     color: '#7c3aed',
-    tabs: [{ id: 'main', label: '🏠 หน้าหลัก' }],
+    tabs: [
+      { id: 'main',     label: '🏠 หน้าหลัก' },
+      { id: 'students', label: '👨‍🎓 นักเรียน' },
+    ],
   },
   {
     label: 'รายงาน',
@@ -649,6 +652,114 @@ export default function TeacherDashboard() {
           <h3 className="mb-6">🗺️ สรุปมาตรฐานสถานพัฒนาเด็กปฐมวัย (ปี 2569)</h3>
           <QaStandardView />
         </div>
+      )}
+
+      {/* ── Students tab ── */}
+      {activeTab === 'students' && (
+        <>
+          {/* Action bar */}
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))', gap:'.75rem', marginBottom:'1.25rem' }}>
+            <button type="button" className="btn"
+              style={{ background:'#dbeafe', color:'#1e40af', padding:'.85rem', fontSize:'.9rem', borderRadius:'14px' }}
+              onClick={() => {
+                const text = prompt('วางข้อมูล CSV (ชื่อ, ชั้น, อายุ, น้ำหนัก, ส่วนสูง)\nเช่น: เด็กชายดีใจ, K3, 5, 18.5, 110');
+                if (text) {
+                  const r = handleImport('students', 'name,level,age,weight,height\n' + text);
+                  alert(r.ok ? 'นำเข้าข้อมูลสำเร็จ! ✅' : r.message);
+                }
+              }}>
+              📥 นำเข้าข้อมูล
+            </button>
+            <button type="button" className="btn btn-primary"
+              style={{ padding:'.85rem', fontSize:'.9rem', borderRadius:'14px' }}
+              onClick={() => setIsAddingLocal(true)}>
+              ➕ เพิ่มนักเรียน
+            </button>
+          </div>
+
+          {/* Student list card */}
+          <div className="glass" style={{ padding:'1.5rem' }}>
+            <div className="page-header" style={{ marginBottom:'1rem' }}>
+              <h3>👨‍🎓 รายชื่อนักเรียน{myClass ? ` ห้อง ${myClass}` : ''} ({filtered.length}/{myStudents.length} คน)</h3>
+              <input className="input" style={{ maxWidth:'220px' }} placeholder="🔍 ค้นหาชื่อ..."
+                value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+
+            <div style={{ display:'flex', flexDirection:'column', gap:'.6rem' }}>
+              {filtered.map(s => {
+                const isInactive = (s.status ?? 'ปกติ') === 'นอกระบบ';
+                const rec   = getDayRecord(dailyRecords, today, s.id);
+                const hygOk = hasHygieneToday(rec);
+                const att   = rec?.attendance;
+                const ac    = att ? (ATT_COLOR[att] ?? { bg:'#f5f3ff', color:'#6b7280' }) : null;
+                const isBoy = s.name.includes('ชาย');
+                const pct   = s.attendance?.total
+                  ? Math.round((s.attendance.present / s.attendance.total) * 100) : 0;
+
+                return (
+                  <div key={s.id} className="student-card"
+                    style={{ display:'flex', alignItems:'center', gap:'1rem', flexWrap:'wrap', opacity: isInactive ? 0.6 : 1 }}>
+                    <div className="student-avatar"
+                      style={{
+                        background: isInactive ? '#f3f4f6' : (isBoy ? '#dbeafe' : '#fce7f3'),
+                        color: isInactive ? '#9ca3af' : (isBoy ? '#1e40af' : '#9d174d'),
+                      }}>
+                      {isInactive ? '⛔' : (isBoy ? '👦' : '👧')}
+                    </div>
+                    <div style={{ flex:1, minWidth:'130px' }}>
+                      <div className="font-bold" style={{ fontSize:'.92rem' }}>{s.name}</div>
+                      <div className="flex gap-1 mt-1" style={{ flexWrap:'wrap' }}>
+                        <span className={'badge badge-' + (s.level?.toLowerCase())}>{s.level}</span>
+                        {isInactive && (
+                          <span className="badge" style={{ background:'#f3f4f6', color:'#6b7280' }}>นอกระบบ</span>
+                        )}
+                        {!isInactive && att && <span className="badge" style={{ background:ac?.bg, color:ac?.color }}>{att}</span>}
+                        {!isInactive && hygOk && <><span className="badge badge-success">🥛</span><span className="badge badge-info">🪥</span></>}
+                      </div>
+                    </div>
+                    {!isInactive && (
+                      <div style={{ textAlign:'center', minWidth:'52px' }}>
+                        <div style={{ fontSize:'1rem', fontWeight:800,
+                          color:pct>=80?'var(--success)':pct>=60?'var(--accent)':'var(--danger)' }}>
+                          {pct}%
+                        </div>
+                        <div className="text-xs text-muted">มาเรียน</div>
+                      </div>
+                    )}
+                    {!isInactive && (
+                      <div style={{ textAlign:'center', minWidth:'48px' }}>
+                        {s.assessments?.summary
+                          ? <div style={{ color:'var(--success)', fontSize:'1.25rem' }}>✅</div>
+                          : <div style={{ color:'#d1d5db', fontSize:'1.25rem' }}>○</div>}
+                        <div className="text-xs text-muted">ประเมิน</div>
+                      </div>
+                    )}
+                    <div className="flex gap-1" style={{ flexWrap:'wrap' }}>
+                      <button type="button" className="btn btn-sm"
+                        style={{ background:'#ede9fe', color:'var(--primary)' }}
+                        onClick={() => setSelectedStudent(s)}>📄</button>
+                      <button type="button" className="btn btn-sm"
+                        style={{ background:'#fef9c3', color:'#92400e' }}
+                        onClick={() => setEditingStudentLocal(s)}>✏️</button>
+                      {!isInactive && (
+                        <button type="button" className="btn btn-sm btn-primary"
+                          onClick={() => setEvaluatingStudent(s)}>📊</button>
+                      )}
+                      <button type="button" className="btn btn-sm"
+                        style={{ color:'var(--danger)' }}
+                        onClick={() => handleDelete(s.id)}>🗑️</button>
+                    </div>
+                  </div>
+                );
+              })}
+              {filtered.length === 0 && (
+                <div className="text-center text-muted" style={{ padding:'3rem 1rem' }}>
+                  ไม่พบนักเรียนที่ค้นหา
+                </div>
+              )}
+            </div>
+          </div>
+        </>
       )}
 
       {/* ── Main tab ── */}

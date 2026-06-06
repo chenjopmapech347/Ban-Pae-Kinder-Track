@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { STORAGE_KEYS, clearAllStorage } from '../constants/storageKeys';
 import { DEFAULT_AUTH_CONFIG } from '../constants/auth';
@@ -35,10 +35,9 @@ export function AppProvider({ children }) {
   const [firebaseUser, setFirebaseUser] = useState(null);
 
   // ฟัง Firebase Auth state
-  useState(() => {
-    const unsub = onFirebaseAuthChange(fbUser => setFirebaseUser(fbUser));
-    return unsub;
-  });
+  useEffect(() => {
+    return onFirebaseAuthChange(fbUser => setFirebaseUser(fbUser));
+  }, []);
 
   const [students, setStudents] = useLocalStorage(STORAGE_KEYS.students, INITIAL_STUDENTS);
   const [teachers, setTeachers] = useLocalStorage(STORAGE_KEYS.teachers, INITIAL_TEACHERS);
@@ -62,11 +61,13 @@ export function AppProvider({ children }) {
     STORAGE_KEYS.schoolName,
     INITIAL_SCHOOLS[0].name,
   );
-  const [academicYear, setAcademicYear] = useLocalStorage(STORAGE_KEYS.academicYear, '2568');
+  const [academicYear, setAcademicYear] = useLocalStorage(STORAGE_KEYS.academicYear, '2569');
   const [dailyRecords, setDailyRecords] = useLocalStorage(STORAGE_KEYS.dailyRecords, {});
   const [qaData, setQaData] = useLocalStorage(STORAGE_KEYS.qaData, null);
   const [indicators, setIndicators] = useLocalStorage(STORAGE_KEYS.indicators, INITIAL_INDICATORS);
   const [activities, setActivities] = useLocalStorage(STORAGE_KEYS.activities, INITIAL_ACTIVITIES);
+  const [schoolTerms, setSchoolTerms] = useLocalStorage(STORAGE_KEYS.schoolTerms, {});
+  const [activityLogs, setActivityLogs] = useLocalStorage(STORAGE_KEYS.activityLogs, []);
 
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [evaluatingStudent, setEvaluatingStudent] = useState(null);
@@ -88,6 +89,9 @@ export function AppProvider({ children }) {
       academicYear,
       dailyRecords,
       qaData,
+      indicators,
+      activities,
+      activityLogs,
     }),
     [
       students,
@@ -103,6 +107,9 @@ export function AppProvider({ children }) {
       academicYear,
       dailyRecords,
       qaData,
+      indicators,
+      activities,
+      activityLogs,
     ],
   );
 
@@ -120,6 +127,9 @@ export function AppProvider({ children }) {
     if (payload.academicYear) setAcademicYear(payload.academicYear);
     if (payload.dailyRecords) setDailyRecords(payload.dailyRecords);
     if (payload.qaData) setQaData(payload.qaData);
+    if (payload.indicators) setIndicators(payload.indicators);
+    if (payload.activities) setActivities(payload.activities);
+    if (payload.activityLogs) setActivityLogs(payload.activityLogs);
   }, [
     setStudents,
     setTeachers,
@@ -134,6 +144,9 @@ export function AppProvider({ children }) {
     setAcademicYear,
     setDailyRecords,
     setQaData,
+    setIndicators,
+    setActivities,
+    setActivityLogs,
   ]);
 
   const importStudentAssessmentExcel = useCallback(
@@ -280,6 +293,11 @@ export function AppProvider({ children }) {
     [setAuthConfig],
   );
 
+  // ─── Activity Log ─────────────────────────────────────────────────────────
+  const addActivityLog = useCallback((entry) => {
+    setActivityLogs((prev) => [entry, ...prev].slice(0, 500));
+  }, [setActivityLogs]);
+
   const login = useCallback(
     (nextRole, credentials) => {
       if (nextRole === 'admin') {
@@ -306,6 +324,7 @@ export function AppProvider({ children }) {
           name: matchedTeacher.name,
           teacherId: matchedTeacher.id,
           level: matchedTeacher.level,
+          className: matchedTeacher.className,
         });
         return { ok: true };
       }
@@ -468,6 +487,8 @@ export function AppProvider({ children }) {
     setIndicators,
     activities,
     setActivities,
+    schoolTerms,
+    setSchoolTerms,
     importStudentAssessmentExcel,
     importQaStandardExcel,
     selectedStudent,
@@ -495,6 +516,9 @@ export function AppProvider({ children }) {
     loginWithFirebase,
     syncPushToFirebase,
     syncPullFromFirebase,
+    // Activity Log
+    activityLogs,
+    addActivityLog,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

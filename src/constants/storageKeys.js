@@ -14,6 +14,8 @@ export const STORAGE_KEYS = {
   qaData:           'kt_qaData',
   indicators:       'kt_indicators',
   activities:       'kt_activities',
+  schoolTerms:      'kt_schoolTerms',
+  activityLogs:     'kt_activityLogs',
 };
 
 export function clearAllStorage() {

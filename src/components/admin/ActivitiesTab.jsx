@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { INDICATORS_DATA } from '../../data/indicatorsData';
 
 // ── Modal เพิ่ม/แก้ไขกิจกรรม ───────────────────────────────────────────────
-function ActivityModal({ isOpen, onClose, onSave, editing, indicators, presetIndicatorId }) {
+function ActivityModal({ isOpen, onClose, onSave, editing, indicators, presetIndicatorId, anchorY }) {
   const blank = {
     indicatorId: presetIndicatorId ?? indicators[0]?.id ?? '',
     itemLabel: '',
@@ -11,6 +11,16 @@ function ActivityModal({ isOpen, onClose, onSave, editing, indicators, presetInd
     label: '',
   };
   const [form, setForm] = useState(() => editing ?? blank);
+
+  // จัดกลุ่มตัวบ่งชี้ตาม domain — must be before any early return (Rules of Hooks)
+  const byDomain = useMemo(() => {
+    const map = {};
+    indicators.forEach(ind => {
+      if (!map[ind.domainId]) map[ind.domainId] = { label: ind.domainLabel, emoji: ind.domainEmoji, items: [] };
+      map[ind.domainId].items.push(ind);
+    });
+    return map;
+  }, [indicators]);
 
   if (!isOpen) return null;
 
@@ -28,18 +38,15 @@ function ActivityModal({ isOpen, onClose, onSave, editing, indicators, presetInd
     onClose();
   };
 
-  // จัดกลุ่มตัวบ่งชี้ตาม domain
-  const byDomain = useMemo(() => {
-    const map = {};
-    indicators.forEach(ind => {
-      if (!map[ind.domainId]) map[ind.domainId] = { label: ind.domainLabel, emoji: ind.domainEmoji, items: [] };
-      map[ind.domainId].items.push(ind);
-    });
-    return map;
-  }, [indicators]);
-
+  const MODAL_H = 480; // ประมาณความสูง modal
+  const top = Math.max(16, Math.min(
+    (anchorY ?? window.innerHeight / 2) - 160,
+    window.innerHeight - MODAL_H - 16
+  ));
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 200, overflowY: 'auto', paddingTop: top + 'px', paddingBottom: '16px' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
       <div className="glass p-8 animate-pop" style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
         <h3 className="mb-5">{editing ? '✏️ แก้ไขกิจกรรม' : '➕ เพิ่มกิจกรรมใหม่'}</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -111,6 +118,14 @@ export default function ActivitiesTab() {
   const [isModal,         setIsModal]         = useState(false);
   const [editing,         setEditing]         = useState(null);
   const [search,          setSearch]          = useState('');
+  const [anchorY,         setAnchorY]         = useState(null);
+
+  const openModal = (e, act = null, indId = null) => {
+    setAnchorY(e.clientY);
+    setEditing(act);
+    if (indId) setActiveIndicator(indId);
+    setIsModal(true);
+  };
 
   const domain = domains.find(d => d.id === activeDomain);
 
@@ -159,7 +174,7 @@ export default function ActivitiesTab() {
         <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <input className="input" style={{ maxWidth: '180px' }} placeholder="🔍 ค้นหา..."
             value={search} onChange={e => setSearch(e.target.value)} />
-          <button className="btn btn-primary" onClick={() => { setEditing(null); setIsModal(true); }}>
+          <button className="btn btn-primary" onClick={e => openModal(e)}>
             + เพิ่มกิจกรรม
           </button>
         </div>
@@ -252,7 +267,7 @@ export default function ActivitiesTab() {
                   {ind?.label ?? indId}
                 </span>
                 <button type="button"
-                  onClick={() => { setEditing(null); setActiveIndicator(indId); setIsModal(true); }}
+                  onClick={e => openModal(e, null, indId)}
                   style={{
                     marginLeft: 'auto', padding: '.2rem .6rem', border: 'none',
                     borderRadius: '6px', background: domain?.color ?? '#7c3aed',
@@ -287,7 +302,7 @@ export default function ActivitiesTab() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '.4rem', flexShrink: 0 }}>
-                      <button className="btn btn-sm" onClick={() => { setEditing(act); setIsModal(true); }}>แก้ไข</button>
+                      <button className="btn btn-sm" onClick={e => openModal(e, act)}>แก้ไข</button>
                       <button className="btn btn-sm" style={{ color: 'var(--danger)' }}
                         onClick={() => handleDelete(act.id)}>ลบ</button>
                     </div>
@@ -306,11 +321,12 @@ export default function ActivitiesTab() {
 
       <ActivityModal
         isOpen={isModal}
-        onClose={() => { setIsModal(false); setEditing(null); }}
+        onClose={() => { setIsModal(false); setEditing(null); setAnchorY(null); }}
         onSave={handleSave}
         editing={editing}
         indicators={indicators}
         presetIndicatorId={activeIndicator !== 'all' ? activeIndicator : null}
+        anchorY={anchorY}
       />
     </div>
   );

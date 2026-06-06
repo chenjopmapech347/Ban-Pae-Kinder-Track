@@ -10,7 +10,24 @@ const LEVEL_COLOR = {
 };
 
 export default function ParentView() {
-  const { user, students, setSelectedStudent, assessmentTopics } = useApp();
+  const { user, students, setSelectedStudent, assessmentTopics,
+    indicators: allIndicators, activities: allActivities } = useApp();
+
+  // คำนวณคะแนนเฉลี่ยรายด้านจากโครงสร้างใหม่ (assessments.indicators)
+  // ถ้ายังไม่มีข้อมูลใหม่ ให้ fallback ไปที่ assessments.summary (โครงสร้างเก่า)
+  const topicAvg = (student, topic) => {
+    const inds = (allIndicators ?? []).filter(i => i.domainId === topic.id);
+    const scores = inds.flatMap(ind =>
+      (allActivities ?? []).filter(a => a.indicatorId === ind.id)
+        .map(act => student.assessments?.indicators?.[ind.id]?.[act.id]?.score ?? null)
+    ).filter(v => v !== null);
+    if (scores.length) {
+      return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+    }
+    // fallback: old summary structure
+    const legacy = student.assessments?.summary?.[topic.id];
+    return legacy != null ? legacy : null;
+  };
   const student = students.find(s => s.id === user?.studentId);
 
   if (!student) {
@@ -95,12 +112,12 @@ export default function ParentView() {
       </div>
 
       {/* Assessment */}
-      {student.assessments?.summary ? (
+      {assessmentTopics.some(t => topicAvg(student, t) !== null) ? (
         <div className="glass-card mb-6">
           <h3 className="mb-4">🌱 ผลการประเมินพัฒนาการ</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {assessmentTopics.map(topic => {
-              const val = student.assessments?.summary?.[topic.id] ?? 0;
+              const val = topicAvg(student, topic) ?? 0;
               const lvl = LEVEL_COLOR[val] ?? LEVEL_COLOR[0];
               return (
                 <div key={topic.id} style={{

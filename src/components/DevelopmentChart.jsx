@@ -8,11 +8,10 @@
  */
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Cell,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
 
 /* ── colour palette ─────────────────────────────────── */
-const DOMAIN_COLORS = ['#7c3aed','#f43f5e','#f59e0b','#10b981','#3b82f6','#ec4899'];
 const LEVEL_COLORS  = { K1:'#3b82f6', K2:'#10b981', K3:'#f97316' };
 
 /* ── helpers ─────────────────────────────────────────── */
@@ -172,7 +171,7 @@ export function ClassOverviewChart({ students = [], topics = [] }) {
 export function AssessmentProgressBars({ topics = [], summary = {} }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
-      {topics.map((t, i) => {
+      {topics.map((t) => {
         const val = summary?.[t.id] ?? 0;
         const pct = Math.round((val / 3) * 100);
         const color = val === 3 ? '#7c3aed' : val === 2 ? '#f59e0b' : val === 1 ? '#f43f5e' : '#d1d5db';

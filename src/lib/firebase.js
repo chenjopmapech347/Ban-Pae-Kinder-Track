@@ -23,13 +23,13 @@ export const isFirebaseConfigured = Boolean(
 );
 
 // Init เฉพาะเมื่อ config ครบ
-let _app = null, _db = null, _auth = null;
+let _db = null, _auth = null;
 
 if (isFirebaseConfigured) {
   try {
-    _app  = initializeApp(firebaseConfig);
-    _db   = getFirestore(_app);
-    _auth = getAuth(_app);
+    const app = initializeApp(firebaseConfig);
+    _db   = getFirestore(app);
+    _auth = getAuth(app);
   } catch (e) {
     console.warn('[KinderTrack] Firebase init failed:', e.message);
   }

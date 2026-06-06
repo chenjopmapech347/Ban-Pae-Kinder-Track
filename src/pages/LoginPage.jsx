@@ -7,7 +7,7 @@ const STAFF_TABS = [
 ];
 
 export default function LoginPage() {
-  const { login, loginWithFirebase, students, teachers, authConfig, isFirebaseConfigured } = useApp();
+  const { login, students, teachers, authConfig, isFirebaseConfigured } = useApp();
 
   const [roleTab, setRoleTab]     = useState('teacher');
   const [username, setUsername]   = useState('');
@@ -43,14 +43,22 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="text-center mb-6">
-          <div style={{ fontSize: '4rem', lineHeight: 1, marginBottom: '.75rem' }}>🏫</div>
+          <div style={{ marginBottom: '.75rem' }}>
+            <img src="/logo.png" alt="โลโก้" style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover', boxShadow: '0 4px 16px rgba(124,58,237,.25)' }}
+              onError={e => { e.target.style.display='none'; }} />
+          </div>
           <h1 style={{
-            fontSize: '2rem',
-            background: 'linear-gradient(135deg,#7c3aed,#ec4899,#f59e0b)',
-            WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
-            marginBottom: '.25rem',
-          }}>KinderTrack</h1>
-          <p className="text-muted" style={{ fontSize: '.88rem' }}>ระบบบันทึกพัฒนาการเด็กปฐมวัย</p>
+            fontSize: '1.35rem', fontWeight: 800, lineHeight: 1.35,
+            color: '#1e1b4b', marginBottom: '.3rem',
+          }}>
+            ระบบบันทึกพัฒนาการเด็กปฐมวัย
+          </h1>
+          <p style={{ fontSize: '.9rem', fontWeight: 700, color: '#7c3aed', marginBottom: '.15rem' }}>
+            โรงเรียนเทศบาลบ้านเพ ๑
+          </p>
+          <p style={{ fontSize: '.78rem', color: '#9ca3af', marginBottom: '.1rem', letterSpacing: '.03em' }}>
+            Ban Phe 1 · KinderTrack
+          </p>
           {isFirebaseConfigured && (
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: '.35rem',
@@ -202,9 +210,9 @@ export default function LoginPage() {
                 </div>
               ))}
               <div style={{ fontWeight: 700, marginTop: '.5rem', color: '#b45309' }}>👨‍👩‍👧 ผู้ปกครอง (PIN รายนักเรียน):</div>
-              {students.map(s => (
+              {students.slice(0, 5).map(s => (
                 <div key={s.id} style={{ paddingLeft: '1rem' }}>
-                  {s.name.split(' ').slice(-1)[0]}:{' '}
+                  {s.name}:{' '}
                   <code style={{ background: '#fef3c7', padding: '.1rem .4rem', borderRadius: '6px' }}>{s.parentPin}</code>
                 </div>
               ))}

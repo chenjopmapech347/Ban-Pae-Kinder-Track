@@ -31,10 +31,3 @@ export function mergeDayRecords(dailyRecords, date, patchByStudentId) {
   });
   return { ...dailyRecords, [date]: day };
 }
-
-export function applyAttendanceToStudents(students, dailyRecords) {
-  return students.map((s) => ({
-    ...s,
-    attendance: recomputeAttendanceFromDailyRecords(dailyRecords, s.id),
-  }));
-}

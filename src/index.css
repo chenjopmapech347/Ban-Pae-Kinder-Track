@@ -330,3 +330,92 @@ label { font-size:.85rem; font-weight:600; color:var(--text-main); }
 ::-webkit-scrollbar       { width:6px; height:6px; }
 ::-webkit-scrollbar-track { background:transparent; }
 ::-webkit-scrollbar-thumb { background:var(--primary-mid); border-radius:999px; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   RESPONSIVE — Mobile & Tablet
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* ── App header compact on mobile ── */
+@media (max-width: 640px) {
+  .app-header {
+    padding: .75rem 1rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 1.25rem;
+    gap: .5rem;
+  }
+  .app-header .user-avatar { width: 34px; height: 34px; font-size: .75rem; }
+}
+
+/* ── Tab navigation — horizontal scroll on mobile ── */
+@media (max-width: 768px) {
+  /* AdminDashboard tab groups */
+  div[style*="flexDirection: column"][style*="gap: .4rem"] > div {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: .25rem;
+  }
+  div[style*="flexDirection: column"][style*="gap: .4rem"] > div::-webkit-scrollbar { display: none; }
+
+  /* Teacher tab bar */
+  .tab-btn { font-size: .8rem; padding: .45rem .9rem; }
+
+  /* Page header stacks on narrow screens */
+  .page-header { flex-direction: column; align-items: flex-start; gap: .5rem; }
+  .page-header h2, .page-header h3 { font-size: 1.1rem; }
+
+  /* Stat cards — 2 columns on phones */
+  .grid-4 { grid-template-columns: repeat(2, 1fr); }
+
+  /* Glass padding reduced */
+  .glass { padding: 1rem; }
+  .glass-card { padding: .9rem 1rem; }
+
+  /* Tables — horizontal scroll */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table thead th { padding: .65rem .75rem; font-size: .78rem; }
+  .table tbody td { padding: .65rem .75rem; font-size: .85rem; }
+
+  /* Student cards — allow name to wrap */
+  .student-card { padding: .8rem 1rem; }
+  .student-avatar { width: 38px; height: 38px; font-size: 1rem; }
+
+  /* Login card — full width */
+  .login-card { padding: 1.75rem 1.25rem; border-radius: var(--radius-lg); }
+}
+
+/* ── EvaluationTab — score buttons larger touch targets on mobile ── */
+@media (max-width: 640px) {
+  /* Pill groups wrap nicely */
+  div[style*="display: flex"][style*="flexWrap: wrap"] { gap: .35rem; }
+
+  /* Score buttons — bigger tap area */
+  button[style*="borderRadius: 8px"][style*="padding: .28rem .7rem"] {
+    padding: .55rem .9rem !important;
+    font-size: .9rem !important;
+    min-width: 52px;
+  }
+
+  /* Step bar wraps */
+  div[style*="gap: 1.25rem"][style*="flexWrap: wrap"] { gap: .6rem; }
+
+  /* Table in EvaluationTab */
+  .table thead th:nth-child(2) { display: none; }  /* hide รหัส column */
+  .table tbody td:nth-child(2) { display: none; }
+}
+
+/* ── ReportsTab sub-tabs — scroll on mobile ── */
+@media (max-width: 768px) {
+  /* Sub-tab bar horizontal scroll */
+  div.tab-bar { padding-bottom: .4rem; }
+
+  /* Reports summary table — numeric columns min-width */
+  .table thead th, .table tbody td { white-space: nowrap; }
+}
+
+/* ── TeacherDashboard action buttons — 2 cols on very small screens ── */
+@media (max-width: 420px) {
+  div[style*="repeat(auto-fit,minmax(150px,1fr))"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}

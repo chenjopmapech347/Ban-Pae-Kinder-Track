@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { todayISO, formatDateThai } from '../utils/helpers';
 import { getDayRecord, hasHygieneToday } from '../utils/attendance';
+import EvaluationTab from '../components/admin/EvaluationTab';
+import ReportsTab from '../components/admin/ReportsTab';
 
 const ATT_OPTS   = ['มา','ขาด','ลา','ป่วย'];
 const LUNCH_OPTS = ['หมด','เกือบหมด','ครึ่งเดียว','ไม่ทาน'];
@@ -145,43 +147,59 @@ function HygieneView({ students, draft, updateDraft, recordDate, loadDraftForDat
   );
 }
 
+const TEACHER_TABS = [
+  { id: 'main',       label: '🏠 หน้าหลัก' },
+  { id: 'evaluation', label: '📊 ประเมินผล' },
+  { id: 'reports',    label: '📋 สรุปผล' },
+];
+
 export default function TeacherDashboard() {
   const {
     students, setStudents, setIsAdding, setSelectedStudent, setEvaluatingStudent,
     handleImport, announcements, dailyRecords, saveDailyAttendance, saveDailyHygiene,
+    user,
   } = useApp();
 
-  const [activeView, setActiveView] = useState('main');
-  const [recordDate, setRecordDate] = useState(todayISO);
-  const [draft, setDraft]           = useState(() => buildDraft(students, dailyRecords, todayISO()));
-  const [search, setSearch]         = useState('');
+  const [activeTab,   setActiveTab]   = useState('main');
+  const [activeView,  setActiveView]  = useState('main');
+  const [recordDate,  setRecordDate]  = useState(todayISO);
+
+  // filter to teacher's own class
+  const myClass    = user?.className;
+  const myStudents = useMemo(
+    () => students.filter(s => s.className === myClass && !s.name.startsWith('(ว่าง)')),
+    [students, myClass],
+  );
+
+  const [draft, setDraft] = useState(() => buildDraft(myStudents, dailyRecords, todayISO()));
+  const [search, setSearch] = useState('');
 
   const today     = todayISO();
   const dateLabel = formatDateThai(recordDate);
 
   const isSaved = useMemo(
-    () => students.every(s => getDayRecord(dailyRecords, recordDate, s.id)?.attendance),
-    [students, dailyRecords, recordDate],
+    () => myStudents.every(s => getDayRecord(dailyRecords, recordDate, s.id)?.attendance),
+    [myStudents, dailyRecords, recordDate],
   );
 
   const filtered = useMemo(
-    () => students.filter(s => s.name.includes(search.trim())),
-    [students, search],
+    () => myStudents.filter(s => s.name.includes(search.trim())),
+    [myStudents, search],
   );
 
   const stats = useMemo(() => ({
-    total:      students.length,
-    attend:     students.filter(s => getDayRecord(dailyRecords, today, s.id)?.attendance === 'มา').length,
-    hygiene:    students.filter(s => hasHygieneToday(getDayRecord(dailyRecords, today, s.id))).length,
-    assessed:   students.filter(s => s.assessments?.summary).length,
-  }), [students, dailyRecords, today]);
+    total:    myStudents.length,
+    attend:   myStudents.filter(s => getDayRecord(dailyRecords, today, s.id)?.attendance === 'มา').length,
+    hygiene:  myStudents.filter(s => hasHygieneToday(getDayRecord(dailyRecords, today, s.id))).length,
+    assessed: myStudents.filter(s => s.assessments?.summary).length,
+  }), [myStudents, dailyRecords, today]);
 
-  const loadDraft = date => { setRecordDate(date); setDraft(buildDraft(students, dailyRecords, date)); };
+  const loadDraft = date => { setRecordDate(date); setDraft(buildDraft(myStudents, dailyRecords, date)); };
   const updateDraft = (id, patch) => setDraft(prev => ({ ...prev, [id]: { ...prev[id], ...patch } }));
 
   const saveAttendance = () => {
     const rec = {};
-    students.forEach(s => { rec[String(s.id)] = { attendance: draft[s.id]?.attendance ?? 'มา' }; });
+    myStudents.forEach(s => { rec[String(s.id)] = { attendance: draft[s.id]?.attendance ?? 'มา' }; });
     saveDailyAttendance(recordDate, rec);
     alert('บันทึกการมาเรียนเรียบร้อยแล้ว ✅');
     setActiveView('main');
@@ -189,7 +207,7 @@ export default function TeacherDashboard() {
 
   const saveHygiene = () => {
     const rec = {};
-    students.forEach(s => {
+    myStudents.forEach(s => {
       const d = draft[s.id];
       rec[String(s.id)] = { milk: Boolean(d?.milk), brush: Boolean(d?.brush), lunch: d?.lunch ?? 'หมด' };
     });
@@ -204,17 +222,56 @@ export default function TeacherDashboard() {
   };
 
   if (activeView === 'attendance')
-    return <AttendanceView students={students} draft={draft} updateDraft={updateDraft}
+    return <AttendanceView students={myStudents} draft={draft} updateDraft={updateDraft}
       recordDate={recordDate} loadDraftForDate={loadDraft} isSaved={isSaved} dateLabel={dateLabel}
       onSave={saveAttendance} onBack={() => setActiveView('main')} />;
 
   if (activeView === 'hygiene')
-    return <HygieneView students={students} draft={draft} updateDraft={updateDraft}
+    return <HygieneView students={myStudents} draft={draft} updateDraft={updateDraft}
       recordDate={recordDate} loadDraftForDate={loadDraft}
       onSave={saveHygiene} onBack={() => setActiveView('main')} />;
 
+  // Tab views for evaluation & reports
+  if (activeTab === 'evaluation') return (
+    <div className="animate-fade">
+      <div style={{ display:'flex', gap:'.5rem', marginBottom:'1.25rem', flexWrap:'wrap' }}>
+        {TEACHER_TABS.map(t => (
+          <button key={t.id} type="button" className={'tab-btn' + (activeTab === t.id ? ' active' : '')}
+            onClick={() => setActiveTab(t.id)}>{t.label}</button>
+        ))}
+      </div>
+      <EvaluationTab />
+    </div>
+  );
+
+  if (activeTab === 'reports') return (
+    <div className="animate-fade">
+      <div style={{ display:'flex', gap:'.5rem', marginBottom:'1.25rem', flexWrap:'wrap' }}>
+        {TEACHER_TABS.map(t => (
+          <button key={t.id} type="button" className={'tab-btn' + (activeTab === t.id ? ' active' : '')}
+            onClick={() => setActiveTab(t.id)}>{t.label}</button>
+        ))}
+      </div>
+      <ReportsTab teacherClassFilter={myClass} />
+    </div>
+  );
+
   return (
     <div className="animate-fade">
+      {/* Tab navigation */}
+      <div style={{ display:'flex', gap:'.5rem', marginBottom:'1.25rem', flexWrap:'wrap' }}>
+        {TEACHER_TABS.map(t => (
+          <button key={t.id} type="button" className={'tab-btn' + (activeTab === t.id ? ' active' : '')}
+            onClick={() => setActiveTab(t.id)}>{t.label}</button>
+        ))}
+        {myClass && (
+          <span style={{
+            marginLeft:'auto', background:'#ede9fe', color:'#7c3aed',
+            borderRadius:'999px', padding:'.25rem .85rem', fontSize:'.8rem', fontWeight:800,
+          }}>🏫 ห้อง {myClass}</span>
+        )}
+      </div>
+
       {announcements[0] && (
         <div className="announce-banner mb-6">
           <span className="announce-icon">📢</span>
@@ -279,7 +336,7 @@ export default function TeacherDashboard() {
 
       <div className="glass" style={{ padding:'1.5rem' }}>
         <div className="page-header" style={{ marginBottom:'1rem' }}>
-          <h3>👨‍🎓 รายชื่อนักเรียน ({filtered.length}/{students.length} คน)</h3>
+          <h3>👨‍🎓 รายชื่อนักเรียน{myClass ? ` ห้อง ${myClass}` : ''} ({filtered.length}/{myStudents.length} คน)</h3>
           <input className="input" style={{ maxWidth:'220px' }} placeholder="🔍 ค้นหาชื่อ..."
             value={search} onChange={e => setSearch(e.target.value)} />
         </div>

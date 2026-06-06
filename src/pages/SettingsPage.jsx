@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { getCloudStatusMessage } from '../lib/cloudSync';
 import { exportAttendanceLogExcel } from '../utils/exportExcel';
 import { firebaseCreateUser, firebaseSendReset } from '../lib/firebaseAuth';
 

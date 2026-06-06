@@ -1,13 +1,6 @@
-import { supabase, isSupabaseConfigured } from './supabase';
+import { supabase } from './supabase';
 
 const SNAPSHOT_ROW_ID = 'default';
-
-export function getCloudStatusMessage() {
-  if (!isSupabaseConfigured) {
-    return 'ยังไม่ได้ตั้งค่า Supabase — ใช้ข้อมูลในเครื่อง (localStorage)';
-  }
-  return 'เชื่อมต่อ Supabase แล้ว — สามารถสำรอง/ดึงข้อมูลจากคลาวด์ได้';
-}
 
 export async function pullSnapshotFromCloud() {
   if (!supabase) {

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+﻿import { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { INDICATORS_DATA } from '../../data/indicatorsData';
 import { getStandardsByDomain } from '../../data/flatIndicators';
@@ -16,7 +16,7 @@ const DOMAIN_ID_MAP = Object.fromEntries(
   Object.entries(DOMAIN_MAP).map(([k, v]) => [v, k])
 ); // reverse map
 
-function downloadTemplate(domains) {
+function downloadTemplate() {
   const rows = [
     ['ด้าน (physical/emotional/social/mental)', 'รหัสมาตรฐาน', 'ชื่อมาตรฐาน', 'รหัสตัวบ่งชี้', 'ชื่อตัวบ่งชี้'],
     ['physical', 'qa-3', 'มาตรฐานที่ 3 ร่างกาย', '3.1', 'ตัวบ่งชี้ที่ 3.1 น้ำหนัก/ส่วนสูงตามเกณฑ์'],
@@ -431,7 +431,7 @@ export default function IndicatorsTab() {
 
           {/* Download Template */}
           <button className="btn" style={{ background: '#f0fdf4', color: '#16a34a', border: '1.5px solid #86efac' }}
-            onClick={() => downloadTemplate(domains)}
+            onClick={() => downloadTemplate()}
             title="ดาวน์โหลดแม่แบบ CSV">
             📄 แม่แบบ CSV
           </button>

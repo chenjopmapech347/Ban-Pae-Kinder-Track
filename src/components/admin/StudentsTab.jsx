@@ -89,6 +89,7 @@ export default function StudentsTab() {
 
   const [isModalOpen, setIsModalOpen]     = useState(false);
   const [editingItem, setEditingItem]     = useState(null);
+  const [editAnchorY, setEditAnchorY]     = useState(null);
   const [assessingStudent, setAssessing]  = useState(null);
   const [assessAnchorY,    setAssessAnchorY] = useState(null);
   const wizardRef = useRef(null);
@@ -161,6 +162,20 @@ export default function StudentsTab() {
               alert(r.ok ? 'นำเข้าสำเร็จ! ✅' : r.message);
             }
           }}>📥 CSV</button>
+          <button className="btn" style={{ background: '#f0fdf4', color: '#166534' }} onClick={() => {
+            const BOM = '﻿';
+            const header = 'ชื่อ-นามสกุล,ชื่อเล่น,เพศ,เลขประจำตัว,เลขบัตรประชาชน,ระดับ,ห้องเรียน,อายุ,น้ำหนัก,ส่วนสูง,parentPin,ชื่อบิดา,อาชีพบิดา,ชื่อมารดา,อาชีพมารดา,เบอร์ผู้ปกครอง,ที่อยู่';
+            const rows = [
+              'เด็กชายตัวอย่าง ใจดี,ตัวอย่าง,ชาย,69001,1-2199-00000-00-0,K1,อ.1/1,4,18.5,105,1001,นายบิดา ใจดี,เกษตรกร,นางมารดา ใจดี,แม่บ้าน,0812345678,123 ถ.ตัวอย่าง',
+              'เด็กหญิงตัวอย่าง สวยงาม,สวย,หญิง,69002,1-2199-00000-00-1,K2,อ.2/1,5,20,110,1002,นายบิดา สวยงาม,ค้าขาย,นางมารดา สวยงาม,พยาบาล,0898765432,456 ถ.ตัวอย่าง',
+            ];
+            const csv = BOM + header + '\n' + rows.join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = 'student_template.csv';
+            a.click(); URL.revokeObjectURL(url);
+          }}>📋 Template CSV</button>
           <button className="btn btn-primary" onClick={() => { setEditingItem(null); setIsModalOpen(true); }}>
             + เพิ่มนักเรียน
           </button>
@@ -280,7 +295,7 @@ export default function StudentsTab() {
                       <button className="btn btn-sm btn-primary"
                         onClick={e => startAssess(e, s)}>✏️ ประเมิน</button>
                       <button className="btn btn-sm"
-                        onClick={() => { setEditingItem(s); setIsModalOpen(true); }}>แก้ไข</button>
+                        onClick={e => { setEditAnchorY(e.clientY); setEditingItem(s); setIsModalOpen(true); }}>แก้ไข</button>
                       <button className="btn btn-sm" style={{ color: 'var(--danger)' }}
                         onClick={() => { if(confirm('ลบข้อมูลนักเรียน?')) setStudents(students.filter(x => x.id !== s.id)); }}>ลบ</button>
                     </div>
@@ -298,6 +313,7 @@ export default function StudentsTab() {
       <StudentModal
         key={editingItem?.id ? 'edit-' + editingItem.id : 'new-admin'}
         isOpen={isModalOpen}
+        anchorY={editAnchorY}
         onClose={() => setIsModalOpen(false)}
         onSave={data => {
           if (editingItem) setStudents(students.map(s => s.id === editingItem.id ? { ...s, ...data } : s));

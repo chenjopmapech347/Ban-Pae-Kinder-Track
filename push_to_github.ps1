@@ -12,7 +12,7 @@ if (Test-Path $lock) {
 git add -A
 
 # Commit
-git commit -m "feat: TeachersTab username/PIN columns, teacher self-change PIN, student parentPin editor"
+git commit -m "feat: StudentModal anchored near click, CSV template download button"
 
 # Push
 git push origin main

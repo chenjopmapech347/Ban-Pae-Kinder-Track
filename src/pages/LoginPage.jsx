@@ -9,13 +9,17 @@ const STAFF_TABS = [
 export default function LoginPage() {
   const { login, students, teachers, authConfig, isFirebaseConfigured } = useApp();
 
-  const [roleTab, setRoleTab]     = useState('teacher');
-  const [username, setUsername]   = useState('');
-  const [pin, setPin]             = useState('');
-  const [studentId, setStudentId] = useState(String(students[0]?.id ?? ''));
-  const [mode, setMode]           = useState('staff'); // 'staff' | 'parent'
-  const [error, setError]         = useState('');
-  const [loading, setLoading]     = useState(false);
+  const [roleTab, setRoleTab]       = useState('teacher');
+  const [username, setUsername]     = useState('');
+  const [pin, setPin]               = useState('');
+  const [studentId, setStudentId]   = useState(String(students[0]?.id ?? ''));
+  const [studentCode, setStudentCode] = useState(''); // รหัสที่ผู้ปกครองพิมพ์
+  const [mode, setMode]             = useState('staff'); // 'staff' | 'parent'
+  const [error, setError]           = useState('');
+  const [loading, setLoading]       = useState(false);
+
+  // ค้นหานักเรียนจากรหัสประจำตัว
+  const foundStudent = students.find(s => s.code === studentCode.trim()) ?? null;
 
   const activeTab = STAFF_TABS.find(t => t.id === roleTab) ?? STAFF_TABS[0];
 
@@ -27,7 +31,12 @@ export default function LoginPage() {
     let result;
 
     if (mode === 'parent') {
-      result = login('parent', { pin, studentId });
+      if (!foundStudent) {
+        setError('ไม่พบนักเรียนที่มีรหัสนี้');
+        setLoading(false);
+        return;
+      }
+      result = login('parent', { pin, studentId: foundStudent.id });
     } else {
       // Admin และ Teacher ใช้ username + PIN
       result = login(roleTab, { username, pin });
@@ -154,23 +163,77 @@ export default function LoginPage() {
           {/* ─── Parent mode ─── */}
           {mode === 'parent' && (
             <>
+              {/* Step 1: พิมพ์รหัสประจำตัว */}
               <div>
-                <label style={{ display: 'block', marginBottom: '.35rem' }}>เลือกบุตรหลาน</label>
-                <select className="input" value={studentId}
-                  onChange={e => setStudentId(e.target.value)} required>
-                  {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
+                <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 700 }}>
+                  🔢 รหัสประจำตัวบุตรหลาน
+                </label>
+                <input
+                  className="input"
+                  type="text"
+                  inputMode="numeric"
+                  value={studentCode}
+                  onChange={e => { setStudentCode(e.target.value); setError(''); }}
+                  placeholder="เช่น 1420"
+                  autoComplete="off"
+                  style={{ fontSize: '1.15rem', letterSpacing: '.1em', fontWeight: 700 }}
+                />
               </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '.35rem' }}>🔑 รหัส PIN ผู้ปกครอง</label>
-                <input className="input" type="password" value={pin}
-                  onChange={e => setPin(e.target.value)}
-                  placeholder="รหัส 4 หลัก" required
-                  style={{ fontSize: '1.1rem', letterSpacing: '.2em' }} />
-                <div className="text-xs text-muted mt-2">
-                  💡 ถ้าไม่รู้ PIN ให้แอดมินดูได้ที่เมนู "นักเรียน"
+
+              {/* แสดงชื่อบุตรหลานเมื่อพบ */}
+              {studentCode.trim() !== '' && (
+                <div style={{
+                  borderRadius: '14px', padding: '.85rem 1rem',
+                  background: foundStudent ? '#d1fae5' : '#fee2e2',
+                  border: `1.5px solid ${foundStudent ? '#6ee7b7' : '#fca5a5'}`,
+                  display: 'flex', alignItems: 'center', gap: '.75rem',
+                  transition: 'all .2s',
+                }}>
+                  <span style={{ fontSize: '1.6rem', flexShrink: 0 }}>
+                    {foundStudent
+                      ? (foundStudent.gender === 'ชาย' ? '👦' : '👧')
+                      : '❓'}
+                  </span>
+                  <div>
+                    {foundStudent ? (
+                      <>
+                        <div style={{ fontWeight: 800, fontSize: '.95rem', color: '#065f46' }}>
+                          {foundStudent.name}
+                        </div>
+                        <div style={{ fontSize: '.75rem', color: '#059669', marginTop: '.1rem' }}>
+                          ชั้น {foundStudent.className} · รหัส {foundStudent.code}
+                        </div>
+                      </>
+                    ) : (
+                      <div style={{ fontWeight: 700, color: '#991b1b', fontSize: '.88rem' }}>
+                        ไม่พบนักเรียนที่มีรหัสนี้
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Step 2: PIN — แสดงเมื่อพบนักเรียนแล้ว */}
+              {foundStudent && (
+                <div>
+                  <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 700 }}>
+                    🔑 รหัส PIN ผู้ปกครอง
+                  </label>
+                  <input
+                    className="input"
+                    type="password"
+                    value={pin}
+                    onChange={e => setPin(e.target.value)}
+                    placeholder="กรอก PIN"
+                    required
+                    autoFocus
+                    style={{ fontSize: '1.25rem', letterSpacing: '.25em' }}
+                  />
+                  <div className="text-xs text-muted mt-2">
+                    💡 PIN คือรหัสประจำตัวนักเรียน ถ้าไม่ทราบให้ติดต่อครูประจำชั้น
+                  </div>
+                </div>
+              )}
             </>
           )}
 
@@ -178,17 +241,19 @@ export default function LoginPage() {
             <div className="alert alert-error animate-slide">❌ {error}</div>
           )}
 
-          <button type="submit" className="btn btn-lg w-full" disabled={loading}
-            style={{
-              background: mode === 'parent'
-                ? 'linear-gradient(135deg,#f59e0b,#fbbf24)'
-                : 'linear-gradient(135deg,' + activeTab.color + ',' + activeTab.color + 'cc)',
-              color: 'white',
-              boxShadow: '0 6px 20px ' + (mode === 'parent' ? '#f59e0b' : activeTab.color) + '40',
-              marginTop: '.25rem',
-            }}>
-            {loading ? '⏳ กำลังเข้าสู่ระบบ...' : '🚀 เข้าสู่ระบบ'}
-          </button>
+          {(mode !== 'parent' || foundStudent) && (
+            <button type="submit" className="btn btn-lg w-full" disabled={loading}
+              style={{
+                background: mode === 'parent'
+                  ? 'linear-gradient(135deg,#f59e0b,#fbbf24)'
+                  : 'linear-gradient(135deg,' + activeTab.color + ',' + activeTab.color + 'cc)',
+                color: 'white',
+                boxShadow: '0 6px 20px ' + (mode === 'parent' ? '#f59e0b' : activeTab.color) + '40',
+                marginTop: '.25rem',
+              }}>
+              {loading ? '⏳ กำลังเข้าสู่ระบบ...' : '🚀 เข้าสู่ระบบ'}
+            </button>
+          )}
         </form>
 
         {/* PIN hint (ถ้า Firebase ยังไม่ได้ตั้งค่า) */}

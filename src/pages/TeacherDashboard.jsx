@@ -13,6 +13,44 @@ import StudentModal   from '../components/StudentModal';
 
 const ATT_OPTS   = ['มา','ขาด','ลา','ป่วย'];
 const LUNCH_OPTS = ['หมด','เกือบหมด','ครึ่งเดียว','ไม่ทาน'];
+
+function StudentPinRow({ student, onSave }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal]         = useState(student.parentPin ?? '');
+  const [show, setShow]       = useState(false);
+  if (!editing) return (
+    <div style={{ display:'flex', alignItems:'center', gap:'.75rem', padding:'.5rem .75rem',
+      background:'#f9fafb', borderRadius:'8px', border:'1px solid #e5e7eb' }}>
+      <span style={{ flex:1, fontWeight:600, fontSize:'.9rem' }}>{student.name}</span>
+      <span style={{ fontSize:'.8rem', color:'#6b7280' }}>PIN:</span>
+      <code style={{ background:'#ede9fe', padding:'.15rem .5rem', borderRadius:'5px', fontSize:'.82rem', letterSpacing: show?'0':'.15em' }}>
+        {show ? (student.parentPin ?? '—') : '••••'}
+      </code>
+      <button type="button" onClick={() => setShow(s=>!s)}
+        style={{ background:'none', border:'none', cursor:'pointer', fontSize:'.8rem', padding:0 }}>
+        {show ? '🙈' : '👁️'}
+      </button>
+      <button type="button" className="btn btn-sm"
+        onClick={() => { setVal(student.parentPin ?? ''); setEditing(true); }}>
+        ✏️ แก้ไข
+      </button>
+    </div>
+  );
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:'.75rem', padding:'.5rem .75rem',
+      background:'#faf5ff', borderRadius:'8px', border:'2px solid #a78bfa' }}>
+      <span style={{ flex:1, fontWeight:600, fontSize:'.9rem' }}>{student.name}</span>
+      <span style={{ fontSize:'.8rem', color:'#6b7280' }}>PIN ใหม่:</span>
+      <input style={{ width:'110px', padding:'.3rem .5rem', borderRadius:'6px',
+        border:'1.5px solid #a78bfa', fontFamily:'inherit', fontSize:'.85rem' }}
+        value={val} onChange={e => setVal(e.target.value)} autoFocus />
+      <button type="button" className="btn btn-sm btn-primary"
+        onClick={() => { onSave(val); setEditing(false); }}>บันทึก</button>
+      <button type="button" className="btn btn-sm"
+        onClick={() => setEditing(false)}>ยกเลิก</button>
+    </div>
+  );
+}
 const ATT_COLOR  = {
   มา:  { bg:'#d1fae5',color:'#065f46' },
   ขาด: { bg:'#fee2e2',color:'#991b1b' },
@@ -434,7 +472,9 @@ export default function TeacherDashboard() {
           ) : (
             <form onSubmit={e => {
               e.preventDefault();
-              setTeachers(teachers.map(t => t.id === myTeacher.id ? { ...t, ...profileForm } : t));
+              const { _newPin, ...rest } = profileForm;
+              const patch = _newPin?.trim() ? { ...rest, pin: _newPin.trim() } : rest;
+              setTeachers(teachers.map(t => t.id === myTeacher.id ? { ...t, ...patch } : t));
               setProfileForm(null);
               setProfileSaved(true);
             }} style={{ display:'flex', flexDirection:'column', gap:'1rem', maxWidth:'520px' }}>
@@ -472,12 +512,46 @@ export default function TeacherDashboard() {
                   </div>
                 ))}
               </div>
+              {/* เปลี่ยนรหัสผ่าน */}
+              <div style={{ borderTop:'1.5px solid #e5e7eb', paddingTop:'.75rem', marginTop:'.25rem' }}>
+                <div style={{ fontWeight:700, fontSize:'.85rem', color:'#6b7280', marginBottom:'.75rem' }}>
+                  🔐 เปลี่ยนรหัสผ่าน Login
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'.75rem' }}>
+                  <div>
+                    <label style={{ display:'block', marginBottom:'.35rem', fontWeight:600, fontSize:'.85rem' }}>Username</label>
+                    <input className="input" value={profileForm.username ?? ''} readOnly
+                      style={{ background:'#f9fafb', color:'#6b7280' }} />
+                  </div>
+                  <div>
+                    <label style={{ display:'block', marginBottom:'.35rem', fontWeight:600, fontSize:'.85rem' }}>รหัสผ่านใหม่</label>
+                    <input className="input" placeholder="เว้นว่างถ้าไม่เปลี่ยน"
+                      value={profileForm._newPin ?? ''}
+                      onChange={e => setProfileForm(f => ({ ...f, _newPin: e.target.value }))} />
+                  </div>
+                </div>
+              </div>
+
               <div className="flex gap-2 mt-2">
                 <button type="button" className="btn flex-1" onClick={() => setProfileForm(null)}>ยกเลิก</button>
                 <button type="submit" className="btn btn-primary flex-1">💾 บันทึก</button>
               </div>
             </form>
           )}
+
+          {/* ── PIN ผู้ปกครองนักเรียนในห้อง ── */}
+          <div style={{ borderTop:'2px solid #e5e7eb', marginTop:'1.5rem', paddingTop:'1.25rem' }}>
+            <h4 style={{ marginBottom:'.75rem', color:'#374151' }}>🔑 รหัส PIN ผู้ปกครอง</h4>
+            <p style={{ fontSize:'.83rem', color:'#6b7280', marginBottom:'1rem' }}>
+              แก้ไข PIN สำหรับผู้ปกครองเข้าสู่ระบบ (ห้อง {myClass})
+            </p>
+            <div style={{ display:'flex', flexDirection:'column', gap:'.5rem' }}>
+              {myStudents.map(s => (
+                <StudentPinRow key={s.id} student={s}
+                  onSave={pin => setStudents(prev => prev.map(x => x.id === s.id ? { ...x, parentPin: pin } : x))} />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );

@@ -12,7 +12,7 @@ if (Test-Path $lock) {
 git add -A
 
 # Commit
-git commit -m "feat: HygieneView select-all buttons, default milk/brush=true, master PIN, fix Thai font in manual"
+git commit -m "feat: TeachersTab username/PIN columns, teacher self-change PIN, student parentPin editor"
 
 # Push
 git push origin main

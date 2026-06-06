@@ -1,6 +1,21 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 
+function PinCell({ pin }) {
+  const [show, setShow] = useState(false);
+  return (
+    <span style={{ display:'inline-flex', alignItems:'center', gap:'.3rem' }}>
+      <code style={{ background:'#f5f3ff', padding:'.1rem .4rem', borderRadius:'5px', fontSize:'.8rem', letterSpacing: show ? '0' : '.15em' }}>
+        {show ? pin : '••••••'}
+      </code>
+      <button type="button" onClick={() => setShow(s => !s)}
+        style={{ background:'none', border:'none', cursor:'pointer', fontSize:'.85rem', color:'#7c3aed', padding:0 }}>
+        {show ? '🙈' : '👁️'}
+      </button>
+    </span>
+  );
+}
+
 const CLASS_OPTIONS = {
   K1: ['อ.1/1', 'อ.1/2'],
   K2: ['อ.2/1', 'อ.2/2'],
@@ -54,6 +69,8 @@ export default function TeachersTab() {
               <th>ชื่อ-นามสกุล</th>
               <th>ระดับชั้น</th>
               <th>ห้องเรียน</th>
+              <th>Username</th>
+              <th>รหัสผ่าน</th>
               <th>เบอร์โทร</th>
               <th>สถานะ</th>
               <th>จัดการ</th>
@@ -72,6 +89,12 @@ export default function TeachersTab() {
                     ? <span style={{ fontWeight: 700, color: 'var(--primary)', background: '#ede9fe', borderRadius: '6px', padding: '.15rem .55rem', fontSize: '.82rem' }}>{t.className}</span>
                     : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                 </td>
+                <td>
+                  <code style={{ background:'#f0f9ff', padding:'.1rem .4rem', borderRadius:'5px', fontSize:'.8rem', color:'#0369a1' }}>
+                    {t.username ?? '—'}
+                  </code>
+                </td>
+                <td>{t.pin ? <PinCell pin={t.pin} /> : <span style={{ color:'var(--text-muted)' }}>—</span>}</td>
                 <td style={{ fontSize:'.85rem' }}>{t.phone ?? '—'}</td>
                 <td><span className="text-success">● {t.status}</span></td>
                 <td>
@@ -146,6 +169,27 @@ export default function TeachersTab() {
                 <input className="input" required placeholder="0xx-xxx-xxxx"
                   value={form.phone ?? ''}
                   onChange={e => setForm({ ...form, phone: e.target.value })} />
+              </div>
+
+              {/* Username + PIN */}
+              <div style={{ borderTop:'1.5px solid #e5e7eb', paddingTop:'.75rem' }}>
+                <div style={{ fontWeight:700, fontSize:'.8rem', color:'#6b7280', marginBottom:'.6rem' }}>
+                  🔐 ข้อมูล Login
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'.75rem' }}>
+                  <div>
+                    <label style={{ display:'block',marginBottom:'.3rem',fontWeight:600,fontSize:'.85rem' }}>Username *</label>
+                    <input className="input" required placeholder="เช่น teacher01"
+                      value={form.username ?? ''}
+                      onChange={e => setForm({ ...form, username: e.target.value.toLowerCase().replace(/\s/g,'') })} />
+                  </div>
+                  <div>
+                    <label style={{ display:'block',marginBottom:'.3rem',fontWeight:600,fontSize:'.85rem' }}>รหัสผ่าน (PIN) *</label>
+                    <input className="input" required placeholder="เช่น kru01"
+                      value={form.pin ?? ''}
+                      onChange={e => setForm({ ...form, pin: e.target.value })} />
+                  </div>
+                </div>
               </div>
 
               {/* Social — optional */}

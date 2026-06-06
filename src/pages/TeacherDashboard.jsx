@@ -8,8 +8,9 @@ import OverviewTab    from '../components/admin/OverviewTab';
 import AdminAttTab    from '../components/admin/AttendanceTab';
 import PickupTab      from '../components/admin/PickupTab';
 import ActivityLogTab from '../components/admin/ActivityLogTab';
-import QaStandardView from '../components/QaStandardView';
-import Std2SelfTab    from '../components/teacher/Std2SelfTab';
+import QaStandardView        from '../components/QaStandardView';
+import Std2SelfTab           from '../components/teacher/Std2SelfTab';
+import NationalStandardsTab  from '../components/admin/NationalStandardsTab';
 import StudentModal   from '../components/StudentModal';
 
 const ATT_OPTS   = ['มา','ขาด','ลา','ป่วย'];
@@ -81,9 +82,10 @@ const TEACHER_TAB_GROUPS = [
     label: 'อื่นๆ',
     color: '#6b7280',
     tabs: [
-      { id: 'std2self',  label: '👩‍🏫 มาตรฐานที่ 2' },
-      { id: 'standards', label: '🗺️ มาตรฐาน' },
-      { id: 'profile',   label: '👤 โปรไฟล์' },
+      { id: 'std2self',    label: '👩‍🏫 มาตรฐานที่ 2' },
+      { id: 'nationalstd', label: '🏛 มาตรฐานปฐมวัย' },
+      { id: 'standards',   label: '🗺️ แผนมาตรฐาน' },
+      { id: 'profile',     label: '👤 โปรไฟล์' },
     ],
   },
 ];
@@ -452,6 +454,20 @@ export default function TeacherDashboard() {
 
           {!isEditing ? (
             <div style={{ display:'flex', flexDirection:'column', gap:'1rem', maxWidth:'520px' }}>
+              {/* Username — แสดงเท่านั้น ไม่สามารถแก้ไขได้ */}
+              <div style={{
+                display:'flex', gap:'1rem', alignItems:'center',
+                padding:'.6rem .85rem', borderRadius:'10px',
+                background:'#f1f5f9', border:'1.5px solid #e2e8f0',
+              }}>
+                <span style={{ minWidth:'100px', fontWeight:700, color:'#6b7280', fontSize:'.85rem' }}>Username</span>
+                <code style={{ fontWeight:700, fontSize:'.9rem', color:'#374151', letterSpacing:'.02em' }}>
+                  {myTeacher?.username ?? '—'}
+                </code>
+                <span style={{ marginLeft:'auto', fontSize:'.68rem', color:'#94a3b8', background:'#e2e8f0', padding:'2px 7px', borderRadius:'5px' }}>
+                  🔒 แก้ไขไม่ได้
+                </span>
+              </div>
               {[
                 { label:'ชื่อ',      value: myTeacher?.firstName ?? myTeacher?.name ?? '—' },
                 { label:'นามสกุล',   value: myTeacher?.lastName ?? '—' },
@@ -572,6 +588,7 @@ export default function TeacherDashboard() {
       {activeTab === 'reports'     && <ReportsTab teacherClassFilter={myClass} />}
       {activeTab === 'activitylog' && <ActivityLogTab />}
       {activeTab === 'std2self'    && <Std2SelfTab />}
+      {activeTab === 'nationalstd' && <NationalStandardsTab />}
       {activeTab === 'standards'   && (
         <div className="glass p-6">
           <h3 className="mb-6">🗺️ สรุปมาตรฐานสถานพัฒนาเด็กปฐมวัย (ปี 2569)</h3>

@@ -9,7 +9,7 @@ if (Test-Path $lock) {
 }
 
 git add -A
-git commit -m "feat: std2 per-teacher self-assessment - TeacherDashboard tab + NationalStandardsTab aggregated view"
+git commit -m "feat: add NationalStandardsTab to TeacherDashboard - teachers can view all 3 national standards"
 git push origin main
 
 Write-Host "Done!" -ForegroundColor Green

@@ -9,6 +9,7 @@ import AdminAttTab    from '../components/admin/AttendanceTab';
 import PickupTab      from '../components/admin/PickupTab';
 import ActivityLogTab from '../components/admin/ActivityLogTab';
 import QaStandardView from '../components/QaStandardView';
+import Std2SelfTab    from '../components/teacher/Std2SelfTab';
 import StudentModal   from '../components/StudentModal';
 
 const ATT_OPTS   = ['มา','ขาด','ลา','ป่วย'];
@@ -80,6 +81,7 @@ const TEACHER_TAB_GROUPS = [
     label: 'อื่นๆ',
     color: '#6b7280',
     tabs: [
+      { id: 'std2self',  label: '👩‍🏫 มาตรฐานที่ 2' },
       { id: 'standards', label: '🗺️ มาตรฐาน' },
       { id: 'profile',   label: '👤 โปรไฟล์' },
     ],
@@ -569,6 +571,7 @@ export default function TeacherDashboard() {
       {activeTab === 'evaluation'  && <EvaluationTab />}
       {activeTab === 'reports'     && <ReportsTab teacherClassFilter={myClass} />}
       {activeTab === 'activitylog' && <ActivityLogTab />}
+      {activeTab === 'std2self'    && <Std2SelfTab />}
       {activeTab === 'standards'   && (
         <div className="glass p-6">
           <h3 className="mb-6">🗺️ สรุปมาตรฐานสถานพัฒนาเด็กปฐมวัย (ปี 2569)</h3>

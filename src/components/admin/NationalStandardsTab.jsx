@@ -1,7 +1,8 @@
 // NationalStandardsTab.jsx
 // แสดงผลตามมาตรฐานสถานพัฒนาเด็กปฐมวัยแห่งชาติ (3 มาตรฐาน 18 ตัวบ่งชี้)
 // มาตรฐานที่ 3 → aggregate จาก activityLogs
-// มาตรฐานที่ 1-2 → checklist บันทึกใน localStorage
+// มาตรฐานที่ 1   → checklist บันทึกโดยผู้อำนวยการ (kt_std1_ratings)
+// มาตรฐานที่ 2   → per-teacher self-assessment (kt_std2_ratings_<id>) — รวมภาพรวมที่นี่
 import { useState, useMemo } from 'react';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
 import { useApp } from '../../context/AppContext';
@@ -239,11 +240,24 @@ function SummaryBadge({ label, score, color, bg, border }) {
 
 // ─── Main component ────────────────────────────────────────────────────────────
 export default function NationalStandardsTab() {
-  const { activityLogs } = useApp();
+  const { activityLogs, teachers } = useApp();
 
-  // Checklist ratings: { "1.1": 3, "1.2": 2, ... }
+  // มาตรฐานที่ 1 — ผู้อำนวยการประเมิน (shared key)
   const [std1Ratings, setStd1Ratings] = useLocalStorage('kt_std1_ratings', {});
-  const [std2Ratings, setStd2Ratings] = useLocalStorage('kt_std2_ratings', {});
+
+  // มาตรฐานที่ 2 — รวมผลจาก per-teacher self-assessment (kt_std2_ratings_<teacherId>)
+  const std2ByTeacher = useMemo(() => {
+    return (teachers ?? []).map(t => {
+      let ratings = {};
+      try {
+        const raw = localStorage.getItem(`kt_std2_ratings_${t.id}`);
+        if (raw) ratings = JSON.parse(raw);
+      } catch {}
+      const score = calcChecklistScore(STD2_ITEMS, ratings);
+      const name = [t.firstName, t.lastName].filter(Boolean).join(' ') || t.name || `ครู ${t.id}`;
+      return { teacher: t, name, ratings, score };
+    });
+  }, [teachers]);
 
   const [activeSection, setActiveSection] = useState('all');
   const [filterRound, setFilterRound] = useState('');
@@ -281,11 +295,15 @@ export default function NationalStandardsTab() {
 
   // ── คะแนน checklist ──────────────────────────────────────────────────────
   const std1Score = calcChecklistScore(STD1_ITEMS, std1Ratings);
-  const std2Score = calcChecklistScore(STD2_ITEMS, std2Ratings);
+  // std2Score = ค่าเฉลี่ยของครูที่ประเมินแล้ว
+  const std2Score = useMemo(() => {
+    const scored = std2ByTeacher.filter(x => x.score !== null);
+    if (scored.length === 0) return null;
+    return Math.round(scored.reduce((s, x) => s + x.score, 0) / scored.length);
+  }, [std2ByTeacher]);
 
   // ── handlers ──────────────────────────────────────────────────────────────
   const updateStd1 = (id, val) => setStd1Ratings(prev => ({ ...prev, [id]: val }));
-  const updateStd2 = (id, val) => setStd2Ratings(prev => ({ ...prev, [id]: val }));
 
   const SECTIONS = [
     { id: 'all',  label: '📊 ภาพรวม' },
@@ -355,8 +373,8 @@ export default function NationalStandardsTab() {
             fontSize: '.78rem', color: '#92400e', marginBottom: '1.25rem',
           }}>
             💡 <strong>มาตรฐานที่ 3</strong> คำนวณจากผลการประเมินในระบบ &nbsp;·&nbsp;
-            <strong>มาตรฐานที่ 1-2</strong> ใช้การกรอก Checklist ด้วยตนเอง &nbsp;·&nbsp;
-            กดที่แท็บเพื่อดูรายละเอียดและแก้ไขข้อมูล
+            <strong>มาตรฐานที่ 2</strong> รวมจากการประเมินตนเองของครูแต่ละคน (TeacherDashboard) &nbsp;·&nbsp;
+            <strong>มาตรฐานที่ 1</strong> กรอก Checklist โดยผู้อำนวยการ
           </div>
 
           {/* Domain quick view */}
@@ -466,21 +484,166 @@ export default function NationalStandardsTab() {
       {/* ══ มาตรฐานที่ 2 ════════════════════════════════════════════════════ */}
       {activeSection === 'std2' && (
         <div>
+          {/* Info banner */}
           <div style={{
             background: '#f5f3ff', border: '1px solid #ddd6fe',
             borderRadius: '10px', padding: '.7rem 1rem',
             fontSize: '.78rem', color: '#5b21b6', marginBottom: '1.25rem',
           }}>
-            📝 <strong>วิธีใช้:</strong> ประเมินแต่ละตัวบ่งชี้โดยเลือก ดีมาก / พอใช้ / ต้องพัฒนา ข้อมูลบันทึกอัตโนมัติ
+            👩‍🏫 <strong>ภาพรวมมาตรฐานที่ 2</strong> — ครูแต่ละคนประเมินตนเองจาก TeacherDashboard → มาตรฐานที่ 2 &nbsp;·&nbsp; ข้อมูลอัปเดตอัตโนมัติเมื่อครูบันทึก
           </div>
-          <ChecklistSection
-            title="มาตรฐานที่ 2 — ครู/ผู้ดูแลเด็กให้การดูแลและจัดประสบการณ์"
-            subtitle="8 ตัวบ่งชี้ · สอดคล้องกับ สมศ. มาตรฐาน 3"
-            items={STD2_ITEMS}
-            ratings={std2Ratings}
-            onChange={updateStd2}
-            colorAccent="#7c3aed"
-          />
+
+          {/* School average score card */}
+          <div style={{
+            background: std2Score !== null ? '#7c3aed' : '#6b7280',
+            color: 'white', borderRadius: '14px', padding: '1rem 1.5rem',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            marginBottom: '1.25rem',
+          }}>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: '.95rem' }}>คะแนนเฉลี่ยของสถานศึกษา</div>
+              <div style={{ fontSize: '.72rem', opacity: .85, marginTop: '.2rem' }}>
+                ครูที่ประเมินแล้ว {std2ByTeacher.filter(x => x.score !== null).length}/{std2ByTeacher.length} คน
+              </div>
+            </div>
+            {std2Score !== null ? (
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '2.5rem', fontWeight: 900, lineHeight: 1 }}>{std2Score}%</div>
+                <div style={{ fontSize: '.65rem', opacity: .8 }}>
+                  {std2Score >= 80 ? 'ดีมาก' : std2Score >= 60 ? 'พอใช้' : 'ต้องพัฒนา'}
+                </div>
+              </div>
+            ) : (
+              <div style={{ fontSize: '.85rem', opacity: .8 }}>ยังไม่มีครูประเมิน</div>
+            )}
+          </div>
+
+          {/* Per-teacher table */}
+          {std2ByTeacher.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af', fontSize: '.85rem' }}>
+              ยังไม่มีข้อมูลครู — เพิ่มครูในเมนู บุคลากร → ครู ก่อน
+            </div>
+          ) : (
+            <>
+              {/* Summary by teacher */}
+              <div style={{ fontWeight: 700, fontSize: '.85rem', color: '#374151', marginBottom: '.6rem' }}>
+                ผลประเมินรายบุคคล
+              </div>
+              <div style={{ overflowX: 'auto', marginBottom: '1.5rem' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.78rem' }}>
+                  <thead>
+                    <tr style={{ background: '#f5f3ff' }}>
+                      <th style={{ padding: '.5rem .75rem', textAlign: 'left', fontWeight: 700, color: '#5b21b6', borderBottom: '2px solid #ddd6fe', whiteSpace: 'nowrap' }}>ครู</th>
+                      <th style={{ padding: '.5rem .75rem', textAlign: 'left', fontWeight: 700, color: '#5b21b6', borderBottom: '2px solid #ddd6fe', whiteSpace: 'nowrap' }}>ห้อง</th>
+                      {STD2_ITEMS.map(it => (
+                        <th key={it.id} style={{ padding: '.5rem .4rem', textAlign: 'center', fontWeight: 700, color: '#5b21b6', borderBottom: '2px solid #ddd6fe', whiteSpace: 'nowrap', fontSize: '.7rem' }}>
+                          {it.id}
+                        </th>
+                      ))}
+                      <th style={{ padding: '.5rem .75rem', textAlign: 'center', fontWeight: 700, color: '#5b21b6', borderBottom: '2px solid #ddd6fe', whiteSpace: 'nowrap' }}>คะแนน</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {std2ByTeacher.map((row, i) => (
+                      <tr key={row.teacher.id} style={{ borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? 'white' : '#faf5ff' }}>
+                        <td style={{ padding: '.5rem .75rem', fontWeight: 600, whiteSpace: 'nowrap' }}>{row.name}</td>
+                        <td style={{ padding: '.5rem .75rem', color: '#6b7280', fontSize: '.73rem' }}>{row.teacher.className ?? '—'}</td>
+                        {STD2_ITEMS.map(it => {
+                          const val = row.ratings[it.id] ?? 0;
+                          const meta = val > 0
+                            ? RATINGS.find(r => r.value === val)
+                            : { color: '#d1d5db', bg: '#f9fafb', label: '' };
+                          return (
+                            <td key={it.id} style={{ padding: '.5rem .4rem', textAlign: 'center' }}>
+                              {val > 0 ? (
+                                <span style={{
+                                  display: 'inline-block', width: '22px', height: '22px', lineHeight: '22px',
+                                  borderRadius: '6px', fontSize: '.65rem', fontWeight: 800,
+                                  background: meta.bg, color: meta.color, textAlign: 'center',
+                                }}>
+                                  {val}
+                                </span>
+                              ) : (
+                                <span style={{ color: '#d1d5db', fontSize: '.8rem' }}>—</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td style={{ padding: '.5rem .75rem', textAlign: 'center' }}>
+                          {row.score !== null ? (
+                            <span style={{
+                              fontWeight: 800, fontSize: '.78rem', padding: '2px 8px', borderRadius: '6px',
+                              background: row.score >= 80 ? '#dcfce7' : row.score >= 60 ? '#fef3c7' : '#fee2e2',
+                              color: row.score >= 80 ? '#16a34a' : row.score >= 60 ? '#d97706' : '#dc2626',
+                            }}>
+                              {row.score}%
+                            </span>
+                          ) : (
+                            <span style={{ color: '#9ca3af', fontSize: '.75rem' }}>ยังไม่ประเมิน</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {/* School average row */}
+                    {std2ByTeacher.some(x => x.score !== null) && (
+                      <tr style={{ background: '#f5f3ff', borderTop: '2px solid #ddd6fe' }}>
+                        <td colSpan={2} style={{ padding: '.5rem .75rem', fontWeight: 800, color: '#7c3aed', fontSize: '.8rem' }}>
+                          ค่าเฉลี่ยสถานศึกษา
+                        </td>
+                        {STD2_ITEMS.map(it => {
+                          const vals = std2ByTeacher.map(r => r.ratings[it.id] ?? 0).filter(v => v > 0);
+                          const avg = vals.length > 0 ? (vals.reduce((s, v) => s + v, 0) / vals.length).toFixed(1) : null;
+                          return (
+                            <td key={it.id} style={{ padding: '.5rem .4rem', textAlign: 'center' }}>
+                              {avg !== null ? (
+                                <span style={{ fontSize: '.72rem', fontWeight: 700, color: '#7c3aed' }}>{avg}</span>
+                              ) : (
+                                <span style={{ color: '#d1d5db', fontSize: '.8rem' }}>—</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td style={{ padding: '.5rem .75rem', textAlign: 'center' }}>
+                          {std2Score !== null && (
+                            <span style={{
+                              fontWeight: 900, fontSize: '.82rem', padding: '3px 10px', borderRadius: '6px',
+                              background: std2Score >= 80 ? '#dcfce7' : std2Score >= 60 ? '#fef3c7' : '#fee2e2',
+                              color: std2Score >= 80 ? '#16a34a' : std2Score >= 60 ? '#d97706' : '#dc2626',
+                            }}>
+                              {std2Score}%
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Legend */}
+              <div style={{
+                background: '#f9fafb', border: '1px solid #e5e7eb',
+                borderRadius: '10px', padding: '.6rem 1rem',
+                fontSize: '.72rem', color: '#6b7280',
+                display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center',
+              }}>
+                <span style={{ fontWeight: 700, color: '#374151' }}>คะแนน:</span>
+                {RATINGS.map(r => (
+                  <span key={r.value} style={{ display: 'flex', alignItems: 'center', gap: '.3rem' }}>
+                    <span style={{
+                      display: 'inline-block', width: '18px', height: '18px', lineHeight: '18px',
+                      borderRadius: '4px', background: r.bg, color: r.color,
+                      fontWeight: 800, textAlign: 'center', fontSize: '.65rem',
+                    }}>{r.value}</span>
+                    {r.label}
+                  </span>
+                ))}
+                <span style={{ marginLeft: 'auto' }}>
+                  ตัวบ่งชี้ {STD2_ITEMS.map(it => `${it.id}`).join(', ')}
+                </span>
+              </div>
+            </>
+          )}
         </div>
       )}
 

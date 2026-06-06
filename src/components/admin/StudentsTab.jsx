@@ -92,7 +92,39 @@ export default function StudentsTab() {
   const [editAnchorY, setEditAnchorY]     = useState(null);
   const [assessingStudent, setAssessing]  = useState(null);
   const [assessAnchorY,    setAssessAnchorY] = useState(null);
+  const [exportOpen, setExportOpen]       = useState(false);
+  const [importOpen, setImportOpen]       = useState(false);
   const wizardRef = useRef(null);
+
+  /* ── helpers ── */
+  const downloadTemplate = () => {
+    const BOM = '﻿';
+    const header = 'ชื่อ-นามสกุล,ชื่อเล่น,เพศ,เลขประจำตัว,เลขบัตรประชาชน,ระดับ,ห้องเรียน,อายุ,น้ำหนัก,ส่วนสูง,parentPin,ชื่อบิดา,อาชีพบิดา,ชื่อมารดา,อาชีพมารดา,เบอร์ผู้ปกครอง,ที่อยู่';
+    const rows = [
+      'เด็กชายตัวอย่าง ใจดี,ตัวอย่าง,ชาย,69001,1-2199-00000-00-0,K1,อ.1/1,4,18.5,105,1001,นายบิดา ใจดี,เกษตรกร,นางมารดา ใจดี,แม่บ้าน,0812345678,123 ถ.ตัวอย่าง',
+      'เด็กหญิงตัวอย่าง สวยงาม,สวย,หญิง,69002,1-2199-00000-00-1,K2,อ.2/1,5,20,110,1002,นายบิดา สวยงาม,ค้าขาย,นางมารดา สวยงาม,พยาบาล,0898765432,456 ถ.ตัวอย่าง',
+    ];
+    const csv = BOM + header + '\n' + rows.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'student_template.csv';
+    a.click(); URL.revokeObjectURL(url);
+  };
+
+  const importCSV = () => {
+    const text = prompt('วาง CSV (ชื่อ, ชั้น, อายุ, น้ำหนัก, ส่วนสูง)');
+    if (text) {
+      const r = handleImport('students', 'name,level,age,weight,height\n' + text);
+      alert(r.ok ? 'นำเข้าสำเร็จ! ✅' : r.message);
+    }
+  };
+
+  const autoSetPin = () => {
+    const updated = students.map(s => ({ ...s, parentPin: s.studentId ?? s.code ?? String(s.id) }));
+    setStudents(updated);
+    alert(`✅ ตั้ง PIN ให้นักเรียน ${updated.length} คน เรียบร้อยแล้ว`);
+  };
 
   const startAssess = (e, s) => {
     setAssessAnchorY(e.clientY);
@@ -131,52 +163,79 @@ export default function StudentsTab() {
       <div className="page-header mb-6">
         <h3>จัดการนักเรียนทั้งหมด</h3>
         <div className="flex gap-2" style={{ flexWrap: 'wrap', alignItems: 'center' }}>
+
+          {/* ── ค้นหา ── */}
           <input className="input" style={{ maxWidth: '180px' }} placeholder="🔍 ค้นหา..."
             value={search} onChange={e => setSearch(e.target.value)} />
 
-          {/* ── ตั้ง PIN ให้ตรงกับรหัสประจำตัว ── */}
-          <button type="button" className="btn" style={{ background: '#fef9c3', color: '#713f12', fontWeight: 700 }}
-            onClick={() => {
-              const updated = students.map(s => ({
-                ...s,
-                parentPin: s.code ?? String(s.id),
-              }));
-              setStudents(updated);
-              alert(`✅ ตั้ง PIN ให้นักเรียน ${updated.length} คน เรียบร้อยแล้ว`);
-            }}>
-            🔑 ตั้ง PIN = รหัสประจำตัว
-          </button>
+          {/* ── ส่งออก dropdown ── */}
+          <div style={{ position: 'relative' }}>
+            <button type="button" className="btn" style={{ background: '#dcfce7', color: '#166534', fontWeight: 700 }}
+              onClick={() => { setExportOpen(o => !o); setImportOpen(false); }}>
+              📤 ส่งออก ▾
+            </button>
+            {exportOpen && (
+              <div style={{
+                position: 'absolute', top: '110%', right: 0, zIndex: 200,
+                background: 'white', borderRadius: '10px', boxShadow: '0 4px 20px rgba(0,0,0,.15)',
+                minWidth: '180px', padding: '.4rem 0', border: '1px solid #e5e7eb',
+              }}
+                onMouseLeave={() => setExportOpen(false)}>
+                <button type="button"
+                  style={{ display:'flex', alignItems:'center', gap:'.6rem', width:'100%', padding:'.55rem 1rem', background:'none', border:'none', cursor:'pointer', fontSize:'.88rem', color:'#166534' }}
+                  onClick={() => { exportStudentsListExcel(students, assessmentTopics, schoolName, academicYear); setExportOpen(false); }}>
+                  📗 ส่งออก Excel
+                </button>
+                <button type="button"
+                  style={{ display:'flex', alignItems:'center', gap:'.6rem', width:'100%', padding:'.55rem 1rem', background:'none', border:'none', cursor:'pointer', fontSize:'.88rem', color:'#92400e' }}
+                  onClick={() => { printRoster(1); setExportOpen(false); }}>
+                  🖨️ พิมพ์รายชื่อ
+                </button>
+              </div>
+            )}
+          </div>
 
-          <button type="button" className="btn" style={{ background: '#dcfce7', color: '#166534' }}
-            onClick={() => exportStudentsListExcel(students, assessmentTopics, schoolName, academicYear)}>
-            📗 Excel
-          </button>
-          <button type="button" className="btn" style={{ background: '#fef3c7', color: '#92400e' }}
-            onClick={() => printRoster(1)}>
-            🖨️ พิมพ์รายชื่อ
-          </button>
-          <button className="btn" style={{ background: '#f0f9ff' }} onClick={() => {
-            const text = prompt('วาง CSV (ชื่อ, ชั้น, อายุ, น้ำหนัก, ส่วนสูง)');
-            if (text) {
-              const r = handleImport('students', 'name,level,age,weight,height\n' + text);
-              alert(r.ok ? 'นำเข้าสำเร็จ! ✅' : r.message);
-            }
-          }}>📥 CSV</button>
-          <button className="btn" style={{ background: '#f0fdf4', color: '#166534' }} onClick={() => {
-            const BOM = '﻿';
-            const header = 'ชื่อ-นามสกุล,ชื่อเล่น,เพศ,เลขประจำตัว,เลขบัตรประชาชน,ระดับ,ห้องเรียน,อายุ,น้ำหนัก,ส่วนสูง,parentPin,ชื่อบิดา,อาชีพบิดา,ชื่อมารดา,อาชีพมารดา,เบอร์ผู้ปกครอง,ที่อยู่';
-            const rows = [
-              'เด็กชายตัวอย่าง ใจดี,ตัวอย่าง,ชาย,69001,1-2199-00000-00-0,K1,อ.1/1,4,18.5,105,1001,นายบิดา ใจดี,เกษตรกร,นางมารดา ใจดี,แม่บ้าน,0812345678,123 ถ.ตัวอย่าง',
-              'เด็กหญิงตัวอย่าง สวยงาม,สวย,หญิง,69002,1-2199-00000-00-1,K2,อ.2/1,5,20,110,1002,นายบิดา สวยงาม,ค้าขาย,นางมารดา สวยงาม,พยาบาล,0898765432,456 ถ.ตัวอย่าง',
-            ];
-            const csv = BOM + header + '\n' + rows.join('\n');
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = 'student_template.csv';
-            a.click(); URL.revokeObjectURL(url);
-          }}>📋 Template CSV</button>
-          <button className="btn btn-primary" onClick={() => { setEditingItem(null); setIsModalOpen(true); }}>
+          {/* ── นำเข้า dropdown ── */}
+          <div style={{ position: 'relative' }}>
+            <button type="button" className="btn" style={{ background: '#f0f9ff', color: '#0369a1', fontWeight: 700 }}
+              onClick={() => { setImportOpen(o => !o); setExportOpen(false); }}>
+              📥 นำเข้า ▾
+            </button>
+            {importOpen && (
+              <div style={{
+                position: 'absolute', top: '110%', right: 0, zIndex: 200,
+                background: 'white', borderRadius: '10px', boxShadow: '0 4px 20px rgba(0,0,0,.15)',
+                minWidth: '210px', padding: '.4rem 0', border: '1px solid #e5e7eb',
+              }}
+                onMouseLeave={() => setImportOpen(false)}>
+                <div style={{ padding:'.3rem 1rem .2rem', fontSize:'.72rem', fontWeight:800, color:'#9ca3af', textTransform:'uppercase' }}>
+                  ไฟล์
+                </div>
+                <button type="button"
+                  style={{ display:'flex', alignItems:'center', gap:'.6rem', width:'100%', padding:'.55rem 1rem', background:'none', border:'none', cursor:'pointer', fontSize:'.88rem', color:'#0369a1' }}
+                  onClick={() => { downloadTemplate(); setImportOpen(false); }}>
+                  📋 ดาวน์โหลด Template CSV
+                </button>
+                <button type="button"
+                  style={{ display:'flex', alignItems:'center', gap:'.6rem', width:'100%', padding:'.55rem 1rem', background:'none', border:'none', cursor:'pointer', fontSize:'.88rem', color:'#374151' }}
+                  onClick={() => { importCSV(); setImportOpen(false); }}>
+                  📂 นำเข้าจาก CSV
+                </button>
+                <div style={{ height:'1px', background:'#f3f4f6', margin:'.3rem 0' }} />
+                <div style={{ padding:'.3rem 1rem .2rem', fontSize:'.72rem', fontWeight:800, color:'#9ca3af', textTransform:'uppercase' }}>
+                  เครื่องมือ
+                </div>
+                <button type="button"
+                  style={{ display:'flex', alignItems:'center', gap:'.6rem', width:'100%', padding:'.55rem 1rem', background:'none', border:'none', cursor:'pointer', fontSize:'.88rem', color:'#713f12' }}
+                  onClick={() => { autoSetPin(); setImportOpen(false); }}>
+                  🔑 ตั้ง PIN = รหัสประจำตัว
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* ── เพิ่มนักเรียน ── */}
+          <button className="btn btn-primary" onClick={() => { setEditingItem(null); setEditAnchorY(null); setIsModalOpen(true); }}>
             + เพิ่มนักเรียน
           </button>
         </div>

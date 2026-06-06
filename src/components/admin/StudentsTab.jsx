@@ -133,6 +133,18 @@ export default function StudentsTab() {
           <input className="input" style={{ maxWidth: '180px' }} placeholder="🔍 ค้นหา..."
             value={search} onChange={e => setSearch(e.target.value)} />
 
+          {/* ── ตั้ง PIN ให้ตรงกับรหัสประจำตัว ── */}
+          <button type="button" className="btn" style={{ background: '#fef9c3', color: '#713f12', fontWeight: 700 }}
+            onClick={() => {
+              const updated = students.map(s => ({
+                ...s,
+                parentPin: s.code ?? String(s.id),
+              }));
+              setStudents(updated);
+              alert(`✅ ตั้ง PIN ให้นักเรียน ${updated.length} คน เรียบร้อยแล้ว`);
+            }}>
+            🔑 ตั้ง PIN = รหัสประจำตัว
+          </button>
 
           <button type="button" className="btn" style={{ background: '#dcfce7', color: '#166534' }}
             onClick={() => exportStudentsListExcel(students, assessmentTopics, schoolName, academicYear)}>
@@ -234,7 +246,7 @@ export default function StudentsTab() {
                 <tr key={s.id} className="hover-row">
                   <td>
                     <code style={{ fontSize: '.75rem', background: '#f1f5f9', padding: '.1rem .4rem', borderRadius: '5px', color: '#475569', fontWeight: 700 }}>
-                      {s.id}
+                      {s.code ?? s.id}
                     </code>
                   </td>
                   <td>

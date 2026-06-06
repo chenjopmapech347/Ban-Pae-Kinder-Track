@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { INDICATORS_DATA } from '../data/indicatorsData';
+import { useApp } from '../context/AppContext';
+import { callClaude, buildPostAssessmentPrompt, buildActivitySuggestionPrompt } from '../utils/aiHelper';
 
 const SCORE_OPTIONS = [
   { value: 3, label: 'ผ่าน',          emoji: '✅', color: '#059669', bg: '#ecfdf5' },
@@ -243,7 +245,7 @@ function StepActivities({ domain, std, ind, student, onSave, onBack }) {
 
       {/* Save */}
       <button type="button"
-        onClick={() => onSave({ domainId: domain.id, indId: ind.id, scores })}
+        onClick={() => onSave({ domainId: domain.id, indId: ind.id, scores, activities: allActivities })}
         style={{
           width: '100%', marginTop: '1rem', padding: '.85rem',
           background: `linear-gradient(135deg, ${domain.color}, ${domain.color}cc)`,
@@ -259,18 +261,103 @@ function StepActivities({ domain, std, ind, student, onSave, onBack }) {
   );
 }
 
+// ── Step 4: AI Recommendation ──────────────────────────────────────────────
+function StepAiRecommend({ domain, ind, scores, activities, student, onDone, aiApiKey }) {
+  const [text, setText]       = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState('');
+  const [fetched, setFetched] = useState(false);
+
+  const fetchAI = async () => {
+    setLoading(true); setError('');
+    try {
+      const prompt = buildPostAssessmentPrompt(student, domain, ind, scores, activities);
+      const result = await callClaude(aiApiKey, prompt);
+      setText(result);
+      setFetched(true);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="animate-fade">
+      <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+        <div style={{ fontSize: '2.5rem', marginBottom: '.5rem' }}>🤖</div>
+        <h3 style={{ color: '#7c3aed', marginBottom: '.25rem' }}>AI ข้อเสนอแนะ</h3>
+        <div style={{ fontSize: '.82rem', color: '#6b7280' }}>
+          บันทึกผล {domain.emoji} ด้าน{domain.label} — {ind.label} เรียบร้อยแล้ว
+        </div>
+      </div>
+
+      {!aiApiKey ? (
+        <div style={{ background: '#fef9c3', borderRadius: '12px', padding: '1rem', marginBottom: '1rem', fontSize: '.85rem', color: '#713f12' }}>
+          ⚠️ ยังไม่ได้ตั้งค่า AI API Key — ไปที่ <strong>ตั้งค่า → 🤖 AI</strong> เพื่อเปิดใช้งาน
+        </div>
+      ) : !fetched ? (
+        <button type="button"
+          onClick={fetchAI}
+          disabled={loading}
+          style={{
+            width: '100%', padding: '.9rem', marginBottom: '1rem',
+            background: loading ? '#e5e7eb' : 'linear-gradient(135deg,#7c3aed,#a855f7)',
+            color: loading ? '#9ca3af' : 'white', border: 'none', borderRadius: '12px',
+            fontFamily: 'inherit', fontWeight: 800, fontSize: '1rem', cursor: loading ? 'not-allowed' : 'pointer',
+            boxShadow: loading ? 'none' : '0 4px 16px #7c3aed40',
+          }}>
+          {loading ? '⏳ AI กำลังวิเคราะห์...' : '✨ ขอคำแนะนำจาก AI'}
+        </button>
+      ) : null}
+
+      {error && (
+        <div style={{ background: '#fee2e2', borderRadius: '12px', padding: '.85rem', marginBottom: '1rem', fontSize: '.83rem', color: '#991b1b' }}>
+          ❌ {error}
+        </div>
+      )}
+
+      {text && (
+        <div style={{
+          background: 'linear-gradient(135deg,#f5f3ff,#faf5ff)',
+          border: '1.5px solid #c4b5fd',
+          borderRadius: '14px', padding: '1.1rem 1.25rem', marginBottom: '1rem',
+          lineHeight: 1.75, fontSize: '.9rem', color: '#374151',
+        }}>
+          <div style={{ fontSize: '.72rem', fontWeight: 800, color: '#7c3aed', marginBottom: '.5rem', letterSpacing: '.05em' }}>
+            🤖 CLAUDE AI
+          </div>
+          {text}
+        </div>
+      )}
+
+      <button type="button" onClick={onDone}
+        style={{
+          width: '100%', padding: '.85rem',
+          background: '#f3f4f6', color: '#374151',
+          border: 'none', borderRadius: '12px',
+          fontFamily: 'inherit', fontWeight: 700, fontSize: '.95rem', cursor: 'pointer',
+        }}>
+        ✅ เสร็จสิ้น — กลับหน้าหลัก
+      </button>
+    </div>
+  );
+}
+
 // ── Main Wizard Modal ────────────────────────────────────────────────────────
 export default function AssessmentWizard({ student, onSave, onCancel }) {
+  const { aiApiKey } = useApp();
   const [step, setStep]       = useState('domain');
   const [domain, setDomain]   = useState(null);
   const [std, setStd]         = useState(null);
   const [ind, setInd]         = useState(null);
+  const [lastSave, setLastSave] = useState(null); // { domain, ind, scores, activities }
 
   // นับกิจกรรมที่ประเมินแล้วทั้งหมด
   const totalScored = Object.values(student.assessments?.indicators ?? {})
     .reduce((sum, scoreMap) => sum + Object.keys(scoreMap).length, 0);
 
-  const handleSaveActivities = ({ domainId, indId, scores }) => {
+  const handleSaveActivities = ({ domainId, indId, scores, activities }) => {
     const key = `${domainId}_${indId}`;
     const updatedAssessments = {
       ...(student.assessments ?? {}),
@@ -285,8 +372,8 @@ export default function AssessmentWizard({ student, onSave, onCancel }) {
       updatedAt: new Date().toISOString(),
     };
     onSave(updatedAssessments);
-    setStep('domain');
-    setDomain(null); setStd(null); setInd(null);
+    setLastSave({ domain, ind, scores, activities });
+    setStep('ai');
   };
 
   return (
@@ -333,6 +420,16 @@ export default function AssessmentWizard({ student, onSave, onCancel }) {
               background: step === 'activities' ? '#7c3aed' : '#e5e7eb',
               color: step === 'activities' ? 'white' : '#9ca3af',
             }}>3. กิจกรรม</span>
+            {aiApiKey && (
+              <>
+                <span style={{ color: '#d1d5db' }}>›</span>
+                <span style={{
+                  padding: '.2rem .5rem', borderRadius: '6px', fontWeight: 700,
+                  background: step === 'ai' ? '#7c3aed' : '#e5e7eb',
+                  color: step === 'ai' ? 'white' : '#9ca3af',
+                }}>4. AI</span>
+              </>
+            )}
             <button type="button" onClick={onCancel}
               style={{
                 marginLeft: '.5rem', background: '#fee2e2', color: '#dc2626',
@@ -367,6 +464,20 @@ export default function AssessmentWizard({ student, onSave, onCancel }) {
               student={student}
               onSave={handleSaveActivities}
               onBack={() => setStep('indicator')}
+            />
+          )}
+          {step === 'ai' && lastSave && (
+            <StepAiRecommend
+              domain={lastSave.domain}
+              ind={lastSave.ind}
+              scores={lastSave.scores}
+              activities={lastSave.activities}
+              student={student}
+              aiApiKey={aiApiKey}
+              onDone={() => {
+                setStep('domain');
+                setDomain(null); setStd(null); setInd(null); setLastSave(null);
+              }}
             />
           )}
         </div>

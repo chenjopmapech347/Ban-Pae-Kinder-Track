@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { getQualityText } from '../utils/helpers';
+import { callClaude, buildParentSummaryPrompt } from '../utils/aiHelper';
 
 const LEVEL_EMOJI = { 3: '⭐⭐⭐', 2: '⭐⭐', 1: '⭐', 0: '—' };
 const LEVEL_COLOR = {
@@ -11,7 +13,12 @@ const LEVEL_COLOR = {
 
 export default function ParentView() {
   const { user, students, setSelectedStudent, assessmentTopics,
-    indicators: allIndicators, activities: allActivities } = useApp();
+    indicators: allIndicators, activities: allActivities,
+    aiApiKey } = useApp();
+
+  const [aiText, setAiText]       = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError]     = useState('');
 
   // คำนวณคะแนนเฉลี่ยรายด้านจากโครงสร้างใหม่ (assessments.indicators)
   // ถ้ายังไม่มีข้อมูลใหม่ ให้ fallback ไปที่ assessments.summary (โครงสร้างเก่า)
@@ -141,6 +148,66 @@ export default function ParentView() {
             );
           })}
         </div>
+      </div>
+
+      {/* AI Summary */}
+      <div className="glass-card mb-6">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.75rem' }}>
+          <h3 style={{ margin: 0 }}>🤖 สรุปพัฒนาการโดย AI</h3>
+          {aiApiKey && !aiLoading && (
+            <button type="button"
+              onClick={async () => {
+                setAiLoading(true); setAiError(''); setAiText('');
+                try {
+                  const topicScores = assessmentTopics.map(t => ({ label: t.label, score: topicAvg(student, t) }));
+                  const result = await callClaude(aiApiKey, buildParentSummaryPrompt(student, topicScores));
+                  setAiText(result);
+                } catch (e) { setAiError(e.message); }
+                finally { setAiLoading(false); }
+              }}
+              style={{
+                background: 'linear-gradient(135deg,#7c3aed,#a855f7)',
+                color: 'white', border: 'none', borderRadius: '10px',
+                padding: '.4rem .9rem', fontFamily: 'inherit', fontWeight: 700,
+                fontSize: '.8rem', cursor: 'pointer',
+              }}>
+              ✨ สร้างสรุป
+            </button>
+          )}
+        </div>
+
+        {!aiApiKey && (
+          <div style={{ fontSize: '.83rem', color: '#6b7280', fontStyle: 'italic' }}>
+            ยังไม่ได้เปิดใช้งาน AI — ติดต่อครูเพื่อตั้งค่า API Key
+          </div>
+        )}
+        {aiLoading && (
+          <div style={{ textAlign: 'center', padding: '1.5rem', color: '#7c3aed', fontSize: '.9rem' }}>
+            ⏳ AI กำลังวิเคราะห์พัฒนาการ...
+          </div>
+        )}
+        {aiError && (
+          <div style={{ background: '#fee2e2', borderRadius: '10px', padding: '.75rem', fontSize: '.83rem', color: '#991b1b' }}>
+            ❌ {aiError}
+          </div>
+        )}
+        {aiText && (
+          <div style={{
+            background: 'linear-gradient(135deg,#f5f3ff,#faf5ff)',
+            border: '1.5px solid #c4b5fd', borderRadius: '12px',
+            padding: '1rem 1.1rem', lineHeight: 1.8, fontSize: '.88rem', color: '#374151',
+          }}>
+            <div style={{ fontSize: '.7rem', fontWeight: 800, color: '#7c3aed', marginBottom: '.4rem' }}>
+              🤖 CLAUDE AI
+            </div>
+            {aiText}
+          </div>
+        )}
+        {!aiText && !aiLoading && !aiError && aiApiKey && (
+          <div style={{ fontSize: '.82rem', color: '#9ca3af', fontStyle: 'italic' }}>
+            กดปุ่ม "สร้างสรุป" เพื่อให้ AI สรุปพัฒนาการและข้อแนะนำสำหรับผู้ปกครอง
+          </div>
+        )}
       </div>
 
       {/* Physical Info */}

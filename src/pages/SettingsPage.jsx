@@ -12,6 +12,7 @@ export default function SettingsPage({ onBack }) {
     syncPushToCloud, syncPullFromCloud, isSupabaseConfigured,
     syncPushToFirebase, syncPullFromFirebase, isFirebaseConfigured,
     students, dailyRecords,
+    aiApiKey, setAiApiKey,
   } = useApp();
 
   const [newYear, setNewYear]         = useState('');
@@ -270,6 +271,40 @@ export default function SettingsPage({ onBack }) {
             {syncMsg && <p className="text-sm mt-3">{syncMsg}</p>}
           </div>
         )}
+
+        {/* ─── AI Settings ─── */}
+        <div className="glass p-6" style={{ border: '1.5px solid #e0e7ff' }}>
+          <h3 className="mb-2">🤖 ตั้งค่า AI (Claude API)</h3>
+          <p className="text-sm text-muted mb-4">
+            ใส่ API Key จาก{' '}
+            <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer"
+              style={{ color: '#7c3aed' }}>console.anthropic.com</a>
+            {' '}เพื่อเปิดใช้งานคำแนะนำ AI หลังประเมินและสรุปพัฒนาการ
+          </p>
+          <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              className="input"
+              type="password"
+              value={aiApiKey}
+              onChange={e => setAiApiKey(e.target.value)}
+              placeholder="sk-ant-api03-..."
+              style={{ flex: 1, minWidth: '260px', fontFamily: 'monospace', fontSize: '.85rem' }}
+            />
+            <button type="button" className="btn btn-primary"
+              onClick={() => alert(aiApiKey ? '✅ บันทึก API Key แล้ว' : '⚠️ กรุณาใส่ API Key')}>
+              💾 บันทึก
+            </button>
+            {aiApiKey && (
+              <span style={{
+                background: '#d1fae5', color: '#065f46', borderRadius: '999px',
+                padding: '.25rem .75rem', fontSize: '.78rem', fontWeight: 700,
+              }}>✅ พร้อมใช้งาน</span>
+            )}
+          </div>
+          <div className="text-xs text-muted mt-3">
+            🔒 Key เก็บในเครื่องของคุณเท่านั้น ไม่ส่งออกไปไหน · ใช้ claude-haiku (ประหยัด ~$0.001/ครั้ง)
+          </div>
+        </div>
 
         {/* ─── Danger zone ─── */}
         <div className="glass p-6" style={{ border:'1.5px solid #fee2e2' }}>

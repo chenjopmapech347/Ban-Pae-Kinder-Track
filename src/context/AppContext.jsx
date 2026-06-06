@@ -69,6 +69,7 @@ export function AppProvider({ children }) {
   const [schoolTerms, setSchoolTerms] = useLocalStorage(STORAGE_KEYS.schoolTerms, {});
   const [aiApiKey, setAiApiKey] = useLocalStorage('kindertrack_ai_api_key', '');
   const [activityLogs, setActivityLogs] = useLocalStorage(STORAGE_KEYS.activityLogs, []);
+  const [pickupRecords, setPickupRecords] = useLocalStorage(STORAGE_KEYS.pickupRecords, {});
 
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [evaluatingStudent, setEvaluatingStudent] = useState(null);
@@ -525,6 +526,9 @@ export function AppProvider({ children }) {
     // AI
     aiApiKey,
     setAiApiKey,
+    // Pickup
+    pickupRecords,
+    setPickupRecords,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

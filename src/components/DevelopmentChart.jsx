@@ -2,10 +2,13 @@
  * DevelopmentChart — recharts-based charts for KinderTrack
  *
  * Exports:
- *   <RadarDevChart topics={[]} summary={{}} />   — per-student spider chart
- *   <AttendanceBarChart students={[]} />          — class attendance bars
- *   <ClassOverviewChart students={[]} topics={[]} /> — avg by level bars
+ *   <RadarDevChart topics={[]} summary={{}} />        — per-student spider chart
+ *   <AttendanceBarChart students={[]} />               — class attendance bars
+ *   <ClassOverviewChart students={[]} topics={[]} />   — avg by level bars
+ *   <ClassRadarChart students={[]} topics={[]}         — per-class radar with selector
+ *                    indicators={[]} activities={[]} />
  */
+import { useState, useEffect, useCallback } from 'react';
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -191,6 +194,176 @@ export function AssessmentProgressBars({ topics = [], summary = {} }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/* ── ClassRadarChart — per-class radar with selector + auto-rotate ── */
+const ALL_CLASSES = ['อ.1/1', 'อ.1/2', 'อ.2/1', 'อ.2/2', 'อ.3/1', 'อ.3/2', 'อ.3/3'];
+const CLASS_COLORS = {
+  'อ.1/1': '#3b82f6', 'อ.1/2': '#6366f1',
+  'อ.2/1': '#10b981', 'อ.2/2': '#059669',
+  'อ.3/1': '#f97316', 'อ.3/2': '#ef4444', 'อ.3/3': '#d97706',
+};
+
+export function ClassRadarChart({ students = [], topics = [] }) {
+  const [selectedClass, setSelectedClass] = useState(null); // null = auto-rotate
+  const [currentIdx, setCurrentIdx] = useState(0);
+
+  // auto-rotate when no class pinned
+  useEffect(() => {
+    if (selectedClass !== null) return;
+    const id = setInterval(() => {
+      setCurrentIdx(i => (i + 1) % ALL_CLASSES.length);
+    }, 3000);
+    return () => clearInterval(id);
+  }, [selectedClass]);
+
+  const displayClass = selectedClass ?? ALL_CLASSES[currentIdx];
+  const color = CLASS_COLORS[displayClass] ?? '#7c3aed';
+
+  // compute averages for displayClass
+  const classStudents = students.filter(
+    s => s.className === displayClass && !s.name.startsWith('(ว่าง)')
+  );
+
+  const data = topics.map(t => {
+    const scored = classStudents.filter(s => s.assessments?.summary?.[t.id] != null);
+    const avg = scored.length
+      ? parseFloat((scored.reduce((a, s) => a + (s.assessments.summary[t.id] ?? 0), 0) / scored.length).toFixed(2))
+      : 0;
+    return {
+      subject: (t.emoji ?? '') + ' ' + t.label,
+      value: avg,
+      fullMark: 3,
+    };
+  });
+
+  const hasData = data.some(d => d.value > 0) && classStudents.length > 0;
+
+  return (
+    <div>
+      {/* ── class selector buttons ── */}
+      <div style={{ display: 'flex', gap: '.3rem', flexWrap: 'wrap', marginBottom: '.65rem', alignItems: 'center' }}>
+        <button
+          onClick={() => setSelectedClass(null)}
+          style={{
+            padding: '.22rem .6rem', borderRadius: '7px', fontSize: '.7rem', fontWeight: 700,
+            border: selectedClass === null ? '1.5px solid #7c3aed' : '1.5px solid #e5e7eb',
+            background: selectedClass === null ? '#7c3aed' : 'white',
+            color: selectedClass === null ? 'white' : '#6b7280',
+            cursor: 'pointer', transition: 'all .15s',
+          }}
+        >
+          🔄 Auto
+        </button>
+        {ALL_CLASSES.map(cls => {
+          const isActive = selectedClass === cls;
+          const c = CLASS_COLORS[cls];
+          return (
+            <button
+              key={cls}
+              onClick={() => setSelectedClass(cls === selectedClass ? null : cls)}
+              style={{
+                padding: '.22rem .6rem', borderRadius: '7px', fontSize: '.7rem', fontWeight: 700,
+                border: isActive ? `1.5px solid ${c}` : '1.5px solid #e5e7eb',
+                background: isActive ? c : 'white',
+                color: isActive ? 'white' : '#6b7280',
+                cursor: 'pointer', transition: 'all .15s',
+              }}
+            >
+              {cls}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── current class badge ── */}
+      <div style={{ textAlign: 'center', marginBottom: '.4rem' }}>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: '.4rem',
+          background: color + '18', border: `1.5px solid ${color}40`,
+          borderRadius: '20px', padding: '.22rem .9rem',
+          fontSize: '.82rem', fontWeight: 800, color,
+        }}>
+          🏫 {displayClass}
+          {classStudents.length > 0 && (
+            <span style={{ fontWeight: 500, color: color + 'cc', fontSize: '.7rem' }}>
+              ({classStudents.length} คน)
+            </span>
+          )}
+          {selectedClass === null && (
+            <span style={{ fontSize: '.62rem', fontWeight: 600, color: '#9ca3af', marginLeft: '.15rem' }}>
+              ▶ auto
+            </span>
+          )}
+        </span>
+      </div>
+
+      {!hasData ? (
+        <div style={{ textAlign: 'center', padding: '1.5rem', color: '#9ca3af', fontSize: '.85rem' }}>
+          ⏳ ยังไม่มีข้อมูลการประเมินสำหรับห้อง {displayClass}
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height={248}>
+          <RadarChart data={data} margin={{ top: 10, right: 32, bottom: 10, left: 32 }}>
+            <PolarGrid stroke="#e8e3f4" />
+            <PolarAngleAxis
+              dataKey="subject"
+              tick={{ fontSize: 11, fill: '#1e1b4b', fontWeight: 600 }}
+            />
+            <PolarRadiusAxis
+              domain={[0, 3]} tick={false} axisLine={false} tickCount={4}
+            />
+            <Radar
+              name="พัฒนาการเฉลี่ย"
+              dataKey="value"
+              stroke={color}
+              fill={color}
+              fillOpacity={0.22}
+              strokeWidth={2.5}
+              dot={{ r: 5, fill: color, strokeWidth: 0 }}
+            />
+            <Tooltip
+              content={({ active, payload }) => {
+                if (!active || !payload?.length) return null;
+                const d = payload[0];
+                return (
+                  <div style={{
+                    background: 'white', border: `1.5px solid ${color}40`,
+                    borderRadius: '10px', padding: '.5rem .8rem', fontSize: '.78rem',
+                    boxShadow: '0 4px 16px rgba(0,0,0,.1)',
+                  }}>
+                    <div style={{ fontWeight: 700, marginBottom: '.12rem' }}>{d.name}</div>
+                    <div style={{ color }}>
+                      เฉลี่ย: <strong>{d.value}</strong>
+                      <span style={{ color: '#9ca3af', marginLeft: '.3rem' }}>/ 3.00</span>
+                    </div>
+                    <div style={{ color: '#9ca3af', fontSize: '.7rem', marginTop: '.1rem' }}>
+                      {d.value >= 2.5 ? 'ดีมาก 🌟' : d.value >= 2 ? 'ดี ✅' : d.value >= 1 ? 'พอใช้ ⚠️' : 'ต้องพัฒนา ❗'}
+                    </div>
+                  </div>
+                );
+              }}
+            />
+          </RadarChart>
+        </ResponsiveContainer>
+      )}
+
+      {/* ── score scale legend ── */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '.9rem', marginTop: '.3rem', flexWrap: 'wrap' }}>
+        {[
+          { v: '3', label: 'ดี', c: '#7c3aed' },
+          { v: '2', label: 'พอใช้', c: '#f59e0b' },
+          { v: '1', label: 'ปรับปรุง', c: '#f43f5e' },
+          { v: '0', label: 'ยังไม่ได้', c: '#d1d5db' },
+        ].map(({ v, label, c }) => (
+          <div key={v} style={{ display: 'flex', alignItems: 'center', gap: '.28rem', fontSize: '.68rem', color: '#6b7280' }}>
+            <div style={{ width: 8, height: 8, borderRadius: '50%', background: c }} />
+            {v} = {label}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

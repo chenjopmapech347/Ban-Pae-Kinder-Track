@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import ExcelImportPanel from '../ExcelImportPanel';
-import { AttendanceBarChart, ClassOverviewChart } from '../DevelopmentChart';
+import { AttendanceBarChart, ClassRadarChart } from '../DevelopmentChart';
 
 const ALL_CLASSES = ['อ.1/1', 'อ.1/2', 'อ.2/1', 'อ.2/2', 'อ.3/1', 'อ.3/2', 'อ.3/3'];
 const ROUNDS = [1, 2, 3, 4];
@@ -86,11 +86,7 @@ export default function OverviewTab() {
         </div>
         <div className="glass-card">
           <h4 className="mb-3">🌱 พัฒนาการเฉลี่ยแต่ละชั้น</h4>
-          {students.some(s => s.assessments?.summary) ? (
-            <ClassOverviewChart students={students} topics={assessmentTopics} />
-          ) : (
-            <div className="text-center text-muted" style={{ padding: '2rem' }}>ยังไม่มีข้อมูลการประเมิน</div>
-          )}
+          <ClassRadarChart students={students} topics={assessmentTopics} />
         </div>
       </div>
 

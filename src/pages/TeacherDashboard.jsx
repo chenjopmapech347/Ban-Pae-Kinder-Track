@@ -2,8 +2,14 @@ import { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { todayISO, formatDateThai } from '../utils/helpers';
 import { getDayRecord, hasHygieneToday } from '../utils/attendance';
-import EvaluationTab from '../components/admin/EvaluationTab';
-import ReportsTab from '../components/admin/ReportsTab';
+import EvaluationTab  from '../components/admin/EvaluationTab';
+import ReportsTab     from '../components/admin/ReportsTab';
+import OverviewTab    from '../components/admin/OverviewTab';
+import AdminAttTab    from '../components/admin/AttendanceTab';
+import PickupTab      from '../components/admin/PickupTab';
+import ActivityLogTab from '../components/admin/ActivityLogTab';
+import QaStandardView from '../components/QaStandardView';
+import StudentModal   from '../components/StudentModal';
 
 const ATT_OPTS   = ['มา','ขาด','ลา','ป่วย'];
 const LUNCH_OPTS = ['หมด','เกือบหมด','ครึ่งเดียว','ไม่ทาน'];
@@ -14,11 +20,39 @@ const ATT_COLOR  = {
   ป่วย:{ bg:'#dbeafe',color:'#1e40af' },
 };
 
+const TEACHER_TAB_GROUPS = [
+  {
+    label: 'ทั่วไป',
+    color: '#7c3aed',
+    tabs: [{ id: 'main', label: '🏠 หน้าหลัก' }],
+  },
+  {
+    label: 'รายงาน',
+    color: '#0891b2',
+    tabs: [
+      { id: 'overview',    label: '📊 ภาพรวม' },
+      { id: 'attendance',  label: '📅 การมาเรียน' },
+      { id: 'pickup',      label: '🏠 รับกลับบ้าน' },
+      { id: 'evaluation',  label: '✏️ ประเมินผล' },
+      { id: 'reports',     label: '📋 รายงานสรุป' },
+      { id: 'activitylog', label: '📜 ประวัติ' },
+    ],
+  },
+  {
+    label: 'อื่นๆ',
+    color: '#6b7280',
+    tabs: [
+      { id: 'standards', label: '🗺️ มาตรฐาน' },
+      { id: 'profile',   label: '👤 โปรไฟล์' },
+    ],
+  },
+];
+
 function buildDraft(students, dailyRecords, date) {
   const d = {};
   students.forEach(s => {
     const r = getDayRecord(dailyRecords, date, s.id);
-    d[s.id] = { attendance: r?.attendance ?? 'มา', milk: r?.milk ?? false, brush: r?.brush ?? false, lunch: r?.lunch ?? 'หมด' };
+    d[s.id] = { attendance: r?.attendance ?? 'มา', milk: r?.milk ?? true, brush: r?.brush ?? true, lunch: r?.lunch ?? 'หมด' };
   });
   return d;
 }
@@ -89,6 +123,35 @@ function HygieneView({ students, draft, updateDraft, recordDate, loadDraftForDat
             onChange={e => loadDraftForDate(e.target.value)} />
         </div>
       </div>
+      {/* ── ปุ่มเลือกทั้งหมด ── */}
+      <div className="glass-card mb-3" style={{ padding:'.75rem 1rem', background:'#f0fdf4' }}>
+        <div style={{ fontSize:'.8rem', fontWeight:800, color:'#166534', marginBottom:'.5rem' }}>
+          ⚡ เลือกทั้งหมด
+        </div>
+        <div style={{ display:'flex', gap:'.5rem', flexWrap:'wrap' }}>
+          <button type="button" className="btn btn-sm"
+            style={{ background:'#d1fae5', color:'#065f46', fontWeight:700 }}
+            onClick={() => students.forEach(s => updateDraft(s.id, { milk:true, brush:true }))}>
+            🥛🪥 เลือกทั้งหมด (นม + แปรงฟัน)
+          </button>
+          <button type="button" className="btn btn-sm"
+            style={{ background:'#dcfce7', color:'#166534', fontWeight:700 }}
+            onClick={() => students.forEach(s => updateDraft(s.id, { milk:true }))}>
+            🥛 เลือกทั้งหมด (นม)
+          </button>
+          <button type="button" className="btn btn-sm"
+            style={{ background:'#dbeafe', color:'#1e40af', fontWeight:700 }}
+            onClick={() => students.forEach(s => updateDraft(s.id, { brush:true }))}>
+            🪥 เลือกทั้งหมด (แปรงฟัน)
+          </button>
+          <button type="button" className="btn btn-sm"
+            style={{ background:'#f3f4f6', color:'#6b7280', fontWeight:700, marginLeft:'auto' }}
+            onClick={() => students.forEach(s => updateDraft(s.id, { milk:false, brush:false }))}>
+            ✕ ยกเลิกทั้งหมด
+          </button>
+        </div>
+      </div>
+
       <div style={{ display:'flex',flexDirection:'column',gap:'.6rem',marginBottom:'5rem' }}>
         {students.map(s => (
           <div key={s.id} className="glass-card" style={{ padding:'.9rem 1.1rem' }}>
@@ -147,39 +210,50 @@ function HygieneView({ students, draft, updateDraft, recordDate, loadDraftForDat
   );
 }
 
-const TEACHER_TABS = [
-  { id: 'main',       label: '🏠 หน้าหลัก' },
-  { id: 'evaluation', label: '📊 ประเมินผล' },
-  { id: 'reports',    label: '📋 สรุปผล' },
-];
-
 export default function TeacherDashboard() {
   const {
-    students, setStudents, setIsAdding, setSelectedStudent, setEvaluatingStudent,
-    handleImport, announcements, dailyRecords, saveDailyAttendance, saveDailyHygiene,
-    user,
+    students, setStudents,
+    setSelectedStudent, setEvaluatingStudent,
+    handleImport, announcements, dailyRecords,
+    saveDailyAttendance, saveDailyHygiene,
+    user, teachers, setTeachers,
   } = useApp();
 
-  const [activeTab,   setActiveTab]   = useState('main');
-  const [activeView,  setActiveView]  = useState('main');
-  const [recordDate,  setRecordDate]  = useState(todayISO);
+  const [activeTab,  setActiveTab]  = useState('main');
+  const [activeView, setActiveView] = useState('main');
+  const [recordDate, setRecordDate] = useState(todayISO());
 
-  // filter to teacher's own class
+  // ── Local student add / edit ───────────────────────────────────────────
+  const [isAddingLocal,       setIsAddingLocal]       = useState(false);
+  const [editingStudentLocal, setEditingStudentLocal] = useState(null);
+
+  // ── Profile edit ──────────────────────────────────────────────────────
+  const myTeacher  = teachers?.find(t => t.id === user?.id);
+  const [profileForm,  setProfileForm]  = useState(null);
+  const [profileSaved, setProfileSaved] = useState(false);
+
+  // ── Students filtered to teacher's class ──────────────────────────────
   const myClass    = user?.className;
   const myStudents = useMemo(
     () => students.filter(s => s.className === myClass && !s.name.startsWith('(ว่าง)')),
     [students, myClass],
   );
 
-  const [draft, setDraft] = useState(() => buildDraft(myStudents, dailyRecords, todayISO()));
+  // Active (ปกติ) students only — for attendance & stats
+  const activeStudents = useMemo(
+    () => myStudents.filter(s => (s.status ?? 'ปกติ') === 'ปกติ'),
+    [myStudents],
+  );
+
+  const [draft,  setDraft]  = useState(() => buildDraft(activeStudents, dailyRecords, todayISO()));
   const [search, setSearch] = useState('');
 
   const today     = todayISO();
   const dateLabel = formatDateThai(recordDate);
 
   const isSaved = useMemo(
-    () => myStudents.every(s => getDayRecord(dailyRecords, recordDate, s.id)?.attendance),
-    [myStudents, dailyRecords, recordDate],
+    () => activeStudents.every(s => getDayRecord(dailyRecords, recordDate, s.id)?.attendance),
+    [activeStudents, dailyRecords, recordDate],
   );
 
   const filtered = useMemo(
@@ -188,18 +262,18 @@ export default function TeacherDashboard() {
   );
 
   const stats = useMemo(() => ({
-    total:    myStudents.length,
-    attend:   myStudents.filter(s => getDayRecord(dailyRecords, today, s.id)?.attendance === 'มา').length,
-    hygiene:  myStudents.filter(s => hasHygieneToday(getDayRecord(dailyRecords, today, s.id))).length,
-    assessed: myStudents.filter(s => s.assessments?.summary).length,
-  }), [myStudents, dailyRecords, today]);
+    total:    activeStudents.length,
+    attend:   activeStudents.filter(s => getDayRecord(dailyRecords, today, s.id)?.attendance === 'มา').length,
+    hygiene:  activeStudents.filter(s => hasHygieneToday(getDayRecord(dailyRecords, today, s.id))).length,
+    assessed: activeStudents.filter(s => s.assessments?.summary).length,
+  }), [activeStudents, dailyRecords, today]);
 
-  const loadDraft = date => { setRecordDate(date); setDraft(buildDraft(myStudents, dailyRecords, date)); };
+  const loadDraft   = date => { setRecordDate(date); setDraft(buildDraft(activeStudents, dailyRecords, date)); };
   const updateDraft = (id, patch) => setDraft(prev => ({ ...prev, [id]: { ...prev[id], ...patch } }));
 
   const saveAttendance = () => {
     const rec = {};
-    myStudents.forEach(s => { rec[String(s.id)] = { attendance: draft[s.id]?.attendance ?? 'มา' }; });
+    activeStudents.forEach(s => { rec[String(s.id)] = { attendance: draft[s.id]?.attendance ?? 'มา' }; });
     saveDailyAttendance(recordDate, rec);
     alert('บันทึกการมาเรียนเรียบร้อยแล้ว ✅');
     setActiveView('main');
@@ -207,7 +281,7 @@ export default function TeacherDashboard() {
 
   const saveHygiene = () => {
     const rec = {};
-    myStudents.forEach(s => {
+    activeStudents.forEach(s => {
       const d = draft[s.id];
       rec[String(s.id)] = { milk: Boolean(d?.milk), brush: Boolean(d?.brush), lunch: d?.lunch ?? 'หมด' };
     });
@@ -221,184 +295,381 @@ export default function TeacherDashboard() {
       setStudents(students.filter(s => s.id !== id));
   };
 
+  const handleAddStudentLocal = data => {
+    setStudents(prev => [...prev, {
+      ...data,
+      id: Date.now(),
+      className: myClass,
+      status: data.status || 'ปกติ',
+      assessments: {},
+      attendance: { present: 0, absent: 0, total: 0 },
+      parentPin: data.parentPin || String(1000 + Math.floor(Math.random() * 9000)),
+    }]);
+    setIsAddingLocal(false);
+  };
+
+  const handleEditStudentLocal = data => {
+    setStudents(students.map(s => s.id === editingStudentLocal.id ? { ...s, ...data } : s));
+    setEditingStudentLocal(null);
+  };
+
+  // ── Grouped tab nav ───────────────────────────────────────────────────
+  const TabNav = () => (
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: '.35rem',
+      marginBottom: '1.5rem',
+      background: '#f9fafb', borderRadius: '16px',
+      padding: '.75rem 1rem', border: '1px solid #e5e7eb',
+    }}>
+      {TEACHER_TAB_GROUPS.map((group, gi) => (
+        <div key={group.label} style={{ display: 'flex', alignItems: 'center', gap: '.35rem', flexWrap: 'wrap' }}>
+          <span style={{
+            fontSize: '.63rem', fontWeight: 800, color: group.color,
+            textTransform: 'uppercase', letterSpacing: '.06em',
+            minWidth: '55px', textAlign: 'right', paddingRight: '.5rem',
+            borderRight: `2px solid ${group.color}40`, flexShrink: 0,
+            lineHeight: 1,
+          }}>
+            {group.label}
+          </span>
+          {group.tabs.map(t => {
+            const isActive = activeTab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActiveTab(t.id)}
+                style={{
+                  padding: '.32rem .75rem',
+                  borderRadius: '8px',
+                  border: isActive ? `1.5px solid ${group.color}` : '1.5px solid transparent',
+                  background: isActive ? group.color : 'white',
+                  color: isActive ? 'white' : '#4b5563',
+                  fontFamily: 'inherit',
+                  fontWeight: isActive ? 700 : 500,
+                  fontSize: '.8rem',
+                  cursor: 'pointer',
+                  transition: 'all .15s',
+                  boxShadow: isActive ? `0 2px 8px ${group.color}35` : '0 1px 2px rgba(0,0,0,.05)',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = `${group.color}12`; }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'white'; }}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+          {gi === 0 && myClass && (
+            <span style={{
+              marginLeft: 'auto', background: '#ede9fe', color: '#7c3aed',
+              borderRadius: '999px', padding: '.22rem .85rem', fontSize: '.78rem', fontWeight: 800,
+            }}>🏫 ห้อง {myClass}</span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  // ── Full-page attendance / hygiene recording views ─────────────────────
   if (activeView === 'attendance')
-    return <AttendanceView students={myStudents} draft={draft} updateDraft={updateDraft}
+    return <AttendanceView students={activeStudents} draft={draft} updateDraft={updateDraft}
       recordDate={recordDate} loadDraftForDate={loadDraft} isSaved={isSaved} dateLabel={dateLabel}
       onSave={saveAttendance} onBack={() => setActiveView('main')} />;
 
   if (activeView === 'hygiene')
-    return <HygieneView students={myStudents} draft={draft} updateDraft={updateDraft}
+    return <HygieneView students={activeStudents} draft={draft} updateDraft={updateDraft}
       recordDate={recordDate} loadDraftForDate={loadDraft}
       onSave={saveHygiene} onBack={() => setActiveView('main')} />;
 
-  // Tab views for evaluation & reports
-  if (activeTab === 'evaluation') return (
-    <div className="animate-fade">
-      <div style={{ display:'flex', gap:'.5rem', marginBottom:'1.25rem', flexWrap:'wrap' }}>
-        {TEACHER_TABS.map(t => (
-          <button key={t.id} type="button" className={'tab-btn' + (activeTab === t.id ? ' active' : '')}
-            onClick={() => setActiveTab(t.id)}>{t.label}</button>
-        ))}
-      </div>
-      <EvaluationTab />
-    </div>
-  );
-
-  if (activeTab === 'reports') return (
-    <div className="animate-fade">
-      <div style={{ display:'flex', gap:'.5rem', marginBottom:'1.25rem', flexWrap:'wrap' }}>
-        {TEACHER_TABS.map(t => (
-          <button key={t.id} type="button" className={'tab-btn' + (activeTab === t.id ? ' active' : '')}
-            onClick={() => setActiveTab(t.id)}>{t.label}</button>
-        ))}
-      </div>
-      <ReportsTab teacherClassFilter={myClass} />
-    </div>
-  );
-
-  return (
-    <div className="animate-fade">
-      {/* Tab navigation */}
-      <div style={{ display:'flex', gap:'.5rem', marginBottom:'1.25rem', flexWrap:'wrap' }}>
-        {TEACHER_TABS.map(t => (
-          <button key={t.id} type="button" className={'tab-btn' + (activeTab === t.id ? ' active' : '')}
-            onClick={() => setActiveTab(t.id)}>{t.label}</button>
-        ))}
-        {myClass && (
-          <span style={{
-            marginLeft:'auto', background:'#ede9fe', color:'#7c3aed',
-            borderRadius:'999px', padding:'.25rem .85rem', fontSize:'.8rem', fontWeight:800,
-          }}>🏫 ห้อง {myClass}</span>
-        )}
-      </div>
-
-      {announcements[0] && (
-        <div className="announce-banner mb-6">
-          <span className="announce-icon">📢</span>
-          <div style={{ flex:1,minWidth:0 }}>
-            <div className="announce-title">{announcements[0].title}</div>
-            <div className="announce-date">📅 {announcements[0].date}</div>
+  // ── Profile tab ────────────────────────────────────────────────────────
+  if (activeTab === 'profile') {
+    const isEditing = profileForm !== null;
+    const SOCIAL = [
+      { key:'line',      label:'LINE',      placeholder:'@lineId' },
+      { key:'facebook',  label:'Facebook',  placeholder:'ชื่อเพจ/โปรไฟล์' },
+      { key:'instagram', label:'Instagram', placeholder:'@username' },
+      { key:'tiktok',    label:'TikTok',    placeholder:'@username' },
+      { key:'youtube',   label:'YouTube',   placeholder:'ชื่อช่อง' },
+    ];
+    return (
+      <div className="animate-fade">
+        <TabNav />
+        <div className="glass p-6">
+          <div className="page-header mb-6">
+            <h3>👤 ข้อมูลของฉัน</h3>
+            {!isEditing && (
+              <button type="button" className="btn btn-primary"
+                onClick={() => { setProfileForm({ ...myTeacher }); setProfileSaved(false); }}>
+                ✏️ แก้ไขข้อมูล
+              </button>
+            )}
           </div>
-        </div>
-      )}
 
-      <div className="grid grid-4 mb-6" style={{ gap:'.75rem' }}>
-        <div className="stat-card" style={{ background:'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
-          <span className="stat-icon">👶</span>
-          <div className="stat-value">{stats.total}</div>
-          <div className="stat-label">นักเรียนทั้งหมด</div>
-        </div>
-        <div className="stat-card" style={{ background:'linear-gradient(135deg,#10b981,#34d399)' }}>
-          <span className="stat-icon">✅</span>
-          <div className="stat-value">{stats.attend}</div>
-          <div className="stat-label">มาเรียนวันนี้</div>
-        </div>
-        <div className="stat-card" style={{ background:'linear-gradient(135deg,#f59e0b,#fbbf24)' }}>
-          <span className="stat-icon">🥛</span>
-          <div className="stat-value">{stats.hygiene}</div>
-          <div className="stat-label">บันทึกกิจวัตรแล้ว</div>
-        </div>
-        <div className="stat-card" style={{ background:'linear-gradient(135deg,#3b82f6,#60a5fa)' }}>
-          <span className="stat-icon">📋</span>
-          <div className="stat-value">{stats.assessed}</div>
-          <div className="stat-label">ประเมินแล้ว</div>
-        </div>
-      </div>
+          {profileSaved && (
+            <div className="alert alert-success mb-4">✅ บันทึกข้อมูลเรียบร้อยแล้ว</div>
+          )}
 
-      <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:'.75rem',marginBottom:'1.5rem' }}>
-        <button type="button" className="btn"
-          style={{ background:'#d1fae5',color:'#065f46',padding:'.85rem',fontSize:'.9rem',borderRadius:'14px' }}
-          onClick={() => { loadDraft(today); setActiveView('hygiene'); }}>
-          🥛 บันทึกกิจวัตร
-        </button>
-        <button type="button" className="btn"
-          style={{ background:'#fef3c7',color:'#92400e',padding:'.85rem',fontSize:'.9rem',borderRadius:'14px' }}
-          onClick={() => { loadDraft(today); setActiveView('attendance'); }}>
-          📅 เช็คชื่อ
-        </button>
-        <button type="button" className="btn"
-          style={{ background:'#dbeafe',color:'#1e40af',padding:'.85rem',fontSize:'.9rem',borderRadius:'14px' }}
-          onClick={() => {
-            const text = prompt('วางข้อมูล CSV (ชื่อ, ชั้น, อายุ, น้ำหนัก, ส่วนสูง)\nเช่น: เด็กชายดีใจ, K3, 5, 18.5, 110');
-            if (text) {
-              const r = handleImport('students', 'name,level,age,weight,height\n' + text);
-              alert(r.ok ? 'นำเข้าข้อมูลสำเร็จ! ✅' : r.message);
-            }
-          }}>
-          📥 นำเข้าข้อมูล
-        </button>
-        <button type="button" className="btn btn-primary"
-          style={{ padding:'.85rem',fontSize:'.9rem',borderRadius:'14px' }}
-          onClick={() => setIsAdding(true)}>
-          ➕ เพิ่มนักเรียน
-        </button>
-      </div>
-
-      <div className="glass" style={{ padding:'1.5rem' }}>
-        <div className="page-header" style={{ marginBottom:'1rem' }}>
-          <h3>👨‍🎓 รายชื่อนักเรียน{myClass ? ` ห้อง ${myClass}` : ''} ({filtered.length}/{myStudents.length} คน)</h3>
-          <input className="input" style={{ maxWidth:'220px' }} placeholder="🔍 ค้นหาชื่อ..."
-            value={search} onChange={e => setSearch(e.target.value)} />
-        </div>
-
-        <div style={{ display:'flex',flexDirection:'column',gap:'.6rem' }}>
-          {filtered.map(s => {
-            const rec     = getDayRecord(dailyRecords, today, s.id);
-            const hygOk   = hasHygieneToday(rec);
-            const att     = rec?.attendance;
-            const ac      = att ? (ATT_COLOR[att] ?? { bg:'#f5f3ff',color:'#6b7280' }) : null;
-            const isBoy   = s.name.includes('ชาย');
-            const pct     = s.attendance?.total
-              ? Math.round((s.attendance.present / s.attendance.total) * 100) : 0;
-
-            return (
-              <div key={s.id} className="student-card"
-                style={{ display:'flex',alignItems:'center',gap:'1rem',flexWrap:'wrap' }}>
-                <div className="student-avatar"
-                  style={{ background:isBoy?'#dbeafe':'#fce7f3', color:isBoy?'#1e40af':'#9d174d' }}>
-                  {isBoy ? '👦' : '👧'}
+          {!isEditing ? (
+            <div style={{ display:'flex', flexDirection:'column', gap:'1rem', maxWidth:'520px' }}>
+              {[
+                { label:'ชื่อ',      value: myTeacher?.firstName ?? myTeacher?.name ?? '—' },
+                { label:'นามสกุล',   value: myTeacher?.lastName ?? '—' },
+                { label:'E-mail',    value: myTeacher?.email ?? '—' },
+                { label:'เบอร์โทร',  value: myTeacher?.phone ?? '—' },
+                { label:'ห้องเรียน', value: myTeacher?.className ?? '—' },
+              ].map(r => (
+                <div key={r.label} style={{ display:'flex', gap:'1rem', alignItems:'flex-start' }}>
+                  <span style={{ minWidth:'100px', fontWeight:700, color:'#6b7280', fontSize:'.85rem' }}>{r.label}</span>
+                  <span style={{ fontWeight:600 }}>{r.value}</span>
                 </div>
-                <div style={{ flex:1,minWidth:'130px' }}>
-                  <div className="font-bold" style={{ fontSize:'.92rem' }}>{s.name}</div>
-                  <div className="flex gap-1 mt-1" style={{ flexWrap:'wrap' }}>
-                    <span className={'badge badge-' + (s.level?.toLowerCase())}>{s.level}</span>
-                    {att && <span className="badge" style={{ background:ac?.bg,color:ac?.color }}>{att}</span>}
-                    {hygOk && <><span className="badge badge-success">🥛</span><span className="badge badge-info">🪥</span></>}
-                  </div>
+              ))}
+              {SOCIAL.map(s => myTeacher?.[s.key] ? (
+                <div key={s.key} style={{ display:'flex', gap:'1rem', alignItems:'flex-start' }}>
+                  <span style={{ minWidth:'100px', fontWeight:700, color:'#6b7280', fontSize:'.85rem' }}>{s.label}</span>
+                  <span style={{ fontWeight:600 }}>{myTeacher[s.key]}</span>
                 </div>
-                <div style={{ textAlign:'center',minWidth:'52px' }}>
-                  <div style={{ fontSize:'1rem',fontWeight:800,
-                    color:pct>=80?'var(--success)':pct>=60?'var(--accent)':'var(--danger)' }}>
-                    {pct}%
-                  </div>
-                  <div className="text-xs text-muted">มาเรียน</div>
+              ) : null)}
+            </div>
+          ) : (
+            <form onSubmit={e => {
+              e.preventDefault();
+              setTeachers(teachers.map(t => t.id === myTeacher.id ? { ...t, ...profileForm } : t));
+              setProfileForm(null);
+              setProfileSaved(true);
+            }} style={{ display:'flex', flexDirection:'column', gap:'1rem', maxWidth:'520px' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'.75rem' }}>
+                <div>
+                  <label style={{ display:'block', marginBottom:'.35rem', fontWeight:600, fontSize:'.85rem' }}>ชื่อ *</label>
+                  <input className="input" required value={profileForm.firstName ?? ''}
+                    onChange={e => setProfileForm(f => ({ ...f, firstName: e.target.value }))} />
                 </div>
-                <div style={{ textAlign:'center',minWidth:'48px' }}>
-                  {s.assessments?.summary
-                    ? <div style={{ color:'var(--success)',fontSize:'1.25rem' }}>✅</div>
-                    : <div style={{ color:'#d1d5db',fontSize:'1.25rem' }}>○</div>}
-                  <div className="text-xs text-muted">ประเมิน</div>
-                </div>
-                <div className="flex gap-1" style={{ flexWrap:'wrap' }}>
-                  <button type="button" className="btn btn-sm"
-                    style={{ background:'#ede9fe',color:'var(--primary)' }}
-                    onClick={() => setSelectedStudent(s)}>📄</button>
-                  <button type="button" className="btn btn-sm btn-primary"
-                    onClick={() => setEvaluatingStudent(s)}>✏️</button>
-                  <button type="button" className="btn btn-sm"
-                    style={{ color:'var(--danger)' }}
-                    onClick={() => handleDelete(s.id)}>🗑️</button>
+                <div>
+                  <label style={{ display:'block', marginBottom:'.35rem', fontWeight:600, fontSize:'.85rem' }}>นามสกุล *</label>
+                  <input className="input" required value={profileForm.lastName ?? ''}
+                    onChange={e => setProfileForm(f => ({ ...f, lastName: e.target.value }))} />
                 </div>
               </div>
-            );
-          })}
-          {filtered.length === 0 && (
-            <div className="text-center text-muted" style={{ padding:'3rem 1rem' }}>
-              ไม่พบนักเรียนที่ค้นหา
-            </div>
+              <div>
+                <label style={{ display:'block', marginBottom:'.35rem', fontWeight:600, fontSize:'.85rem' }}>E-mail *</label>
+                <input className="input" type="email" required value={profileForm.email ?? ''}
+                  onChange={e => setProfileForm(f => ({ ...f, email: e.target.value }))} />
+              </div>
+              <div>
+                <label style={{ display:'block', marginBottom:'.35rem', fontWeight:600, fontSize:'.85rem' }}>เบอร์โทรศัพท์ *</label>
+                <input className="input" required placeholder="0xx-xxx-xxxx" value={profileForm.phone ?? ''}
+                  onChange={e => setProfileForm(f => ({ ...f, phone: e.target.value }))} />
+              </div>
+              <div style={{ borderTop:'1.5px solid #e5e7eb', paddingTop:'.75rem', marginTop:'.25rem' }}>
+                <div style={{ fontWeight:700, fontSize:'.85rem', color:'#6b7280', marginBottom:'.75rem' }}>
+                  📱 ช่องทางติดต่อ Social (ไม่บังคับ)
+                </div>
+                {SOCIAL.map(s => (
+                  <div key={s.key} style={{ marginBottom:'.6rem' }}>
+                    <label style={{ display:'block', marginBottom:'.3rem', fontWeight:600, fontSize:'.85rem' }}>{s.label}</label>
+                    <input className="input" placeholder={s.placeholder} value={profileForm[s.key] ?? ''}
+                      onChange={e => setProfileForm(f => ({ ...f, [s.key]: e.target.value }))} />
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <button type="button" className="btn flex-1" onClick={() => setProfileForm(null)}>ยกเลิก</button>
+                <button type="submit" className="btn btn-primary flex-1">💾 บันทึก</button>
+              </div>
+            </form>
           )}
         </div>
       </div>
+    );
+  }
+
+  // ── All other tabs ─────────────────────────────────────────────────────
+  return (
+    <div className="animate-fade">
+      <TabNav />
+
+      {/* ── Report / system tabs ── */}
+      {activeTab === 'overview'    && <OverviewTab />}
+      {activeTab === 'attendance'  && <AdminAttTab defaultClass={myClass} />}
+      {activeTab === 'pickup'      && <PickupTab defaultClass={myClass} />}
+      {activeTab === 'evaluation'  && <EvaluationTab />}
+      {activeTab === 'reports'     && <ReportsTab teacherClassFilter={myClass} />}
+      {activeTab === 'activitylog' && <ActivityLogTab />}
+      {activeTab === 'standards'   && (
+        <div className="glass p-6">
+          <h3 className="mb-6">🗺️ สรุปมาตรฐานสถานพัฒนาเด็กปฐมวัย (ปี 2569)</h3>
+          <QaStandardView />
+        </div>
+      )}
+
+      {/* ── Main tab ── */}
+      {activeTab === 'main' && (
+        <>
+          {announcements[0] && (
+            <div className="announce-banner mb-6">
+              <span className="announce-icon">📢</span>
+              <div style={{ flex:1,minWidth:0 }}>
+                <div className="announce-title">{announcements[0].title}</div>
+                <div className="announce-date">📅 {announcements[0].date}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Stats */}
+          <div className="grid grid-4 mb-6" style={{ gap:'.75rem' }}>
+            <div className="stat-card" style={{ background:'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
+              <span className="stat-icon">👶</span>
+              <div className="stat-value">{stats.total}</div>
+              <div className="stat-label">นักเรียน (ปกติ)</div>
+            </div>
+            <div className="stat-card" style={{ background:'linear-gradient(135deg,#10b981,#34d399)' }}>
+              <span className="stat-icon">✅</span>
+              <div className="stat-value">{stats.attend}</div>
+              <div className="stat-label">มาเรียนวันนี้</div>
+            </div>
+            <div className="stat-card" style={{ background:'linear-gradient(135deg,#f59e0b,#fbbf24)' }}>
+              <span className="stat-icon">🥛</span>
+              <div className="stat-value">{stats.hygiene}</div>
+              <div className="stat-label">บันทึกกิจวัตรแล้ว</div>
+            </div>
+            <div className="stat-card" style={{ background:'linear-gradient(135deg,#3b82f6,#60a5fa)' }}>
+              <span className="stat-icon">📋</span>
+              <div className="stat-value">{stats.assessed}</div>
+              <div className="stat-label">ประเมินแล้ว</div>
+            </div>
+          </div>
+
+          {/* Quick action buttons */}
+          <div style={{ display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:'.75rem',marginBottom:'1.5rem' }}>
+            <button type="button" className="btn"
+              style={{ background:'#d1fae5',color:'#065f46',padding:'.85rem',fontSize:'.9rem',borderRadius:'14px' }}
+              onClick={() => { loadDraft(today); setActiveView('hygiene'); }}>
+              🥛 บันทึกกิจวัตร
+            </button>
+            <button type="button" className="btn"
+              style={{ background:'#fef3c7',color:'#92400e',padding:'.85rem',fontSize:'.9rem',borderRadius:'14px' }}
+              onClick={() => { loadDraft(today); setActiveView('attendance'); }}>
+              📅 เช็คชื่อ
+            </button>
+            <button type="button" className="btn"
+              style={{ background:'#dbeafe',color:'#1e40af',padding:'.85rem',fontSize:'.9rem',borderRadius:'14px' }}
+              onClick={() => {
+                const text = prompt('วางข้อมูล CSV (ชื่อ, ชั้น, อายุ, น้ำหนัก, ส่วนสูง)\nเช่น: เด็กชายดีใจ, K3, 5, 18.5, 110');
+                if (text) {
+                  const r = handleImport('students', 'name,level,age,weight,height\n' + text);
+                  alert(r.ok ? 'นำเข้าข้อมูลสำเร็จ! ✅' : r.message);
+                }
+              }}>
+              📥 นำเข้าข้อมูล
+            </button>
+            <button type="button" className="btn btn-primary"
+              style={{ padding:'.85rem',fontSize:'.9rem',borderRadius:'14px' }}
+              onClick={() => setIsAddingLocal(true)}>
+              ➕ เพิ่มนักเรียน
+            </button>
+          </div>
+
+          {/* Student list */}
+          <div className="glass" style={{ padding:'1.5rem' }}>
+            <div className="page-header" style={{ marginBottom:'1rem' }}>
+              <h3>👨‍🎓 รายชื่อนักเรียน{myClass ? ` ห้อง ${myClass}` : ''} ({filtered.length}/{myStudents.length} คน)</h3>
+              <input className="input" style={{ maxWidth:'220px' }} placeholder="🔍 ค้นหาชื่อ..."
+                value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+
+            <div style={{ display:'flex',flexDirection:'column',gap:'.6rem' }}>
+              {filtered.map(s => {
+                const isInactive = (s.status ?? 'ปกติ') === 'นอกระบบ';
+                const rec   = getDayRecord(dailyRecords, today, s.id);
+                const hygOk = hasHygieneToday(rec);
+                const att   = rec?.attendance;
+                const ac    = att ? (ATT_COLOR[att] ?? { bg:'#f5f3ff',color:'#6b7280' }) : null;
+                const isBoy = s.name.includes('ชาย');
+                const pct   = s.attendance?.total
+                  ? Math.round((s.attendance.present / s.attendance.total) * 100) : 0;
+
+                return (
+                  <div key={s.id} className="student-card"
+                    style={{
+                      display:'flex',alignItems:'center',gap:'1rem',flexWrap:'wrap',
+                      opacity: isInactive ? 0.6 : 1,
+                    }}>
+                    <div className="student-avatar"
+                      style={{
+                        background: isInactive ? '#f3f4f6' : (isBoy?'#dbeafe':'#fce7f3'),
+                        color: isInactive ? '#9ca3af' : (isBoy?'#1e40af':'#9d174d'),
+                      }}>
+                      {isInactive ? '⛔' : (isBoy ? '👦' : '👧')}
+                    </div>
+                    <div style={{ flex:1,minWidth:'130px' }}>
+                      <div className="font-bold" style={{ fontSize:'.92rem' }}>{s.name}</div>
+                      <div className="flex gap-1 mt-1" style={{ flexWrap:'wrap' }}>
+                        <span className={'badge badge-' + (s.level?.toLowerCase())}>{s.level}</span>
+                        {isInactive && (
+                          <span className="badge" style={{ background:'#f3f4f6', color:'#6b7280' }}>นอกระบบ</span>
+                        )}
+                        {!isInactive && att && <span className="badge" style={{ background:ac?.bg,color:ac?.color }}>{att}</span>}
+                        {!isInactive && hygOk && <><span className="badge badge-success">🥛</span><span className="badge badge-info">🪥</span></>}
+                      </div>
+                    </div>
+                    {!isInactive && (
+                      <div style={{ textAlign:'center',minWidth:'52px' }}>
+                        <div style={{ fontSize:'1rem',fontWeight:800,
+                          color:pct>=80?'var(--success)':pct>=60?'var(--accent)':'var(--danger)' }}>
+                          {pct}%
+                        </div>
+                        <div className="text-xs text-muted">มาเรียน</div>
+                      </div>
+                    )}
+                    {!isInactive && (
+                      <div style={{ textAlign:'center',minWidth:'48px' }}>
+                        {s.assessments?.summary
+                          ? <div style={{ color:'var(--success)',fontSize:'1.25rem' }}>✅</div>
+                          : <div style={{ color:'#d1d5db',fontSize:'1.25rem' }}>○</div>}
+                        <div className="text-xs text-muted">ประเมิน</div>
+                      </div>
+                    )}
+                    <div className="flex gap-1" style={{ flexWrap:'wrap' }}>
+                      <button type="button" className="btn btn-sm"
+                        style={{ background:'#ede9fe',color:'var(--primary)' }}
+                        onClick={() => setSelectedStudent(s)}>📄</button>
+                      <button type="button" className="btn btn-sm"
+                        style={{ background:'#fef9c3',color:'#92400e' }}
+                        onClick={() => setEditingStudentLocal(s)}>✏️</button>
+                      {!isInactive && (
+                        <button type="button" className="btn btn-sm btn-primary"
+                          onClick={() => setEvaluatingStudent(s)}>📊</button>
+                      )}
+                      <button type="button" className="btn btn-sm"
+                        style={{ color:'var(--danger)' }}
+                        onClick={() => handleDelete(s.id)}>🗑️</button>
+                    </div>
+                  </div>
+                );
+              })}
+              {filtered.length === 0 && (
+                <div className="text-center text-muted" style={{ padding:'3rem 1rem' }}>
+                  ไม่พบนักเรียนที่ค้นหา
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── Local student modals ── */}
+      <StudentModal
+        isOpen={isAddingLocal}
+        onClose={() => setIsAddingLocal(false)}
+        onSave={handleAddStudentLocal}
+      />
+      <StudentModal
+        key={editingStudentLocal?.id ?? 'edit'}
+        isOpen={editingStudentLocal !== null}
+        onClose={() => setEditingStudentLocal(null)}
+        editingStudent={editingStudentLocal}
+        onSave={handleEditStudentLocal}
+      />
     </div>
   );
 }

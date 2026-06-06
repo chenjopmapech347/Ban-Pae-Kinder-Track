@@ -14,7 +14,7 @@ const LEVEL_COLOR = {
 export default function ParentView() {
   const { user, students, setSelectedStudent, assessmentTopics,
     indicators: allIndicators, activities: allActivities,
-    aiApiKey } = useApp();
+    aiApiKey, teachers } = useApp();
 
   const [aiText, setAiText]       = useState('');
   const [aiLoading, setAiLoading] = useState(false);
@@ -36,6 +36,7 @@ export default function ParentView() {
     return legacy != null ? legacy : null;
   };
   const student = students.find(s => s.id === user?.studentId);
+  const classTeacher = teachers?.find(t => t.className === student?.className);
 
   if (!student) {
     return (
@@ -84,6 +85,40 @@ export default function ParentView() {
           </div>
         </div>
       </div>
+
+      {/* Teacher Info */}
+      {classTeacher && (
+        <div className="glass-card mb-6">
+          <h3 className="mb-3">👩‍🏫 ครูประจำชั้น</h3>
+          <div style={{ display:'flex', alignItems:'center', gap:'1rem' }}>
+            <div style={{
+              width:52, height:52, borderRadius:'50%',
+              background:'linear-gradient(135deg,#7c3aed,#a855f7)',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              fontSize:'1.6rem', flexShrink:0,
+            }}>👩‍🏫</div>
+            <div style={{ flex:1 }}>
+              <div style={{ fontWeight:800, fontSize:'1rem' }}>
+                {classTeacher.firstName && classTeacher.lastName
+                  ? `${classTeacher.firstName} ${classTeacher.lastName}`
+                  : classTeacher.name}
+              </div>
+              <div style={{ fontSize:'.82rem', color:'#6b7280', marginTop:'.2rem' }}>
+                ห้อง {classTeacher.className}
+              </div>
+            </div>
+            {classTeacher.phone && (
+              <a href={`tel:${classTeacher.phone}`} style={{
+                display:'flex', flexDirection:'column', alignItems:'center', gap:'.2rem',
+                background:'#d1fae5', color:'#065f46', borderRadius:'12px',
+                padding:'.6rem .9rem', textDecoration:'none', fontWeight:700, fontSize:'.82rem',
+              }}>
+                📞 <span>{classTeacher.phone}</span>
+              </a>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Attendance */}
       <div className="glass-card mb-6">

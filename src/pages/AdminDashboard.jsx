@@ -14,6 +14,8 @@ import StandardsMapTab    from '../components/admin/StandardsMapTab';
 import TermsTab           from '../components/admin/TermsTab';
 import EvaluationTab     from '../components/admin/EvaluationTab';
 import ActivityLogTab    from '../components/admin/ActivityLogTab';
+import AttendanceTab    from '../components/admin/AttendanceTab';
+import PickupTab       from '../components/admin/PickupTab';
 
 const TAB_GROUPS = [
   {
@@ -21,6 +23,8 @@ const TAB_GROUPS = [
     color: '#7c3aed',
     tabs: [
       { id: 'overview',    label: '🏠 ภาพรวม'           },
+      { id: 'attendance',  label: '📅 การมาเรียน'        },
+      { id: 'pickup',      label: '🏠 รับกลับบ้าน'       },
       { id: 'evaluation',  label: '📊 ประเมินผล'         },
       { id: 'reports',     label: '📋 รายงานสรุป'        },
       { id: 'activitylog', label: '📜 ประวัติการประเมิน' },
@@ -114,6 +118,8 @@ export default function AdminDashboard() {
 
       {/* ── Tab Content ── */}
       {activeTab === 'overview'   && <OverviewTab />}
+      {activeTab === 'attendance' && <AttendanceTab />}
+      {activeTab === 'pickup'     && <PickupTab />}
       {activeTab === 'students'   && <StudentsTab />}
       {activeTab === 'teachers'   && <TeachersTab />}
       {activeTab === 'classes'     && <ClassesTab />}

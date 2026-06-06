@@ -233,6 +233,7 @@ export default function StudentsTab() {
               <th style={{ width: '90px' }}>รหัสประจำตัว</th>
               <th>ชื่อ-นามสกุล</th>
               <th>ชั้น</th>
+              <th>สถานะ</th>
               <th>PIN ผู้ปกครอง</th>
               <th>สถานะประเมิน</th>
               <th>จัดการ</th>
@@ -259,6 +260,11 @@ export default function StudentsTab() {
                     >{s.name}</button>
                   </td>
                   <td><span className={'badge badge-' + s.level.toLowerCase()}>{s.level}</span></td>
+                  <td>
+                    {(s.status ?? 'ปกติ') === 'ปกติ'
+                      ? <span className="badge" style={{ background:'#d1fae5',color:'#065f46' }}>✅ ปกติ</span>
+                      : <span className="badge" style={{ background:'#f3f4f6',color:'#6b7280' }}>⛔ นอกระบบ</span>}
+                  </td>
                   <td><code style={{ background: '#f5f3ff', padding: '.15rem .5rem', borderRadius: '6px', fontSize: '.8rem' }}>{s.parentPin ?? '—'}</code></td>
                   <td>
                     {actCount > 0
@@ -283,7 +289,7 @@ export default function StudentsTab() {
               );
             })}
             {!filtered.length && (
-              <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>ไม่พบข้อมูล</td></tr>
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>ไม่พบข้อมูล</td></tr>
             )}
           </tbody>
         </table>

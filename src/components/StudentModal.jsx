@@ -1,8 +1,12 @@
 import { useState } from 'react';
 
+const ALL_CLASSES = ['อ.1/1', 'อ.1/2', 'อ.2/1', 'อ.2/2', 'อ.3/1', 'อ.3/2', 'อ.3/3'];
+
 const emptyStudent = {
   name: '',
   level: 'K1',
+  className: '',
+  status: 'ปกติ',
   age: '',
   weight: '',
   height: '',
@@ -16,6 +20,7 @@ const emptyStudent = {
   motherOcc: '',
   address: '',
   phone: '',
+  parentPhone: '',
   parentPin: '',
 };
 
@@ -87,6 +92,23 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
                   <input className="input" value={formData.parentPin} onChange={(e) => setFormData({ ...formData, parentPin: e.target.value })} placeholder="4 หลัก" />
                 </div>
               </div>
+              <div className="grid grid-2 gap-2">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold">ห้องเรียน</label>
+                  <select className="input" value={formData.className ?? ''} onChange={(e) => setFormData({ ...formData, className: e.target.value })}>
+                    <option value="">— ยังไม่กำหนด —</option>
+                    {ALL_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-bold">สถานะ</label>
+                  <select className="input" value={formData.status ?? 'ปกติ'} onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    style={{ color: (formData.status ?? 'ปกติ') === 'นอกระบบ' ? '#6b7280' : '#065f46', fontWeight: 700 }}>
+                    <option value="ปกติ">✅ ปกติ</option>
+                    <option value="นอกระบบ">⛔ นอกระบบ</option>
+                  </select>
+                </div>
+              </div>
               <div className="grid grid-3 gap-2">
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-bold">ระดับชั้น</label>
@@ -131,6 +153,10 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold">ที่อยู่ติดต่อ</label>
                 <textarea className="input" style={{ minHeight: '80px' }} value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-bold">เบอร์โทรผู้ปกครอง 📞</label>
+                <input className="input" placeholder="0xx-xxx-xxxx" value={formData.parentPhone ?? ''} onChange={(e) => setFormData({ ...formData, parentPhone: e.target.value })} />
               </div>
             </div>
           )}

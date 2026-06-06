@@ -13,9 +13,10 @@ import ActivitiesTab      from '../components/admin/ActivitiesTab';
 import StandardsMapTab    from '../components/admin/StandardsMapTab';
 import TermsTab           from '../components/admin/TermsTab';
 import EvaluationTab     from '../components/admin/EvaluationTab';
-import ActivityLogTab    from '../components/admin/ActivityLogTab';
-import AttendanceTab    from '../components/admin/AttendanceTab';
-import PickupTab       from '../components/admin/PickupTab';
+import ActivityLogTab         from '../components/admin/ActivityLogTab';
+import AttendanceTab         from '../components/admin/AttendanceTab';
+import PickupTab             from '../components/admin/PickupTab';
+import NationalStandardsTab  from '../components/admin/NationalStandardsTab';
 
 const TAB_GROUPS = [
   {
@@ -27,7 +28,8 @@ const TAB_GROUPS = [
       { id: 'pickup',      label: '🏠 รับกลับบ้าน'       },
       { id: 'evaluation',  label: '📊 ประเมินผล'         },
       { id: 'reports',     label: '📋 รายงานสรุป'        },
-      { id: 'activitylog', label: '📜 ประวัติการประเมิน' },
+      { id: 'activitylog',   label: '📜 ประวัติการประเมิน' },
+      { id: 'nationalstd',   label: '🏛 มาตรฐานแห่งชาติ' },
     ],
   },
   {
@@ -125,7 +127,8 @@ export default function AdminDashboard() {
       {activeTab === 'classes'     && <ClassesTab />}
       {activeTab === 'evaluation'  && <EvaluationTab />}
       {activeTab === 'reports'     && <ReportsTab />}
-      {activeTab === 'activitylog' && <ActivityLogTab />}
+      {activeTab === 'activitylog'  && <ActivityLogTab />}
+      {activeTab === 'nationalstd'  && <NationalStandardsTab />}
       {activeTab === 'schools'     && <SchoolsTab />}
       {activeTab === 'topics'     && <TopicsTab />}
       {activeTab === 'indicators' && <IndicatorsTab />}

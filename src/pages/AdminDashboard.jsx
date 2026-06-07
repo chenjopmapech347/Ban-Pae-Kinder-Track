@@ -17,13 +17,15 @@ import ActivityLogTab         from '../components/admin/ActivityLogTab';
 import AttendanceTab         from '../components/admin/AttendanceTab';
 import PickupTab             from '../components/admin/PickupTab';
 import NationalStandardsTab  from '../components/admin/NationalStandardsTab';
+import AnnouncementsTab     from '../components/admin/AnnouncementsTab';
 
 const TAB_GROUPS = [
   {
     label: 'รายงาน',
     color: '#7c3aed',
     tabs: [
-      { id: 'overview',    label: '🏠 ภาพรวม'           },
+      { id: 'overview',       label: '🏠 ภาพรวม'           },
+      { id: 'announcements',  label: '📢 ประกาศ'            },
       { id: 'attendance',  label: '📅 การมาเรียน'        },
       { id: 'pickup',      label: '🏠 รับกลับบ้าน'       },
       { id: 'evaluation',  label: '📊 ประเมินผล'         },
@@ -119,7 +121,8 @@ export default function AdminDashboard() {
       </div>
 
       {/* ── Tab Content ── */}
-      {activeTab === 'overview'   && <OverviewTab />}
+      {activeTab === 'overview'      && <OverviewTab />}
+      {activeTab === 'announcements' && <AnnouncementsTab />}
       {activeTab === 'attendance' && <AttendanceTab />}
       {activeTab === 'pickup'     && <PickupTab />}
       {activeTab === 'students'   && <StudentsTab />}

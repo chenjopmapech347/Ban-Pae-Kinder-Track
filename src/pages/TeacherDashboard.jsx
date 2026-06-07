@@ -65,9 +65,10 @@ const TEACHER_TAB_GROUPS = [
     label: 'ทั่วไป',
     color: '#7c3aed',
     tabs: [
-      { id: 'main',     label: '🏠 หน้าหลัก' },
-      { id: 'students', label: '👨‍🎓 นักเรียน' },
-      { id: 'pins',     label: '🔑 PIN ผู้ปกครอง' },
+      { id: 'main',          label: '🏠 หน้าหลัก' },
+      { id: 'students',      label: '👨‍🎓 นักเรียน' },
+      { id: 'pins',          label: '🔑 PIN ผู้ปกครอง' },
+      { id: 'teacherannounce', label: '📢 ประกาศ' },
     ],
   },
   {
@@ -260,7 +261,7 @@ export default function TeacherDashboard() {
   const {
     students, setStudents,
     setSelectedStudent, setEvaluatingStudent,
-    handleImport, announcements, dailyRecords,
+    handleImport, announcements, setAnnouncements, dailyRecords,
     saveDailyAttendance, saveDailyHygiene,
     user, teachers, setTeachers,
   } = useApp();
@@ -278,6 +279,11 @@ export default function TeacherDashboard() {
   const [profileForm,  setProfileForm]  = useState(null);
   const [profileSaved, setProfileSaved] = useState(false);
 
+  // ── Teacher announce state ────────────────────────────────────────────
+  const [annTitle,  setAnnTitle]  = useState('');
+  const [annBody,   setAnnBody]   = useState('');
+  const [annSaved,  setAnnSaved]  = useState(false);
+
   // ── Students filtered to teacher's class ──────────────────────────────
   const myClass    = user?.className;
   const myStudents = useMemo(
@@ -289,6 +295,14 @@ export default function TeacherDashboard() {
   const activeStudents = useMemo(
     () => myStudents.filter(s => (s.status ?? 'ปกติ') === 'ปกติ'),
     [myStudents],
+  );
+
+  // ── Announcements visible to this teacher (all + own class) ──────────
+  const myAnnouncements = useMemo(
+    () => (announcements ?? [])
+      .filter(a => !a.target || a.target === 'all' || a.target === myClass)
+      .slice(0, 3),
+    [announcements, myClass],
   );
 
   const [draft,  setDraft]  = useState(() => buildDraft(activeStudents, dailyRecords, todayISO()));
@@ -613,6 +627,86 @@ export default function TeacherDashboard() {
         </div>
       )}
 
+      {/* ── Teacher Announce tab ── */}
+      {activeTab === 'teacherannounce' && (
+        <div className="glass p-6 animate-fade">
+          <div className="page-header mb-4">
+            <h3>📢 ประกาศ</h3>
+            {myClass && (
+              <span style={{ background:'#ede9fe', color:'#7c3aed', borderRadius:'999px', padding:'.22rem .85rem', fontSize:'.78rem', fontWeight:800 }}>
+                ห้อง {myClass}
+              </span>
+            )}
+          </div>
+
+          {/* Form — ครูประกาศได้เฉพาะห้องตนเอง */}
+          <div style={{ background:'#faf5ff', border:'1.5px solid #ede9fe', borderRadius:'14px', padding:'1.25rem 1.5rem', marginBottom:'1.5rem' }}>
+            <div style={{ fontWeight:700, color:'#7c3aed', marginBottom:'.85rem', fontSize:'.88rem' }}>
+              ✍️ สร้างประกาศ{myClass ? ` (ห้อง ${myClass})` : ''}
+            </div>
+            <div style={{ marginBottom:'.7rem' }}>
+              <label style={{ display:'block', fontWeight:700, fontSize:'.82rem', color:'#374151', marginBottom:'.35rem' }}>หัวข้อ *</label>
+              <input className="input" placeholder="หัวข้อประกาศ..." value={annTitle} onChange={e => setAnnTitle(e.target.value)} />
+            </div>
+            <div style={{ marginBottom:'1rem' }}>
+              <label style={{ display:'block', fontWeight:700, fontSize:'.82rem', color:'#374151', marginBottom:'.35rem' }}>รายละเอียด (ไม่บังคับ)</label>
+              <textarea className="input" rows={3} placeholder="รายละเอียดเพิ่มเติม..." value={annBody}
+                onChange={e => setAnnBody(e.target.value)} style={{ resize:'vertical', fontFamily:'inherit' }} />
+            </div>
+            {annSaved && <div className="alert alert-success mb-3">✅ เพิ่มประกาศเรียบร้อยแล้ว</div>}
+            <button type="button" className="btn btn-primary" disabled={!annTitle.trim()}
+              onClick={() => {
+                if (!annTitle.trim()) return;
+                const now = new Date();
+                const date = now.toLocaleDateString('th-TH', { day:'2-digit', month:'2-digit', year:'numeric', calendar:'buddhist' });
+                setAnnouncements([
+                  { id: Date.now(), date, title: annTitle.trim(), body: annBody.trim(), target: myClass ?? 'all' },
+                  ...(announcements ?? []),
+                ]);
+                setAnnTitle(''); setAnnBody('');
+                setAnnSaved(true);
+                setTimeout(() => setAnnSaved(false), 2500);
+              }}>
+              📢 ประกาศ
+            </button>
+          </div>
+
+          {/* List — แสดง 3 ล่าสุดที่เห็นได้ */}
+          <div style={{ fontWeight:700, color:'#374151', marginBottom:'.85rem', fontSize:'.88rem' }}>
+            📋 ประกาศล่าสุด (ที่เกี่ยวกับห้อง {myClass})
+          </div>
+          {myAnnouncements.length === 0 ? (
+            <div className="text-center text-muted" style={{ padding:'2rem' }}>ยังไม่มีประกาศ</div>
+          ) : (
+            <div style={{ display:'flex', flexDirection:'column', gap:'.7rem' }}>
+              {myAnnouncements.map((a, idx) => (
+                <div key={a.id} style={{
+                  display:'flex', gap:'1rem', alignItems:'flex-start',
+                  padding:'1rem 1.25rem', borderRadius:'12px',
+                  background: idx === 0 ? '#faf5ff' : 'white',
+                  border: `1.5px solid ${idx === 0 ? '#ddd6fe' : '#e5e7eb'}`,
+                }}>
+                  <div style={{ fontSize:'1.4rem', marginTop:'.1rem' }}>📢</div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ display:'flex', gap:'.4rem', alignItems:'center', flexWrap:'wrap', marginBottom:'.3rem' }}>
+                      {idx === 0 && <span style={{ background:'#7c3aed', color:'white', fontSize:'.65rem', fontWeight:800, padding:'1px 8px', borderRadius:'999px' }}>ล่าสุด</span>}
+                      {(!a.target || a.target === 'all') ? (
+                        <span style={{ background:'#dbeafe', color:'#1e40af', fontSize:'.68rem', fontWeight:700, padding:'1px 8px', borderRadius:'999px' }}>ทุกคน</span>
+                      ) : (
+                        <span style={{ background:'#ede9fe', color:'#7c3aed', fontSize:'.68rem', fontWeight:700, padding:'1px 8px', borderRadius:'999px' }}>ห้อง {a.target}</span>
+                      )}
+                      <span style={{ fontSize:'.72rem', color:'#9ca3af' }}>📅 {a.date}</span>
+                    </div>
+                    <div style={{ fontWeight:700, fontSize:'.9rem', color:'#111827', marginBottom: a.body ? '.3rem' : 0 }}>{a.title}</div>
+                    {a.body && <div style={{ fontSize:'.83rem', color:'#4b5563', lineHeight:1.5, whiteSpace:'pre-wrap' }}>{a.body}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Students tab ── */}
       {activeTab === 'students' && (
         <>
@@ -724,15 +818,24 @@ export default function TeacherDashboard() {
       {/* ── Main tab ── */}
       {activeTab === 'main' && (
         <>
-          {announcements[0] && (
-            <div className="announce-banner mb-6">
+          {myAnnouncements.map((a, idx) => (
+            <div key={a.id} className="announce-banner mb-3">
               <span className="announce-icon">📢</span>
-              <div style={{ flex:1,minWidth:0 }}>
-                <div className="announce-title">{announcements[0].title}</div>
-                <div className="announce-date">📅 {announcements[0].date}</div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:'flex', gap:'.4rem', alignItems:'center', flexWrap:'wrap', marginBottom:'.15rem' }}>
+                  {(!a.target || a.target === 'all') ? (
+                    <span style={{ background:'#dbeafe', color:'#1e40af', fontSize:'.65rem', fontWeight:700, padding:'1px 7px', borderRadius:'999px' }}>ทุกคน</span>
+                  ) : (
+                    <span style={{ background:'#ede9fe', color:'#7c3aed', fontSize:'.65rem', fontWeight:700, padding:'1px 7px', borderRadius:'999px' }}>ห้อง {a.target}</span>
+                  )}
+                  {idx === 0 && <span style={{ background:'#7c3aed', color:'white', fontSize:'.63rem', fontWeight:800, padding:'1px 6px', borderRadius:'999px' }}>ล่าสุด</span>}
+                </div>
+                <div className="announce-title">{a.title}</div>
+                {a.body && <div style={{ fontSize:'.78rem', color:'#4b5563', marginTop:'.15rem' }}>{a.body}</div>}
+                <div className="announce-date">📅 {a.date}</div>
               </div>
             </div>
-          )}
+          ))}
 
           {/* Stats */}
           <div className="grid grid-4 mb-6" style={{ gap:'.75rem' }}>

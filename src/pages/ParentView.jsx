@@ -14,7 +14,7 @@ const LEVEL_COLOR = {
 export default function ParentView() {
   const { user, students, setSelectedStudent, assessmentTopics,
     indicators: allIndicators, activities: allActivities,
-    aiApiKey, teachers } = useApp();
+    aiApiKey, teachers, announcements } = useApp();
 
   const [aiText, setAiText]       = useState('');
   const [aiLoading, setAiLoading] = useState(false);
@@ -37,6 +37,11 @@ export default function ParentView() {
   };
   const student = students.find(s => s.id === user?.studentId);
   const classTeacher = teachers?.find(t => t.className === student?.className);
+
+  // ประกาศที่ผู้ปกครองเห็น: ทุกคน + ห้องบุตรหลาน
+  const parentAnnouncements = (announcements ?? [])
+    .filter(a => !a.target || a.target === 'all' || a.target === student?.className)
+    .slice(0, 3);
 
   if (!student) {
     return (
@@ -85,6 +90,30 @@ export default function ParentView() {
           </div>
         </div>
       </div>
+
+      {/* Announcements */}
+      {parentAnnouncements.length > 0 && (
+        <div style={{ display:'flex', flexDirection:'column', gap:'.5rem', marginBottom:'1.25rem' }}>
+          {parentAnnouncements.map((a, idx) => (
+            <div key={a.id} className="announce-banner">
+              <span className="announce-icon">📢</span>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:'flex', gap:'.35rem', alignItems:'center', flexWrap:'wrap', marginBottom:'.12rem' }}>
+                  {idx === 0 && <span style={{ background:'#7c3aed', color:'white', fontSize:'.63rem', fontWeight:800, padding:'1px 6px', borderRadius:'999px' }}>ล่าสุด</span>}
+                  {(!a.target || a.target === 'all') ? (
+                    <span style={{ background:'#dbeafe', color:'#1e40af', fontSize:'.65rem', fontWeight:700, padding:'1px 7px', borderRadius:'999px' }}>ทุกคน</span>
+                  ) : (
+                    <span style={{ background:'#ede9fe', color:'#7c3aed', fontSize:'.65rem', fontWeight:700, padding:'1px 7px', borderRadius:'999px' }}>ห้อง {a.target}</span>
+                  )}
+                </div>
+                <div className="announce-title">{a.title}</div>
+                {a.body && <div style={{ fontSize:'.78rem', color:'#4b5563', marginTop:'.1rem' }}>{a.body}</div>}
+                <div className="announce-date">📅 {a.date}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Teacher Info */}
       {classTeacher && (

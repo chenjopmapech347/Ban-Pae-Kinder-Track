@@ -87,7 +87,7 @@ const TEACHER_TAB_GROUPS = [
     color: '#6b7280',
     tabs: [
       { id: 'std2self',    label: '👩‍🏫 มาตรฐานที่ 2' },
-      { id: 'nationalstd', label: '🏛 มาตรฐานปฐมวัย' },
+      { id: 'nationalstd', label: '🗺️ มาตรฐานการศึกษาปฐมวัย' },
       { id: 'standards',   label: '🗺️ แผนมาตรฐาน' },
       { id: 'profile',     label: '👤 โปรไฟล์' },
     ],

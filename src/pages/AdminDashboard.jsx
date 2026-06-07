@@ -51,7 +51,7 @@ const TAB_GROUPS = [
       { id: 'activities',  label: '🎯 กิจกรรม'          },
       { id: 'terms',       label: '📅 ภาคเรียน'         },
       { id: 'holidays',    label: '🏖️ วันหยุด'          },
-      { id: 'standards',   label: '🗺️ มาตรฐานปฐมวัย'   },
+      { id: 'standards',   label: '🗺️ มาตรฐานการศึกษาปฐมวัย' },
       { id: 'qa',          label: '🛡️ QA'               },
     ],
   },

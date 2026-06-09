@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { exportClassSummaryExcel, exportActivityDetailExcel, exportActivityLogExcel } from '../../utils/exportExcel';
+import FormReportsTab from './FormReportsTab';
 
 // ── constants ─────────────────────────────────────────────────────────────────
 const ALL_CLASSES = ['อ.1/1','อ.1/2','อ.2/1','อ.2/2','อ.3/1','อ.3/2','อ.3/3'];
@@ -17,6 +18,7 @@ const SCORES = [
 ];
 
 const SUB_TABS = [
+  { id:'forms',    label:'📄 แบบฟอร์มพิมพ์' },
   { id:'topic',    label:'📂 หัวข้อประเมิน' },
   { id:'indicator',label:'📋 ตัวบ่งชี้' },
   { id:'activity', label:'🎯 กิจกรรม' },
@@ -835,7 +837,7 @@ function ViewProgress({ students, assessmentTopics, indicators, activities }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function ReportsTab({ teacherClassFilter = null }) {
   const { students: allStudents, assessmentTopics, indicators, activities, schools, activityLogs } = useApp();
-  const [subTab, setSubTab] = useState('topic');
+  const [subTab, setSubTab] = useState('forms');
   const schoolName = schools?.[0]?.name ?? 'โรงเรียน';
 
   // ถ้าเป็นครูที่ล็อกอิน ให้กรองเฉพาะห้องของตัวเอง
@@ -905,6 +907,7 @@ export default function ReportsTab({ teacherClassFilter = null }) {
 
       {/* Content */}
       <div style={{ background:'white', border:'1.5px solid #e2e8f0', borderRadius:'14px', padding:'1.1rem 1.2rem' }}>
+        {subTab === 'forms'     && <FormReportsTab teacherClassFilter={teacherClassFilter} />}
         {subTab === 'topic'     && <ViewTopic     {...props} />}
         {subTab === 'indicator' && <ViewIndicator {...props} />}
         {subTab === 'activity'  && <ViewActivity  {...props} />}

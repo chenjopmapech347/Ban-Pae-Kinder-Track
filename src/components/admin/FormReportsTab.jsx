@@ -44,7 +44,12 @@ const REPORT_TYPES = [
 ];
 
 // ── helpers ──────────────────────────────────────────────────────────────────
+// 'print' = print-optimized (compact, fixed widths, auto window.print()),
+// 'preview' = screen-optimized (larger text, columns auto-fit to content)
+let RENDER_MODE = 'print';
+
 function printHtml(title, html, landscape = true) {
+  if (RENDER_MODE === 'preview') { previewHtml(title, html, landscape); return; }
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
     *{box-sizing:border-box}
@@ -66,6 +71,57 @@ function printHtml(title, html, landscape = true) {
   const w = window.open('','_blank','width=1100,height=750');
   if (!w) { alert('กรุณาอนุญาต popup'); return; }
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title><style>${css}</style></head><body>${html}<script>setTimeout(()=>window.print(),600)<\/script></body></html>`);
+  w.document.close();
+}
+
+// แสดงตัวอย่างก่อนพิมพ์ — เหมาะกับการดูบนจอ คอลัมน์ปรับความกว้างตามเนื้อหา
+function previewHtml(title, html, landscape = true) {
+  const css = `
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
+    *{box-sizing:border-box}
+    html{background:#e5e7eb}
+    body{font-family:'Sarabun',sans-serif;font-size:15px;margin:0;padding:0;background:#e5e7eb;color:#111}
+    .preview-bar{
+      position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;
+      gap:1rem;background:#fff;border-bottom:2px solid #ddd6fe;padding:.7rem 1.2rem;
+      font-weight:800;font-size:.95rem;color:#7c3aed;
+    }
+    .preview-bar button{
+      font-family:inherit;font-weight:800;font-size:.85rem;color:#fff;background:#7c3aed;
+      border:none;border-radius:8px;padding:.5rem 1.1rem;cursor:pointer;
+    }
+    .preview-bar button:hover{background:#6d28d9}
+    .preview-content{padding:1.2rem;overflow-x:auto}
+    h2{font-size:20px;font-weight:800;margin:0 0 4px;text-align:center}
+    .sub{font-size:14px;color:#444;margin-bottom:10px;text-align:center}
+    table{border-collapse:collapse;width:auto;max-width:none;table-layout:auto;margin:0 auto 16px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+    th,td{border:1px solid #999;padding:6px 12px;text-align:center;vertical-align:middle;font-size:14px;white-space:nowrap}
+    th{background:#ede9fe;font-weight:700}
+    .tl{text-align:left!important;padding-left:8px!important;white-space:normal}
+    .wd{width:auto!important;min-width:32px!important}
+    th[style*="width"],td[style*="width"]{width:auto!important;min-width:0!important}
+    .sig{margin-top:20px;text-align:right}
+    .sig-inner{display:inline-block;text-align:center}
+    .sig-line{width:200px;border-bottom:1px solid #555;margin:24px auto 4px}
+    .legend{font-size:13px;color:#555;margin-top:6px}
+    .pg{border-bottom:3px dashed #c4b5fd;padding-bottom:24px;margin-bottom:24px}
+    @media print{
+      .preview-bar{display:none}
+      body{background:#fff}
+      .preview-content{padding:0}
+      .pg{border-bottom:none;page-break-after:always}
+      @page{margin:1in;size:A4 ${landscape?'landscape':'portrait'}}
+    }
+  `;
+  const w = window.open('','_blank','width=1200,height=850');
+  if (!w) { alert('กรุณาอนุญาต popup'); return; }
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>ตัวอย่าง: ${title}</title><style>${css}</style></head><body>
+    <div class="preview-bar">
+      <span>👁️ ตัวอย่างก่อนพิมพ์ — ${title}</span>
+      <button onclick="window.print()">🖨️ พิมพ์</button>
+    </div>
+    <div class="preview-content">${html}</div>
+  </body></html>`);
   w.document.close();
 }
 
@@ -523,7 +579,7 @@ export default function FormReportsTab({ teacherClassFilter = null }) {
   // reset student selection when class changes or switching away from book
   useEffect(() => { setSelStudent(''); }, [cn, selReport]);
 
-  const handlePrint = () => {
+  const runReport = () => {
     if (!cn && rpt?.hasCls) return;
     switch (selReport) {
       case 'health':      printHealth(students, teachers, dailyRecords, schoolName, cn, selMonth); break;
@@ -540,6 +596,9 @@ export default function FormReportsTab({ teacherClassFilter = null }) {
       case 'book':        printBook(students, teachers, schoolName, cn, assessmentTopics, indicators, activities, selStudent||null); break;
     }
   };
+
+  const handlePrint = () => { RENDER_MODE = 'print'; runReport(); };
+  const handlePreview = () => { RENDER_MODE = 'preview'; runReport(); };
 
   return (
     <div>
@@ -678,6 +737,14 @@ export default function FormReportsTab({ teacherClassFilter = null }) {
         background: '#faf5ff', border: '1.5px solid #ddd6fe', borderRadius: '12px',
         padding: '.85rem 1.1rem',
       }}>
+        <button
+          type="button"
+          className="btn"
+          onClick={handlePreview}
+          style={{ padding: '.5rem 1.4rem', fontSize: '.9rem', fontWeight: 800, flexShrink: 0 }}
+        >
+          👁️ แสดงตัวอย่างก่อนพิมพ์
+        </button>
         <button
           type="button"
           className="btn btn-primary"

@@ -7,7 +7,7 @@ export default function SchoolsTab() {
   const [editing, setEditing] = useState(null);
   const [form, setForm]       = useState({});
 
-  const openNew  = () => { setEditing(null); setForm({ name:'',address:'',phone:'',principal:'' }); setIsModal(true); };
+  const openNew  = () => { setEditing(null); setForm({ name:'',address:'',phone:'',principal:'',affiliation:'' }); setIsModal(true); };
   const openEdit = s => { setEditing(s); setForm(s); setIsModal(true); };
 
   const handleSave = e => {
@@ -38,6 +38,7 @@ export default function SchoolsTab() {
             <div className="text-sm">📍 {s.address}</div>
             <div className="text-sm">📞 {s.phone}</div>
             <div className="text-sm text-muted">👤 ผอ. {s.principal}</div>
+            {s.affiliation && <div className="text-sm text-muted">🏢 สังกัด {s.affiliation}</div>}
           </div>
         ))}
       </div>
@@ -47,7 +48,7 @@ export default function SchoolsTab() {
           <div className="glass p-8 w-full max-w-md animate-pop">
             <h3 className="mb-4">{editing?'แก้ไขโรงเรียน':'เพิ่มโรงเรียนใหม่'}</h3>
             <form onSubmit={handleSave} style={{ display:'flex',flexDirection:'column',gap:'.85rem' }}>
-              {[['name','ชื่อโรงเรียน'],['address','ที่อยู่'],['phone','เบอร์โทร'],['principal','ชื่อผู้อำนวยการ']].map(([k,l])=>(
+              {[['name','ชื่อโรงเรียน'],['affiliation','สังกัด'],['address','ที่อยู่'],['phone','เบอร์โทร'],['principal','ชื่อผู้อำนวยการ']].map(([k,l])=>(
                 <div key={k}><label style={{ display:'block',marginBottom:'.35rem' }}>{l}</label>
                   <input className="input" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} /></div>
               ))}

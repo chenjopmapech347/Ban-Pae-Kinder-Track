@@ -193,6 +193,7 @@ export const INITIAL_SCHOOLS = [
   {
     id: 1,
     name: 'โรงเรียนเทศบาลบ้านเพ ๑',
+    affiliation: '',
     address: 'ต.บ้านเพ อ.เมือง จ.ระยอง 21160',
     phone: '038-651234',
     principal: 'ผอ.สมชาย ใจดี',

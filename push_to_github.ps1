@@ -9,7 +9,7 @@ if (Test-Path $lock) {
 }
 
 git add -A
-git commit -m "feat: add FormReportsTab with 12 printable form types in รายงานสรุป"
+git commit -m "feat: add per-student selector to สมุดรายงานประจำตัวเด็กปฐมวัย print form"
 git push origin main
 
 Write-Host "Done!" -ForegroundColor Green

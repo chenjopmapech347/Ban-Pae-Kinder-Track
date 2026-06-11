@@ -79,8 +79,7 @@ function previewHtml(title, html, landscape = true) {
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
     *{box-sizing:border-box}
-    html{background:#e5e7eb}
-    body{font-family:'Sarabun',sans-serif;font-size:15px;margin:0;padding:0;background:#e5e7eb;color:#111}
+    body{font-family:'Sarabun',sans-serif;margin:0;padding:0;color:#111}
     .preview-bar{
       position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;
       gap:1rem;background:#fff;border-bottom:2px solid #ddd6fe;padding:.7rem 1.2rem;
@@ -91,25 +90,42 @@ function previewHtml(title, html, landscape = true) {
       border:none;border-radius:8px;padding:.5rem 1.1rem;cursor:pointer;
     }
     .preview-bar button:hover{background:#6d28d9}
-    .preview-content{padding:1.2rem;overflow-x:auto}
-    h2{font-size:20px;font-weight:800;margin:0 0 4px;text-align:center}
-    .sub{font-size:14px;color:#444;margin-bottom:10px;text-align:center}
-    table{border-collapse:collapse;width:auto;max-width:none;table-layout:auto;margin:0 auto 16px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.08)}
-    th,td{border:1px solid #999;padding:6px 12px;text-align:center;vertical-align:middle;font-size:14px;white-space:nowrap}
-    th{background:#ede9fe;font-weight:700}
-    .tl{text-align:left!important;padding-left:8px!important;white-space:normal}
-    .wd{width:auto!important;min-width:32px!important}
-    th[style*="width"],td[style*="width"]{width:auto!important;min-width:0!important}
-    .sig{margin-top:20px;text-align:right}
+    h2{font-size:12px;font-weight:800;margin:0 0 1px;text-align:center}
+    .sub{font-size:9px;color:#444;margin-bottom:4px;text-align:center}
+    table{width:100%;border-collapse:collapse}
+    th,td{border:1px solid #888;padding:1.5px 2px;text-align:center;vertical-align:middle;font-size:8.5px}
+    th{background:#d0d0d0;font-weight:700}
+    .tl{text-align:left!important;padding-left:4px!important}
+    .wd{width:20px;min-width:20px}
+    .sig{margin-top:14px;text-align:right}
     .sig-inner{display:inline-block;text-align:center}
-    .sig-line{width:200px;border-bottom:1px solid #555;margin:24px auto 4px}
-    .legend{font-size:13px;color:#555;margin-top:6px}
-    .pg{border-bottom:3px dashed #c4b5fd;padding-bottom:24px;margin-bottom:24px}
+    .sig-line{width:155px;border-bottom:1px solid #555;margin:18px auto 2px}
+    .legend{font-size:8px;color:#555;margin-top:2px}
+    .pg{page-break-after:always}
+
+    /* จอภาพ: ขยายตัวอักษร/ระยะห่าง และปรับคอลัมน์ให้พอดีกับเนื้อหา */
+    @media screen{
+      html{background:#e5e7eb}
+      body{font-size:15px;background:#e5e7eb}
+      .preview-content{padding:1.2rem;overflow-x:auto}
+      h2{font-size:20px;margin:0 0 4px}
+      .sub{font-size:14px;margin-bottom:10px}
+      table{width:auto;max-width:none;table-layout:auto;margin:0 auto 16px;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+      th,td{padding:6px 12px;font-size:14px;white-space:nowrap}
+      th{background:#ede9fe}
+      .tl{padding-left:8px!important;white-space:normal}
+      .wd{width:auto!important;min-width:32px!important}
+      th[style*="width"],td[style*="width"]{width:auto!important;min-width:0!important}
+      .sig{margin-top:20px}
+      .sig-line{width:200px;margin:24px auto 4px}
+      .legend{font-size:13px;margin-top:6px}
+      .pg{border-bottom:3px dashed #c4b5fd;padding-bottom:24px;margin-bottom:24px}
+    }
+
+    /* พิมพ์: ใช้สัดส่วนเดียวกับปุ่ม "พิมพ์แบบฟอร์ม" ให้ผลลัพธ์ตรงกัน */
     @media print{
       .preview-bar{display:none}
-      body{background:#fff}
       .preview-content{padding:0}
-      .pg{border-bottom:none;page-break-after:always}
       @page{margin:1in;size:A4 ${landscape?'landscape':'portrait'}}
     }
   `;

@@ -40,7 +40,7 @@ const REPORT_TYPES = [
   { id:'media',       label:'ทะเบียนผลิตสื่อ / นวัตกรรมการเรียนการสอน',                  icon:'📚', hasCls:true                },
   { id:'attend',      label:'บันทึกเวลาเรียน',                                            icon:'📋', hasCls:true,  hasMo:true  },
   { id:'dev',         label:'แบบบันทึกผลการประเมินพัฒนาการ การศึกษาปฐมวัย',              icon:'🌱', hasCls:true                },
-  { id:'book',        label:'สมุดรายงานประจำตัวเด็กปฐมวัย',                              icon:'📖', hasCls:true                },
+  { id:'book',        label:'สมุดรายงานประจำตัวเด็กปฐมวัย',                              icon:'📖', hasCls:true, hasStu:true },
 ];
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ function printHtml(title, html, landscape = true) {
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
     *{box-sizing:border-box}
-    body{font-family:'Sarabun',sans-serif;font-size:10px;margin:5px;padding:0;background:#fff;color:#000}
+    body{font-family:'Sarabun',sans-serif;font-size:10px;margin:0;padding:0;background:#fff;color:#000}
     h2{font-size:12px;font-weight:800;margin:0 0 1px;text-align:center}
     .sub{font-size:9px;color:#444;margin-bottom:4px;text-align:center}
     table{width:100%;border-collapse:collapse}
@@ -61,7 +61,7 @@ function printHtml(title, html, landscape = true) {
     .sig-line{width:155px;border-bottom:1px solid #555;margin:18px auto 2px}
     .legend{font-size:8px;color:#555;margin-top:2px}
     .pg{page-break-after:always}
-    @media print{body{margin:2px}@page{margin:5mm;size:A4 ${landscape?'landscape':'portrait'}}}
+    @media print{body{margin:0}@page{margin:1in;size:A4 ${landscape?'landscape':'portrait'}}}
   `;
   const w = window.open('','_blank','width=1100,height=750');
   if (!w) { alert('กรุณาอนุญาต popup'); return; }
@@ -437,8 +437,9 @@ function printDev(students, teachers, schoolName, cn, topics, indicators, activi
 }
 
 // 12. สมุดรายงานประจำตัว
-function printBook(students, teachers, schoolName, cn, topics, indicators, activities) {
-  const sts = realSts(students, cn);
+function printBook(students, teachers, schoolName, cn, topics, indicators, activities, studentId = null) {
+  let sts = realSts(students, cn);
+  if (studentId) sts = sts.filter(s => String(s.id) === String(studentId));
   const tName = teacherName(teachers, cn);
 
   const topicAvg = (s, t) => {
@@ -496,10 +497,11 @@ export default function FormReportsTab({ teacherClassFilter = null }) {
     dailyRecords, assessmentTopics, indicators, activities,
   } = useApp();
 
-  const [selReport, setSelReport] = useState('health');
-  const [selClass,  setSelClass]  = useState('');
-  const [selMonth,  setSelMonth]  = useState(1); // default มิ.ย.
-  const [selWeek,   setSelWeek]   = useState(1);
+  const [selReport,  setSelReport]  = useState('health');
+  const [selClass,   setSelClass]   = useState('');
+  const [selMonth,   setSelMonth]   = useState(1); // default มิ.ย.
+  const [selWeek,    setSelWeek]    = useState(1);
+  const [selStudent, setSelStudent] = useState(''); // '' = ทั้งหมด
 
   const schoolName = schools?.[0]?.name ?? 'โรงเรียน';
 
@@ -515,7 +517,11 @@ export default function FormReportsTab({ teacherClassFilter = null }) {
 
   const rpt = REPORT_TYPES.find(r => r.id === selReport);
   const cn  = selClass || classList[0] || '';
-  const cnt = realSts(students, cn).length;
+  const classStudents = useMemo(() => realSts(students, cn), [students, cn]);
+  const cnt = classStudents.length;
+
+  // reset student selection when class changes or switching away from book
+  useEffect(() => { setSelStudent(''); }, [cn, selReport]);
 
   const handlePrint = () => {
     if (!cn && rpt?.hasCls) return;
@@ -531,7 +537,7 @@ export default function FormReportsTab({ teacherClassFilter = null }) {
       case 'media':       printMedia(teachers, schoolName, cn); break;
       case 'attend':      printAttend(students, teachers, dailyRecords, schoolName, cn, selMonth); break;
       case 'dev':         printDev(students, teachers, schoolName, cn, assessmentTopics, indicators, activities); break;
-      case 'book':        printBook(students, teachers, schoolName, cn, assessmentTopics, indicators, activities); break;
+      case 'book':        printBook(students, teachers, schoolName, cn, assessmentTopics, indicators, activities, selStudent||null); break;
     }
   };
 
@@ -627,6 +633,43 @@ export default function FormReportsTab({ teacherClassFilter = null }) {
             </div>
           </div>
         )}
+
+        {/* Student — shown only for สมุดรายงาน */}
+        {rpt?.hasStu && classStudents.length > 0 && (
+          <div style={{ width: '100%' }}>
+            <div style={{ fontSize: '.72rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', marginBottom: '.35rem' }}>
+              เลือกนักเรียน
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.28rem' }}>
+              {/* ทั้งหมด button */}
+              <button type="button" onClick={() => setSelStudent('')} style={{
+                padding: '.25rem .7rem', borderRadius: '7px', cursor: 'pointer',
+                border: `2px solid ${selStudent === '' ? '#dc2626' : '#e5e7eb'}`,
+                background: selStudent === '' ? '#fef2f2' : 'white',
+                fontFamily: 'inherit', fontWeight: 700, fontSize: '.76rem',
+                color: selStudent === '' ? '#dc2626' : '#6b7280',
+              }}>
+                📋 ทั้งหมด ({classStudents.length} คน)
+              </button>
+              {classStudents.map(s => {
+                const active = selStudent === String(s.id);
+                const shortName = s.name
+                  .replace(/^เด็กชาย\s*/,'').replace(/^เด็กหญิง\s*/,'')
+                  .replace(/^ด\.ช\.\s*/,'').replace(/^ด\.ญ\.\s*/,'');
+                return (
+                  <button key={s.id} type="button" onClick={() => setSelStudent(String(s.id))} title={s.name} style={{
+                    padding: '.25rem .6rem', borderRadius: '7px', cursor: 'pointer',
+                    border: `2px solid ${active ? '#ea580c' : '#e5e7eb'}`,
+                    background: active ? '#fff7ed' : 'white',
+                    fontFamily: 'inherit', fontWeight: 700, fontSize: '.74rem',
+                    color: active ? '#ea580c' : '#6b7280',
+                    maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>{shortName}</button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Preview info + print button ── */}
@@ -651,6 +694,12 @@ export default function FormReportsTab({ teacherClassFilter = null }) {
             {rpt?.hasCls && <span>🏫 ห้อง {cn || '—'} · {cnt} คน</span>}
             {rpt?.hasMo  && <span>📅 {THAI_MONTHS[selMonth].full} {THAI_MONTHS[selMonth].be}</span>}
             {rpt?.hasWk  && <span>📆 สัปดาห์ {selWeek} ({weekRange(selWeek)})</span>}
+            {rpt?.hasStu && (
+              <span>👤 {selStudent
+                ? (classStudents.find(s => String(s.id) === selStudent)?.name ?? '—')
+                : `ทั้งหมด ${cnt} คน`}
+              </span>
+            )}
           </div>
         </div>
       </div>

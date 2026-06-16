@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { INDICATORS_DATA } from '../data/indicatorsData';
 import { useApp } from '../context/AppContext';
-import { callClaude, buildPostAssessmentPrompt, buildActivitySuggestionPrompt } from '../utils/aiHelper';
+import { callClaude, buildPostAssessmentPrompt } from '../utils/aiHelper';
 
 const SCORE_OPTIONS = [
   { value: 3, label: 'ผ่าน',          emoji: '✅', color: '#059669', bg: '#ecfdf5' },

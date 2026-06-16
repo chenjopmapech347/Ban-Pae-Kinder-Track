@@ -14,8 +14,6 @@ const ATT_COLOR = {
   '-':  { bg: '#f5f3ff', color: '#6b7280', dot: '#d1d5db' },
 };
 
-const LUNCH_OPTS  = ['หมด', 'เกือบหมด', 'ครึ่งเดียว', 'ไม่ทาน'];
-const LUNCH_COLOR = { หมด: '#10b981', เกือบหมด: '#34d399', ครึ่งเดียว: '#f59e0b', ไม่ทาน: '#ef4444' };
 
 // ── Ticker — เวลาปัจจุบัน ──────────────────────────────────────────────
 function LiveClock() {
@@ -82,7 +80,10 @@ export default function AttendanceTab({ defaultClass }) {
   const dateLabel = formatDateThai(selectedDate);
 
   // ── กรองห้องที่แสดง ────────────────────────────────────────────────
-  const displayClasses = filterClass === 'ทั้งหมด' ? ALL_CLASSES : [filterClass];
+  const displayClasses = useMemo(
+    () => filterClass === 'ทั้งหมด' ? ALL_CLASSES : [filterClass],
+    [filterClass]
+  );
 
   // ── สรุปรวมทุกห้อง ─────────────────────────────────────────────────
   const grandSummary = useMemo(() => {

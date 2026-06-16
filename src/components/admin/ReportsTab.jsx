@@ -183,7 +183,7 @@ function printStudentReport(student, indicators, activities, assessmentTopics, s
     </tr></thead>
     <tbody>${topicRows}</tbody>
   </table>
-  <script>window.print();window.close();<\/script>
+  <script>window.print();window.close();</` + `script>
   </body></html>`;
   const w = window.open('','_blank','width=900,height=700');
   w.document.write(html); w.document.close();
@@ -214,7 +214,7 @@ function printClassReport(classStudents, className, indicators, activities, asse
   <p>${schoolName ?? 'โรงเรียน'} (คะแนนเฉลี่ยต่อด้าน, ระดับ 1–3)</p>
   <table><thead><tr><th>#</th><th>รหัส</th><th>ชื่อ-นามสกุล</th>${topicHeaders}</tr></thead>
   <tbody>${rows}</tbody></table>
-  <script>window.print();window.close();<\/script></body></html>`;
+  <script>window.print();window.close();</` + `script></body></html>`;
   const w = window.open('','_blank','width=1000,height=700');
   w.document.write(html); w.document.close();
 }
@@ -599,7 +599,6 @@ const ROUNDS = [1,2,3,4];
 
 function ScoreCell({ score }) {
   if (score === null) return <span style={{ color:'#cbd5e1', fontSize:'.78rem' }}>—</span>;
-  const sc = SCORES.find(s => s.v === Math.round(score));
   const color = score >= 2.5 ? '#059669' : score >= 1.5 ? '#b45309' : '#dc2626';
   return (
     <span style={{ fontWeight:800, fontSize:'.85rem', color }}>

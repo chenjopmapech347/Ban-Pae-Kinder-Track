@@ -8,7 +8,7 @@
  *   <ClassRadarChart students={[]} topics={[]}         — per-class radar with selector
  *                    indicators={[]} activities={[]} />
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,

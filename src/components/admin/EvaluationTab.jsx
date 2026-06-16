@@ -131,15 +131,17 @@ export default function EvaluationTab() {
 
   // load existing scores — แยกตามครั้งที่ประเมิน
   useEffect(() => {
-    if (!selActivity || !selIndicator || !selClass) { setResults({}); return; }
     const init = {};
-    classStudents.forEach(s => {
-      const actData = s.assessments?.indicators?.[selIndicator]?.[selActivity];
-      init[s.id] = actData?.[`r${round}`] ?? 0;   // โหลดคะแนนครั้งที่เลือก
-    });
+    if (selActivity && selIndicator && selClass) {
+      classStudents.forEach(s => {
+        const actData = s.assessments?.indicators?.[selIndicator]?.[selActivity];
+        init[s.id] = actData?.[`r${round}`] ?? 0;   // โหลดคะแนนครั้งที่เลือก
+      });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSaved(false);
+    }
     setResults(init);
-    setSaved(false);
-  }, [selActivity, selIndicator, selClass, round, classStudents.length]);
+  }, [selActivity, selIndicator, selClass, round, classStudents]);
 
   // reset chain when parent changes
   const handleTopicChange = id => { setTopic(id); setIndicator(null); setActivity(null); };
@@ -508,7 +510,6 @@ export default function EvaluationTab() {
               <tbody>
                 {classStudents.map((s, idx) => {
                   const score    = results[s.id] ?? 0;
-                  const existing = s.assessments?.indicators?.[selIndicator]?.[selActivity];
                   return (
                     <tr key={s.id} className="hover-row" style={{ background: score > 0 ? SCORES.find(sc => sc.value === score)?.bg + '55' : undefined }}>
                       <td style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '.8rem' }}>{idx + 1}</td>

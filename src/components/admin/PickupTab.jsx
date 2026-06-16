@@ -56,7 +56,7 @@ export default function PickupTab({ defaultClass }) {
   );
 
   // existing records for date
-  const dayRecords = pickupRecords[selectedDate] ?? {};
+  const dayRecords = useMemo(() => pickupRecords[selectedDate] ?? {}, [pickupRecords, selectedDate]);
 
   // summary counts per relation
   const summary = useMemo(() => {

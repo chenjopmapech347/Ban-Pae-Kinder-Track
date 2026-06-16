@@ -1,5 +1,4 @@
 // TermsTab.jsx — ตั้งค่าวันเปิดและปิดเรียนแต่ละภาคเรียน
-import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 
 const TERM_COLORS = [
@@ -23,7 +22,7 @@ function daysBetween(start, end) {
 
 export default function TermsTab() {
   const { schoolTerms, setSchoolTerms, academicYear } = useApp();
-  const [editing, setEditing] = useState(null); // { termIdx, field }
+
 
   const terms = schoolTerms?.[academicYear] ?? [
     { label: 'ภาคเรียนที่ 1', open: '', close: '' },
@@ -138,7 +137,6 @@ export default function TermsTab() {
                 const today = new Date().toISOString().slice(0,10);
                 const isActive = today >= term.open && today <= term.close;
                 const isPast   = today > term.close;
-                const isFuture = today < term.open;
                 return (
                   <div style={{ marginTop: '.75rem' }}>
                     <span style={{

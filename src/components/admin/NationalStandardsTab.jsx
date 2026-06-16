@@ -252,7 +252,7 @@ export default function NationalStandardsTab() {
       try {
         const raw = localStorage.getItem(`kt_std2_ratings_${t.id}`);
         if (raw) ratings = JSON.parse(raw);
-      } catch {}
+      } catch { /* invalid JSON — skip */ }
       const score = calcChecklistScore(STD2_ITEMS, ratings);
       const name = [t.firstName, t.lastName].filter(Boolean).join(' ') || t.name || `ครู ${t.id}`;
       return { teacher: t, name, ratings, score };

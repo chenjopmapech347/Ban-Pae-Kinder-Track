@@ -5,7 +5,7 @@ import { useApp } from '../../context/AppContext';
 
 const TARGET_ALL = 'all';
 
-function TargetBadge({ target, classes }) {
+function TargetBadge({ target }) {
   if (target === TARGET_ALL || !target) {
     return (
       <span style={{

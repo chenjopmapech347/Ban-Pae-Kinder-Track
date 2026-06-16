@@ -4,6 +4,7 @@ import { todayISO, formatDateThai } from '../utils/helpers';
 import { getDayRecord, hasHygieneToday } from '../utils/attendance';
 import EvaluationTab  from '../components/admin/EvaluationTab';
 import ReportsTab     from '../components/admin/ReportsTab';
+import FormReportsTab from '../components/admin/FormReportsTab';
 import OverviewTab    from '../components/admin/OverviewTab';
 import AdminAttTab    from '../components/admin/AttendanceTab';
 import PickupTab      from '../components/admin/PickupTab';
@@ -79,7 +80,8 @@ const TEACHER_TAB_GROUPS = [
       { id: 'attendance',  label: '📅 การมาเรียน' },
       { id: 'pickup',      label: '🏠 รับกลับบ้าน' },
       { id: 'evaluation',  label: '✏️ ประเมินผล' },
-      { id: 'reports',     label: '📋 รายงานสรุป' },
+      { id: 'reports',     label: '📋 รายงาน' },
+      { id: 'formreports', label: '📄 สรุปรายงาน' },
       { id: 'activitylog', label: '📜 ประวัติ' },
     ],
   },
@@ -94,6 +96,66 @@ const TEACHER_TAB_GROUPS = [
     ],
   },
 ];
+
+// ── Grouped tab nav (must be defined outside TeacherDashboard to avoid re-mounting) ──
+function TabNav({ activeTab, setActiveTab, myClass }) {
+  return (
+    <div style={{
+      display: 'flex', flexDirection: 'column', gap: '.35rem',
+      marginBottom: '1.5rem',
+      background: '#f9fafb', borderRadius: '16px',
+      padding: '.75rem 1rem', border: '1px solid #e5e7eb',
+    }}>
+      {TEACHER_TAB_GROUPS.map((group, gi) => (
+        <div key={group.label} style={{ display: 'flex', alignItems: 'center', gap: '.35rem', flexWrap: 'wrap' }}>
+          <span style={{
+            fontSize: '.63rem', fontWeight: 800, color: group.color,
+            textTransform: 'uppercase', letterSpacing: '.06em',
+            minWidth: '55px', textAlign: 'right', paddingRight: '.5rem',
+            borderRight: `2px solid ${group.color}40`, flexShrink: 0,
+            lineHeight: 1,
+          }}>
+            {group.label}
+          </span>
+          {group.tabs.map(t => {
+            const isActive = activeTab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActiveTab(t.id)}
+                style={{
+                  padding: '.32rem .75rem',
+                  borderRadius: '8px',
+                  border: isActive ? `1.5px solid ${group.color}` : '1.5px solid transparent',
+                  background: isActive ? group.color : 'white',
+                  color: isActive ? 'white' : '#4b5563',
+                  fontFamily: 'inherit',
+                  fontWeight: isActive ? 700 : 500,
+                  fontSize: '.8rem',
+                  cursor: 'pointer',
+                  transition: 'all .15s',
+                  boxShadow: isActive ? `0 2px 8px ${group.color}35` : '0 1px 2px rgba(0,0,0,.05)',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = `${group.color}12`; }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'white'; }}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+          {gi === 0 && myClass && (
+            <span style={{
+              marginLeft: 'auto', background: '#ede9fe', color: '#7c3aed',
+              borderRadius: '999px', padding: '.22rem .85rem', fontSize: '.78rem', fontWeight: 800,
+            }}>🏫 ห้อง {myClass}</span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function buildDraft(students, dailyRecords, date) {
   const d = {};
@@ -373,64 +435,6 @@ export default function TeacherDashboard() {
     setEditingStudentLocal(null);
   };
 
-  // ── Grouped tab nav ───────────────────────────────────────────────────
-  const TabNav = () => (
-    <div style={{
-      display: 'flex', flexDirection: 'column', gap: '.35rem',
-      marginBottom: '1.5rem',
-      background: '#f9fafb', borderRadius: '16px',
-      padding: '.75rem 1rem', border: '1px solid #e5e7eb',
-    }}>
-      {TEACHER_TAB_GROUPS.map((group, gi) => (
-        <div key={group.label} style={{ display: 'flex', alignItems: 'center', gap: '.35rem', flexWrap: 'wrap' }}>
-          <span style={{
-            fontSize: '.63rem', fontWeight: 800, color: group.color,
-            textTransform: 'uppercase', letterSpacing: '.06em',
-            minWidth: '55px', textAlign: 'right', paddingRight: '.5rem',
-            borderRight: `2px solid ${group.color}40`, flexShrink: 0,
-            lineHeight: 1,
-          }}>
-            {group.label}
-          </span>
-          {group.tabs.map(t => {
-            const isActive = activeTab === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setActiveTab(t.id)}
-                style={{
-                  padding: '.32rem .75rem',
-                  borderRadius: '8px',
-                  border: isActive ? `1.5px solid ${group.color}` : '1.5px solid transparent',
-                  background: isActive ? group.color : 'white',
-                  color: isActive ? 'white' : '#4b5563',
-                  fontFamily: 'inherit',
-                  fontWeight: isActive ? 700 : 500,
-                  fontSize: '.8rem',
-                  cursor: 'pointer',
-                  transition: 'all .15s',
-                  boxShadow: isActive ? `0 2px 8px ${group.color}35` : '0 1px 2px rgba(0,0,0,.05)',
-                  whiteSpace: 'nowrap',
-                }}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = `${group.color}12`; }}
-                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'white'; }}
-              >
-                {t.label}
-              </button>
-            );
-          })}
-          {gi === 0 && myClass && (
-            <span style={{
-              marginLeft: 'auto', background: '#ede9fe', color: '#7c3aed',
-              borderRadius: '999px', padding: '.22rem .85rem', fontSize: '.78rem', fontWeight: 800,
-            }}>🏫 ห้อง {myClass}</span>
-          )}
-        </div>
-      ))}
-    </div>
-  );
-
   // ── Full-page attendance / hygiene recording views ─────────────────────
   if (activeView === 'attendance')
     return <AttendanceView students={activeStudents} draft={draft} updateDraft={updateDraft}
@@ -454,7 +458,7 @@ export default function TeacherDashboard() {
     ];
     return (
       <div className="animate-fade">
-        <TabNav />
+        <TabNav activeTab={activeTab} setActiveTab={setActiveTab} myClass={myClass} />
         <div className="glass p-6">
           <div className="page-header mb-6">
             <h3>👤 ข้อมูลของฉัน</h3>
@@ -583,14 +587,15 @@ export default function TeacherDashboard() {
   // ── All other tabs ─────────────────────────────────────────────────────
   return (
     <div className="animate-fade">
-      <TabNav />
+      <TabNav activeTab={activeTab} setActiveTab={setActiveTab} myClass={myClass} />
 
       {/* ── Report / system tabs ── */}
       {activeTab === 'overview'    && <OverviewTab />}
       {activeTab === 'attendance'  && <AdminAttTab defaultClass={myClass} />}
       {activeTab === 'pickup'      && <PickupTab defaultClass={myClass} />}
       {activeTab === 'evaluation'  && <EvaluationTab />}
-      {activeTab === 'reports'     && <ReportsTab teacherClassFilter={myClass} />}
+      {activeTab === 'reports'     && <FormReportsTab teacherClassFilter={myClass} />}
+      {activeTab === 'formreports' && <ReportsTab teacherClassFilter={myClass} />}
       {activeTab === 'activitylog' && <ActivityLogTab />}
       {activeTab === 'pins' && (
         <div className="glass p-6 animate-fade">

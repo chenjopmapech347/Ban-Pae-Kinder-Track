@@ -70,7 +70,7 @@ function printHtml(title, html, landscape = true) {
   `;
   const w = window.open('','_blank','width=1100,height=750');
   if (!w) { alert('กรุณาอนุญาต popup'); return; }
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title><style>${css}</style></head><body>${html}<script>setTimeout(()=>window.print(),600)<\/script></body></html>`);
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title><style>${css}</style></head><body>${html}<script>setTimeout(()=>window.print(),600)</` + `script></body></html>`);
   w.document.close();
 }
 
@@ -584,8 +584,9 @@ export default function FormReportsTab({ teacherClassFilter = null }) {
 
   // auto-select first class
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!selClass && classList.length) setSelClass(classList[0]);
-  }, [classList]);
+  }, [classList, selClass]);
 
   const rpt = REPORT_TYPES.find(r => r.id === selReport);
   const cn  = selClass || classList[0] || '';
@@ -593,6 +594,7 @@ export default function FormReportsTab({ teacherClassFilter = null }) {
   const cnt = classStudents.length;
 
   // reset student selection when class changes or switching away from book
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { setSelStudent(''); }, [cn, selReport]);
 
   const runReport = () => {

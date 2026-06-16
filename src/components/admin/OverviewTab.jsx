@@ -131,7 +131,6 @@ export default function OverviewTab() {
                   {rounds.map((assessed, i) => {
                     const isPending  = assessed === 0;
                     const isPartial  = assessed > 0 && assessed < total;
-                    const isComplete = assessed >= total;
                     const bg    = isPending ? '#fee2e2' : isPartial ? '#fef3c7' : '#d1fae5';
                     const color = isPending ? '#991b1b' : isPartial ? '#92400e' : '#065f46';
                     const icon  = isPending ? '✕' : isPartial ? '~' : '✓';

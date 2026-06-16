@@ -12,7 +12,6 @@ export default function LoginPage() {
   const [roleTab, setRoleTab]       = useState('teacher');
   const [username, setUsername]     = useState('');
   const [pin, setPin]               = useState('');
-  const [studentId, setStudentId]   = useState(String(students[0]?.id ?? ''));
   const [studentCode, setStudentCode] = useState(''); // รหัสที่ผู้ปกครองพิมพ์
   const [mode, setMode]             = useState('staff'); // 'staff' | 'parent'
   const [error, setError]           = useState('');

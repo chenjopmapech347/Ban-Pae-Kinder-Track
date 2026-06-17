@@ -29,17 +29,17 @@ const OUTDOOR_CORNERS = [
 ];
 
 const REPORT_TYPES = [
-  { id:'health',      label:'แบบคัดกรองอาการป่วยรายห้องเรียน',                          icon:'🩺', hasCls:true,  hasMo:true  },
-  { id:'lunch',       label:'แบบบันทึกการรับประทานอาหารกลางวัน',                         icon:'🍱', hasCls:true,  hasMo:true  },
-  { id:'milk',        label:'แบบบันทึกการดื่มนมโรงเรียนรายเดือน',                        icon:'🥛', hasCls:true,  hasMo:true  },
-  { id:'pickup',      label:'แบบบันทึกการรับ-ส่ง',                                       icon:'🚌', hasCls:true,  hasMo:true  },
-  { id:'corners_in',  label:'แบบบันทึกการเล่นมุมประสบการณ์ภายในห้องเรียนรายสัปดาห์',    icon:'🏠', hasCls:true,  hasWk:true  },
-  { id:'corners_out', label:'แบบบันทึกการเล่นมุมประสบการณ์ภายนอกห้องเรียนรายสัปดาห์',   icon:'🌳', hasCls:true,  hasWk:true  },
-  { id:'wh',          label:'แบบบันทึกน้ำหนัก-ส่วนสูง นักเรียน',                         icon:'📏', hasCls:true                },
-  { id:'teeth',       label:'แบบบันทึกการแปรงฟัน',                                       icon:'🦷', hasCls:true,  hasMo:true  },
+  { id:'health',      label:'คัดกรองอาการป่วย',                                          icon:'🩺', hasCls:true,  hasMo:true  },
+  { id:'lunch',       label:'การรับประทานอาหารกลางวัน',                                  icon:'🍱', hasCls:true,  hasMo:true  },
+  { id:'milk',        label:'การดื่มนม',                                                  icon:'🥛', hasCls:true,  hasMo:true  },
+  { id:'pickup',      label:'การรับ-ส่งนักเรียน',                                        icon:'🚌', hasCls:true,  hasMo:true  },
+  { id:'corners_in',  label:'การเล่นมุมประสบการณ์ภายในห้องเรียน',                        icon:'🏠', hasCls:true,  hasWk:true  },
+  { id:'corners_out', label:'การเล่นมุมประสบการณ์ภายนอกห้องเรียน',                       icon:'🌳', hasCls:true,  hasWk:true  },
+  { id:'wh',          label:'วัดน้ำหนัก-ส่วนสูง',                                        icon:'📏', hasCls:true                },
+  { id:'teeth',       label:'การแปรงฟัน',                                                 icon:'🦷', hasCls:true,  hasMo:true  },
   { id:'media',       label:'ทะเบียนผลิตสื่อ / นวัตกรรมการเรียนการสอน',                  icon:'📚', hasCls:true                },
-  { id:'attend',      label:'บันทึกเวลาเรียน',                                            icon:'📋', hasCls:true,  hasMo:true  },
-  { id:'dev',         label:'แบบบันทึกผลการประเมินพัฒนาการ การศึกษาปฐมวัย',              icon:'🌱', hasCls:true                },
+  { id:'attend',      label:'ลงเวลาเรียน',                                                icon:'📋', hasCls:true,  hasMo:true  },
+  { id:'dev',         label:'การประเมินพัฒนาการ การศึกษาปฐมวัย',                          icon:'🌱', hasCls:true                },
   { id:'book',        label:'สมุดรายงานประจำตัวเด็กปฐมวัย',                              icon:'📖', hasCls:true, hasStu:true },
 ];
 

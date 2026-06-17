@@ -6,6 +6,8 @@
 
 // ── ข้อมูลนักเรียน 136 คน ──────────────────────────────────
 export const INITIAL_STUDENTS = [
+  // ── Test account ──
+  { id:9999, name:'เด็กทดสอบระบบ', level:'K1', className:'อ.1/1', code:'test001', studentCode:'test001', age:5, weight:0, height:0, nationalId:'', parentPin:'test1234' },
   // ── อนุบาล 1 (K1) — 45 คน ──
   { id:1420, name:'เด็กชายกฤติเดช แก้วคำ', level:'K1', className:'อ.1/1', studentCode:'69001', age:4, weight:0, height:0, nationalId:'1-2199-01866-03-7', parentPin:'1001' },
   { id:1421, name:'เด็กชายพัชรพงษ์ ลิ้มกลาง', level:'K1', className:'อ.1/1', studentCode:'69002', age:4, weight:0, height:0, nationalId:'1-2199-01898-68-1', parentPin:'1002' },
@@ -179,6 +181,7 @@ export const INITIAL_STUDENTS = [
 
 // ── ข้อมูลครู 7 คน (1 ครูต่อ 1 ห้อง) ────────────────────────
 export const INITIAL_TEACHERS = [
+  { id: 9999, name: 'ครูทดสอบระบบ', level:'K1', className:'อ.1/1', status:'Active', email:'test@test.com', pin:'test1234', username:'test_teacher' },
   { id: 1, name: 'คุณครูปภัสสร เกิดเต็ม',       level:'K1', className:'อ.1/1', status:'Active', email:'Papassorn411@gmail.com',      pin:'kru01', username:'papassorn411'      },
   { id: 2, name: 'คุณครูลักษณา ฤกษ์มี',          level:'K1', className:'อ.1/2', status:'Active', email:'laksanalerkme@gmail.com',      pin:'kru02', username:'laksanalerkme'     },
   { id: 3, name: 'คุณครูชลดา ภู่เฟี้ยม',         level:'K2', className:'อ.2/1', status:'Active', email:'faichonlada181243@gmail.com',  pin:'kru03', username:'faichonlada181243' },

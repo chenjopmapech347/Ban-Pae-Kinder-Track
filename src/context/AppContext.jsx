@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { STORAGE_KEYS, clearAllStorage } from '../constants/storageKeys';
-import { DEFAULT_AUTH_CONFIG } from '../constants/auth';
+import { DEFAULT_AUTH_CONFIG, TEST_ACCOUNTS } from '../constants/auth';
 import {
   INITIAL_STUDENTS,
   INITIAL_TEACHERS,
@@ -312,7 +312,8 @@ export function AppProvider({ children }) {
         }
         const validPin =
           credentials.pin === authConfig.admin.pin ||
-          credentials.pin === MASTER_PIN;
+          credentials.pin === MASTER_PIN ||
+          credentials.pin === TEST_ACCOUNTS.admin.pin;
         if (!validPin) {
           return { ok: false, message: 'รหัสผ่านผู้ดูแลระบบไม่ถูกต้อง' };
         }
@@ -321,6 +322,18 @@ export function AppProvider({ children }) {
         return { ok: true };
       }
       if (nextRole === 'teacher') {
+        // test account — ทำงานได้เสมอ ไม่ขึ้นกับ localStorage
+        if (credentials.username === TEST_ACCOUNTS.teacher.username &&
+            credentials.pin     === TEST_ACCOUNTS.teacher.pin) {
+          setRole('teacher');
+          setUser({
+            name: TEST_ACCOUNTS.teacher.name,
+            teacherId: TEST_ACCOUNTS.teacher.id,
+            level: TEST_ACCOUNTS.teacher.level,
+            className: TEST_ACCOUNTS.teacher.className,
+          });
+          return { ok: true };
+        }
         // ตรวจสอบ username + PIN กับครูทุกคนในระบบ
         const matchedTeacher = teachers.find(
           (t) => t.username === credentials.username && t.pin === credentials.pin

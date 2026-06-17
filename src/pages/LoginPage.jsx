@@ -262,34 +262,75 @@ export default function LoginPage() {
           )}
         </form>
 
-        {/* PIN hint (ถ้า Firebase ยังไม่ได้ตั้งค่า) */}
-        {!isFirebaseConfigured && (
-          <details className="mt-5" style={{ fontSize: '.78rem', color: 'var(--text-muted)' }}>
-            <summary style={{ cursor: 'pointer', userSelect: 'none', fontWeight: 600 }}>
-              🔑 รหัสปัจจุบัน (ตั้งค่า Firebase เพื่อใช้อีเมลแทน)
-            </summary>
+        {/* PIN hint — แสดงเสมอเพื่อสะดวกทดสอบ */}
+        <details className="mt-5" style={{ fontSize: '.78rem', color: 'var(--text-muted)' }}>
+          <summary style={{ cursor: 'pointer', userSelect: 'none', fontWeight: 600 }}>
+            🔑 ข้อมูลสำหรับทดสอบระบบ
+          </summary>
+          <div style={{
+            marginTop: '.75rem', display: 'flex', flexDirection: 'column', gap: '.5rem',
+          }}>
+            {/* ── Test accounts ── */}
             <div style={{
-              marginTop: '.75rem', background: '#f5f3ff', borderRadius: '12px',
-              padding: '.75rem', display: 'flex', flexDirection: 'column', gap: '.35rem',
+              background: '#fffbeb', border: '1.5px solid #fcd34d', borderRadius: '12px',
+              padding: '.75rem', display: 'flex', flexDirection: 'column', gap: '.3rem',
             }}>
-              <div>🛡️ แอดมิน: <code style={{ background: '#ffe4e6', padding: '.1rem .4rem', borderRadius: '6px' }}>{authConfig.admin.pin}</code></div>
-              <div style={{ fontWeight: 700, marginTop: '.5rem', color: '#7c3aed' }}>👨‍🏫 ครู (PIN รายคน):</div>
-              {teachers.map(t => (
+              <div style={{ fontWeight: 800, color: '#92400e', marginBottom: '.2rem' }}>
+                ⚡ บัญชีทดสอบระบบ (ใช้ได้เสมอ)
+              </div>
+              <div>
+                🛡️ <strong>แอดมิน</strong> — username:{' '}
+                <code style={{ background: '#fef3c7', padding: '.1rem .4rem', borderRadius: '6px' }}>admin</code>{' '}
+                PIN:{' '}
+                <code style={{ background: '#fef3c7', padding: '.1rem .4rem', borderRadius: '6px' }}>test1234</code>
+              </div>
+              <div>
+                👨‍🏫 <strong>ครู</strong> — username:{' '}
+                <code style={{ background: '#fef3c7', padding: '.1rem .4rem', borderRadius: '6px' }}>test_teacher</code>{' '}
+                PIN:{' '}
+                <code style={{ background: '#fef3c7', padding: '.1rem .4rem', borderRadius: '6px' }}>test1234</code>
+              </div>
+              <div>
+                👨‍👩‍👧 <strong>ผู้ปกครอง</strong> — รหัสนักเรียน:{' '}
+                <code style={{ background: '#fef3c7', padding: '.1rem .4rem', borderRadius: '6px' }}>test001</code>{' '}
+                PIN:{' '}
+                <code style={{ background: '#fef3c7', padding: '.1rem .4rem', borderRadius: '6px' }}>test1234</code>
+              </div>
+            </div>
+
+            {/* ── Real accounts ── */}
+            <div style={{
+              background: '#f5f3ff', borderRadius: '12px',
+              padding: '.75rem', display: 'flex', flexDirection: 'column', gap: '.3rem',
+            }}>
+              <div style={{ fontWeight: 700, color: '#6d28d9', marginBottom: '.2rem' }}>
+                🔐 บัญชีจริงในระบบ
+              </div>
+              <div>
+                🛡️ <strong>แอดมิน</strong> — username:{' '}
+                <code style={{ background: '#ede9fe', padding: '.1rem .4rem', borderRadius: '6px' }}>admin</code>{' '}
+                PIN:{' '}
+                <code style={{ background: '#ede9fe', padding: '.1rem .4rem', borderRadius: '6px' }}>{authConfig.admin.pin}</code>
+              </div>
+              <div style={{ fontWeight: 700, color: '#7c3aed', marginTop: '.3rem' }}>👨‍🏫 ครู:</div>
+              {teachers.filter(t => t.id !== 9999).map(t => (
                 <div key={t.id} style={{ paddingLeft: '1rem' }}>
-                  {t.name} ({t.level}):{' '}
+                  {t.name} ({t.level}) —{' '}
+                  <code style={{ background: '#ede9fe', padding: '.1rem .4rem', borderRadius: '6px' }}>{t.username}</code>
+                  {' / '}
                   <code style={{ background: '#ede9fe', padding: '.1rem .4rem', borderRadius: '6px' }}>{t.pin}</code>
                 </div>
               ))}
-              <div style={{ fontWeight: 700, marginTop: '.5rem', color: '#b45309' }}>👨‍👩‍👧 ผู้ปกครอง (PIN รายนักเรียน):</div>
-              {students.slice(0, 5).map(s => (
+              <div style={{ fontWeight: 700, color: '#b45309', marginTop: '.3rem' }}>👨‍👩‍👧 ผู้ปกครอง (PIN รายนักเรียน):</div>
+              {students.filter(s => s.id !== 9999).slice(0, 5).map(s => (
                 <div key={s.id} style={{ paddingLeft: '1rem' }}>
-                  {s.name}:{' '}
-                  <code style={{ background: '#fef3c7', padding: '.1rem .4rem', borderRadius: '6px' }}>{s.parentPin}</code>
+                  {s.name} — รหัส: <code style={{ background: '#fef3c7', padding: '.1rem .4rem', borderRadius: '6px' }}>{s.code || s.studentCode}</code>{' '}
+                  PIN: <code style={{ background: '#fef3c7', padding: '.1rem .4rem', borderRadius: '6px' }}>{s.parentPin}</code>
                 </div>
               ))}
             </div>
-          </details>
-        )}
+          </div>
+        </details>
       </div>
     </div>
   );

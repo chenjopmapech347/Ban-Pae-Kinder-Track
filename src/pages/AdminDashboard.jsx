@@ -18,6 +18,7 @@ import AttendanceTab         from '../components/admin/AttendanceTab';
 import PickupTab             from '../components/admin/PickupTab';
 import NationalStandardsTab  from '../components/admin/NationalStandardsTab';
 import AnnouncementsTab     from '../components/admin/AnnouncementsTab';
+import MediaTab             from '../components/admin/MediaTab';
 
 const TAB_GROUPS = [
   {
@@ -41,6 +42,7 @@ const TAB_GROUPS = [
       { id: 'students',    label: '👶 นักเรียน'   },
       { id: 'teachers',    label: '👩‍🏫 ครู'        },
       { id: 'classes',     label: '🏫 ห้องเรียน'  },
+      { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ' },
     ],
   },
   {
@@ -128,6 +130,7 @@ export default function AdminDashboard() {
       {activeTab === 'students'   && <StudentsTab />}
       {activeTab === 'teachers'   && <TeachersTab />}
       {activeTab === 'classes'     && <ClassesTab />}
+      {activeTab === 'media'       && <MediaTab viewMode="entry" />}
       {activeTab === 'evaluation'  && <EvaluationTab />}
       {activeTab === 'reports'     && <ReportsTab />}
       {activeTab === 'activitylog'  && <ActivityLogTab />}

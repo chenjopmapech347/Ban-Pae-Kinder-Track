@@ -5,6 +5,7 @@ import { getDayRecord, hasHygieneToday } from '../utils/attendance';
 import EvaluationTab  from '../components/admin/EvaluationTab';
 import ReportsTab     from '../components/admin/ReportsTab';
 import FormReportsTab from '../components/admin/FormReportsTab';
+import MediaTab       from '../components/admin/MediaTab';
 import OverviewTab    from '../components/admin/OverviewTab';
 import AdminAttTab    from '../components/admin/AttendanceTab';
 import PickupTab      from '../components/admin/PickupTab';
@@ -82,7 +83,15 @@ const TEACHER_TAB_GROUPS = [
       { id: 'evaluation',  label: '✏️ ประเมินผล' },
       { id: 'reports',     label: '📋 รายงาน' },
       { id: 'formreports', label: '📄 สรุปรายงาน' },
+      { id: 'medialist',   label: '📚 รายการทะเบียนสื่อ' },
       { id: 'activitylog', label: '📜 ประวัติ' },
+    ],
+  },
+  {
+    label: 'บุคลากร',
+    color: '#d97706',
+    tabs: [
+      { id: 'media', label: '📚 ทะเบียนผลิตสื่อ' },
     ],
   },
   {
@@ -596,6 +605,8 @@ export default function TeacherDashboard() {
       {activeTab === 'evaluation'  && <EvaluationTab />}
       {activeTab === 'reports'     && <FormReportsTab teacherClassFilter={myClass} />}
       {activeTab === 'formreports' && <ReportsTab teacherClassFilter={myClass} />}
+      {activeTab === 'medialist'   && <MediaTab teacherClassFilter={myClass} viewMode="report" />}
+      {activeTab === 'media'       && <MediaTab teacherClassFilter={myClass} viewMode="entry" />}
       {activeTab === 'activitylog' && <ActivityLogTab />}
       {activeTab === 'pins' && (
         <div className="glass p-6 animate-fade">

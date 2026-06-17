@@ -37,7 +37,6 @@ const REPORT_TYPES = [
   { id:'corners_out', label:'การเล่นมุมประสบการณ์ภายนอกห้องเรียน',                       icon:'🌳', hasCls:true,  hasWk:true  },
   { id:'wh',          label:'วัดน้ำหนัก-ส่วนสูง',                                        icon:'📏', hasCls:true                },
   { id:'teeth',       label:'การแปรงฟัน',                                                 icon:'🦷', hasCls:true,  hasMo:true  },
-  { id:'media',       label:'ทะเบียนผลิตสื่อ / นวัตกรรมการเรียนการสอน',                  icon:'📚', hasCls:true                },
   { id:'attend',      label:'ลงเวลาเรียน',                                                icon:'📋', hasCls:true,  hasMo:true  },
   { id:'dev',         label:'การประเมินพัฒนาการ การศึกษาปฐมวัย',                          icon:'🌱', hasCls:true                },
   { id:'book',        label:'สมุดรายงานประจำตัวเด็กปฐมวัย',                              icon:'📖', hasCls:true, hasStu:true },
@@ -563,13 +562,13 @@ function printBook(students, teachers, schoolName, cn, topics, indicators, activ
 // ═══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
-export default function FormReportsTab({ teacherClassFilter = null }) {
+export default function FormReportsTab({ teacherClassFilter = null, defaultReport = 'health' }) {
   const {
     students, teachers, classes, schools,
     dailyRecords, assessmentTopics, indicators, activities,
   } = useApp();
 
-  const [selReport,  setSelReport]  = useState('health');
+  const [selReport,  setSelReport]  = useState(defaultReport);
   const [selClass,   setSelClass]   = useState('');
   const [selMonth,   setSelMonth]   = useState(1); // default มิ.ย.
   const [selWeek,    setSelWeek]    = useState(1);

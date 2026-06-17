@@ -17,6 +17,7 @@ export const STORAGE_KEYS = {
   schoolTerms:      'kt_schoolTerms',
   activityLogs:     'kt_activityLogs',
   pickupRecords:    'kt_pickupRecords',
+  mediaRecords:     'kt_mediaRecords',
 };
 
 export function clearAllStorage() {

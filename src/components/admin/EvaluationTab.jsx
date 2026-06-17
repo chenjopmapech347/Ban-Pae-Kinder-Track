@@ -296,7 +296,7 @@ export default function EvaluationTab() {
               onSelect={handleIndicatorChange}
               color="#0891b2" bg="#ecfeff"
               getKey={i => i.id}
-              getLabel={i => `[${i.indicatorCode}] ${i.label.length > 45 ? i.label.slice(0, 45) + '…' : i.label}`}
+              getLabel={i => { const txt = i.label.replace(/^ตัวบ่งชี้ที่\s*[\d.]+\s*/u, ''); return `[${i.indicatorCode}] ${txt.length > 45 ? txt.slice(0, 45) + '…' : txt}`; }}
               getCount={i => activities.filter(a => a.indicatorId === i.id).length}
             />
           </div>

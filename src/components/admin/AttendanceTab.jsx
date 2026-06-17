@@ -57,14 +57,80 @@ function ClassSummaryBar({ counts, total }) {
   );
 }
 
-export default function AttendanceTab({ defaultClass }) {
-  const { students, dailyRecords, teachers, saveDailyAttendance } = useApp();
+// ── สรุปเวลาเรียนรายเดือน — พิมพ์ ─────────────────────────────────────────
+function printMonthlySummary(classSections, monthLabel, schoolName) {
+  const css = `
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
+    *{box-sizing:border-box}
+    body{font-family:'Sarabun',sans-serif;font-size:11px;margin:0;padding:0}
+    h2{font-size:13px;font-weight:800;margin:0 0 2px;text-align:center}
+    .sub{font-size:10px;color:#444;text-align:center;margin-bottom:6px}
+    table{width:100%;border-collapse:collapse;margin-bottom:18px}
+    th,td{border:1px solid #888;padding:2px 4px;text-align:center;font-size:10px}
+    th{background:#d0d0d0;font-weight:700}
+    .tl{text-align:left!important;padding-left:5px!important}
+    .pg{page-break-after:always}
+    @media print{@page{size:A4 portrait;margin:1.5cm}}
+  `;
+  const pages = classSections.map(({ cls, teacher, rows }, i) => {
+    const isLast = i === classSections.length - 1;
+    const trs = rows.map((s, idx) => `
+      <tr>
+        <td>${idx + 1}</td>
+        <td class="tl">${s.name.replace('เด็กชาย','ด.ช.').replace('เด็กหญิง','ด.ญ.')}</td>
+        <td>${s.counts.มา}</td>
+        <td>${s.counts.ขาด}</td>
+        <td>${s.counts.ลา}</td>
+        <td>${s.counts.ป่วย}</td>
+        <td><b>${s.counts.มา + s.counts.ขาด + s.counts.ลา + s.counts.ป่วย}</b></td>
+      </tr>`).join('');
+    return `
+      <div class="${isLast ? '' : 'pg'}">
+        <h2>สรุปเวลาเรียนประจำเดือน ${monthLabel}</h2>
+        <div class="sub">${schoolName || 'โรงเรียนเทศบาลบ้านเพ ๑'} · ห้อง ${cls}${teacher ? ' · ' + teacher.name : ''}</div>
+        <table>
+          <thead><tr><th style="width:32px">ที่</th><th class="tl">ชื่อ-นามสกุล</th><th style="width:40px">มา</th><th style="width:40px">ขาด</th><th style="width:40px">ลา</th><th style="width:40px">ป่วย</th><th style="width:50px">รวม</th></tr></thead>
+          <tbody>${trs}</tbody>
+        </table>
+      </div>`;
+  }).join('');
+  const w = window.open('', '_blank', 'width=900,height=700');
+  if (!w) return;
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>สรุปเวลาเรียน ${monthLabel}</title><style>${css}</style></head><body>${pages}<script>setTimeout(()=>window.print(),600)</` + `script></body></html>`);
+  w.document.close();
+}
 
+export default function AttendanceTab({ defaultClass }) {
+  const { students, dailyRecords, teachers, saveDailyAttendance, schoolName } = useApp();
+
+  const [mainView,     setMainView]     = useState('daily');   // 'daily' | 'monthly'
   const [selectedDate, setSelectedDate] = useState(todayISO());
   const [filterClass,  setFilterClass]  = useState(defaultClass ?? 'ทั้งหมด');
   const [viewMode,     setViewMode]     = useState('card');  // 'card' | 'table'
   const [showHygiene,  setShowHygiene]  = useState(false);
   const [markingClass, setMarkingClass] = useState(null);   // cls being bulk-marked
+
+  // ── สรุปรายเดือน ──────────────────────────────────────────────────────
+  const [selMonth, setSelMonth] = useState(() => todayISO().slice(0, 7)); // YYYY-MM
+
+  const monthlyData = useMemo(() => {
+    const targetDates = Object.keys(dailyRecords).filter(d => d.startsWith(selMonth));
+    const schoolDays  = targetDates.length;
+    const targetClasses = filterClass === 'ทั้งหมด' ? ALL_CLASSES : [filterClass];
+    return targetClasses.map(cls => {
+      const teacher = teachers?.find(t => t.className === cls);
+      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'));
+      const rows = sts.map(s => {
+        const counts = { มา: 0, ขาด: 0, ลา: 0, ป่วย: 0 };
+        targetDates.forEach(d => {
+          const rec = dailyRecords[d]?.[String(s.id)];
+          if (rec?.attendance && counts[rec.attendance] !== undefined) counts[rec.attendance]++;
+        });
+        return { ...s, counts };
+      });
+      return { cls, teacher, rows, schoolDays };
+    }).filter(sec => sec.rows.length > 0);
+  }, [dailyRecords, selMonth, filterClass, students, teachers]);
 
   // bulk mark ห้องทั้งห้องเป็น "มา"
   const handleMarkAllPresent = (cls) => {
@@ -158,6 +224,27 @@ export default function AttendanceTab({ defaultClass }) {
         </div>
       </div>
 
+      {/* ── Main view toggle ── */}
+      <div style={{ display: 'flex', gap: '.5rem', marginBottom: '1rem' }}>
+        {[
+          { id: 'daily',   label: '📅 บันทึกรายวัน' },
+          { id: 'monthly', label: '📊 สรุปรายเดือน' },
+        ].map(v => (
+          <button key={v.id} type="button"
+            onClick={() => setMainView(v.id)}
+            style={{
+              padding: '.45rem 1.1rem', borderRadius: '10px',
+              fontFamily: 'inherit', fontWeight: 700, fontSize: '.85rem', cursor: 'pointer',
+              background: mainView === v.id ? '#7c3aed' : 'white',
+              color: mainView === v.id ? 'white' : '#6b7280',
+              boxShadow: mainView === v.id ? '0 3px 10px #7c3aed40' : '0 1px 4px rgba(0,0,0,.08)',
+              border: mainView === v.id ? '1.5px solid #7c3aed' : '1.5px solid #e5e7eb',
+            }}>
+            {v.label}
+          </button>
+        ))}
+      </div>
+
       {/* ── Controls ── */}
       <div style={{
         background: 'white', border: '1.5px solid #e5e7eb',
@@ -165,18 +252,27 @@ export default function AttendanceTab({ defaultClass }) {
         display: 'flex', gap: '.75rem', alignItems: 'center',
         flexWrap: 'wrap', marginBottom: '1rem',
       }}>
-        {/* Date picker */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
-          <span style={{ fontSize: '.8rem', fontWeight: 700, color: '#6b7280' }}>📅 วันที่</span>
-          <input type="date" className="input" style={{ width: '170px', fontSize: '.85rem' }}
-            value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
-          {!isToday && (
-            <button className="btn btn-sm" onClick={() => setSelectedDate(todayISO())}
-              style={{ fontSize: '.75rem' }}>วันนี้</button>
-          )}
-        </div>
+        {mainView === 'daily' ? (<>
+          {/* Date picker */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+            <span style={{ fontSize: '.8rem', fontWeight: 700, color: '#6b7280' }}>📅 วันที่</span>
+            <input type="date" className="input" style={{ width: '170px', fontSize: '.85rem' }}
+              value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
+            {!isToday && (
+              <button className="btn btn-sm" onClick={() => setSelectedDate(todayISO())}
+                style={{ fontSize: '.75rem' }}>วันนี้</button>
+            )}
+          </div>
+        </>) : (<>
+          {/* Month picker */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+            <span style={{ fontSize: '.8rem', fontWeight: 700, color: '#6b7280' }}>📆 เดือน</span>
+            <input type="month" className="input" style={{ width: '170px', fontSize: '.85rem' }}
+              value={selMonth} onChange={e => setSelMonth(e.target.value)} />
+          </div>
+        </>)}
 
-        {/* Class filter */}
+        {/* Class filter (shared) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
           <span style={{ fontSize: '.8rem', fontWeight: 700, color: '#6b7280' }}>🏫 ห้อง</span>
           <select className="input" style={{ width: '120px', fontSize: '.85rem' }}
@@ -186,30 +282,134 @@ export default function AttendanceTab({ defaultClass }) {
           </select>
         </div>
 
-        {/* Hygiene toggle */}
-        <label style={{ display: 'flex', alignItems: 'center', gap: '.4rem',
-          cursor: 'pointer', fontSize: '.83rem', fontWeight: 600, userSelect: 'none' }}>
-          <input type="checkbox" checked={showHygiene}
-            onChange={e => setShowHygiene(e.target.checked)} />
-          🥛 แสดงกิจวัตร
-        </label>
+        {mainView === 'daily' && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: '.4rem',
+            cursor: 'pointer', fontSize: '.83rem', fontWeight: 600, userSelect: 'none' }}>
+            <input type="checkbox" checked={showHygiene}
+              onChange={e => setShowHygiene(e.target.checked)} />
+            🥛 แสดงกิจวัตร
+          </label>
+        )}
 
-        {/* View mode */}
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: '.35rem' }}>
-          {[{ id: 'card', icon: '⊞' }, { id: 'table', icon: '☰' }].map(v => (
-            <button key={v.id} type="button"
-              onClick={() => setViewMode(v.id)}
-              style={{
-                border: 'none', borderRadius: '8px', padding: '.3rem .6rem',
-                fontFamily: 'inherit', fontSize: '1rem', cursor: 'pointer',
-                background: viewMode === v.id ? '#7c3aed' : '#f3f4f6',
-                color: viewMode === v.id ? 'white' : '#6b7280',
-              }}>{v.icon}</button>
-          ))}
-        </div>
+        {mainView === 'monthly' && (
+          <button type="button"
+            onClick={() => {
+              const [y, m] = selMonth.split('-');
+              const thMonth = new Date(Number(y), Number(m) - 1, 1)
+                .toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+              printMonthlySummary(monthlyData, thMonth, schoolName);
+            }}
+            style={{
+              padding: '.4rem 1rem', borderRadius: '8px', border: 'none',
+              background: '#0891b2', color: 'white', fontFamily: 'inherit',
+              fontWeight: 700, fontSize: '.82rem', cursor: 'pointer',
+            }}>
+            🖨️ พิมพ์สรุป
+          </button>
+        )}
+
+        {/* View mode (daily only) */}
+        {mainView === 'daily' && (
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '.35rem' }}>
+            {[{ id: 'card', icon: '⊞' }, { id: 'table', icon: '☰' }].map(v => (
+              <button key={v.id} type="button"
+                onClick={() => setViewMode(v.id)}
+                style={{
+                  border: 'none', borderRadius: '8px', padding: '.3rem .6rem',
+                  fontFamily: 'inherit', fontSize: '1rem', cursor: 'pointer',
+                  background: viewMode === v.id ? '#7c3aed' : '#f3f4f6',
+                  color: viewMode === v.id ? 'white' : '#6b7280',
+                }}>{v.icon}</button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* ── Content ── */}
+      {/* ════ MONTHLY SUMMARY VIEW ════ */}
+      {mainView === 'monthly' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {monthlyData.length === 0 ? (
+            <div className="glass-card text-center text-muted" style={{ padding: '2rem' }}>
+              ยังไม่มีข้อมูลการลงเวลาในเดือนนี้
+            </div>
+          ) : monthlyData.map(({ cls, teacher, rows, schoolDays }) => (
+            <div key={cls} className="glass-card" style={{ padding: '1rem 1.25rem' }}>
+              {/* Class header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', marginBottom: '.85rem', flexWrap: 'wrap' }}>
+                <div style={{
+                  background: 'linear-gradient(135deg,#0891b2,#22d3ee)',
+                  color: 'white', borderRadius: '10px', padding: '.25rem .75rem',
+                  fontWeight: 800, fontSize: '.9rem',
+                }}>
+                  🏫 ห้อง {cls}
+                </div>
+                {teacher && <span style={{ fontSize: '.8rem', color: '#6b7280', fontWeight: 600 }}>👩‍🏫 {teacher.name}</span>}
+                <span style={{ fontSize: '.78rem', color: '#6b7280', background: '#f3f4f6', borderRadius: '8px', padding: '.2rem .6rem' }}>
+                  📆 วันที่มีข้อมูล {schoolDays} วัน
+                </span>
+              </div>
+
+              <div className="table-wrap">
+                <table className="table" style={{ fontSize: '.83rem' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ width: '36px' }}>#</th>
+                      <th style={{ textAlign: 'left' }}>ชื่อ-นามสกุล</th>
+                      <th style={{ width: '50px', background: '#d1fae5', color: '#065f46' }}>มา</th>
+                      <th style={{ width: '50px', background: '#fee2e2', color: '#991b1b' }}>ขาด</th>
+                      <th style={{ width: '50px', background: '#fef3c7', color: '#92400e' }}>ลา</th>
+                      <th style={{ width: '50px', background: '#dbeafe', color: '#1e40af' }}>ป่วย</th>
+                      <th style={{ width: '60px' }}>รวม</th>
+                      <th style={{ width: '70px' }}>% มาเรียน</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((s, idx) => {
+                      const { มา = 0, ขาด = 0, ลา = 0, ป่วย = 0 } = s.counts;
+                      const total = มา + ขาด + ลา + ป่วย;
+                      const pct   = total ? Math.round((มา / total) * 100) : 0;
+                      return (
+                        <tr key={s.id} className="hover-row">
+                          <td style={{ textAlign: 'center', color: 'var(--text-muted)' }}>{idx + 1}</td>
+                          <td style={{ fontWeight: 600 }}>
+                            {s.name.replace('เด็กชาย', 'ด.ช.').replace('เด็กหญิง', 'ด.ญ.')}
+                          </td>
+                          <td style={{ textAlign: 'center', fontWeight: 800, color: '#059669' }}>{มา || '—'}</td>
+                          <td style={{ textAlign: 'center', fontWeight: 800, color: '#dc2626' }}>{ขาด || '—'}</td>
+                          <td style={{ textAlign: 'center', fontWeight: 800, color: '#b45309' }}>{ลา || '—'}</td>
+                          <td style={{ textAlign: 'center', fontWeight: 800, color: '#2563eb' }}>{ป่วย || '—'}</td>
+                          <td style={{ textAlign: 'center', fontWeight: 700 }}>{total}</td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span style={{
+                              fontWeight: 800,
+                              color: pct >= 80 ? '#059669' : pct >= 60 ? '#b45309' : '#dc2626',
+                            }}>{total ? `${pct}%` : '—'}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  {/* Summary footer */}
+                  <tfoot>
+                    <tr style={{ background: '#f9fafb', fontWeight: 700 }}>
+                      <td colSpan={2} style={{ textAlign: 'right', padding: '4px 8px', color: '#374151' }}>รวมทั้งห้อง</td>
+                      {['มา', 'ขาด', 'ลา', 'ป่วย'].map(k => (
+                        <td key={k} style={{ textAlign: 'center' }}>
+                          {rows.reduce((s, r) => s + (r.counts[k] || 0), 0)}
+                        </td>
+                      ))}
+                      <td colSpan={2} />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ════ DAILY VIEW ════ */}
+      {mainView === 'daily' && (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {classSections.map(({ cls, teacher, rows, counts, total }) => (
           <div key={cls} className="glass-card" style={{ padding: '1rem 1.25rem' }}>
@@ -416,6 +616,8 @@ export default function AttendanceTab({ defaultClass }) {
           </div>
         ))}
       </div>
+
+      )} {/* end daily view */}
 
       {/* ── Legend ── */}
       <div style={{

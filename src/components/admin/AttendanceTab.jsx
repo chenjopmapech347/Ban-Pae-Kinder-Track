@@ -124,7 +124,7 @@ export default function AttendanceTab({ defaultClass }) {
       }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: '.25rem' }}>
-            📅 การมาเรียนรายนักเรียน
+            📅 การมาเรียน
           </div>
           <div style={{ opacity: .85, fontSize: '.83rem' }}>
             {isToday ? '🟢 วันนี้ — ' : ''}{dateLabel} · <LiveClock />

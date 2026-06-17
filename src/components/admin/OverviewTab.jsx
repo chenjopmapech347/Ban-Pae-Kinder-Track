@@ -77,7 +77,7 @@ export default function OverviewTab() {
       {/* Charts row */}
       <div className="grid grid-2 mb-6" style={{ gap: '1.25rem' }}>
         <div className="glass-card">
-          <h4 className="mb-3">📊 การมาเรียนรายนักเรียน</h4>
+          <h4 className="mb-3">📊 การมาเรียน</h4>
           {students.length ? (
             <AttendanceBarChart students={students} />
           ) : (

@@ -107,7 +107,15 @@ export default function EvaluationTab() {
 
   // filtered indicators + activities
   const topicIndicators = useMemo(
-    () => indicators.filter(i => i.domainId === selTopic),
+    () => indicators
+      .filter(i => i.domainId === selTopic)
+      .sort((a, b) => {
+        const parse = code => {
+          const [maj, min] = String(code ?? '').split('.').map(Number);
+          return (maj || 0) * 1000 + (min || 0);
+        };
+        return parse(a.indicatorCode) - parse(b.indicatorCode);
+      }),
     [indicators, selTopic]
   );
   const indActivities = useMemo(

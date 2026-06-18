@@ -39,7 +39,6 @@ const REPORT_TYPES = [
   { id:'teeth',       label:'การแปรงฟัน',                                                 icon:'🦷', hasCls:true,  hasMo:true  },
   { id:'attend',      label:'ลงเวลาเรียน',                                                icon:'📋', hasCls:true,  hasMo:true  },
   { id:'dev',         label:'การประเมินพัฒนาการ การศึกษาปฐมวัย',                          icon:'🌱', hasCls:true                },
-  { id:'book',        label:'สมุดรายงานประจำตัวเด็กปฐมวัย',                              icon:'📖', hasCls:true, hasStu:true },
 ];
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -507,58 +506,6 @@ function printDev(students, teachers, schoolName, cn, topics, indicators, activi
     ${sigHtml(tName)}`, true);
 }
 
-// 12. สมุดรายงานประจำตัว
-function printBook(students, teachers, schoolName, cn, topics, indicators, activities, studentId = null) {
-  let sts = realSts(students, cn);
-  if (studentId) sts = sts.filter(s => String(s.id) === String(studentId));
-  const tName = teacherName(teachers, cn);
-
-  const topicAvg = (s, t) => {
-    const inds = (indicators??[]).filter(i=>i.domainId===t.id);
-    const sc = inds.flatMap(ind=>(activities??[]).filter(a=>a.indicatorId===ind.id)
-      .map(act=>s.assessments?.indicators?.[ind.id]?.[act.id]?.score??null)).filter(v=>v!==null);
-    return sc.length?(sc.reduce((a,b)=>a+b,0)/sc.length).toFixed(1):null;
-  };
-  const lvlText = v => !v?'—':parseFloat(v)>=2.5?'ดี':parseFloat(v)>=1.5?'พอใช้':'ต้องปรับปรุง';
-
-  const pages = sts.map((s,idx) => {
-    const tot=s.attendance?.total??0, pres=s.attendance?.present??0, abs=s.attendance?.absent??0;
-    const pct=tot?Math.round(pres/tot*100):0;
-    const tRows = (topics??[]).map(t => {
-      const avg = topicAvg(s,t);
-      return `<tr><td class="tl">${t.emoji||''} ด้าน${t.label}</td><td>${avg??'—'}</td><td>${lvlText(avg)}</td></tr>`;
-    }).join('');
-    return `
-      <div class="${idx<sts.length-1?'pg':''}">
-        <h2>สมุดรายงานประจำตัวเด็กปฐมวัย</h2>
-        <div class="sub">${schoolName} &nbsp;|&nbsp; ปีการศึกษา 2568</div>
-        <table style="margin-bottom:6px">
-          <tr><th class="tl" style="width:90px">ชื่อ-สกุล</th><td class="tl" colspan="3" style="font-weight:700">${s.name}</td></tr>
-          <tr><th class="tl">ชั้น / ห้อง</th><td>${cn}</td><th class="tl" style="width:80px">รหัสนักเรียน</th><td>${s.studentCode??s.id}</td></tr>
-          <tr><th class="tl">อายุ</th><td>${s.age??'—'} ปี</td><th class="tl">ครูประจำชั้น</th><td>${tName}</td></tr>
-          <tr><th class="tl">น้ำหนัก</th><td>${s.weight??'—'} กก.</td><th class="tl">ส่วนสูง</th><td>${s.height??'—'} ซม.</td></tr>
-        </table>
-        <div style="font-weight:700;font-size:9.5px;background:#d0d0d0;padding:2px 5px;margin:5px 0 2px">การเข้าเรียน</div>
-        <table style="margin-bottom:6px">
-          <tr><th>วันเรียนทั้งหมด</th><th>มาเรียน</th><th>ขาด/ลา</th><th>อัตราการมา</th></tr>
-          <tr><td>${tot}</td><td>${pres}</td><td>${abs}</td><td>${pct}%</td></tr>
-        </table>
-        <div style="font-weight:700;font-size:9.5px;background:#d0d0d0;padding:2px 5px;margin:5px 0 2px">ผลการประเมินพัฒนาการ</div>
-        <table>
-          <thead><tr><th class="tl">ด้านพัฒนาการ</th><th style="width:50px">คะแนน</th><th style="width:90px">ระดับ</th></tr></thead>
-          <tbody>${tRows}</tbody>
-        </table>
-        <div style="margin-top:8px;font-size:8.5px">
-          <strong>ความคิดเห็นของครูประจำชั้น:</strong>
-          <div style="border:1px solid #ccc;min-height:32px;margin-top:3px;padding:3px"></div>
-        </div>
-        ${sigHtml(tName)}
-      </div>`;
-  }).join('');
-
-  printHtml(`สมุดรายงานประจำตัว ${cn}`, pages, false);
-}
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -610,7 +557,6 @@ export default function FormReportsTab({ teacherClassFilter = null, defaultRepor
       case 'media':       printMedia(teachers, schoolName, cn); break;
       case 'attend':      printAttend(students, teachers, dailyRecords, schoolName, cn, selMonth); break;
       case 'dev':         printDev(students, teachers, schoolName, cn, assessmentTopics, indicators, activities); break;
-      case 'book':        printBook(students, teachers, schoolName, cn, assessmentTopics, indicators, activities, selStudent||null); break;
     }
   };
 

@@ -6,6 +6,8 @@ import { firebaseCreateUser, firebaseSendReset } from '../lib/firebaseAuth';
 export default function SettingsPage({ onBack }) {
   const {
     schoolName, setSchoolName,
+    schoolPhilosophy, setSchoolPhilosophy,
+    schoolVision, setSchoolVision,
     academicYears, setAcademicYears,
     resetAllData, authConfig, updateAuthConfig,
     exportBackupJson, importBackupJson,
@@ -124,9 +126,40 @@ export default function SettingsPage({ onBack }) {
         {/* ─── School name ─── */}
         <div className="glass p-6">
           <h3 className="mb-4">🏫 ข้อมูลโรงเรียน</h3>
-          <label style={{ display:'block',marginBottom:'.35rem' }}>ชื่อโรงเรียน (จะปรากฏในสมุดรายงาน)</label>
-          <input className="input" value={schoolName} onChange={e=>setSchoolName(e.target.value)}
-            placeholder="เช่น โรงเรียนเทศบาลบ้านเพ ๑" />
+          <div style={{ display:'flex', flexDirection:'column', gap:'1rem' }}>
+            <div>
+              <label style={{ display:'block',marginBottom:'.35rem',fontWeight:700,fontSize:'.85rem' }}>
+                ชื่อโรงเรียน
+              </label>
+              <input className="input" value={schoolName} onChange={e=>setSchoolName(e.target.value)}
+                placeholder="เช่น โรงเรียนเทศบาลบ้านเพ ๑" />
+            </div>
+            <div>
+              <label style={{ display:'block',marginBottom:'.35rem',fontWeight:700,fontSize:'.85rem' }}>
+                📖 ปรัชญาการศึกษาปฐมวัย
+              </label>
+              <textarea className="input" rows={4}
+                value={schoolPhilosophy}
+                onChange={e => setSchoolPhilosophy(e.target.value)}
+                placeholder="กรอกปรัชญาการศึกษาปฐมวัยของโรงเรียน (ถ้าไม่กรอก ระบบจะใช้ค่าเริ่มต้น)"
+                style={{ resize:'vertical', lineHeight:1.8 }}
+              />
+            </div>
+            <div>
+              <label style={{ display:'block',marginBottom:'.35rem',fontWeight:700,fontSize:'.85rem' }}>
+                🎯 วิสัยทัศน์
+              </label>
+              <textarea className="input" rows={3}
+                value={schoolVision}
+                onChange={e => setSchoolVision(e.target.value)}
+                placeholder="กรอกวิสัยทัศน์ของโรงเรียน (ถ้าไม่กรอก ระบบจะใช้ค่าเริ่มต้น)"
+                style={{ resize:'vertical', lineHeight:1.8 }}
+              />
+            </div>
+            <p style={{ fontSize:'.75rem', color:'#9ca3af', marginTop:'-.25rem' }}>
+              ข้อมูลจะปรากฏในสมุดรายงานประจำตัวเด็กปฐมวัย (อ.01)
+            </p>
+          </div>
         </div>
 
         {/* ─── Academic years ─── */}

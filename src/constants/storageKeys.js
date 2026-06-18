@@ -18,6 +18,17 @@ export const STORAGE_KEYS = {
   activityLogs:     'kt_activityLogs',
   pickupRecords:    'kt_pickupRecords',
   mediaRecords:     'kt_mediaRecords',
+  cornerRecords:      'kt_cornerRecords',      // การใช้แหล่งเรียนรู้นอกห้องเรียนรายสัปดาห์
+  innerCornerRecords: 'kt_innerCornerRecords', // การใช้มุมประสบการณ์ภายในห้องเรียนรายสัปดาห์
+  healthCheckRecords:  'kt_healthCheckRecords',  // การตรวจสุขภาพประจำสัปดาห์
+  illnessCheckRecords: 'kt_illnessCheckRecords', // คัดกรองอาการป่วยรายห้องเรียนรายเดือน
+  toothBrushRecords:   'kt_toothBrushRecords',   // บันทึกการแปรงฟันรายเดือน
+  lunchRecords:        'kt_lunchRecords',         // บันทึกการรับประทานอาหารกลางวันรายเดือน
+  milkRecords:         'kt_milkRecords',          // บันทึกการดื่มนมรายเดือน
+  nutritionRecords:    'kt_nutritionRecords',      // การประเมินภาวะโภชนาการ
+  studentReportRecords: 'kt_studentReportRecords', // สมุดรายงานประจำตัวเด็กปฐมวัย (อ.01)
+  schoolPhilosophy:     'kt_schoolPhilosophy',     // ปรัชญาการศึกษาปฐมวัย
+  schoolVision:         'kt_schoolVision',          // วิสัยทัศน์
 };
 
 export function clearAllStorage() {

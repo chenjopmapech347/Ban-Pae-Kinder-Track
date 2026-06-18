@@ -1,19 +1,30 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, lazy, Suspense } from 'react';
 import { useApp } from '../context/AppContext';
 import { todayISO, formatDateThai } from '../utils/helpers';
 import { getDayRecord, hasHygieneToday } from '../utils/attendance';
-import EvaluationTab  from '../components/admin/EvaluationTab';
-import ReportsTab     from '../components/admin/ReportsTab';
-import FormReportsTab from '../components/admin/FormReportsTab';
-import MediaTab       from '../components/admin/MediaTab';
-import OverviewTab    from '../components/admin/OverviewTab';
-import AdminAttTab    from '../components/admin/AttendanceTab';
-import PickupTab      from '../components/admin/PickupTab';
-import ActivityLogTab from '../components/admin/ActivityLogTab';
-import QaStandardView        from '../components/QaStandardView';
-import Std2SelfTab           from '../components/teacher/Std2SelfTab';
-import NationalStandardsTab  from '../components/admin/NationalStandardsTab';
-import StudentModal   from '../components/StudentModal';
+import StudentModal from '../components/StudentModal';
+
+const EvaluationTab          = lazy(() => import('../components/admin/EvaluationTab'));
+const ReportsTab             = lazy(() => import('../components/admin/ReportsTab'));
+const FormReportsTab         = lazy(() => import('../components/admin/FormReportsTab'));
+const MediaTab               = lazy(() => import('../components/admin/MediaTab'));
+const CornerTab              = lazy(() => import('../components/admin/CornerTab'));
+const InnerCornerTab         = lazy(() => import('../components/admin/InnerCornerTab'));
+const DevelopmentalReportTab = lazy(() => import('../components/admin/DevelopmentalReportTab'));
+const HealthCheckTab         = lazy(() => import('../components/admin/HealthCheckTab'));
+const IllnessCheckTab        = lazy(() => import('../components/admin/IllnessCheckTab'));
+const ToothBrushTab          = lazy(() => import('../components/admin/ToothBrushTab'));
+const LunchTab               = lazy(() => import('../components/admin/LunchTab'));
+const MilkTab                = lazy(() => import('../components/admin/MilkTab'));
+const NutritionTab           = lazy(() => import('../components/admin/NutritionTab'));
+const StudentReportTab       = lazy(() => import('../components/admin/StudentReportTab'));
+const OverviewTab            = lazy(() => import('../components/admin/OverviewTab'));
+const AdminAttTab            = lazy(() => import('../components/admin/AttendanceTab'));
+const PickupTab              = lazy(() => import('../components/admin/PickupTab'));
+const ActivityLogTab         = lazy(() => import('../components/admin/ActivityLogTab'));
+const QaStandardView         = lazy(() => import('../components/QaStandardView'));
+const Std2SelfTab            = lazy(() => import('../components/teacher/Std2SelfTab'));
+const NationalStandardsTab   = lazy(() => import('../components/admin/NationalStandardsTab'));
 
 const ATT_OPTS   = ['มา','ขาด','ลา','ป่วย'];
 const LUNCH_OPTS = ['หมด','เกือบหมด','ครึ่งเดียว','ไม่ทาน'];
@@ -80,7 +91,14 @@ const TEACHER_TAB_GROUPS = [
       { id: 'overview',    label: '📊 ภาพรวม' },
       { id: 'attendance',  label: '📅 การมาเรียน' },
       { id: 'pickup',      label: '🏠 รับกลับบ้าน' },
-      { id: 'evaluation',  label: '✏️ ประเมินผล' },
+      { id: 'healthcheck',  label: '🏥 ตรวจสุขภาพ' },
+      { id: 'illnesscheck', label: '🤒 คัดกรองอาการป่วย' },
+      { id: 'toothbrush',   label: '🪥 แปรงฟัน'           },
+      { id: 'lunch',        label: '🍱 อาหารกลางวัน'     },
+      { id: 'milk',         label: '🥛 ดื่มนม'            },
+      { id: 'nutrition',    label: '⚖️ ภาวะโภชนาการ'     },
+      { id: 'studentreport', label: '📒 สมุดรายงานประจำตัวเด็กปฐมวัย (อ.01)' },
+      { id: 'evaluation',   label: '✏️ ประเมินผล' },
       { id: 'reports',     label: '📋 รายงาน' },
       { id: 'formreports', label: '📄 สรุปรายงาน' },
       { id: 'medialist',   label: '📚 รายการทะเบียนสื่อ' },
@@ -91,7 +109,10 @@ const TEACHER_TAB_GROUPS = [
     label: 'บุคลากร',
     color: '#d97706',
     tabs: [
-      { id: 'media', label: '📚 ทะเบียนผลิตสื่อ' },
+      { id: 'media',   label: '📚 ทะเบียนผลิตสื่อ' },
+      { id: 'corner',      label: '🌿 แหล่งเรียนรู้นอกห้อง' },
+      { id: 'innercorner', label: '🏠 มุมประสบการณ์ในห้อง' },
+      { id: 'devreport',   label: '📋 รายงานพัฒนาการ' },
     ],
   },
   {
@@ -599,14 +620,25 @@ export default function TeacherDashboard() {
       <TabNav activeTab={activeTab} setActiveTab={setActiveTab} myClass={myClass} />
 
       {/* ── Report / system tabs ── */}
+      <Suspense fallback={<div style={{ textAlign:'center', padding:'3rem', color:'#9ca3af' }}>กำลังโหลด…</div>}>
       {activeTab === 'overview'    && <OverviewTab />}
       {activeTab === 'attendance'  && <AdminAttTab defaultClass={myClass} />}
       {activeTab === 'pickup'      && <PickupTab defaultClass={myClass} />}
-      {activeTab === 'evaluation'  && <EvaluationTab />}
+      {activeTab === 'healthcheck'  && <HealthCheckTab teacherClassFilter={myClass} />}
+      {activeTab === 'illnesscheck' && <IllnessCheckTab teacherClassFilter={myClass} />}
+      {activeTab === 'toothbrush'   && <ToothBrushTab teacherClassFilter={myClass} />}
+      {activeTab === 'lunch'        && <LunchTab teacherClassFilter={myClass} />}
+      {activeTab === 'milk'         && <MilkTab teacherClassFilter={myClass} />}
+      {activeTab === 'nutrition'    && <NutritionTab teacherClassFilter={myClass} />}
+      {activeTab === 'studentreport' && <StudentReportTab teacherClassFilter={myClass} />}
+      {activeTab === 'evaluation'   && <EvaluationTab />}
       {activeTab === 'reports'     && <FormReportsTab teacherClassFilter={myClass} />}
       {activeTab === 'formreports' && <ReportsTab teacherClassFilter={myClass} />}
       {activeTab === 'medialist'   && <MediaTab teacherClassFilter={myClass} viewMode="report" />}
       {activeTab === 'media'       && <MediaTab teacherClassFilter={myClass} viewMode="entry" />}
+      {activeTab === 'corner'      && <CornerTab teacherClassFilter={myClass} />}
+      {activeTab === 'innercorner' && <InnerCornerTab teacherClassFilter={myClass} />}
+      {activeTab === 'devreport'   && <DevelopmentalReportTab teacherClassFilter={myClass} />}
       {activeTab === 'activitylog' && <ActivityLogTab />}
       {activeTab === 'pins' && (
         <div className="glass p-6 animate-fade">
@@ -994,6 +1026,8 @@ export default function TeacherDashboard() {
           </div>
         </>
       )}
+
+      </Suspense>
 
       {/* ── Local student modals ── */}
       <StudentModal

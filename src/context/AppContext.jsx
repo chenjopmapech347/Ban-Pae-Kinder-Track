@@ -61,6 +61,8 @@ export function AppProvider({ children }) {
     STORAGE_KEYS.schoolName,
     INITIAL_SCHOOLS[0].name,
   );
+  const [schoolPhilosophy, setSchoolPhilosophy] = useLocalStorage(STORAGE_KEYS.schoolPhilosophy, '');
+  const [schoolVision, setSchoolVision] = useLocalStorage(STORAGE_KEYS.schoolVision, '');
   const [academicYear, setAcademicYear] = useLocalStorage(STORAGE_KEYS.academicYear, '2569');
   const [dailyRecords, setDailyRecords] = useLocalStorage(STORAGE_KEYS.dailyRecords, {});
   const [qaData, setQaData] = useLocalStorage(STORAGE_KEYS.qaData, null);
@@ -71,6 +73,15 @@ export function AppProvider({ children }) {
   const [activityLogs, setActivityLogs] = useLocalStorage(STORAGE_KEYS.activityLogs, []);
   const [pickupRecords, setPickupRecords] = useLocalStorage(STORAGE_KEYS.pickupRecords, {});
   const [mediaRecords,  setMediaRecords]  = useLocalStorage(STORAGE_KEYS.mediaRecords,  []);
+  const [cornerRecords,      setCornerRecords]      = useLocalStorage(STORAGE_KEYS.cornerRecords,      {});
+  const [innerCornerRecords, setInnerCornerRecords] = useLocalStorage(STORAGE_KEYS.innerCornerRecords, {});
+  const [healthCheckRecords,  setHealthCheckRecords]  = useLocalStorage(STORAGE_KEYS.healthCheckRecords,  {});
+  const [illnessCheckRecords, setIllnessCheckRecords] = useLocalStorage(STORAGE_KEYS.illnessCheckRecords, {});
+  const [toothBrushRecords,   setToothBrushRecords]   = useLocalStorage(STORAGE_KEYS.toothBrushRecords,   {});
+  const [lunchRecords,        setLunchRecords]        = useLocalStorage(STORAGE_KEYS.lunchRecords,        {});
+  const [milkRecords,         setMilkRecords]         = useLocalStorage(STORAGE_KEYS.milkRecords,         {});
+  const [nutritionRecords,    setNutritionRecords]    = useLocalStorage(STORAGE_KEYS.nutritionRecords,    {});
+  const [studentReportRecords, setStudentReportRecords] = useLocalStorage(STORAGE_KEYS.studentReportRecords, {});
 
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [evaluatingStudent, setEvaluatingStudent] = useState(null);
@@ -502,6 +513,10 @@ export function AppProvider({ children }) {
     setAcademicYears,
     schoolName,
     setSchoolName,
+    schoolPhilosophy,
+    setSchoolPhilosophy,
+    schoolVision,
+    setSchoolVision,
     academicYear,
     setAcademicYear,
     dailyRecords,
@@ -552,6 +567,33 @@ export function AppProvider({ children }) {
     // Media
     mediaRecords,
     setMediaRecords,
+    // Corner / Outside Learning
+    cornerRecords,
+    setCornerRecords,
+    // Inner Corner / Inside Learning
+    innerCornerRecords,
+    setInnerCornerRecords,
+    // Health Check
+    healthCheckRecords,
+    setHealthCheckRecords,
+    // Illness Check
+    illnessCheckRecords,
+    setIllnessCheckRecords,
+    // Tooth Brush
+    toothBrushRecords,
+    setToothBrushRecords,
+    // Lunch
+    lunchRecords,
+    setLunchRecords,
+    // Milk
+    milkRecords,
+    setMilkRecords,
+    // Nutrition
+    nutritionRecords,
+    setNutritionRecords,
+    // Student Report Book (อ.01)
+    studentReportRecords,
+    setStudentReportRecords,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

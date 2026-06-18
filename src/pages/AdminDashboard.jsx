@@ -1,24 +1,35 @@
-import { useState } from 'react';
-import QaStandardView  from '../components/QaStandardView';
-import OverviewTab     from '../components/admin/OverviewTab';
-import StudentsTab     from '../components/admin/StudentsTab';
-import TeachersTab     from '../components/admin/TeachersTab';
-import ClassesTab      from '../components/admin/ClassesTab';
-import HolidaysTab     from '../components/admin/HolidaysTab';
-import TopicsTab       from '../components/admin/TopicsTab';
-import SchoolsTab      from '../components/admin/SchoolsTab';
-import ReportsTab      from '../components/admin/ReportsTab';
-import IndicatorsTab   from '../components/admin/IndicatorsTab';
-import ActivitiesTab      from '../components/admin/ActivitiesTab';
-import StandardsMapTab    from '../components/admin/StandardsMapTab';
-import TermsTab           from '../components/admin/TermsTab';
-import EvaluationTab     from '../components/admin/EvaluationTab';
-import ActivityLogTab         from '../components/admin/ActivityLogTab';
-import AttendanceTab         from '../components/admin/AttendanceTab';
-import PickupTab             from '../components/admin/PickupTab';
-import NationalStandardsTab  from '../components/admin/NationalStandardsTab';
-import AnnouncementsTab     from '../components/admin/AnnouncementsTab';
-import MediaTab             from '../components/admin/MediaTab';
+import { useState, lazy, Suspense } from 'react';
+
+const QaStandardView         = lazy(() => import('../components/QaStandardView'));
+const OverviewTab            = lazy(() => import('../components/admin/OverviewTab'));
+const StudentsTab            = lazy(() => import('../components/admin/StudentsTab'));
+const TeachersTab            = lazy(() => import('../components/admin/TeachersTab'));
+const ClassesTab             = lazy(() => import('../components/admin/ClassesTab'));
+const HolidaysTab            = lazy(() => import('../components/admin/HolidaysTab'));
+const TopicsTab              = lazy(() => import('../components/admin/TopicsTab'));
+const SchoolsTab             = lazy(() => import('../components/admin/SchoolsTab'));
+const ReportsTab             = lazy(() => import('../components/admin/ReportsTab'));
+const IndicatorsTab          = lazy(() => import('../components/admin/IndicatorsTab'));
+const ActivitiesTab          = lazy(() => import('../components/admin/ActivitiesTab'));
+const StandardsMapTab        = lazy(() => import('../components/admin/StandardsMapTab'));
+const TermsTab               = lazy(() => import('../components/admin/TermsTab'));
+const EvaluationTab          = lazy(() => import('../components/admin/EvaluationTab'));
+const ActivityLogTab         = lazy(() => import('../components/admin/ActivityLogTab'));
+const AttendanceTab          = lazy(() => import('../components/admin/AttendanceTab'));
+const PickupTab              = lazy(() => import('../components/admin/PickupTab'));
+const NationalStandardsTab   = lazy(() => import('../components/admin/NationalStandardsTab'));
+const AnnouncementsTab       = lazy(() => import('../components/admin/AnnouncementsTab'));
+const MediaTab               = lazy(() => import('../components/admin/MediaTab'));
+const CornerTab              = lazy(() => import('../components/admin/CornerTab'));
+const InnerCornerTab         = lazy(() => import('../components/admin/InnerCornerTab'));
+const DevelopmentalReportTab = lazy(() => import('../components/admin/DevelopmentalReportTab'));
+const HealthCheckTab         = lazy(() => import('../components/admin/HealthCheckTab'));
+const IllnessCheckTab        = lazy(() => import('../components/admin/IllnessCheckTab'));
+const ToothBrushTab          = lazy(() => import('../components/admin/ToothBrushTab'));
+const LunchTab               = lazy(() => import('../components/admin/LunchTab'));
+const MilkTab                = lazy(() => import('../components/admin/MilkTab'));
+const NutritionTab           = lazy(() => import('../components/admin/NutritionTab'));
+const StudentReportTab       = lazy(() => import('../components/admin/StudentReportTab'));
 
 const TAB_GROUPS = [
   {
@@ -29,7 +40,14 @@ const TAB_GROUPS = [
       { id: 'announcements',  label: '📢 ประกาศ'            },
       { id: 'attendance',  label: '📅 การมาเรียน'        },
       { id: 'pickup',      label: '🏠 รับกลับบ้าน'       },
-      { id: 'evaluation',  label: '📊 ประเมินผล'         },
+      { id: 'healthcheck',  label: '🏥 ตรวจสุขภาพ'        },
+      { id: 'illnesscheck', label: '🤒 คัดกรองอาการป่วย' },
+      { id: 'toothbrush',   label: '🪥 แปรงฟัน'              },
+      { id: 'lunch',        label: '🍱 อาหารกลางวัน'       },
+      { id: 'milk',         label: '🥛 ดื่มนม'              },
+      { id: 'nutrition',    label: '⚖️ ภาวะโภชนาการ'       },
+      { id: 'studentreport', label: '📒 สมุดรายงานประจำตัวเด็กปฐมวัย (อ.01)'  },
+      { id: 'evaluation',   label: '📊 ประเมินผล'          },
       { id: 'reports',     label: '📋 รายงานสรุป'        },
       { id: 'activitylog',   label: '📜 ประวัติการประเมิน' },
       { id: 'nationalstd',   label: '🏛 มาตรฐานแห่งชาติ' },
@@ -43,6 +61,9 @@ const TAB_GROUPS = [
       { id: 'teachers',    label: '👩‍🏫 ครู'        },
       { id: 'classes',     label: '🏫 ห้องเรียน'  },
       { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ' },
+      { id: 'corner',      label: '🌿 แหล่งเรียนรู้นอกห้อง' },
+      { id: 'innercorner', label: '🏠 มุมประสบการณ์ในห้อง' },
+      { id: 'devreport',   label: '📋 รายงานพัฒนาการ' },
     ],
   },
   {
@@ -123,14 +144,25 @@ export default function AdminDashboard() {
       </div>
 
       {/* ── Tab Content ── */}
+      <Suspense fallback={<div style={{ textAlign:'center', padding:'3rem', color:'#9ca3af' }}>กำลังโหลด…</div>}>
       {activeTab === 'overview'      && <OverviewTab />}
       {activeTab === 'announcements' && <AnnouncementsTab />}
-      {activeTab === 'attendance' && <AttendanceTab />}
-      {activeTab === 'pickup'     && <PickupTab />}
-      {activeTab === 'students'   && <StudentsTab />}
+      {activeTab === 'attendance'  && <AttendanceTab />}
+      {activeTab === 'pickup'      && <PickupTab />}
+      {activeTab === 'healthcheck'  && <HealthCheckTab />}
+      {activeTab === 'illnesscheck' && <IllnessCheckTab />}
+      {activeTab === 'toothbrush'   && <ToothBrushTab />}
+      {activeTab === 'lunch'        && <LunchTab />}
+      {activeTab === 'milk'         && <MilkTab />}
+      {activeTab === 'nutrition'    && <NutritionTab />}
+      {activeTab === 'studentreport' && <StudentReportTab />}
+      {activeTab === 'students'     && <StudentsTab />}
       {activeTab === 'teachers'   && <TeachersTab />}
       {activeTab === 'classes'     && <ClassesTab />}
       {activeTab === 'media'       && <MediaTab viewMode="entry" />}
+      {activeTab === 'corner'      && <CornerTab />}
+      {activeTab === 'innercorner' && <InnerCornerTab />}
+      {activeTab === 'devreport'   && <DevelopmentalReportTab />}
       {activeTab === 'evaluation'  && <EvaluationTab />}
       {activeTab === 'reports'     && <ReportsTab />}
       {activeTab === 'activitylog'  && <ActivityLogTab />}
@@ -148,6 +180,7 @@ export default function AdminDashboard() {
           <QaStandardView />
         </div>
       )}
+      </Suspense>
     </div>
   );
 }

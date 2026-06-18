@@ -463,8 +463,11 @@ export default function EvaluationTab() {
           }}>
             <div>
               <label style={{ display: 'block', fontSize: '.73rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '.25rem' }}>ครั้งที่ประเมิน</label>
-              <select className="input" style={{ width: '120px' }} value={round} onChange={e => { setRound(Number(e.target.value)); setSaved(false); }}>
-                {[1,2,3,4].map(r => <option key={r} value={r}>ครั้งที่ {r}</option>)}
+              <select className="input" style={{ width: '160px' }} value={round} onChange={e => { setRound(Number(e.target.value)); setSaved(false); }}>
+                <option value={1}>ภาคเรียน 1 ครั้งที่ 1</option>
+                <option value={2}>ภาคเรียน 1 ครั้งที่ 2</option>
+                <option value={3}>ภาคเรียน 2 ครั้งที่ 1</option>
+                <option value={4}>ภาคเรียน 2 ครั้งที่ 2</option>
               </select>
             </div>
             <div>

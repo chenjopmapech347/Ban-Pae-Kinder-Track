@@ -209,6 +209,11 @@ export default function LoginPage() {
                         <div style={{ fontSize: '.75rem', color: '#059669', marginTop: '.1rem' }}>
                           ชั้น {foundStudent.className} · รหัส {foundStudent.code}
                         </div>
+                        {foundStudent.guardianName && (
+                          <div style={{ fontSize: '.75rem', color: '#047857', marginTop: '.15rem', fontWeight: 700 }}>
+                            👨‍👩‍👧 ผู้ปกครอง: {foundStudent.guardianName}
+                          </div>
+                        )}
                       </>
                     ) : (
                       <div style={{ fontWeight: 700, color: '#991b1b', fontSize: '.88rem' }}>

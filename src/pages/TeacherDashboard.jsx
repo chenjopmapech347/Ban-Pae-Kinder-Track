@@ -99,7 +99,6 @@ const TEACHER_TAB_GROUPS = [
       { id: 'nutrition',    label: '⚖️ ภาวะโภชนาการ'     },
       { id: 'studentreport', label: '📒 สมุดรายงานประจำตัวเด็กปฐมวัย (อ.01)' },
       { id: 'evaluation',   label: '✏️ ประเมินผล' },
-      { id: 'reports',     label: '📋 รายงาน' },
       { id: 'formreports', label: '📄 สรุปรายงาน' },
       { id: 'medialist',   label: '📚 รายการทะเบียนสื่อ' },
       { id: 'activitylog', label: '📜 ประวัติ' },

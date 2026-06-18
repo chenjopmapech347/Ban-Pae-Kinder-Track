@@ -379,7 +379,8 @@ export function AppProvider({ children }) {
         }
         setRole('parent');
         setUser({
-          name: `ผู้ปกครอง ${student.name.split(' ').slice(-1)[0]}`,
+          name: student.guardianName?.trim() || `ผู้ปกครอง ${student.name.split(' ').slice(-1)[0]}`,
+          guardianName: student.guardianName?.trim() || '',
           studentId: student.id,
         });
         return { ok: true };

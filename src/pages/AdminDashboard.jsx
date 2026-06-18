@@ -48,7 +48,7 @@ const TAB_GROUPS = [
       { id: 'nutrition',    label: '⚖️ ภาวะโภชนาการ'       },
       { id: 'studentreport', label: '📒 สมุดรายงานประจำตัวเด็กปฐมวัย (อ.01)'  },
       { id: 'evaluation',   label: '📊 ประเมินผล'          },
-      { id: 'reports',     label: '📋 รายงานสรุป'        },
+      { id: 'reports',     label: '📋 รายงานสรุปการประเมินผล' },
       { id: 'activitylog',   label: '📜 ประวัติการประเมิน' },
       { id: 'nationalstd',   label: '🏛 มาตรฐานแห่งชาติ' },
     ],

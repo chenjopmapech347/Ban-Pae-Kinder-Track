@@ -143,7 +143,7 @@ export default function SettingsPage({ onBack }) {
               <input className="input"
                 value={localGovSlogan}
                 onChange={e => setLocalGovSlogan(e.target.value)}
-                placeholder="เช่น สะอาด สวยงาม น่าอยู่"
+                placeholder="เช่น เด็กเล็กเบิกบาน วิชาการก้าวหน้า เยาวชนพัฒนา ปวงประชาร่วมใจ"
               />
             </div>
             <div>
@@ -153,7 +153,7 @@ export default function SettingsPage({ onBack }) {
               <input className="input"
                 value={schoolSlogan}
                 onChange={e => setSchoolSlogan(e.target.value)}
-                placeholder="เช่น เรียนดี กีฬาเด่น เน้นคุณธรรม"
+                placeholder="เช่น วินัยดี มีวิชา กีฬาเด่น เป็นโรงเรียนของชุมชน"
               />
             </div>
             <div>

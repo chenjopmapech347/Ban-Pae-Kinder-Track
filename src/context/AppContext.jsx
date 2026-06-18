@@ -61,10 +61,14 @@ export function AppProvider({ children }) {
     STORAGE_KEYS.schoolName,
     INITIAL_SCHOOLS[0].name,
   );
-  const [schoolPhilosophy, setSchoolPhilosophy] = useLocalStorage(STORAGE_KEYS.schoolPhilosophy, '');
-  const [schoolVision, setSchoolVision] = useLocalStorage(STORAGE_KEYS.schoolVision, '');
-  const [localGovSlogan, setLocalGovSlogan] = useLocalStorage(STORAGE_KEYS.localGovSlogan, '');
-  const [schoolSlogan, setSchoolSlogan] = useLocalStorage(STORAGE_KEYS.schoolSlogan, '');
+  const [schoolPhilosophy, setSchoolPhilosophy] = useLocalStorage(STORAGE_KEYS.schoolPhilosophy,
+    'การศึกษาปฐมวัย เป็นการพัฒนาเด็กตั้งแต่แรกเกิดถึง 6 ปีบริบูรณ์ อย่างเป็นองค์รวมบนพื้นฐานการอบรมเลี้ยงดูและการส่งเสริมกระบวนการเรียนรู้ที่สนองต่อธรรมชาติและพัฒนาการตามวัยของเด็กแต่ละคนให้เต็มตามศักยภาพ ภายใต้บริบทสังคมและวัฒนธรรมที่เด็กอาศัยอยู่ ด้วยความรัก ความเอื้ออาทร และความเข้าใจของทุกคน เพื่อสร้างรากฐานคุณภาพชีวิตให้เด็กพัฒนาไปสู่ความเป็นมนุษย์ที่สมบูรณ์ เกิดคุณค่าต่อตนเอง ครอบครัว ชุมชน สังคม และประเทศชาติ');
+  const [schoolVision, setSchoolVision] = useLocalStorage(STORAGE_KEYS.schoolVision,
+    'หลักสูตรการศึกษาปฐมวัยมุ่งพัฒนาเด็กทุกคนให้ได้รับการพัฒนาด้านร่างกาย อารมณ์ จิตใจ สังคมและสติปัญญา อย่างมีคุณภาพและต่อเนื่อง ได้รับการจัดประสบการณ์การเรียนรู้อย่างมีความสุขและเหมาะสมตามวัย มีทักษะชีวิต และปฏิบัติตนตามหลักปรัชญาของเศรษฐกิจพอเพียง เป็นคนดี มีวินัย และสำนึกความเป็นไทย โดยความร่วมมือระหว่างสถานศึกษา พ่อแม่ ครอบครัว ชุมชน และทุกฝ่ายที่เกี่ยวข้องกับการพัฒนาเด็ก');
+  const [localGovSlogan, setLocalGovSlogan] = useLocalStorage(STORAGE_KEYS.localGovSlogan,
+    'เด็กเล็กเบิกบาน วิชาการก้าวหน้า เยาวชนพัฒนา ปวงประชาร่วมใจ');
+  const [schoolSlogan, setSchoolSlogan] = useLocalStorage(STORAGE_KEYS.schoolSlogan,
+    'วินัยดี มีวิชา กีฬาเด่น เป็นโรงเรียนของชุมชน');
   const [academicYear, setAcademicYear] = useLocalStorage(STORAGE_KEYS.academicYear, '2569');
   const [dailyRecords, setDailyRecords] = useLocalStorage(STORAGE_KEYS.dailyRecords, {});
   const [qaData, setQaData] = useLocalStorage(STORAGE_KEYS.qaData, null);

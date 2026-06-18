@@ -100,6 +100,109 @@ function printMonthlySummary(classSections, monthLabel, schoolName) {
   w.document.close();
 }
 
+// ── บัญชีเรียกชื่อ — พิมพ์ ────────────────────────────────────────────────
+// marks: มา = ว่าง, ป่วย = ป, ลา = ล, ขาด = ข  (ตามคำอธิบายบัญชีเรียกชื่อ)
+const DAY_ABBR = ['อา','จ','อ','พ','พฤ','ศ','ส']; // 0=Sun … 6=Sat
+function printRollCall(classSections, selMonth, schoolName) {
+  const [yr, mo] = selMonth.split('-').map(Number);
+  const daysInMonth = new Date(yr, mo, 0).getDate();
+  // build day-header cells: date number + day abbr
+  const dayCols = Array.from({ length: daysInMonth }, (_, i) => {
+    const d = new Date(yr, mo - 1, i + 1);
+    return { date: i + 1, dow: d.getDay() }; // dow 0=Sun,6=Sat
+  });
+  const thMonthYear = new Date(yr, mo - 1, 1)
+    .toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+
+  const attMark = v => ({ มา: '', ป่วย: 'ป', ลา: 'ล', ขาด: 'ข' }[v] ?? '');
+  const weekendBg = 'background:#f0f0f0';
+
+  const css = `
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
+    *{box-sizing:border-box}
+    body{font-family:'Sarabun',sans-serif;font-size:9.5px;margin:0;padding:0}
+    h2{font-size:12px;font-weight:800;margin:0 0 1px;text-align:center}
+    .sub{font-size:9px;color:#444;text-align:center;margin-bottom:5px}
+    table{width:100%;border-collapse:collapse;margin-bottom:16px;table-layout:fixed}
+    th,td{border:1px solid #aaa;padding:1.5px 2px;text-align:center;font-size:8.5px;overflow:hidden;white-space:nowrap}
+    th{background:#d0d0d0;font-weight:700}
+    .tl{text-align:left!important;padding-left:4px!important;white-space:normal;word-break:break-word}
+    .pg{break-after:page;page-break-after:always}
+    .wk{background:#f0f0f0}
+    .ข{color:#dc2626;font-weight:800}
+    .ป{color:#1e40af;font-weight:800}
+    .ล{color:#b45309;font-weight:800}
+    @media print{@page{size:A4 landscape;margin:0.8cm}}
+  `;
+
+  const pages = classSections.map(({ cls, teacher, rows }, pi) => {
+    const isLast = pi === classSections.length - 1;
+    // day header row 1: date number
+    const thDates = dayCols.map(d =>
+      `<th style="width:14px${d.dow===0||d.dow===6?';'+weekendBg:''}" class="${d.dow===0||d.dow===6?'wk':''}">${d.date}</th>`
+    ).join('');
+    // day header row 2: day abbr
+    const thDays = dayCols.map(d =>
+      `<th style="${d.dow===0||d.dow===6?weekendBg:''}" class="${d.dow===0||d.dow===6?'wk':''}">${DAY_ABBR[d.dow]}</th>`
+    ).join('');
+
+    const trs = rows.map((s, idx) => {
+      const dayCells = dayCols.map(d => {
+        const iso = `${yr}-${String(mo).padStart(2,'0')}-${String(d.date).padStart(2,'0')}`;
+        const att = s.dailyAtt?.[iso] ?? '';
+        const mark = attMark(att);
+        const cls2 = d.dow===0||d.dow===6 ? 'wk' : (mark || '');
+        return `<td class="${cls2}">${mark}</td>`;
+      }).join('');
+      const { มา=0, ขาด=0, ลา=0, ป่วย=0 } = s.counts;
+      return `<tr>
+        <td>${idx + 1}</td>
+        <td class="tl">${s.name.replace('เด็กชาย','ด.ช.').replace('เด็กหญิง','ด.ญ.')}</td>
+        <td>${s.studentCode || ''}</td>
+        <td class="tl" style="font-size:7.5px">${s.nationalId || ''}</td>
+        ${dayCells}
+        <td><b>${มา}</b></td>
+        <td class="ข">${ขาด||''}</td>
+        <td class="ล">${ลา||''}</td>
+        <td class="ป">${ป่วย||''}</td>
+      </tr>`;
+    }).join('');
+
+    return `
+      <div class="${isLast?'':'pg'}">
+        <h2>บัญชีเรียกชื่อ ประจำเดือน ${thMonthYear}</h2>
+        <div class="sub">${schoolName||''} · ห้อง ${cls}${teacher?' · ครู'+teacher.name:''}</div>
+        <div class="sub" style="font-size:8px;margin-bottom:4px">มาเรียน = ว่าง &nbsp;|&nbsp; ป่วย = ป &nbsp;|&nbsp; ลา = ล &nbsp;|&nbsp; ขาด = ข</div>
+        <table>
+          <thead>
+            <tr>
+              <th rowspan="2" style="width:22px">ที่</th>
+              <th rowspan="2" class="tl" style="width:110px">ชื่อ-นามสกุล</th>
+              <th rowspan="2" style="width:36px">เลข<br/>ประจำตัว</th>
+              <th rowspan="2" style="width:80px">เลขประชาชน</th>
+              ${thDates}
+              <th rowspan="2" style="width:20px">มา</th>
+              <th rowspan="2" style="width:20px">ขาด</th>
+              <th rowspan="2" style="width:20px">ลา</th>
+              <th rowspan="2" style="width:20px">ป่วย</th>
+            </tr>
+            <tr>${thDays}</tr>
+          </thead>
+          <tbody>${trs}</tbody>
+        </table>
+      </div>`;
+  }).join('');
+
+  const blob = new Blob(
+    [`<!DOCTYPE html><html><head><meta charset="utf-8"><title>บัญชีเรียกชื่อ</title><style>${css}</style></head><body>${pages}</body></html>`],
+    { type: 'text/html;charset=utf-8' }
+  );
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank', 'width=1200,height=800');
+  if (!win) { URL.revokeObjectURL(url); return; }
+  win.addEventListener('load', () => { win.focus(); win.print(); URL.revokeObjectURL(url); });
+}
+
 export default function AttendanceTab({ defaultClass }) {
   const { students, dailyRecords, teachers, saveDailyAttendance, schoolName } = useApp();
 
@@ -122,11 +225,15 @@ export default function AttendanceTab({ defaultClass }) {
       const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'));
       const rows = sts.map(s => {
         const counts = { มา: 0, ขาด: 0, ลา: 0, ป่วย: 0 };
+        const dailyAtt = {};
         targetDates.forEach(d => {
           const rec = dailyRecords[d]?.[String(s.id)];
-          if (rec?.attendance && counts[rec.attendance] !== undefined) counts[rec.attendance]++;
+          if (rec?.attendance) {
+            if (counts[rec.attendance] !== undefined) counts[rec.attendance]++;
+            dailyAtt[d] = rec.attendance;
+          }
         });
-        return { ...s, counts };
+        return { ...s, counts, dailyAtt };
       });
       return { cls, teacher, rows, schoolDays };
     }).filter(sec => sec.rows.length > 0);
@@ -291,7 +398,7 @@ export default function AttendanceTab({ defaultClass }) {
           </label>
         )}
 
-        {mainView === 'monthly' && (
+        {mainView === 'monthly' && (<>
           <button type="button"
             onClick={() => {
               const [y, m] = selMonth.split('-');
@@ -306,7 +413,16 @@ export default function AttendanceTab({ defaultClass }) {
             }}>
             🖨️ พิมพ์สรุป
           </button>
-        )}
+          <button type="button"
+            onClick={() => printRollCall(monthlyData, selMonth, schoolName)}
+            style={{
+              padding: '.4rem 1rem', borderRadius: '8px', border: 'none',
+              background: '#7c3aed', color: 'white', fontFamily: 'inherit',
+              fontWeight: 700, fontSize: '.82rem', cursor: 'pointer',
+            }}>
+            📋 พิมพ์บัญชีเรียกชื่อ
+          </button>
+        </>)}
 
         {/* View mode (daily only) */}
         {mainView === 'daily' && (

@@ -69,6 +69,80 @@ const KHAM_CHIAENG = [
   },
 ];
 
+function printKhamChiaeng() {
+  const css = `
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap');
+    *{box-sizing:border-box}
+    body{font-family:'Sarabun',sans-serif;font-size:13px;margin:0;padding:24px 32px;color:#1e293b;line-height:1.8}
+    h1{font-size:16px;font-weight:800;text-align:center;margin:0 0 4px}
+    .sub{font-size:12px;text-align:center;color:#555;margin-bottom:20px}
+    .item{margin-bottom:14px;display:flex;gap:8px;align-items:flex-start}
+    .no{font-weight:800;color:#92400e;min-width:20px;padding-top:1px}
+    .content{flex:1}
+    .bold{font-weight:800;color:#1e293b}
+    .highlight{background:#fef9c3;padding:1px 5px;border-radius:4px;color:#713f12}
+    ol{margin:5px 0 0 18px;padding:0}
+    li{margin-bottom:3px}
+    .level-row{display:flex;gap:10px;align-items:flex-start;margin-bottom:5px}
+    .level-badge{font-weight:800;min-width:100px;flex-shrink:0;padding:2px 8px;border-radius:6px;text-align:center;font-size:12px}
+    .lv3{background:#d1fae5;color:#065f46}
+    .lv2{background:#fef3c7;color:#92400e}
+    .lv1{background:#fee2e2;color:#991b1b}
+    .formula-box{margin-top:16px;padding:12px 16px;background:#f0fdf4;border-radius:10px;border:1px solid #86efac}
+    .formula-title{font-weight:800;color:#166534;margin-bottom:8px;font-size:13px}
+    .formula-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11.5px;color:#14532d}
+    .formula-grid div{line-height:1.6}
+    @media print{@page{size:A4 portrait;margin:1.5cm} body{padding:0}}
+  `;
+
+  const items = KHAM_CHIAENG.map(item => {
+    const listHtml = item.list
+      ? `<ol>${item.list.map(l => `<li>${l}</li>`).join('')}</ol>` : '';
+    const levelsHtml = item.levels
+      ? item.levels.map((lv, i) =>
+          `<div class="level-row">
+            <span class="level-badge ${i===0?'lv3':i===1?'lv2':'lv1'}">${lv.label}</span>
+            <span>${lv.desc}</span>
+          </div>`).join('') : '';
+    const textHtml = item.text
+      ? `<span class="${item.highlight?'highlight':''}">${item.text}</span>` : '';
+    return `
+      <div class="item">
+        <span class="no">${item.no}.</span>
+        <div class="content">
+          ${item.bold ? `<span class="bold">${item.bold} </span>` : ''}
+          ${textHtml}${listHtml}${levelsHtml}
+        </div>
+      </div>`;
+  }).join('');
+
+  const formula = `
+    <div class="formula-box">
+      <div class="formula-title">📐 สรุปสูตรการคำนวณ</div>
+      <div class="formula-grid">
+        <div><strong>สรุปภาคเรียน (กิจกรรม)</strong><br/>= ครั้งล่าสุดที่ประเมิน (ค2 ถ้ามี, ไม่มีใช้ ค1)</div>
+        <div><strong>สรุปตัวบ่งชี้ (ต่อภาคเรียน)</strong><br/>= ค่าเฉลี่ยของ สรุปกิจกรรมทุกรายการ (1 ทศนิยม ไม่ปัด)</div>
+        <div><strong>สรุปมาตรฐาน (ต่อภาคเรียน)</strong><br/>= ค่าเฉลี่ยของ สรุปตัวบ่งชี้ ปัดทศนิยม (≥.5 ปัดขึ้น)</div>
+        <div><strong>สรุปประจำปี</strong><br/>= ผลภาคเรียน 2 (พัฒนาการปัจจุบัน)</div>
+      </div>
+    </div>`;
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>คำชี้แจงการประเมินพัฒนาการเด็กปฐมวัย</title>
+    <style>${css}</style></head>
+    <body>
+      <h1>คำชี้แจงการประเมินพัฒนาการเด็กปฐมวัย</h1>
+      <div class="sub">หลักสูตรการศึกษาปฐมวัย พ.ศ. 2560</div>
+      ${items}${formula}
+    </body></html>`;
+
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank', 'width=900,height=1000');
+  if (!win) { URL.revokeObjectURL(url); return; }
+  win.addEventListener('load', () => { win.focus(); win.print(); URL.revokeObjectURL(url); });
+}
+
 function KhamChiaeng() {
   const [open, setOpen] = useState(false);
   return (
@@ -83,7 +157,19 @@ function KhamChiaeng() {
           fontFamily: 'inherit', fontWeight: 700, fontSize: '.85rem', color: '#92400e',
         }}>
         <span>📋 คำชี้แจงการประเมินพัฒนาการเด็กปฐมวัย (หลักสูตรปฐมวัย พ.ศ. 2560)</span>
-        <span style={{ fontSize: '1rem' }}>{open ? '▲' : '▼'}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+          <span
+            role="button" tabIndex={0}
+            onClick={e => { e.stopPropagation(); printKhamChiaeng(); }}
+            onKeyDown={e => e.key === 'Enter' && (e.stopPropagation(), printKhamChiaeng())}
+            style={{
+              background: '#92400e', color: 'white', borderRadius: '7px',
+              padding: '.2rem .65rem', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer',
+            }}>
+            🖨️ พิมพ์
+          </span>
+          <span style={{ fontSize: '1rem' }}>{open ? '▲' : '▼'}</span>
+        </div>
       </button>
 
       {open && (

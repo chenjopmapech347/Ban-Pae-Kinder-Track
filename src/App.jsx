@@ -8,8 +8,8 @@ import ParentView from './pages/ParentView';
 import ReportPage from './pages/ReportPage';
 import EvaluationForm from './components/EvaluationForm';
 import StudentModal from './components/StudentModal';
+import { version as APP_VERSION } from '../package.json';
 
-const APP_VERSION   = '1.0.0';
 const APP_DEVELOPER = 'นายเจนจบ มาเพ็ชร์';
 
 const ROLE_LABEL = {

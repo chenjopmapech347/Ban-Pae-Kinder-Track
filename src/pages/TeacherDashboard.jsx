@@ -6,7 +6,6 @@ import StudentModal from '../components/StudentModal';
 
 const EvaluationTab          = lazy(() => import('../components/admin/EvaluationTab'));
 const ReportsTab             = lazy(() => import('../components/admin/ReportsTab'));
-const FormReportsTab         = lazy(() => import('../components/admin/FormReportsTab'));
 const MediaTab               = lazy(() => import('../components/admin/MediaTab'));
 const CornerTab              = lazy(() => import('../components/admin/CornerTab'));
 const InnerCornerTab         = lazy(() => import('../components/admin/InnerCornerTab'));
@@ -637,7 +636,6 @@ export default function TeacherDashboard() {
       {activeTab === 'nutrition'    && <NutritionTab teacherClassFilter={myClass} />}
       {activeTab === 'studentreport' && <StudentReportTab teacherClassFilter={myClass} />}
       {activeTab === 'evaluation'   && <EvaluationTab />}
-      {activeTab === 'reports'     && <FormReportsTab teacherClassFilter={myClass} />}
       {activeTab === 'formreports' && <ReportsTab teacherClassFilter={myClass} />}
       {activeTab === 'medialist'   && <MediaTab teacherClassFilter={myClass} viewMode="report" />}
       {activeTab === 'media'       && <MediaTab teacherClassFilter={myClass} viewMode="entry" />}

@@ -80,16 +80,58 @@ export default function ParentView() {
             {isBoy ? '👦' : '👧'}
           </div>
           <div>
-            <h2 style={{ color: 'white', fontSize: '1.4rem', marginBottom: '0.25rem' }}>
-              สวัสดีคุณผู้ปกครอง 😊
-            </h2>
+            {student.guardianName ? (
+              <h2 style={{ color: 'white', fontSize: '1.4rem', marginBottom: '0.25rem' }}>
+                สวัสดีคุณ {student.guardianName} 😊
+              </h2>
+            ) : (
+              <h2 style={{ color: 'white', fontSize: '1.4rem', marginBottom: '0.25rem' }}>
+                สวัสดีคุณผู้ปกครอง 😊
+              </h2>
+            )}
             <div style={{ opacity: 0.9, fontSize: '1rem', fontWeight: 600 }}>{student.name}</div>
             <div style={{ opacity: 0.75, fontSize: '0.82rem', marginTop: '0.2rem' }}>
               ชั้นอนุบาล {student.level?.replace('K', '')} · อายุ {student.age} ปี
             </div>
+            {student.guardianOcc && (
+              <div style={{ opacity: 0.7, fontSize: '0.75rem', marginTop: '0.1rem' }}>
+                อาชีพ: {student.guardianOcc}
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Parent Info Card */}
+      {(student.guardianName || student.guardianOcc || student.parentPhone) && (
+        <div className="glass-card mb-6" style={{ background:'#f0fdf4', border:'1px solid #bbf7d0' }}>
+          <h3 className="mb-3" style={{ color:'#166534' }}>👨‍👩‍👧 ข้อมูลผู้ปกครอง</h3>
+          <div style={{ display:'grid', gridTemplateColumns:'auto 1fr', gap:'.35rem .85rem',
+            fontSize:'.875rem', alignItems:'center' }}>
+            {student.guardianName && (
+              <>
+                <span style={{ color:'#6b7280', fontWeight:600, whiteSpace:'nowrap' }}>ชื่อ-นามสกุล</span>
+                <span style={{ fontWeight:800, color:'#14532d' }}>{student.guardianName}</span>
+              </>
+            )}
+            {student.guardianOcc && (
+              <>
+                <span style={{ color:'#6b7280', fontWeight:600 }}>อาชีพ</span>
+                <span style={{ color:'#166534' }}>{student.guardianOcc}</span>
+              </>
+            )}
+            {student.parentPhone && (
+              <>
+                <span style={{ color:'#6b7280', fontWeight:600 }}>โทรศัพท์</span>
+                <a href={`tel:${student.parentPhone}`}
+                  style={{ color:'#15803d', fontWeight:700, textDecoration:'none' }}>
+                  📞 {student.parentPhone}
+                </a>
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Announcements */}
       {parentAnnouncements.length > 0 && (

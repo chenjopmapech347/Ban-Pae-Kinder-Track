@@ -7,7 +7,10 @@ const ALL_CLASSES = ['อ.1/1', 'อ.1/2', 'อ.2/1', 'อ.2/2', 'อ.3/1', 'อ
 const ROUNDS = [1, 2, 3, 4];
 
 export default function OverviewTab() {
-  const { students, teachers, assessmentTopics, announcements, setAnnouncements } = useApp();
+  const {
+    students, teachers, assessmentTopics, announcements, setAnnouncements,
+    schoolName, localGovSlogan, schoolSlogan, schoolPhilosophy, schoolVision,
+  } = useApp();
 
   // ── สถานะการประเมินแยกตามห้อง × ครั้ง ──────────────────────────────────────
   const pendingMatrix = useMemo(() => {
@@ -48,6 +51,74 @@ export default function OverviewTab() {
 
   return (
     <div className="animate-fade">
+
+      {/* ── School identity card ── */}
+      {(schoolName || localGovSlogan || schoolSlogan || schoolPhilosophy || schoolVision) && (
+        <div className="glass-card" style={{ marginBottom:'1.25rem', background:'linear-gradient(135deg,#eff6ff 0%,#f0fdf4 100%)', border:'1px solid #bfdbfe' }}>
+          {/* ชื่อโรงเรียน */}
+          {schoolName && (
+            <h3 style={{ textAlign:'center', color:'#1e3a8a', marginBottom:'.65rem', fontSize:'1.15rem', fontWeight:800 }}>
+              🏫 {schoolName}
+            </h3>
+          )}
+
+          {/* คำขวัญ 2 บรรทัด */}
+          {(localGovSlogan || schoolSlogan) && (
+            <div style={{ display:'flex', flexWrap:'wrap', gap:'.6rem', justifyContent:'center', marginBottom:'.85rem' }}>
+              {localGovSlogan && (
+                <div style={{ background:'#dbeafe', borderRadius:'10px', padding:'.4rem 1rem',
+                  border:'1px solid #93c5fd', textAlign:'center' }}>
+                  <div style={{ fontSize:'.65rem', color:'#1e40af', fontWeight:700, marginBottom:'.15rem' }}>
+                    🏛️ คำขวัญขององค์กรปกครองส่วนท้องถิ่น
+                  </div>
+                  <div style={{ fontSize:'.88rem', color:'#1e3a8a', fontWeight:700 }}>{localGovSlogan}</div>
+                </div>
+              )}
+              {schoolSlogan && (
+                <div style={{ background:'#d1fae5', borderRadius:'10px', padding:'.4rem 1rem',
+                  border:'1px solid #6ee7b7', textAlign:'center' }}>
+                  <div style={{ fontSize:'.65rem', color:'#065f46', fontWeight:700, marginBottom:'.15rem' }}>
+                    🎗️ คำขวัญของสถานศึกษาในสังกัดองค์กรปกครองส่วนท้องถิ่น
+                  </div>
+                  <div style={{ fontSize:'.88rem', color:'#064e3b', fontWeight:700 }}>{schoolSlogan}</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ปรัชญา + วิสัยทัศน์ */}
+          {(schoolPhilosophy || schoolVision) && (
+            <div style={{ display:'grid', gridTemplateColumns: schoolPhilosophy && schoolVision ? '1fr 1fr' : '1fr',
+              gap:'.85rem' }}>
+              {schoolPhilosophy && (
+                <div style={{ background:'white', borderRadius:'10px', padding:'.75rem 1rem',
+                  border:'1px solid #e0e7ff' }}>
+                  <div style={{ fontSize:'.72rem', fontWeight:800, color:'#4338ca', marginBottom:'.4rem' }}>
+                    📖 ปรัชญาการศึกษาปฐมวัย
+                  </div>
+                  <p style={{ margin:0, fontSize:'.78rem', color:'#374151', lineHeight:1.75,
+                    textIndent:'1.5em' }}>
+                    {schoolPhilosophy}
+                  </p>
+                </div>
+              )}
+              {schoolVision && (
+                <div style={{ background:'white', borderRadius:'10px', padding:'.75rem 1rem',
+                  border:'1px solid #dcfce7' }}>
+                  <div style={{ fontSize:'.72rem', fontWeight:800, color:'#15803d', marginBottom:'.4rem' }}>
+                    🎯 วิสัยทัศน์
+                  </div>
+                  <p style={{ margin:0, fontSize:'.78rem', color:'#374151', lineHeight:1.75,
+                    textIndent:'1.5em' }}>
+                    {schoolVision}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       <ExcelImportPanel />
 
       {/* Stat Cards */}

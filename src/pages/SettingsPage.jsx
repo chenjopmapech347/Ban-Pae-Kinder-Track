@@ -33,6 +33,33 @@ export default function SettingsPage({ onBack }) {
   const [syncing, setSyncing]         = useState(false);
   const [fbMsg, setFbMsg]             = useState('');
 
+  // School info edit mode
+  const [schoolEditing, setSchoolEditing] = useState(false);
+  const [schoolSaved,   setSchoolSaved]   = useState(false);
+  const [schoolDraft, setSchoolDraft] = useState({
+    name: schoolName, localGov: localGovSlogan, school: schoolSlogan,
+    philosophy: schoolPhilosophy, vision: schoolVision,
+  });
+
+  function handleSchoolEdit() {
+    setSchoolDraft({ name: schoolName, localGov: localGovSlogan, school: schoolSlogan,
+      philosophy: schoolPhilosophy, vision: schoolVision });
+    setSchoolEditing(true);
+    setSchoolSaved(false);
+  }
+  function handleSchoolSave() {
+    setSchoolName(schoolDraft.name);
+    setLocalGovSlogan(schoolDraft.localGov);
+    setSchoolSlogan(schoolDraft.school);
+    setSchoolPhilosophy(schoolDraft.philosophy);
+    setSchoolVision(schoolDraft.vision);
+    setSchoolEditing(false);
+    setSchoolSaved(true);
+  }
+  function handleSchoolCancel() {
+    setSchoolEditing(false);
+  }
+
   const addYear = () => {
     if (newYear && !academicYears.includes(newYear)) {
       setAcademicYears([...academicYears, newYear].sort());
@@ -125,59 +152,78 @@ export default function SettingsPage({ onBack }) {
           <button type="button" className="btn btn-primary mt-4" onClick={saveAuth}>บันทึกรหัสผ่าน</button>
         </div>
 
-        {/* ─── School name ─── */}
+        {/* ─── School info ─── */}
         <div className="glass p-6">
-          <h3 className="mb-4">🏫 ข้อมูลโรงเรียน</h3>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'1rem' }}>
+            <h3 style={{ margin:0 }}>🏫 ข้อมูลโรงเรียน</h3>
+            <div style={{ display:'flex', gap:'.5rem', alignItems:'center' }}>
+              {schoolSaved && !schoolEditing && (
+                <span style={{ color:'#059669', fontWeight:700, fontSize:'.82rem' }}>✅ บันทึกแล้ว</span>
+              )}
+              {!schoolEditing ? (
+                <button type="button" className="btn btn-secondary" onClick={handleSchoolEdit}
+                  style={{ fontSize:'.8rem', padding:'.35rem .9rem' }}>
+                  ✏️ แก้ไข
+                </button>
+              ) : (
+                <>
+                  <button type="button" className="btn btn-primary" onClick={handleSchoolSave}
+                    style={{ fontSize:'.8rem', padding:'.35rem .9rem' }}>
+                    💾 บันทึก
+                  </button>
+                  <button type="button" onClick={handleSchoolCancel}
+                    style={{ fontSize:'.8rem', padding:'.35rem .9rem', borderRadius:'8px',
+                      border:'1px solid #d1d5db', background:'white', cursor:'pointer', fontFamily:'inherit' }}>
+                    ยกเลิก
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
           <div style={{ display:'flex', flexDirection:'column', gap:'1rem' }}>
-            <div>
-              <label style={{ display:'block',marginBottom:'.35rem',fontWeight:700,fontSize:'.85rem' }}>
-                ชื่อโรงเรียน
-              </label>
-              <input className="input" value={schoolName} onChange={e=>setSchoolName(e.target.value)}
-                placeholder="เช่น โรงเรียนเทศบาลบ้านเพ ๑" />
-            </div>
-            <div>
-              <label style={{ display:'block',marginBottom:'.35rem',fontWeight:700,fontSize:'.85rem' }}>
-                🏛️ คำขวัญขององค์กรปกครองส่วนท้องถิ่น
-              </label>
-              <input className="input"
-                value={localGovSlogan}
-                onChange={e => setLocalGovSlogan(e.target.value)}
-                placeholder="เช่น เด็กเล็กเบิกบาน วิชาการก้าวหน้า เยาวชนพัฒนา ปวงประชาร่วมใจ"
-              />
-            </div>
-            <div>
-              <label style={{ display:'block',marginBottom:'.35rem',fontWeight:700,fontSize:'.85rem' }}>
-                🎗️ คำขวัญของสถานศึกษาในสังกัดองค์กรปกครองส่วนท้องถิ่น
-              </label>
-              <input className="input"
-                value={schoolSlogan}
-                onChange={e => setSchoolSlogan(e.target.value)}
-                placeholder="เช่น วินัยดี มีวิชา กีฬาเด่น เป็นโรงเรียนของชุมชน"
-              />
-            </div>
-            <div>
-              <label style={{ display:'block',marginBottom:'.35rem',fontWeight:700,fontSize:'.85rem' }}>
-                📖 ปรัชญาการศึกษาปฐมวัย
-              </label>
-              <textarea className="input" rows={4}
-                value={schoolPhilosophy}
-                onChange={e => setSchoolPhilosophy(e.target.value)}
-                placeholder="กรอกปรัชญาการศึกษาปฐมวัยของโรงเรียน (ถ้าไม่กรอก ระบบจะใช้ค่าเริ่มต้น)"
-                style={{ resize:'vertical', lineHeight:1.8 }}
-              />
-            </div>
-            <div>
-              <label style={{ display:'block',marginBottom:'.35rem',fontWeight:700,fontSize:'.85rem' }}>
-                🎯 วิสัยทัศน์
-              </label>
-              <textarea className="input" rows={3}
-                value={schoolVision}
-                onChange={e => setSchoolVision(e.target.value)}
-                placeholder="กรอกวิสัยทัศน์ของโรงเรียน (ถ้าไม่กรอก ระบบจะใช้ค่าเริ่มต้น)"
-                style={{ resize:'vertical', lineHeight:1.8 }}
-              />
-            </div>
+            {[
+              { label:'ชื่อโรงเรียน', key:'name', type:'input',
+                placeholder:'เช่น โรงเรียนเทศบาลบ้านเพ ๑' },
+              { label:'🏛️ คำขวัญขององค์กรปกครองส่วนท้องถิ่น', key:'localGov', type:'input',
+                placeholder:'เช่น เด็กเล็กเบิกบาน วิชาการก้าวหน้า เยาวชนพัฒนา ปวงประชาร่วมใจ' },
+              { label:'🎗️ คำขวัญของสถานศึกษาในสังกัดองค์กรปกครองส่วนท้องถิ่น', key:'school', type:'input',
+                placeholder:'เช่น วินัยดี มีวิชา กีฬาเด่น เป็นโรงเรียนของชุมชน' },
+              { label:'📖 ปรัชญาการศึกษาปฐมวัย', key:'philosophy', type:'textarea', rows:4 },
+              { label:'🎯 วิสัยทัศน์', key:'vision', type:'textarea', rows:3 },
+            ].map(({ label, key, type, placeholder, rows }) => (
+              <div key={key}>
+                <label style={{ display:'block', marginBottom:'.35rem', fontWeight:700, fontSize:'.85rem' }}>
+                  {label}
+                </label>
+                {schoolEditing ? (
+                  type === 'textarea' ? (
+                    <textarea className="input" rows={rows}
+                      value={schoolDraft[key]}
+                      onChange={e => setSchoolDraft(d => ({ ...d, [key]: e.target.value }))}
+                      style={{ resize:'vertical', lineHeight:1.8 }}
+                    />
+                  ) : (
+                    <input className="input"
+                      value={schoolDraft[key]}
+                      onChange={e => setSchoolDraft(d => ({ ...d, [key]: e.target.value }))}
+                      placeholder={placeholder}
+                    />
+                  )
+                ) : (
+                  <div style={{
+                    padding:'.55rem .85rem', borderRadius:'8px', background:'#f8fafc',
+                    border:'1px solid #e2e8f0', fontSize:'.875rem', color:'#374151',
+                    lineHeight:1.75, minHeight: type === 'textarea' ? '4rem' : 'auto',
+                    whiteSpace:'pre-wrap', wordBreak:'break-word',
+                  }}>
+                    {(key === 'name' ? schoolName : key === 'localGov' ? localGovSlogan :
+                      key === 'school' ? schoolSlogan : key === 'philosophy' ? schoolPhilosophy : schoolVision)
+                      || <span style={{ color:'#9ca3af' }}>{placeholder || '(ยังไม่ได้กรอก)'}</span>}
+                  </div>
+                )}
+              </div>
+            ))}
             <p style={{ fontSize:'.75rem', color:'#9ca3af', marginTop:'-.25rem' }}>
               ข้อมูลจะปรากฏในสมุดรายงานประจำตัวเด็กปฐมวัย (อ.01)
             </p>

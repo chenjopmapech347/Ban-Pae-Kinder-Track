@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import ExcelImportPanel from '../ExcelImportPanel';
 import { AttendanceBarChart, ClassRadarChart } from '../DevelopmentChart';
@@ -33,6 +33,39 @@ export default function OverviewTab() {
 
   const totalPending = pendingMatrix.reduce((sum, row) =>
     sum + row.rounds.filter(r => r === 0).length, 0
+  );
+
+  // ── Attendance chart — class selector + auto-cycle ───────────────────────
+  const classNames = useMemo(() =>
+    [...new Set(students.filter(s => !s.name.startsWith('(ว่าง)')).map(s => s.className))].sort(),
+    [students]
+  );
+  const [selAttClass, setSelAttClass] = useState(null);
+  const [autoPlay, setAutoPlay] = useState(true);
+  const autoPlayRef = useRef(autoPlay);
+  autoPlayRef.current = autoPlay;
+
+  // เมื่อ classNames เปลี่ยน ตั้งค่าเริ่มต้น
+  useEffect(() => {
+    if (classNames.length) setSelAttClass(c => c ?? classNames[0]);
+  }, [classNames]);
+
+  // auto-cycle ทุก 3 วิ
+  useEffect(() => {
+    if (!classNames.length) return;
+    const timer = setInterval(() => {
+      if (!autoPlayRef.current) return;
+      setSelAttClass(cur => {
+        const idx = classNames.indexOf(cur);
+        return classNames[(idx + 1) % classNames.length];
+      });
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [classNames]);
+
+  const attStudents = useMemo(() =>
+    students.filter(s => s.className === selAttClass && !s.name.startsWith('(ว่าง)')),
+    [students, selAttClass]
   );
 
   const stats = {
@@ -148,9 +181,41 @@ export default function OverviewTab() {
       {/* Charts row */}
       <div className="grid grid-2 mb-6" style={{ gap: '1.25rem' }}>
         <div className="glass-card">
-          <h4 className="mb-3">📊 การมาเรียน</h4>
-          {students.length ? (
-            <AttendanceBarChart students={students} />
+          {/* Header + class tabs */}
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'.6rem', flexWrap:'wrap', gap:'.4rem' }}>
+            <h4 style={{ margin:0 }}>📊 การมาเรียน</h4>
+            <button
+              onClick={() => setAutoPlay(p => !p)}
+              title={autoPlay ? 'หยุดวนอัตโนมัติ' : 'เปิดวนอัตโนมัติ'}
+              style={{
+                fontSize:'.7rem', padding:'.2rem .55rem', borderRadius:'6px',
+                border:'1px solid #c4b5fd', background: autoPlay ? '#ede9fe' : '#f3f4f6',
+                color: autoPlay ? '#5b21b6' : '#9ca3af', cursor:'pointer', fontFamily:'inherit', fontWeight:700,
+              }}>
+              {autoPlay ? '⏸ auto' : '▶ auto'}
+            </button>
+          </div>
+          {/* Class selector tabs */}
+          {classNames.length > 1 && (
+            <div style={{ display:'flex', flexWrap:'wrap', gap:'.3rem', marginBottom:'.65rem' }}>
+              {classNames.map(cn => (
+                <button key={cn}
+                  onClick={() => { setSelAttClass(cn); setAutoPlay(false); }}
+                  style={{
+                    fontSize:'.72rem', padding:'.2rem .6rem', borderRadius:'7px', cursor:'pointer',
+                    fontFamily:'inherit', fontWeight: selAttClass === cn ? 800 : 500,
+                    border: selAttClass === cn ? '1.5px solid #7c3aed' : '1px solid #e5e7eb',
+                    background: selAttClass === cn ? '#ede9fe' : 'white',
+                    color: selAttClass === cn ? '#5b21b6' : '#6b7280',
+                    transition:'all .15s',
+                  }}>
+                  {cn}
+                </button>
+              ))}
+            </div>
+          )}
+          {attStudents.length ? (
+            <AttendanceBarChart students={attStudents} />
           ) : (
             <div className="text-center text-muted" style={{ padding: '2rem' }}>ยังไม่มีข้อมูล</div>
           )}

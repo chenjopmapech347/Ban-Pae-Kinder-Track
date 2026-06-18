@@ -175,7 +175,8 @@ export default function ToothBrushTab({ teacherClassFilter = null }) {
         return `<td class="${cls}">${v}</td>`;
       }).join('');
       const total = countH(sData.days);
-      return `<tr><td class="no">${idx+1}</td>${cells}<td class="tot">${total||''}</td></tr>`;
+      const nameShort = s.name.replace('เด็กชาย','ด.ช.').replace('เด็กหญิง','ด.ญ.');
+      return `<tr><td class="no">${idx+1}</td><td class="name">${nameShort}</td>${cells}<td class="tot">${total||''}</td></tr>`;
     }).join('');
 
     // footer row — count H per day
@@ -196,6 +197,7 @@ export default function ToothBrushTab({ teacherClassFilter = null }) {
   table { border-collapse: collapse; width: 100% }
   td, th { border: 1px solid #555; padding: 1px 2px; text-align: center; font-size: 7.5pt }
   .no  { min-width: 18px; font-weight: bold }
+  .name{ text-align: left; padding-left: 4px; min-width: 90px; font-weight: 600 }
   .tot { min-width: 20px; font-weight: bold; background: #fff3c4 }
   .hd  { background: #fef9c3; font-weight: bold; font-size: 8pt }
   .hdc { background: #fef9c3; min-width: 16px }
@@ -214,6 +216,7 @@ export default function ToothBrushTab({ teacherClassFilter = null }) {
   <thead>
     <tr>
       <th rowspan="2" class="hd">เลขที่</th>
+      <th rowspan="2" class="hd" style="text-align:left;padding-left:4px">ชื่อ-นามสกุล</th>
       ${thRow1}
       <th rowspan="2" class="hd">รวม<br/>เวลา</th>
     </tr>
@@ -223,6 +226,7 @@ export default function ToothBrushTab({ teacherClassFilter = null }) {
   <tfoot>
     <tr>
       <td class="footd" style="font-size:7pt;color:#166534">รวม</td>
+      <td class="footd"></td>
       ${footRow}
       <td class="footd"></td>
     </tr>
@@ -308,6 +312,7 @@ export default function ToothBrushTab({ teacherClassFilter = null }) {
               {/* Row 1: วันที่ */}
               <tr>
                 <th rowSpan={2} style={th({ minWidth:'32px', background:'#fef9c3', color:'#713f12' })}>เลขที่</th>
+                <th rowSpan={2} style={th({ minWidth:'110px', textAlign:'left', padding:'2px 6px', background:'#fef9c3', color:'#713f12' })}>ชื่อ-นามสกุล</th>
                 {dayArr.map(d => {
                   const wknd = isWeekend(selYear, selMonth, d);
                   return (
@@ -350,6 +355,9 @@ export default function ToothBrushTab({ teacherClassFilter = null }) {
                 return (
                   <tr key={s.id} style={{ background: idx%2===0 ? 'white' : '#fffdf0' }}>
                     <td style={{ textAlign:'center', border:'1px solid #e5e7eb', padding:'2px', color:'#6b7280', fontWeight:700 }}>{idx+1}</td>
+                    <td style={{ border:'1px solid #e5e7eb', padding:'2px 6px', fontWeight:600, fontSize:'.72rem', whiteSpace:'nowrap' }}>
+                      {s.name.replace('เด็กชาย','ด.ช.').replace('เด็กหญิง','ด.ญ.')}
+                    </td>
                     {dayArr.map(d => {
                       const v    = sData.days?.[d] ?? '';
                       const wknd = isWeekend(selYear, selMonth, d);
@@ -386,6 +394,7 @@ export default function ToothBrushTab({ teacherClassFilter = null }) {
             <tfoot>
               <tr style={{ background:'#f0fdf4' }}>
                 <td style={{ border:'1px solid #d1d5db', textAlign:'center', fontWeight:800, fontSize:'.65rem', color:'#166534' }}>รวม</td>
+                <td style={{ border:'1px solid #d1d5db' }} />
                 {daySummary.map((cnt, i) => {
                   const wknd = isWeekend(selYear, selMonth, i + 1);
                   return (

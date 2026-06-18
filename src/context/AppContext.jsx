@@ -63,6 +63,8 @@ export function AppProvider({ children }) {
   );
   const [schoolPhilosophy, setSchoolPhilosophy] = useLocalStorage(STORAGE_KEYS.schoolPhilosophy, '');
   const [schoolVision, setSchoolVision] = useLocalStorage(STORAGE_KEYS.schoolVision, '');
+  const [localGovSlogan, setLocalGovSlogan] = useLocalStorage(STORAGE_KEYS.localGovSlogan, '');
+  const [schoolSlogan, setSchoolSlogan] = useLocalStorage(STORAGE_KEYS.schoolSlogan, '');
   const [academicYear, setAcademicYear] = useLocalStorage(STORAGE_KEYS.academicYear, '2569');
   const [dailyRecords, setDailyRecords] = useLocalStorage(STORAGE_KEYS.dailyRecords, {});
   const [qaData, setQaData] = useLocalStorage(STORAGE_KEYS.qaData, null);
@@ -517,6 +519,10 @@ export function AppProvider({ children }) {
     setSchoolPhilosophy,
     schoolVision,
     setSchoolVision,
+    localGovSlogan,
+    setLocalGovSlogan,
+    schoolSlogan,
+    setSchoolSlogan,
     academicYear,
     setAcademicYear,
     dailyRecords,

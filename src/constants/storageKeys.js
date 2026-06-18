@@ -29,6 +29,8 @@ export const STORAGE_KEYS = {
   studentReportRecords: 'kt_studentReportRecords', // สมุดรายงานประจำตัวเด็กปฐมวัย (อ.01)
   schoolPhilosophy:     'kt_schoolPhilosophy',     // ปรัชญาการศึกษาปฐมวัย
   schoolVision:         'kt_schoolVision',          // วิสัยทัศน์
+  localGovSlogan:       'kt_localGovSlogan',        // คำขวัญขององค์กรปกครองส่วนท้องถิ่น
+  schoolSlogan:         'kt_schoolSlogan',           // คำขวัญของสถานศึกษาในสังกัด อปท.
 };
 
 export function clearAllStorage() {

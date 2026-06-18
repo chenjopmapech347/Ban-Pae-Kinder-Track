@@ -8,6 +8,8 @@ export default function SettingsPage({ onBack }) {
     schoolName, setSchoolName,
     schoolPhilosophy, setSchoolPhilosophy,
     schoolVision, setSchoolVision,
+    localGovSlogan, setLocalGovSlogan,
+    schoolSlogan, setSchoolSlogan,
     academicYears, setAcademicYears,
     resetAllData, authConfig, updateAuthConfig,
     exportBackupJson, importBackupJson,
@@ -133,6 +135,26 @@ export default function SettingsPage({ onBack }) {
               </label>
               <input className="input" value={schoolName} onChange={e=>setSchoolName(e.target.value)}
                 placeholder="เช่น โรงเรียนเทศบาลบ้านเพ ๑" />
+            </div>
+            <div>
+              <label style={{ display:'block',marginBottom:'.35rem',fontWeight:700,fontSize:'.85rem' }}>
+                🏛️ คำขวัญขององค์กรปกครองส่วนท้องถิ่น
+              </label>
+              <input className="input"
+                value={localGovSlogan}
+                onChange={e => setLocalGovSlogan(e.target.value)}
+                placeholder="เช่น สะอาด สวยงาม น่าอยู่"
+              />
+            </div>
+            <div>
+              <label style={{ display:'block',marginBottom:'.35rem',fontWeight:700,fontSize:'.85rem' }}>
+                🎗️ คำขวัญของสถานศึกษาในสังกัดองค์กรปกครองส่วนท้องถิ่น
+              </label>
+              <input className="input"
+                value={schoolSlogan}
+                onChange={e => setSchoolSlogan(e.target.value)}
+                placeholder="เช่น เรียนดี กีฬาเด่น เน้นคุณธรรม"
+              />
             </div>
             <div>
               <label style={{ display:'block',marginBottom:'.35rem',fontWeight:700,fontSize:'.85rem' }}>

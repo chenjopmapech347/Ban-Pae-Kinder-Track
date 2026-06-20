@@ -81,6 +81,22 @@ export function AppProvider({ children }) {
   const [mediaRecords,  setMediaRecords]  = useLocalStorage(STORAGE_KEYS.mediaRecords,  []);
   const [cornerRecords,      setCornerRecords]      = useLocalStorage(STORAGE_KEYS.cornerRecords,      {});
   const [innerCornerRecords, setInnerCornerRecords] = useLocalStorage(STORAGE_KEYS.innerCornerRecords, {});
+  const [cornerDefs, setCornerDefs] = useLocalStorage(STORAGE_KEYS.cornerDefs, [
+    { key: 'wasteSort',    label: 'คัดแยกขยะ' },
+    { key: 'organicWaste', label: 'ขยะอินทรีย์' },
+    { key: 'garden',       label: 'แปลงปลูกผัก' },
+    { key: 'learningRoom', label: 'ห้องแหล่งเรียนรู้' },
+    { key: 'computerRoom', label: 'ห้องคอมพิวเตอร์' },
+    { key: 'trafficSign',  label: 'เครื่องหมายจราจร' },
+  ]);
+  const [innerCornerDefs, setInnerCornerDefs] = useLocalStorage(STORAGE_KEYS.innerCornerDefs, [
+    { key: 'block',    label: 'มุมบล็อก' },
+    { key: 'story',    label: 'มุมนิทาน' },
+    { key: 'lego',     label: 'มุมเลโก้' },
+    { key: 'creative', label: 'มุมสร้างสรรค์' },
+    { key: 'roleplay', label: 'มุมบทบาทสมมติ' },
+    { key: 'media',    label: 'มุมสื่อ' },
+  ]);
   const [healthCheckRecords,  setHealthCheckRecords]  = useLocalStorage(STORAGE_KEYS.healthCheckRecords,  {});
   const [illnessCheckRecords, setIllnessCheckRecords] = useLocalStorage(STORAGE_KEYS.illnessCheckRecords, {});
   const [toothBrushRecords,   setToothBrushRecords]   = useLocalStorage(STORAGE_KEYS.toothBrushRecords,   {});
@@ -581,9 +597,13 @@ export function AppProvider({ children }) {
     // Corner / Outside Learning
     cornerRecords,
     setCornerRecords,
+    cornerDefs,
+    setCornerDefs,
     // Inner Corner / Inside Learning
     innerCornerRecords,
     setInnerCornerRecords,
+    innerCornerDefs,
+    setInnerCornerDefs,
     // Health Check
     healthCheckRecords,
     setHealthCheckRecords,

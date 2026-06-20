@@ -31,6 +31,8 @@ export const STORAGE_KEYS = {
   schoolVision:         'kt_schoolVision',          // วิสัยทัศน์
   localGovSlogan:       'kt_localGovSlogan',        // คำขวัญขององค์กรปกครองส่วนท้องถิ่น
   schoolSlogan:         'kt_schoolSlogan',           // คำขวัญของสถานศึกษาในสังกัด อปท.
+  cornerDefs:           'kt_cornerDefs',             // นิยามมุมแหล่งเรียนรู้นอกห้องเรียน (แก้ไขได้)
+  innerCornerDefs:      'kt_innerCornerDefs',        // นิยามมุมประสบการณ์ในห้องเรียน (แก้ไขได้)
 };
 
 export function clearAllStorage() {

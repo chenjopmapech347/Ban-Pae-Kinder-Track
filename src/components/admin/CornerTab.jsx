@@ -1,26 +1,7 @@
 // CornerTab.jsx — แบบบันทึกการใช้แหล่งเรียนรู้นอกห้องเรียนรายสัปดาห์
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
-
-// ── helpers ──────────────────────────────────────────────────────────────────
-function getMondayOf(dateStr) {
-  const d = new Date(dateStr);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  d.setDate(d.getDate() + diff);
-  return d.toISOString().slice(0, 10);
-}
-
-function getWeekLabel(mondayStr) {
-  const d = new Date(mondayStr);
-  const end = new Date(d); end.setDate(d.getDate() + 6);
-  const fmt = (x) => x.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
-  return `${fmt(d)} – ${fmt(end)}`;
-}
-
-function genKey() {
-  return `corner_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-}
+import { getMondayOf, getWeekLabel, genUniqueKey } from '../../utils/helpers';
 
 // ── พิมพ์แบบบันทึก ───────────────────────────────────────────────────────────
 function printCornerSheet(rows, CORNERS, weekNo, weekDate, className, schoolName, teacher, academicYear) {
@@ -85,7 +66,7 @@ function ManageDefsModal({ defs, onSave, onClose }) {
   }
   function addNew() {
     if (!newLabel.trim()) return;
-    setList(prev => [...prev, { key: genKey(), label: newLabel.trim() }]);
+    setList(prev => [...prev, { key: genUniqueKey('corner'), label: newLabel.trim() }]);
     setNewLabel('');
   }
   function remove(i) {

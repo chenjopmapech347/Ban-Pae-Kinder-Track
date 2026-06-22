@@ -30,3 +30,25 @@ export function formatDateThai(iso) {
   const [y, m, d] = iso.split('-');
   return `${d}-${m}-${y}`;
 }
+
+/** หา Monday ของสัปดาห์ที่ dateStr อยู่ (YYYY-MM-DD) */
+export function getMondayOf(dateStr) {
+  const d = new Date(dateStr);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+
+/** ป้ายกำกับสัปดาห์ เช่น "2 มิ.ย. – 8 มิ.ย." */
+export function getWeekLabel(mondayStr) {
+  const d = new Date(mondayStr);
+  const end = new Date(d); end.setDate(d.getDate() + 6);
+  const fmt = (x) => x.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+  return `${fmt(d)} – ${fmt(end)}`;
+}
+
+/** สร้าง unique key สำหรับ corner/item ใหม่ */
+export function genUniqueKey(prefix = 'key') {
+  return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+}

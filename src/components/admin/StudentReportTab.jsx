@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import { INDICATORS_DATA } from '../../data/indicatorsData';
+import { callClaude, buildTeacherCommentPrompt } from '../../utils/aiHelper';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 function thaiYear(adYear) { return adYear + 543; }
@@ -478,8 +479,12 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
     schoolPhilosophy, schoolVision,
     dailyRecords,
     studentReportRecords, setStudentReportRecords,
-    indicators, activities,
+    indicators, activities, assessmentTopics,
+    aiApiKey,
   } = useApp();
+
+  const [aiCommentLoading, setAiCommentLoading] = useState({ 1: false, 2: false });
+  const [aiCommentError,   setAiCommentError]   = useState({ 1: '', 2: '' });
 
   const [selStudentId, setSelStudentId] = useState(null);
   const [activeSection, setActiveSection] = useState('physical');
@@ -1209,28 +1214,66 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
                 <div style={{ fontWeight: 800, fontSize: '.88rem', color: '#1d4ed8', marginBottom: '1rem' }}>
                   🧑‍🏫 ความคิดเห็นของครู
                 </div>
-                {[1, 2].map(t => (
-                  <div key={t} style={{ marginBottom: '1rem' }}>
-                    <div style={{ fontWeight: 700, fontSize: '.8rem', color: '#374151', marginBottom: '.35rem' }}>
-                      ภาคเรียนที่ {t}
+                {[1, 2].map(t => {
+                  const topicScores = assessmentTopics?.map(topic => {
+                    const inds = indicators.filter(i => i.domainId === topic.id);
+                    const scores = inds.flatMap(ind =>
+                      activities.filter(a => a.indicatorId === ind.id)
+                        .map(act => student?.assessments?.indicators?.[ind.id]?.[act.id]?.score ?? null)
+                    ).filter(v => v !== null);
+                    return { label: topic.label, score: scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : null };
+                  }) ?? [];
+
+                  const handleAiComment = async () => {
+                    if (!aiApiKey || !student) return;
+                    setAiCommentLoading(p => ({ ...p, [t]: true }));
+                    setAiCommentError(p => ({ ...p, [t]: '' }));
+                    try {
+                      const result = await callClaude(aiApiKey, buildTeacherCommentPrompt(student, topicScores, t));
+                      saveRec({ teacherComments: { ...teacherComments, [`term${t}`]: result } });
+                    } catch (e) {
+                      setAiCommentError(p => ({ ...p, [t]: e.message }));
+                    } finally {
+                      setAiCommentLoading(p => ({ ...p, [t]: false }));
+                    }
+                  };
+
+                  return (
+                    <div key={t} style={{ marginBottom: '1rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', marginBottom: '.35rem' }}>
+                        <div style={{ fontWeight: 700, fontSize: '.8rem', color: '#374151' }}>ภาคเรียนที่ {t}</div>
+                        {aiApiKey && student && (
+                          <button type="button" onClick={handleAiComment} disabled={aiCommentLoading[t]}
+                            style={{
+                              padding: '.2rem .65rem', borderRadius: '6px', border: 'none',
+                              background: '#dbeafe', color: '#1d4ed8', fontFamily: 'inherit',
+                              fontWeight: 700, fontSize: '.75rem', cursor: aiCommentLoading[t] ? 'wait' : 'pointer',
+                            }}>
+                            {aiCommentLoading[t] ? '⏳ กำลังเขียน…' : '✨ AI ช่วยเขียน'}
+                          </button>
+                        )}
+                      </div>
+                      {aiCommentError[t] && (
+                        <div style={{ fontSize: '.78rem', color: '#dc2626', marginBottom: '.3rem' }}>❌ {aiCommentError[t]}</div>
+                      )}
+                      <textarea
+                        value={teacherComments[`term${t}`]}
+                        onChange={e => saveRec({ teacherComments: { ...teacherComments, [`term${t}`]: e.target.value } })}
+                        rows={4}
+                        placeholder={`บันทึกความคิดเห็นของครูประจำชั้น ภาคเรียนที่ ${t}...`}
+                        style={{
+                          width: '100%', padding: '8px 10px', border: '1px solid #93c5fd',
+                          borderRadius: '8px', fontFamily: 'inherit', fontSize: '.82rem',
+                          resize: 'vertical', boxSizing: 'border-box', background: 'white',
+                        }}
+                      />
+                      <div style={{ display: 'flex', gap: '3rem', marginTop: '.5rem', fontSize: '.75rem', color: '#6b7280' }}>
+                        <span>ลงชื่อ _________________________ (ครูประจำชั้น)</span>
+                        <span>ลงชื่อ _________________________ (ผู้อำนวยการ)</span>
+                      </div>
                     </div>
-                    <textarea
-                      value={teacherComments[`term${t}`]}
-                      onChange={e => saveRec({ teacherComments: { ...teacherComments, [`term${t}`]: e.target.value } })}
-                      rows={4}
-                      placeholder={`บันทึกความคิดเห็นของครูประจำชั้น ภาคเรียนที่ ${t}...`}
-                      style={{
-                        width: '100%', padding: '8px 10px', border: '1px solid #93c5fd',
-                        borderRadius: '8px', fontFamily: 'inherit', fontSize: '.82rem',
-                        resize: 'vertical', boxSizing: 'border-box', background: 'white',
-                      }}
-                    />
-                    <div style={{ display: 'flex', gap: '3rem', marginTop: '.5rem', fontSize: '.75rem', color: '#6b7280' }}>
-                      <span>ลงชื่อ _________________________ (ครูประจำชั้น)</span>
-                      <span>ลงชื่อ _________________________ (ผู้อำนวยการ)</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Parent Comments */}

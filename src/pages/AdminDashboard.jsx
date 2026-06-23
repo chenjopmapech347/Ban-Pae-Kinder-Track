@@ -30,14 +30,16 @@ const LunchTab               = lazy(() => import('../components/admin/LunchTab')
 const MilkTab                = lazy(() => import('../components/admin/MilkTab'));
 const NutritionTab           = lazy(() => import('../components/admin/NutritionTab'));
 const StudentReportTab       = lazy(() => import('../components/admin/StudentReportTab'));
+const AIChatTab              = lazy(() => import('../components/AIChatTab'));
 
 const TAB_GROUPS = [
   {
     label: 'ภาพรวม',
     color: '#7c3aed',
     tabs: [
-      { id: 'overview',      label: '🏠 ภาพรวม'  },
-      { id: 'announcements', label: '📢 ประกาศ'   },
+      { id: 'overview',      label: '🏠 ภาพรวม'     },
+      { id: 'announcements', label: '📢 ประกาศ'      },
+      { id: 'aichat',        label: '🤖 AI ผู้ช่วย' },
     ],
   },
   {
@@ -186,6 +188,7 @@ export default function AdminDashboard() {
       {activeTab === 'holidays'   && <HolidaysTab />}
       {activeTab === 'standards'  && <StandardsMapTab />}
       {activeTab === 'terms'      && <TermsTab />}
+      {activeTab === 'aichat'     && <AIChatTab />}
       {activeTab === 'qa'         && (
         <div className="glass p-6 animate-fade">
           <h3 className="mb-6">🛡️ สรุปมาตรฐานสถานพัฒนาเด็กปฐมวัย (ปี 2569)</h3>

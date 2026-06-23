@@ -33,6 +33,7 @@ export const STORAGE_KEYS = {
   schoolSlogan:         'kt_schoolSlogan',           // คำขวัญของสถานศึกษาในสังกัด อปท.
   cornerDefs:           'kt_cornerDefs',             // นิยามมุมแหล่งเรียนรู้นอกห้องเรียน (แก้ไขได้)
   innerCornerDefs:      'kt_innerCornerDefs',        // นิยามมุมประสบการณ์ในห้องเรียน (แก้ไขได้)
+  aiApiKey:             'kt_aiApiKey',               // Claude API Key สำหรับฟีเจอร์ AI
 };
 
 export function clearAllStorage() {

@@ -24,6 +24,7 @@ const ActivityLogTab         = lazy(() => import('../components/admin/ActivityLo
 const QaStandardView         = lazy(() => import('../components/QaStandardView'));
 const Std2SelfTab            = lazy(() => import('../components/teacher/Std2SelfTab'));
 const NationalStandardsTab   = lazy(() => import('../components/admin/NationalStandardsTab'));
+const AIChatTab              = lazy(() => import('../components/AIChatTab'));
 
 const ATT_OPTS   = ['มา','ขาด','ลา','ป่วย'];
 const LUNCH_OPTS = ['หมด','เกือบหมด','ครึ่งเดียว','ไม่ทาน'];
@@ -81,6 +82,7 @@ const TEACHER_TAB_GROUPS = [
       { id: 'students',        label: '👨‍🎓 นักเรียน'      },
       { id: 'pins',            label: '🔑 PIN ผู้ปกครอง' },
       { id: 'teacherannounce', label: '📢 ประกาศ'         },
+      { id: 'aichat',          label: '🤖 AI ผู้ช่วย'    },
     ],
   },
   {
@@ -671,6 +673,7 @@ export default function TeacherDashboard() {
 
       {activeTab === 'std2self'    && <Std2SelfTab />}
       {activeTab === 'nationalstd' && <NationalStandardsTab />}
+      {activeTab === 'aichat'      && <AIChatTab />}
       {activeTab === 'standards'   && (
         <div className="glass p-6">
           <h3 className="mb-6">🗺️ สรุปมาตรฐานสถานพัฒนาเด็กปฐมวัย (ปี 2569)</h3>

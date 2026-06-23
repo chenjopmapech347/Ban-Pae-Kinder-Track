@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { exportClassSummaryExcel, exportActivityDetailExcel, exportActivityLogExcel } from '../../utils/exportExcel';
 import FormReportsTab from './FormReportsTab';
+import { callClaude, buildWeeklySummaryPrompt } from '../../utils/aiHelper';
 
 // ── constants ─────────────────────────────────────────────────────────────────
 const ALL_CLASSES = ['อ.1/1','อ.1/2','อ.2/1','อ.2/2','อ.3/1','อ.3/2','อ.3/3'];
@@ -26,6 +27,7 @@ const SUB_TABS = [
   { id:'class',    label:'🚪 ห้องเรียน' },
   { id:'student',  label:'👤 รายนักเรียน' },
   { id:'progress', label:'📈 พัฒนาการ' },
+  { id:'ai',       label:'🤖 AI สรุป' },
 ];
 
 // ── helpers ───────────────────────────────────────────────────────────────────
@@ -832,10 +834,145 @@ function ViewProgress({ students, assessmentTopics, indicators, activities }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// VIEW: AI สรุปห้องเรียน
+// ═══════════════════════════════════════════════════════════════════════════════
+function ViewAISummary({ students, assessmentTopics, indicators, activities, aiApiKey }) {
+  const [selClass, setClass] = useState(ALL_CLASSES[0]);
+  const [aiText,   setAiText]  = useState('');
+  const [loading,  setLoading] = useState(false);
+  const [error,    setError]   = useState('');
+
+  const classStudents = useMemo(() =>
+    students.filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)')),
+    [students, selClass]
+  );
+
+  function getActivityScore(student, indicatorId, activityId) {
+    return student.assessments?.indicators?.[indicatorId]?.[activityId]?.score ?? null;
+  }
+
+  const topicStats = useMemo(() => {
+    return assessmentTopics.map(t => {
+      const inds = indicators.filter(i => i.domainId === t.id);
+      let sum = 0, count = 0, s1 = 0, s2 = 0, s3 = 0;
+      classStudents.forEach(stu => {
+        const scores = inds.flatMap(ind =>
+          activities.filter(a => a.indicatorId === ind.id)
+            .map(act => getActivityScore(stu, ind.id, act.id))
+        ).filter(v => v !== null);
+        if (!scores.length) return;
+        const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+        sum += avg; count++;
+        if (avg >= 2.5) s3++; else if (avg >= 1.5) s2++; else s1++;
+      });
+      return { label: t.label, avg: count ? sum / count : null, s1, s2, s3 };
+    });
+  }, [classStudents, assessmentTopics, indicators, activities]);
+
+  async function handleGenerate() {
+    if (!aiApiKey) return;
+    setLoading(true); setError(''); setAiText('');
+    try {
+      const result = await callClaude(
+        aiApiKey,
+        buildWeeklySummaryPrompt(selClass, classStudents.length, topicStats)
+      );
+      setAiText(result);
+    } catch (e) { setError(e.message); }
+    finally { setLoading(false); }
+  }
+
+  const lv = LEVEL_META.find(m => CLASS_MAP[m.level]?.includes(selClass));
+
+  return (
+    <div>
+      <div style={{ marginBottom: '1rem' }}>
+        <label style={{ fontSize: '.77rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '.4rem' }}>
+          เลือกห้องเรียน
+        </label>
+        <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
+          {ALL_CLASSES.map(cls => {
+            const active = selClass === cls;
+            const lvm = LEVEL_META.find(m => CLASS_MAP[m.level]?.includes(cls));
+            return (
+              <button key={cls} type="button"
+                onClick={() => { setClass(cls); setAiText(''); setError(''); }}
+                style={{
+                  padding: '.3rem .75rem', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit',
+                  border: `2px solid ${active ? (lvm?.color ?? '#7c3aed') : '#e5e7eb'}`,
+                  background: active ? (lvm?.bg ?? '#f5f3ff') : '#f9fafb',
+                  color: active ? (lvm?.color ?? '#7c3aed') : '#6b7280',
+                  fontWeight: 700, fontSize: '.82rem', transition: 'all .14s',
+                }}>
+                {cls} <span style={{ fontSize: '.72rem', color: active ? lvm?.color : '#9ca3af' }}>
+                  ({students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)')).length} คน)
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Stats preview */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem', marginBottom: '1rem' }}>
+        {topicStats.map(t => {
+          const num = t.avg;
+          const color = num === null ? '#9ca3af' : num >= 2.5 ? '#059669' : num >= 1.5 ? '#b45309' : '#dc2626';
+          return (
+            <div key={t.label} style={{
+              background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px',
+              padding: '.4rem .75rem', fontSize: '.78rem',
+            }}>
+              <span style={{ fontWeight: 700, color: '#475569' }}>ด้าน{t.label}</span>
+              <span style={{ marginLeft: '.5rem', fontWeight: 800, color }}>
+                {num !== null ? num.toFixed(2) : '—'}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {!aiApiKey ? (
+        <div style={{ background: '#fef9c3', border: '1px solid #fbbf24', borderRadius: '10px', padding: '.75rem 1rem', fontSize: '.85rem', color: '#713f12' }}>
+          ⚠️ ตั้งค่า Claude API Key ในหน้า <strong>ตั้งค่า</strong> เพื่อใช้งานฟีเจอร์ AI
+        </div>
+      ) : (
+        <>
+          <button type="button" onClick={handleGenerate} disabled={loading || !classStudents.length}
+            style={{
+              padding: '.5rem 1.4rem', borderRadius: '10px', border: 'none',
+              background: lv?.color ?? '#7c3aed', color: 'white', fontFamily: 'inherit',
+              fontWeight: 700, fontSize: '.88rem', cursor: loading ? 'wait' : 'pointer',
+              marginBottom: '1rem',
+            }}>
+            {loading ? '⏳ กำลังสร้างสรุป…' : `✨ สร้างสรุปพัฒนาการห้อง ${selClass}`}
+          </button>
+          {error && (
+            <div style={{ color: '#dc2626', fontSize: '.83rem', marginBottom: '.75rem' }}>❌ {error}</div>
+          )}
+          {aiText && (
+            <div style={{
+              background: '#f0f9ff', border: '1.5px solid #bae6fd', borderRadius: '12px',
+              padding: '1rem 1.2rem', fontSize: '.88rem', lineHeight: 1.8, color: '#0c4a6e',
+              whiteSpace: 'pre-wrap',
+            }}>
+              <div style={{ fontWeight: 800, fontSize: '.8rem', color: '#0369a1', marginBottom: '.5rem', textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                🤖 สรุปพัฒนาการห้อง {selClass} — {classStudents.length} คน
+              </div>
+              {aiText}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // MAIN
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function ReportsTab({ teacherClassFilter = null }) {
-  const { students: allStudents, assessmentTopics, indicators, activities, schools, activityLogs } = useApp();
+  const { students: allStudents, assessmentTopics, indicators, activities, schools, activityLogs, aiApiKey } = useApp();
   const [subTab, setSubTab] = useState('forms');
   const schoolName = schools?.[0]?.name ?? 'โรงเรียน';
 
@@ -847,7 +984,7 @@ export default function ReportsTab({ teacherClassFilter = null }) {
     [allStudents, teacherClassFilter],
   );
 
-  const props = { students, assessmentTopics, indicators, activities, schoolName };
+  const props = { students, assessmentTopics, indicators, activities, schoolName, aiApiKey };
 
   return (
     <div className="glass p-6 animate-fade">
@@ -914,6 +1051,7 @@ export default function ReportsTab({ teacherClassFilter = null }) {
         {subTab === 'class'     && <ViewClass     {...props} />}
         {subTab === 'student'   && <ViewStudent   {...props} />}
         {subTab === 'progress'  && <ViewProgress  {...props} />}
+        {subTab === 'ai'        && <ViewAISummary {...props} />}
       </div>
     </div>
   );

@@ -33,6 +33,7 @@ function AppShell() {
     isSettingsOpen, setIsSettingsOpen,
     isAdding, setIsAdding,
     handleSaveEvaluation, assessmentTopics, addStudent,
+    autoSyncStatus, isFirebaseConfigured,
   } = useApp();
 
   if (!role) return <LoginPage />;
@@ -68,6 +69,22 @@ function AppShell() {
               <option key={y} value={y}>ปีการศึกษา {y}</option>
             ))}
           </select>
+
+          {/* ── Firebase auto-sync status indicator ── */}
+          {isFirebaseConfigured && autoSyncStatus !== 'idle' && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '.35rem',
+              background: 'rgba(255,255,255,0.15)', borderRadius: '999px',
+              padding: '.2rem .7rem', fontSize: '.72rem', fontWeight: 700,
+              color: 'white', border: '1.5px solid rgba(255,255,255,0.3)',
+              transition: 'all .3s',
+            }}>
+              {autoSyncStatus === 'pending'  && <><span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>⏳</span> รอบันทึก…</>}
+              {autoSyncStatus === 'syncing'  && <><span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>🔄</span> กำลังบันทึก…</>}
+              {autoSyncStatus === 'done'     && <>✅ บันทึกแล้ว</>}
+              {autoSyncStatus === 'error'    && <>❌ บันทึกไม่สำเร็จ</>}
+            </div>
+          )}
 
           {role === 'admin' && (
             <button type="button" className="btn btn-sm"

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { STORAGE_KEYS, clearAllStorage } from '../constants/storageKeys';
 import { DEFAULT_AUTH_CONFIG, TEST_ACCOUNTS } from '../constants/auth';
@@ -304,6 +304,46 @@ export function AppProvider({ children }) {
     return { ok: true, updatedAt: result.updatedAt };
   }, [restoreSnapshotData]);
 
+  // ─── Auto-sync to Firebase (debounced 4s) ──────────────
+  const [autoSyncStatus, setAutoSyncStatus] = useState('idle'); // 'idle' | 'pending' | 'syncing' | 'done' | 'error'
+  const autoSyncTimer  = useRef(null);
+  const isMounted      = useRef(false);   // skip initial mount
+
+  useEffect(() => {
+    // ครั้งแรกที่ mount ข้าม — ไม่ต้องการ overwrite Firebase ด้วยข้อมูลเริ่มต้น
+    if (!isMounted.current) { isMounted.current = true; return; }
+    if (!isFirebaseConfigured) return;
+
+    // บอก UI ว่ามีการเปลี่ยนแปลงรอ sync
+    setAutoSyncStatus('pending');
+
+    // ล้าง timer เก่า แล้วเริ่มนับใหม่
+    clearTimeout(autoSyncTimer.current);
+    autoSyncTimer.current = setTimeout(async () => {
+      setAutoSyncStatus('syncing');
+      try {
+        const payload = buildAppSnapshot(getSnapshotData());
+        const result  = await pushSnapshotToFirebase(payload);
+        setAutoSyncStatus(result.ok ? 'done' : 'error');
+      } catch {
+        setAutoSyncStatus('error');
+      }
+      // reset กลับ idle หลัง 3 วินาที
+      setTimeout(() => setAutoSyncStatus('idle'), 3000);
+    }, 4000);   // debounce 4 วินาที
+
+    return () => clearTimeout(autoSyncTimer.current);
+  }, [
+    // ข้อมูลทั้งหมดที่ต้องการ watch
+    students, teachers, classes, schools, holidays, authConfig,
+    assessmentTopics, announcements, academicYears, schoolName, academicYear,
+    dailyRecords, qaData, indicators, activities, activityLogs,
+    pickupRecords, mediaRecords, cornerRecords, innerCornerRecords,
+    healthCheckRecords, illnessCheckRecords, toothBrushRecords,
+    lunchRecords, milkRecords, nutritionRecords, studentReportRecords,
+    cornerDefs, innerCornerDefs,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ─── Firebase Auth login (async, admin/teacher) ─────────
   const loginWithFirebase = useCallback(async (nextRole, email, password) => {
     const result = await firebaseLogin(email, password);
@@ -582,6 +622,7 @@ export function AppProvider({ children }) {
     loginWithFirebase,
     syncPushToFirebase,
     syncPullFromFirebase,
+    autoSyncStatus,
     // Activity Log
     activityLogs,
     addActivityLog,

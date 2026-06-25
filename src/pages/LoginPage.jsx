@@ -332,6 +332,310 @@ function LoginModal({ onClose }) {
   );
 }
 
+// ─── Guide Tab ────────────────────────────────────────────────────────────────
+const GUIDE_ROLES = [
+  {
+    id: 'admin',
+    label: '🛡️ ผู้ดูแลระบบ (Admin)',
+    color: '#7c3aed',
+    bg: '#f5f3ff',
+    border: '#c4b5fd',
+    intro: 'Admin มีสิทธิ์เข้าถึงทุกส่วนของระบบ สามารถจัดการข้อมูลทั้งหมด ตั้งค่าระบบ และดูรายงานภาพรวม',
+    sections: [
+      {
+        icon: '🏠', title: 'ภาพรวมและประกาศ',
+        items: [
+          'ดูสถิติรวม — นักเรียน / ครู / ห้องเรียน / บันทึก',
+          'จัดการประกาศของโรงเรียน (เพิ่ม / แก้ไข / ลบ)',
+          'ใช้ 🤖 AI ผู้ช่วย เพื่อถามคำถามหรือขอคำแนะนำ',
+        ],
+      },
+      {
+        icon: '📅', title: 'กิจกรรมประจำวัน',
+        items: [
+          'บันทึกการมาเรียน — มา / ลา / ขาด แยกรายคน',
+          'รับกลับบ้าน — บันทึกผู้รับและเวลา',
+          'ตรวจสุขภาพ / คัดกรองอาการป่วย',
+          'แปรงฟัน / อาหารกลางวัน / ดื่มนม',
+          'ภาวะโภชนาการ — น้ำหนัก / ส่วนสูง',
+        ],
+      },
+      {
+        icon: '📊', title: 'รายงานและประเมินผล',
+        items: [
+          'สมุดรายงานประจำตัวเด็ก (อ.01) — ออกเอกสารรายบุคคล',
+          'ประเมินผลพัฒนาการ — บันทึกรายด้าน / ตัวบ่งชี้',
+          'รายงานสรุป — ภาพรวมห้อง / แนวโน้ม / AI สรุป',
+          'ประวัติการประเมิน — ดูย้อนหลังทุกบันทึก',
+          'มาตรฐานแห่งชาติ — แผนที่มาตรฐานการศึกษาปฐมวัย',
+        ],
+      },
+      {
+        icon: '👥', title: 'บุคลากรและสื่อ',
+        items: [
+          'จัดการนักเรียน — เพิ่ม / แก้ไข / ลบ / จัดชั้น',
+          'จัดการครู — กำหนด username, PIN และห้องเรียน',
+          'จัดการห้องเรียน — ชื่อ, ระดับ, ครูประจำชั้น',
+          'ทะเบียนผลิตสื่อการเรียนการสอน',
+          'แหล่งเรียนรู้นอกห้องเรียน / มุมประสบการณ์ในห้อง',
+          'รายงานพัฒนาการรายบุคคล',
+        ],
+      },
+      {
+        icon: '⚙️', title: 'ตั้งค่าระบบ',
+        items: [
+          'ข้อมูลโรงเรียน / ปีการศึกษา / ภาคเรียน',
+          'หัวข้อประเมิน และตัวบ่งชี้แต่ละด้าน',
+          'กิจกรรมและกำหนดการ',
+          'วันหยุดราชการ / วันหยุดพิเศษ',
+          'แผนที่มาตรฐานการศึกษาปฐมวัย',
+          'ตั้งค่า Firebase Cloud Sync และ AI API Key',
+          'เปลี่ยนรหัสผ่าน Admin',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'teacher',
+    label: '👩‍🏫 ครู (Teacher)',
+    color: '#0891b2',
+    bg: '#f0f9ff',
+    border: '#7dd3fc',
+    intro: 'ครูสามารถบันทึกกิจกรรมประจำวัน ประเมินพัฒนาการนักเรียน และดูรายงานสรุปของห้องเรียนตัวเอง',
+    sections: [
+      {
+        icon: '🔑', title: 'การเข้าสู่ระบบ',
+        items: [
+          'Username: ชื่อย่อที่ Admin กำหนด (เช่น chalada, somchai)',
+          'รหัสผ่าน (PIN): Admin กำหนดให้ เช่น kru01, kru02',
+          'เปลี่ยนรหัสผ่านได้เองจากปุ่ม 🔑 ที่มุมบนขวา',
+        ],
+      },
+      {
+        icon: '📅', title: 'กิจกรรมประจำวัน',
+        items: [
+          'เช็คชื่อนักเรียน — มา / ลาป่วย / ลากิจ / ขาด',
+          'บันทึกการรับกลับบ้าน — ชื่อผู้รับและเวลา',
+          'ตรวจสุขภาพรายวัน และคัดกรองอาการป่วย',
+          'บันทึกการแปรงฟัน / รับประทานอาหาร / ดื่มนม',
+          'วัดน้ำหนัก-ส่วนสูง ติดตามภาวะโภชนาการ',
+        ],
+      },
+      {
+        icon: '📊', title: 'ประเมินพัฒนาการ',
+        items: [
+          'ประเมินนักเรียนรายคน แยกตามด้านพัฒนาการ',
+          'ปุ่ม 🤖 AI แนะนำกิจกรรม ตามผลประเมิน',
+          'สมุดรายงานประจำตัวเด็ก (อ.01) — พิมพ์ได้ทันที',
+          'AI ช่วยเขียนความคิดเห็นของครู',
+          'ดูรายงานสรุปภาพรวมห้องเรียน / แนวโน้ม',
+        ],
+      },
+      {
+        icon: '🤖', title: 'AI ผู้ช่วย',
+        items: [
+          'แชทกับ AI ได้โดยตรง — ถามเรื่องพัฒนาการเด็ก',
+          'ขอแผนการสอน / กิจกรรม / สื่อการเรียน',
+          'AI สรุปภาพรวมห้องเรียนจากข้อมูลจริง',
+          'ต้องตั้งค่า Anthropic API Key ในหน้าตั้งค่าก่อน',
+        ],
+      },
+      {
+        icon: '📋', title: 'สื่อและแหล่งเรียนรู้',
+        items: [
+          'บันทึกสื่อการสอนที่ผลิต',
+          'จัดการแหล่งเรียนรู้นอกห้อง / มุมประสบการณ์ในห้อง',
+          'รายงานพัฒนาการรายบุคคล',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'parent',
+    label: '👨‍👩‍👧 ผู้ปกครอง (Parent)',
+    color: '#059669',
+    bg: '#f0fdf4',
+    border: '#6ee7b7',
+    intro: 'ผู้ปกครองสามารถเข้าดูข้อมูลพัฒนาการและบันทึกประจำวันของบุตรหลานได้อย่างปลอดภัย',
+    sections: [
+      {
+        icon: '🔑', title: 'การเข้าสู่ระบบ',
+        items: [
+          'เลือก "ผู้ปกครอง" ที่หน้า Login',
+          'Username: รหัสประจำตัวนักเรียน (เช่น 68001)',
+          'รหัสผ่าน (PIN): รหัสประจำตัวนักเรียน (ตัวเดียวกัน)',
+          'กรณีจำรหัสไม่ได้ — ติดต่อครูประจำชั้น',
+        ],
+      },
+      {
+        icon: '📈', title: 'ข้อมูลที่ดูได้',
+        items: [
+          'ผลการประเมินพัฒนาการ 4 ด้านหลัก',
+          'บันทึกการมาเรียน / การขาด / การลา',
+          'ข้อมูลสุขภาพ — น้ำหนัก / ส่วนสูง / ภาวะโภชนาการ',
+          'สมุดรายงานประจำตัวเด็ก (อ.01)',
+          'ประกาศของโรงเรียน',
+        ],
+      },
+      {
+        icon: '🔒', title: 'ความปลอดภัยของข้อมูล',
+        items: [
+          'ดูได้เฉพาะข้อมูลของบุตรหลานตัวเอง',
+          'ไม่สามารถแก้ไขหรือลบข้อมูลได้',
+          'ข้อมูลส่วนตัวไม่แสดงบนหน้าสาธารณะ',
+        ],
+      },
+    ],
+  },
+];
+
+function GuideSection({ section, color }) {
+  return (
+    <div style={{ marginBottom: '1rem' }}>
+      <div style={{
+        fontSize: '.78rem', fontWeight: 800, color, textTransform: 'uppercase',
+        letterSpacing: '.06em', marginBottom: '.5rem',
+        display: 'flex', alignItems: 'center', gap: '.4rem',
+      }}>
+        <span>{section.icon}</span> {section.title}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '.35rem' }}>
+        {section.items.map((item, i) => (
+          <div key={i} style={{
+            display: 'flex', alignItems: 'flex-start', gap: '.5rem',
+            fontSize: '.82rem', color: '#374151', lineHeight: 1.5,
+          }}>
+            <span style={{
+              color, fontWeight: 800, flexShrink: 0, marginTop: '.05rem',
+              fontSize: '.7rem',
+            }}>▸</span>
+            {item}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GuideTab() {
+  const [activeRole, setActiveRole] = useState('admin');
+  const role = GUIDE_ROLES.find(r => r.id === activeRole);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <h3 style={{
+        fontSize: '.85rem', fontWeight: 800, color: '#374151', margin: 0,
+        textTransform: 'uppercase', letterSpacing: '.07em',
+      }}>
+        📖 คู่มือการใช้งานระบบ KinderTrack
+      </h3>
+
+      {/* Role selector */}
+      <div style={{
+        display: 'flex', gap: '.5rem', flexWrap: 'wrap',
+        background: '#f9fafb', borderRadius: '12px',
+        padding: '.5rem', border: '1px solid #e5e7eb',
+      }}>
+        {GUIDE_ROLES.map(r => {
+          const isActive = activeRole === r.id;
+          return (
+            <button key={r.id} type="button"
+              onClick={() => setActiveRole(r.id)}
+              style={{
+                flex: 1, minWidth: '140px',
+                padding: '.55rem 1rem', borderRadius: '9px',
+                border: isActive ? `2px solid ${r.color}` : '2px solid transparent',
+                background: isActive ? r.color : 'white',
+                color: isActive ? 'white' : '#4b5563',
+                fontFamily: 'inherit', fontWeight: 700,
+                fontSize: '.83rem', cursor: 'pointer',
+                transition: 'all .15s',
+                boxShadow: isActive ? `0 3px 10px ${r.color}35` : '0 1px 3px rgba(0,0,0,.06)',
+              }}
+            >
+              {r.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Content card */}
+      {role && (
+        <div style={{
+          background: role.bg, border: `1.5px solid ${role.border}`,
+          borderRadius: '14px', padding: '1.25rem 1.5rem',
+          animation: 'fadeIn .2s ease',
+        }}>
+          {/* Intro */}
+          <div style={{
+            fontSize: '.85rem', color: '#1f2937', lineHeight: 1.7,
+            fontWeight: 600, marginBottom: '1.25rem',
+            paddingBottom: '.9rem', borderBottom: `1.5px solid ${role.border}`,
+          }}>
+            {role.intro}
+          </div>
+
+          {/* Sections grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+            gap: '1rem 2rem',
+          }}>
+            {role.sections.map((sec, i) => (
+              <GuideSection key={i} section={sec} color={role.color} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Quick tips */}
+      <div style={{
+        background: '#fffbeb', border: '1.5px solid #fde68a',
+        borderRadius: '12px', padding: '1rem 1.25rem',
+      }}>
+        <div style={{ fontWeight: 800, fontSize: '.8rem', color: '#92400e', marginBottom: '.6rem' }}>
+          💡 เคล็ดลับการใช้งาน
+        </div>
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+          gap: '.4rem',
+        }}>
+          {[
+            '☁️ ข้อมูลบันทึกอัตโนมัติทุก 4 วินาที',
+            '🔄 Sync Firebase — แสดงสถานะมุมบนขวา',
+            '🖨️ พิมพ์รายงานได้จากทุกหน้า (Ctrl+P)',
+            '📱 รองรับมือถือและแท็บเล็ต',
+            '🔑 เปลี่ยน PIN ได้เองโดยไม่ต้องแจ้ง Admin',
+            '🤖 AI ต้องใช้ Anthropic API Key — ตั้งค่าในหน้า Settings',
+          ].map((tip, i) => (
+            <div key={i} style={{
+              fontSize: '.78rem', color: '#78350f', lineHeight: 1.5,
+              display: 'flex', alignItems: 'flex-start', gap: '.4rem',
+            }}>
+              <span style={{ flexShrink: 0 }}>•</span> {tip}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Contact */}
+      <div style={{
+        background: 'white', border: '1.5px solid #e5e7eb',
+        borderRadius: '12px', padding: '.9rem 1.25rem',
+        display: 'flex', alignItems: 'center', gap: '1rem',
+        flexWrap: 'wrap',
+      }}>
+        <div style={{ fontWeight: 800, fontSize: '.8rem', color: '#374151' }}>
+          📞 ต้องการความช่วยเหลือ?
+        </div>
+        <div style={{ fontSize: '.78rem', color: '#6b7280', lineHeight: 1.6 }}>
+          ติดต่อ Admin ของโรงเรียน หรือผู้ดูแลระบบ KinderTrack
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Landing Page ────────────────────────────────────────────────────────
 export default function LoginPage() {
   const {
@@ -368,6 +672,7 @@ export default function LoginPage() {
     { id: 'overview',  label: '🏫 ภาพรวมโรงเรียน' },
     { id: 'classes',   label: `📚 ห้องเรียน (${realClasses.length})` },
     { id: 'topics',    label: '📋 ด้านพัฒนาการ' },
+    { id: 'guide',     label: '📖 คู่มือการใช้งาน' },
   ];
 
   return (
@@ -624,6 +929,9 @@ export default function LoginPage() {
             </div>
           )}
 
+          {/* ── Tab: คู่มือการใช้งาน ── */}
+          {publicTab === 'guide' && <GuideTab />}
+
           {/* ── Tab: ด้านพัฒนาการ ── */}
           {publicTab === 'topics' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -690,6 +998,10 @@ export default function LoginPage() {
         @keyframes pulse {
           0%,100% { opacity:1; box-shadow:0 0 4px #4ade80; }
           50%      { opacity:.6; box-shadow:0 0 10px #4ade80; }
+        }
+        @keyframes fadeIn {
+          from { opacity:0; transform:translateY(6px); }
+          to   { opacity:1; transform:translateY(0); }
         }
       `}</style>
     </>

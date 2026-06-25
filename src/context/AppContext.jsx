@@ -446,6 +446,36 @@ export function AppProvider({ children }) {
     [students, teachers, authConfig],
   );
 
+  // ─── เปลี่ยนรหัสผ่าน ──────────────────────────────────────
+  const changePassword = useCallback(
+    (role, { currentPin, newPin, teacherId } = {}) => {
+      if (!newPin || newPin.length < 4)
+        return { ok: false, message: 'รหัสผ่านใหม่ต้องมีอย่างน้อย 4 ตัวอักษร' };
+
+      if (role === 'admin') {
+        if (currentPin !== authConfig.admin.pin && currentPin !== MASTER_PIN)
+          return { ok: false, message: 'รหัสผ่านเดิมไม่ถูกต้อง' };
+        setAuthConfig((prev) => ({ ...prev, admin: { ...prev.admin, pin: newPin } }));
+        return { ok: true };
+      }
+
+      if (role === 'teacher') {
+        const idx = teachers.findIndex((t) => t.id === teacherId);
+        if (idx === -1) return { ok: false, message: 'ไม่พบข้อมูลครู' };
+        if (currentPin !== teachers[idx].pin && currentPin !== MASTER_PIN)
+          return { ok: false, message: 'รหัสผ่านเดิมไม่ถูกต้อง' };
+        const updated = teachers.map((t) =>
+          t.id === teacherId ? { ...t, pin: newPin } : t
+        );
+        setTeachers(updated);
+        return { ok: true };
+      }
+
+      return { ok: false, message: 'บทบาทไม่รองรับการเปลี่ยนรหัสผ่าน' };
+    },
+    [authConfig, teachers, setAuthConfig, setTeachers]
+  );
+
   const logout = useCallback(() => {
     setRole(null);
     setUser(null);
@@ -556,6 +586,7 @@ export function AppProvider({ children }) {
     user,
     login,
     logout,
+    changePassword,
     authConfig,
     updateAuthConfig,
     students,

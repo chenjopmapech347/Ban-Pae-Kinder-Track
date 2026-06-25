@@ -1,4 +1,5 @@
 import './index.css';
+import { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import LoginPage from './pages/LoginPage';
 import SettingsPage from './pages/SettingsPage';
@@ -8,6 +9,7 @@ import ParentView from './pages/ParentView';
 import ReportPage from './pages/ReportPage';
 import EvaluationForm from './components/EvaluationForm';
 import StudentModal from './components/StudentModal';
+import ChangePasswordModal from './components/ChangePasswordModal';
 import { version as APP_VERSION } from '../package.json';
 
 const APP_DEVELOPER = 'นายเจนจบ มาเพ็ชร์';
@@ -35,6 +37,8 @@ function AppShell() {
     handleSaveEvaluation, assessmentTopics, addStudent,
     autoSyncStatus, isFirebaseConfigured,
   } = useApp();
+
+  const [changePwOpen, setChangePwOpen] = useState(false);
 
   if (!role) return <LoginPage />;
 
@@ -98,17 +102,35 @@ function AppShell() {
             <div className="user-avatar">{ROLE_AVATAR[role] ?? '?'}</div>
             <div style={{ lineHeight: 1.4 }}>
               <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'white' }}>{user?.name}</div>
-              <button type="button"
-                onClick={logout}
-                style={{
-                  fontSize: '.72rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                  background: 'rgba(255,255,255,0.18)', color: 'white',
-                  border: '1.5px solid rgba(255,255,255,0.4)',
-                  borderRadius: '999px', padding: '.15rem .65rem',
-                  transition: 'background .15s',
-                }}>
-                🚪 ออกจากระบบ
-              </button>
+              <div style={{ display: 'flex', gap: '.35rem', marginTop: '.15rem', flexWrap: 'wrap' }}>
+                {/* เปลี่ยนรหัสผ่าน — เฉพาะ admin และ ครู */}
+                {(role === 'admin' || role === 'teacher') && (
+                  <button type="button"
+                    onClick={() => setChangePwOpen(true)}
+                    style={{
+                      fontSize: '.68rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                      background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.85)',
+                      border: '1.5px solid rgba(255,255,255,0.3)',
+                      borderRadius: '999px', padding: '.15rem .6rem',
+                      transition: 'all .15s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.22)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}>
+                    🔑 เปลี่ยนรหัสผ่าน
+                  </button>
+                )}
+                <button type="button"
+                  onClick={logout}
+                  style={{
+                    fontSize: '.68rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                    background: 'rgba(255,255,255,0.18)', color: 'white',
+                    border: '1.5px solid rgba(255,255,255,0.4)',
+                    borderRadius: '999px', padding: '.15rem .65rem',
+                    transition: 'background .15s',
+                  }}>
+                  🚪 ออกจากระบบ
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -132,6 +154,7 @@ function AppShell() {
       </main>
 
       <StudentModal key="add-student" isOpen={isAdding} onClose={() => setIsAdding(false)} onSave={addStudent} />
+      <ChangePasswordModal isOpen={changePwOpen} onClose={() => setChangePwOpen(false)} />
 
       {/* ── Footer ── */}
       <footer className="no-print" style={{

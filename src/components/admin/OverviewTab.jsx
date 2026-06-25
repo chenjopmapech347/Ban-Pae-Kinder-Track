@@ -1,6 +1,5 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
-import ExcelImportPanel from '../ExcelImportPanel';
 import { AttendanceBarChart, ClassRadarChart } from '../DevelopmentChart';
 
 const ALL_CLASSES = ['อ.1/1', 'อ.1/2', 'อ.2/1', 'อ.2/2', 'อ.3/1', 'อ.3/2', 'อ.3/3'];
@@ -151,8 +150,6 @@ export default function OverviewTab() {
           )}
         </div>
       )}
-
-      <ExcelImportPanel />
 
       {/* Stat Cards */}
       <div className="grid grid-4 mb-6" style={{ gap: '.75rem' }}>

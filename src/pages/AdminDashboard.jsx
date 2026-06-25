@@ -1,6 +1,5 @@
 import { useState, lazy, Suspense } from 'react';
 
-const QaStandardView         = lazy(() => import('../components/QaStandardView'));
 const OverviewTab            = lazy(() => import('../components/admin/OverviewTab'));
 const StudentsTab            = lazy(() => import('../components/admin/StudentsTab'));
 const TeachersTab            = lazy(() => import('../components/admin/TeachersTab'));
@@ -91,7 +90,6 @@ const TAB_GROUPS = [
       { id: 'terms',       label: '📅 ภาคเรียน'         },
       { id: 'holidays',    label: '🏖️ วันหยุด'          },
       { id: 'standards',   label: '🗺️ มาตรฐานการศึกษาปฐมวัย' },
-      { id: 'qa',          label: '🛡️ QA'               },
     ],
   },
 ];
@@ -189,12 +187,6 @@ export default function AdminDashboard() {
       {activeTab === 'standards'  && <StandardsMapTab />}
       {activeTab === 'terms'      && <TermsTab />}
       {activeTab === 'aichat'     && <AIChatTab />}
-      {activeTab === 'qa'         && (
-        <div className="glass p-6 animate-fade">
-          <h3 className="mb-6">🛡️ สรุปมาตรฐานสถานพัฒนาเด็กปฐมวัย (ปี 2569)</h3>
-          <QaStandardView />
-        </div>
-      )}
       </Suspense>
     </div>
   );

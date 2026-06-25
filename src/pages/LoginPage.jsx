@@ -800,34 +800,6 @@ export default function LoginPage() {
           {/* ── Tab: ภาพรวม ── */}
           {publicTab === 'overview' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              {/* Welcome banner */}
-              <div style={{
-                background: 'linear-gradient(135deg,#f5f3ff,#ede9fe)',
-                border: '2px solid #c4b5fd', borderRadius: '20px',
-                padding: '1.75rem 2rem',
-                display: 'flex', flexDirection: 'column', gap: '.5rem',
-              }}>
-                <div style={{ fontSize: '2rem' }}>🌟</div>
-                <h2 style={{ fontSize: '1.15rem', fontWeight: 900, color: '#1e1b4b', margin: 0 }}>
-                  ยินดีต้อนรับสู่ {schoolName}
-                </h2>
-                <p style={{ fontSize: '.88rem', color: '#5b21b6', margin: 0, lineHeight: 1.7 }}>
-                  ระบบติดตามและบันทึกพัฒนาการเด็กปฐมวัย ปีการศึกษา {academicYear}<br />
-                  ช่วยให้ครูและผู้ปกครองติดตามพัฒนาการของเด็กได้อย่างมีประสิทธิภาพ
-                </p>
-                <button type="button"
-                  onClick={() => setShowLogin(true)}
-                  style={{
-                    alignSelf: 'flex-start', marginTop: '.5rem',
-                    background: '#7c3aed', color: 'white',
-                    border: 'none', borderRadius: '12px',
-                    padding: '.65rem 1.5rem', fontFamily: 'inherit',
-                    fontWeight: 800, fontSize: '.88rem', cursor: 'pointer',
-                    boxShadow: '0 4px 14px #7c3aed40',
-                  }}>
-                  🚀 เข้าสู่ระบบเพื่อใช้งาน
-                </button>
-              </div>
 
               {/* Feature cards */}
               <div>

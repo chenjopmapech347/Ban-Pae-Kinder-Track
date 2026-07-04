@@ -669,10 +669,9 @@ export default function LoginPage() {
 
   // Tabs
   const PUBLIC_TABS = [
-    { id: 'overview',  label: '🏫 ภาพรวมโรงเรียน' },
-    { id: 'classes',   label: `📚 ห้องเรียน (${realClasses.length})` },
-    { id: 'topics',    label: '📋 ด้านพัฒนาการ' },
-    { id: 'guide',     label: '📖 คู่มือการใช้งาน' },
+    { id: 'overview', label: '🏫 ภาพรวม' },
+    { id: 'classes',  label: `📚 ห้องเรียน (${realClasses.length})` },
+    { id: 'guide',    label: '📖 คู่มือ' },
   ];
 
   return (
@@ -708,19 +707,19 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Right: Live badge + Login button */}
+            {/* Right: status badge + Login button */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
               <div style={{
-                display: 'flex', alignItems: 'center', gap: '.4rem',
+                display: 'flex', alignItems: 'center', gap: '.45rem',
                 background: 'rgba(255,255,255,0.1)', borderRadius: '999px',
-                padding: '.3rem .85rem', border: '1.5px solid rgba(255,255,255,0.25)',
+                padding: '.35rem 1rem', border: '1.5px solid rgba(255,255,255,0.25)',
               }}>
                 <span style={{
                   width: '8px', height: '8px', borderRadius: '50%', background: '#4ade80',
-                  boxShadow: '0 0 6px #4ade80', animation: 'pulse 2s infinite',
+                  boxShadow: '0 0 6px #4ade80', animation: 'pulse 2s infinite', flexShrink: 0,
                 }} />
-                <span style={{ fontSize: '.72rem', fontWeight: 800, color: 'white', letterSpacing: '.05em' }}>
-                  ● LIVE
+                <span style={{ fontSize: '.72rem', fontWeight: 700, color: 'rgba(255,255,255,0.9)', letterSpacing: '.02em' }}>
+                  ระบบพร้อมใช้งาน {isFirebaseConfigured ? '· ☁️ Cloud Sync' : ''}
                 </span>
               </div>
               <button type="button"
@@ -741,9 +740,11 @@ export default function LoginPage() {
           </div>
 
           {/* Stats bar */}
-          <div style={{
-            display: 'flex', gap: '.75rem', padding: '0 1.5rem .85rem',
-            flexWrap: 'wrap',
+          <div className="stat-grid" style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '.6rem',
+            padding: '0 1.5rem .85rem',
           }}>
             <StatCard icon="🏫" value={realClasses.length}   label="ห้องเรียน" />
             <StatCard icon="👶" value={realStudents.length}  label="นักเรียน"  />
@@ -770,10 +771,11 @@ export default function LoginPage() {
         {/* ── Tabs ─────────────────────────────────────────── */}
         <div style={{
           background: 'white', borderBottom: '2px solid #f3f4f6',
-          padding: '0 1.5rem',
-          display: 'flex', gap: '0',
+          padding: '0 1rem',
+          display: 'flex', gap: '0', overflowX: 'auto',
           position: 'sticky', top: 0, zIndex: 10,
           boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+          scrollbarWidth: 'none',
         }}>
           {PUBLIC_TABS.map(tab => {
             const active = publicTab === tab.id;
@@ -781,12 +783,12 @@ export default function LoginPage() {
               <button key={tab.id} type="button"
                 onClick={() => setPublicTab(tab.id)}
                 style={{
-                  padding: '.85rem 1.25rem', border: 'none', background: 'transparent',
+                  padding: '.8rem 1.1rem', border: 'none', background: 'transparent',
                   fontFamily: 'inherit', fontWeight: active ? 800 : 600,
                   fontSize: '.83rem', cursor: 'pointer',
                   color: active ? '#7c3aed' : '#6b7280',
                   borderBottom: active ? '3px solid #7c3aed' : '3px solid transparent',
-                  transition: 'all .15s', whiteSpace: 'nowrap',
+                  transition: 'all .15s', whiteSpace: 'nowrap', flexShrink: 0,
                 }}>
                 {tab.label}
               </button>
@@ -800,6 +802,36 @@ export default function LoginPage() {
           {/* ── Tab: ภาพรวม ── */}
           {publicTab === 'overview' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+              {/* CTA Banner */}
+              <div style={{
+                background: 'linear-gradient(135deg,#7c3aed,#6d28d9)',
+                borderRadius: '18px', padding: '1.25rem 1.5rem',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                flexWrap: 'wrap', gap: '1rem',
+              }}>
+                <div>
+                  <div style={{ fontWeight: 900, fontSize: '1rem', color: 'white', marginBottom: '.25rem' }}>
+                    ระบบบันทึกพัฒนาการเด็กปฐมวัย
+                  </div>
+                  <div style={{ fontSize: '.8rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.6 }}>
+                    ปีการศึกษา {academicYear} · {realClasses.length} ห้องเรียน · {realStudents.length} คน · {realTeachers.length} ครู
+                  </div>
+                </div>
+                <button type="button" onClick={() => setShowLogin(true)}
+                  style={{
+                    background: 'white', color: '#7c3aed',
+                    border: 'none', borderRadius: '12px',
+                    padding: '.6rem 1.4rem', fontFamily: 'inherit',
+                    fontWeight: 800, fontSize: '.88rem', cursor: 'pointer',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)', flexShrink: 0,
+                    transition: 'all .15s',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}>
+                  🚀 เข้าสู่ระบบ
+                </button>
+              </div>
 
               {/* Feature cards */}
               <div>
@@ -904,62 +936,42 @@ export default function LoginPage() {
           {/* ── Tab: คู่มือการใช้งาน ── */}
           {publicTab === 'guide' && <GuideTab />}
 
-          {/* ── Tab: ด้านพัฒนาการ ── */}
-          {publicTab === 'topics' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <h3 style={{ fontSize: '.85rem', fontWeight: 800, color: '#374151', margin: 0, textTransform: 'uppercase', letterSpacing: '.07em' }}>
-                📋 ด้านพัฒนาการที่ประเมิน ({assessmentTopics.length} ด้าน)
-              </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: '1rem' }}>
-                {assessmentTopics.map((topic, i) => {
-                  const colors = ['#7c3aed','#0891b2','#059669','#f59e0b','#f43f5e','#8b5cf6','#ec4899'];
-                  const c = colors[i % colors.length];
-                  return (
-                    <div key={topic.id ?? i} style={{
-                      background: 'white', borderRadius: '16px', padding: '1.25rem',
-                      border: `2px solid ${c}18`, boxShadow: `0 2px 12px ${c}10`,
-                      display: 'flex', alignItems: 'flex-start', gap: '.85rem',
-                    }}>
-                      <div style={{
-                        width: '44px', height: '44px', borderRadius: '12px',
-                        background: `${c}15`, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '1.4rem', flexShrink: 0,
-                      }}>
-                        {topic.emoji ?? '📋'}
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 800, fontSize: '.9rem', color: '#1e1b4b', lineHeight: 1.4 }}>
-                          ด้าน{topic.label}
-                        </div>
-                        {topic.desc && (
-                          <div style={{ fontSize: '.76rem', color: '#6b7280', marginTop: '.25rem', lineHeight: 1.5 }}>
-                            {topic.desc}
-                          </div>
-                        )}
-                        <div style={{
-                          marginTop: '.5rem', background: `${c}12`, color: c,
-                          borderRadius: '999px', padding: '.15rem .55rem',
-                          fontSize: '.68rem', fontWeight: 700, display: 'inline-block',
-                        }}>
-                          ตัวบ่งชี้ {topic.indicators?.length ?? '—'} ข้อ
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Footer */}
         <div style={{
-          textAlign: 'center', padding: '1rem',
-          color: '#9ca3af', fontSize: '.72rem',
-          borderTop: '1px solid #f3f4f6', background: 'white',
+          background: 'linear-gradient(135deg,#1e1b4b,#4c1d95)',
+          padding: '1.25rem 1.5rem',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexWrap: 'wrap', gap: '.75rem',
         }}>
-          KinderTrack · {schoolName} · ปีการศึกษา {academicYear}
-          {isFirebaseConfigured && ' · ☁️ Cloud Sync'}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '.2rem' }}>
+            <div style={{ fontWeight: 800, fontSize: '.82rem', color: 'white' }}>
+              🏫 {schoolName}
+            </div>
+            <div style={{ fontSize: '.7rem', color: 'rgba(255,255,255,0.6)' }}>
+              ระบบบันทึกพัฒนาการเด็กปฐมวัย (KinderTrack) · ปีการศึกษา {academicYear}
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            {isFirebaseConfigured && (
+              <span style={{ fontSize: '.7rem', color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
+                ☁️ Cloud Sync พร้อมใช้งาน
+              </span>
+            )}
+            <button type="button" onClick={() => setShowLogin(true)}
+              style={{
+                background: 'rgba(255,255,255,0.15)', color: 'white',
+                border: '1.5px solid rgba(255,255,255,0.3)', borderRadius: '999px',
+                padding: '.4rem 1rem', fontFamily: 'inherit',
+                fontWeight: 700, fontSize: '.78rem', cursor: 'pointer',
+                transition: 'all .15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.25)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)'; }}>
+              🔑 เข้าสู่ระบบ
+            </button>
+          </div>
         </div>
       </div>
 
@@ -974,6 +986,9 @@ export default function LoginPage() {
         @keyframes fadeIn {
           from { opacity:0; transform:translateY(6px); }
           to   { opacity:1; transform:translateY(0); }
+        }
+        @media (max-width: 480px) {
+          .stat-grid { grid-template-columns: repeat(2, 1fr) !important; }
         }
       `}</style>
     </>

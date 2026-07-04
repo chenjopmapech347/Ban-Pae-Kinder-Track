@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
+import { version as APP_VERSION } from '../../package.json';
 
 // ─── Staff tabs ────────────────────────────────────────────────────────────────
 const STAFF_TABS = [
@@ -950,7 +951,7 @@ export default function LoginPage() {
               🏫 {schoolName}
             </div>
             <div style={{ fontSize: '.7rem', color: 'rgba(255,255,255,0.6)' }}>
-              ระบบบันทึกพัฒนาการเด็กปฐมวัย (KinderTrack) · ปีการศึกษา {academicYear}
+              ระบบบันทึกพัฒนาการเด็กปฐมวัย · KinderTrack v{APP_VERSION} · ปีการศึกษา {academicYear}
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>

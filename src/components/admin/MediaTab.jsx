@@ -104,7 +104,8 @@ function printMediaList(records, cn, schoolName, teacher, academicYear) {
 }
 
 export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry' }) {
-  const { mediaRecords, setMediaRecords, classes, schoolName, academicYear, teachers, user } = useApp();
+  const { mediaRecords, setMediaRecords, classes, schoolName, academicYear, teachers, user, role } = useApp();
+  const isAdmin = role === 'admin';
 
   const [form, setForm]         = useState(EMPTY_FORM);
   const [editId, setEditId]     = useState(null);
@@ -143,6 +144,10 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
     setForm(f => ({ ...f, imageUrl: '', imagePath: '' }));
   }
   const [selClass, setSelClass] = useState(teacherClassFilter ?? '');
+
+  // สิทธิ์ต่อรายการ: แก้ไขได้ถ้าเป็น admin หรือเป็นเจ้าของ record
+  const canEdit   = (r) => isAdmin || r.createdByTeacherId === user?.teacherId;
+  const canDelete = ()  => isAdmin;
 
   const classList = useMemo(() => {
     if (teacherClassFilter) return [teacherClassFilter];
@@ -196,6 +201,7 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
           ...finalForm,
           id: Date.now(),
           className: cn,
+          createdByTeacherId: user?.teacherId ?? null,
           createdAt: new Date().toISOString(),
         }]);
       }
@@ -280,12 +286,11 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
             style={{ padding: '.4rem .9rem', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,.5)', background: 'rgba(255,255,255,.15)', color: 'white', fontFamily: 'inherit', fontWeight: 600, fontSize: '.82rem', cursor: 'pointer' }}>
             🖨️ พิมพ์
           </button>
-          {viewMode === 'entry' && (
-            <button type="button" onClick={() => { cancelForm(); setShowForm(true); }}
-              style={{ padding: '.4rem .9rem', borderRadius: '8px', border: 'none', background: 'white', color: '#0891b2', fontFamily: 'inherit', fontWeight: 700, fontSize: '.82rem', cursor: 'pointer' }}>
-              + เพิ่มรายการ
-            </button>
-          )}
+          {/* ครูและ admin เพิ่มรายการได้ */}
+          <button type="button" onClick={() => { cancelForm(); setShowForm(true); }}
+            style={{ padding: '.4rem .9rem', borderRadius: '8px', border: 'none', background: 'white', color: '#0891b2', fontFamily: 'inherit', fontWeight: 700, fontSize: '.82rem', cursor: 'pointer' }}>
+            + เพิ่มรายการ
+          </button>
         </div>
       </div>
 
@@ -468,14 +473,21 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
                     {viewMode === 'entry' && (
                       <td style={{ ...cell, textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '.3rem', justifyContent: 'center' }}>
-                          <button type="button" onClick={() => startEdit(r)}
-                            style={{ padding: '.2rem .5rem', borderRadius: '5px', border: 'none', background: '#e0f2fe', color: '#0891b2', cursor: 'pointer', fontSize: '.75rem', fontWeight: 600 }}>
-                            แก้ไข
-                          </button>
-                          <button type="button" onClick={() => del(r.id)}
-                            style={{ padding: '.2rem .5rem', borderRadius: '5px', border: 'none', background: '#fee2e2', color: '#dc2626', cursor: 'pointer', fontSize: '.75rem', fontWeight: 600 }}>
-                            ลบ
-                          </button>
+                          {canEdit(r) && (
+                            <button type="button" onClick={() => startEdit(r)}
+                              style={{ padding: '.2rem .5rem', borderRadius: '5px', border: 'none', background: '#e0f2fe', color: '#0891b2', cursor: 'pointer', fontSize: '.75rem', fontWeight: 600 }}>
+                              แก้ไข
+                            </button>
+                          )}
+                          {canDelete() && (
+                            <button type="button" onClick={() => del(r.id)}
+                              style={{ padding: '.2rem .5rem', borderRadius: '5px', border: 'none', background: '#fee2e2', color: '#dc2626', cursor: 'pointer', fontSize: '.75rem', fontWeight: 600 }}>
+                              ลบ
+                            </button>
+                          )}
+                          {!canEdit(r) && !canDelete() && (
+                            <span style={{ color: '#d1d5db', fontSize: '.75rem' }}>—</span>
+                          )}
                         </div>
                       </td>
                     )}

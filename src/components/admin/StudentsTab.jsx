@@ -97,6 +97,23 @@ export default function StudentsTab() {
   const [importOpen, setImportOpen]       = useState(false);
   const wizardRef = useRef(null);
 
+  /* ── ช่วงอายุ ── */
+  const getAgeRange = (s) => {
+    if (s.birthdate) {
+      const birth = new Date(s.birthdate);
+      const today = new Date();
+      const age = today.getFullYear() - birth.getFullYear() -
+        (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);
+      return `${age}–${age + 1} ปี`;
+    }
+    if (s.age != null && s.age !== '') {
+      const a = Number(s.age);
+      if (!isNaN(a) && a > 0) return `${a}–${a + 1} ปี`;
+    }
+    const lvMap = { K1: '3–4', K2: '4–5', K3: '5–6' };
+    return lvMap[s.level] ? `${lvMap[s.level]} ปี` : '—';
+  };
+
   /* ── helpers ── */
   const downloadTemplate = () => {
     const BOM = '﻿';
@@ -308,6 +325,7 @@ export default function StudentsTab() {
               <th style={{ width: '90px' }}>รหัสประจำตัว</th>
               <th>ชื่อ-นามสกุล</th>
               <th>ชั้น</th>
+              <th>ช่วงอายุ</th>
               <th>สถานะ</th>
               <th>PIN ผู้ปกครอง</th>
               <th>สถานะประเมิน</th>
@@ -335,6 +353,11 @@ export default function StudentsTab() {
                     >{s.name}</button>
                   </td>
                   <td><span className={'badge badge-' + s.level.toLowerCase()}>{s.level}</span></td>
+                  <td>
+                    <span style={{ fontSize: '.82rem', color: '#475569', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                      {getAgeRange(s)}
+                    </span>
+                  </td>
                   <td>
                     {(s.status ?? 'ปกติ') === 'ปกติ'
                       ? <span className="badge" style={{ background:'#d1fae5',color:'#065f46' }}>✅ ปกติ</span>
@@ -364,7 +387,7 @@ export default function StudentsTab() {
               );
             })}
             {!filtered.length && (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>ไม่พบข้อมูล</td></tr>
+              <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>ไม่พบข้อมูล</td></tr>
             )}
           </tbody>
         </table>

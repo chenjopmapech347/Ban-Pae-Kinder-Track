@@ -51,49 +51,9 @@ function defaultDay() {
   return { v: '√', sep: 0, home: false, fam: false, note: '' };
 }
 
-// เติม √ อัตโนมัติสำหรับวันใหม่ที่ยังไม่มีข้อมูล
-function patchCurrentMonth(rec, yr, mo) {
-  const todayJs = new Date();
-  const todayThaiYear = todayJs.getFullYear() + 543;
-  const todayMonth = todayJs.getMonth() + 1;
-  const todayDay = todayJs.getDate();
-  if (rec.year !== todayThaiYear || rec.month !== todayMonth) return rec;
-  const firstDow = new Date(yr - 543, mo - 1, 1).getDay();
-  const isWknd = (day) => { const dow = (firstDow + day - 1) % 7; return dow === 0 || dow === 6; };
-  const patched = { ...rec, students: { ...rec.students } };
-  Object.entries(rec.students ?? {}).forEach(([sid, sData]) => {
-    const days = { ...(sData.days ?? {}) };
-    let changed = false;
-    for (let d = 1; d <= todayDay; d++) {
-      if (!isWknd(d) && !(d in days)) { days[d] = defaultDay(); changed = true; }
-    }
-    if (changed) patched.students[sid] = { ...sData, days };
-  });
-  return patched;
-}
-
-// สร้าง record เปล่าพร้อม pre-fill √ ทุกวันที่ไม่ใช่วันหยุด (ไม่ pre-fill วันในอนาคต)
-function makeDefaultRecord(k, cls, ay, yr, mo, studs) {
-  const todayJs = new Date();
-  const todayThaiYear = todayJs.getFullYear() + 543;
-  const todayMonth = todayJs.getMonth() + 1;
-  const todayDay = todayJs.getDate();
-  const isCurrentMonth = yr === todayThaiYear && mo === todayMonth;
-
-  const nDays = daysInMonth(yr, mo);
-  const firstDow = new Date(yr - 543, mo - 1, 1).getDay();
-  const isWknd = (day) => { const dow = (firstDow + day - 1) % 7; return dow === 0 || dow === 6; };
-  const studsData = {};
-  studs.forEach(s => {
-    const days = {};
-    for (let d = 1; d <= nDays; d++) {
-      if (isWknd(d)) continue;
-      if (isCurrentMonth && d > todayDay) continue;
-      days[d] = defaultDay();
-    }
-    studsData[s.id] = { days, weight: 0, height: 0 };
-  });
-  return { id: k, className: cls, academicYear: ay, year: yr, month: mo, students: studsData };
+// สร้าง record เปล่า (ตารางว่าง — ครูกด checkbox เลือกเอง)
+function makeDefaultRecord(k, cls, ay, yr, mo) {
+  return { id: k, className: cls, academicYear: ay, year: yr, month: mo, students: {} };
 }
 
 // นับวันป่วย
@@ -267,23 +227,17 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
   // โหลด/สร้าง draft
   const [draft, setDraft] = useState(() => {
     const ex = illnessCheckRecords[key];
-    if (ex) return patchCurrentMonth(ex, selYear, selMonth);
-    const initStuds = students.filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)')).sort((a,b)=>Number(a.id)-Number(b.id));
-    return makeDefaultRecord(key, selClass, academicYear, selYear, selMonth, initStuds);
+    if (ex) return ex;
+    return makeDefaultRecord(key, selClass, academicYear, selYear, selMonth);
   });
 
   // sync draft เมื่อ key เปลี่ยน
   const switchRecord = useCallback((cls, yr, mo) => {
     const k = recKey(cls, academicYear, yr, mo);
     const ex = illnessCheckRecords[k];
-    if (ex) {
-      setDraft(patchCurrentMonth(ex, yr, mo));
-    } else {
-      const studs = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)')).sort((a,b)=>Number(a.id)-Number(b.id));
-      setDraft(makeDefaultRecord(k, cls, academicYear, yr, mo, studs));
-    }
+    setDraft(ex ?? makeDefaultRecord(k, cls, academicYear, yr, mo));
     setSaved(false);
-  }, [illnessCheckRecords, academicYear, students]);
+  }, [illnessCheckRecords, academicYear]);
 
   function handleClassChange(cls) { setSelClass(cls); switchRecord(cls, selYear, selMonth); }
   function handleYearChange(yr)   { const y=Number(yr); setSelYear(y);  switchRecord(selClass, y, selMonth); }
@@ -303,6 +257,24 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
           [studentId]: { ...sData, days: { ...(sData.days ?? {}), [day]: next } },
         },
       };
+    });
+  }
+
+  // กด checkbox บนหัวตาราง → เลือก/ยกเลิก √ ทุกคนในคอลัมน์วันนั้น
+  function toggleDayColumn(day) {
+    if (isWeekend(day)) return;
+    const allChecked = classStudents.length > 0 &&
+      classStudents.every(s => draft.students[s.id]?.days?.[day]?.v === '√');
+    setSaved(false);
+    setDraft(prev => {
+      const newStudents = { ...prev.students };
+      classStudents.forEach(s => {
+        const sData = newStudents[s.id] ?? { days: {}, weight: 0, height: 0 };
+        const days = { ...(sData.days ?? {}) };
+        days[day] = allChecked ? emptyDay() : defaultDay();
+        newStudents[s.id] = { ...sData, days };
+      });
+      return { ...prev, students: newStudents };
     });
   }
 
@@ -524,11 +496,12 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
         <div style={{ overflowX:'auto' }}>
           <table style={{ borderCollapse:'collapse', fontSize:'.72rem' }}>
             <thead>
+              {/* แถว 1: หัวตาราง */}
               <tr>
-                <th style={th({ minWidth:'28px' })}>ที่</th>
-                <th style={th({ minWidth:'160px', textAlign:'left' })}>ชื่อ-สกุล</th>
-                <th style={th({ minWidth:'38px' })}>นน.</th>
-                <th style={th({ minWidth:'44px' })}>ส่วนสูง</th>
+                <th rowSpan={2} style={th({ minWidth:'28px' })}>ที่</th>
+                <th rowSpan={2} style={th({ minWidth:'160px', textAlign:'left' })}>ชื่อ-สกุล</th>
+                <th rowSpan={2} style={th({ minWidth:'38px' })}>นน.</th>
+                <th rowSpan={2} style={th({ minWidth:'44px' })}>ส่วนสูง</th>
                 {dayArr.map(d => (
                   <th key={d} style={{
                     ...th({ minWidth:'22px', maxWidth:'26px', fontSize:'.65rem' }),
@@ -536,7 +509,35 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                     color: isWeekend(d) ? '#9ca3af' : '#1e40af',
                   }}>{d}</th>
                 ))}
-                <th style={th({ minWidth:'30px', background:'#bfdbfe', color:'#1e40af', fontWeight:800 })}>รวม</th>
+                <th rowSpan={2} style={th({ minWidth:'30px', background:'#bfdbfe', color:'#1e40af', fontWeight:800 })}>รวม</th>
+              </tr>
+              {/* แถว 2: checkbox เลือกทั้งคอลัมน์ */}
+              <tr>
+                {dayArr.map(d => {
+                  if (isWeekend(d)) return (
+                    <td key={d} style={{ border:'1px solid #e5e7eb', background:'#f3f4f6', minWidth:'22px', padding:'1px' }} />
+                  );
+                  const allChecked = classStudents.length > 0 &&
+                    classStudents.every(s => draft.students[s.id]?.days?.[d]?.v === '√');
+                  return (
+                    <td key={d}
+                      onClick={() => toggleDayColumn(d)}
+                      title={allChecked ? 'ยกเลิกทั้งคอลัมน์' : 'เลือก √ ทั้งคอลัมน์'}
+                      style={{
+                        textAlign:'center', cursor:'pointer', padding:'2px',
+                        border:'1px solid #d1d5db', minWidth:'22px',
+                        background: allChecked ? '#d1fae5' : '#f0f9ff',
+                      }}>
+                      <input
+                        type="checkbox"
+                        checked={allChecked}
+                        onChange={() => toggleDayColumn(d)}
+                        onClick={e => e.stopPropagation()}
+                        style={{ cursor:'pointer', width:'11px', height:'11px', accentColor:'#059669' }}
+                      />
+                    </td>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>

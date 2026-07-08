@@ -8,11 +8,7 @@ const LEVEL_META = [
   { level: 'K2', label: 'อนุบาล 2', emoji: '🟡', color: '#b45309', bg: '#fffbeb' },
   { level: 'K3', label: 'อนุบาล 3', emoji: '🔵', color: '#2563eb', bg: '#eff6ff' },
 ];
-const CLASS_MAP = {
-  K1: ['อ.1/1', 'อ.1/2'],
-  K2: ['อ.2/1', 'อ.2/2'],
-  K3: ['อ.3/1', 'อ.3/2', 'อ.3/3'],
-};
+// CLASS_MAP ดึงจาก classMap ใน AppContext (dynamic)
 
 const SCORES = [
   { value: 3, label: 'ดีมาก',        short: '3', color: '#059669', bg: '#d1fae5', icon: '🟢' },
@@ -161,7 +157,7 @@ function AISuggestionPanel({ students, assessmentTopics, indicators, activities,
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function EvaluationTab() {
-  const { students, setStudents, assessmentTopics, indicators, activities, role, user, addActivityLog, aiApiKey } = useApp();
+  const { students, setStudents, assessmentTopics, indicators, activities, role, user, addActivityLog, aiApiKey, classMap: CLASS_MAP } = useApp();
 
   // teacher lock — auto-set class from user profile
   const isTeacher    = role === 'teacher';
@@ -232,7 +228,7 @@ export default function EvaluationTab() {
   // reset chain when parent changes
   const handleTopicChange = id => { setTopic(id); setIndicator(null); setActivity(null); };
   const handleIndicatorChange = id => { setIndicator(id); setActivity(null); };
-  const handleLevelChange = lv => { setLevel(lv); setClass(CLASS_MAP[lv][0]); };
+  const handleLevelChange = lv => { setLevel(lv); setClass(CLASS_MAP[lv]?.[0] ?? ''); };
 
   // set score for one student
   const setScore = (studentId, score) => {
@@ -493,7 +489,7 @@ export default function EvaluationTab() {
               <div>
                 <label style={{ fontSize: '.77rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '.35rem' }}>ห้องเรียน</label>
                 <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
-                  {CLASS_MAP[selLevel].map(cls => {
+                  {(CLASS_MAP[selLevel] ?? []).map(cls => {
                     const active = selClass === cls;
                     const cnt    = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)')).length;
                     return (

@@ -9,7 +9,7 @@ export default function StudentsTab() {
   const {
     students, setStudents, assessmentTopics,
     handleImport, setSelectedStudent,
-    schoolName, schoolLogo, academicYear, allClassNames,
+    schoolName, schoolLogo, academicYear, allClassNames, classMap,
   } = useApp();
 
   // ── ฟังก์ชันพิมพ์รายชื่อนักเรียน (รูปแบบแบบสำรวจ) ──
@@ -147,12 +147,8 @@ export default function StudentsTab() {
   // ── bulk-assign classroom ──
   const [assignOpen, setAssignOpen]   = useState(false);
   const [assignLevel, setAssignLevel] = useState('K1');
-  const [assignClass, setAssignClass] = useState('อ.1/1');
-  const ASSIGN_CLASS_MAP = {
-    K1: ['อ.1/1', 'อ.1/2'],
-    K2: ['อ.2/1', 'อ.2/2'],
-    K3: ['อ.3/1', 'อ.3/2', 'อ.3/3'],
-  };
+  const [assignClass, setAssignClass] = useState(() => classMap?.K1?.[0] ?? '');
+  const ASSIGN_CLASS_MAP = classMap; // dynamic จาก AppContext
   const noClassStudents = students.filter(s => !s.className && !s.name.startsWith('(ว่าง)'));
   const assignTargets   = students.filter(s => s.level === assignLevel && !s.className && !s.name.startsWith('(ว่าง)'));
 
@@ -178,11 +174,7 @@ export default function StudentsTab() {
     { level: 'K2',  label: 'อนุบาล 2', emoji: '🟡', color: '#b45309', bg: '#fffbeb' },
     { level: 'K3',  label: 'อนุบาล 3', emoji: '🔵', color: '#2563eb', bg: '#eff6ff' },
   ];
-  const CLASS_MAP = {
-    K1: ['อ.1/1', 'อ.1/2'],
-    K2: ['อ.2/1', 'อ.2/2'],
-    K3: ['อ.3/1', 'อ.3/2', 'อ.3/3'],
-  };
+  const CLASS_MAP = classMap; // dynamic จาก AppContext
 
   const handleLevelClick = (lv) => {
     setLevel(lv);
@@ -491,7 +483,7 @@ export default function StudentsTab() {
                       background: assignLevel===lv ? '#7c3aed' : '#f5f3ff',
                       color: assignLevel===lv ? 'white' : '#7c3aed',
                       border: '1.5px solid #7c3aed' }}
-                    onClick={() => { setAssignLevel(lv); setAssignClass(ASSIGN_CLASS_MAP[lv][0]); }}>
+                    onClick={() => { setAssignLevel(lv); setAssignClass(ASSIGN_CLASS_MAP[lv]?.[0] ?? ''); }}>
                     {lv === 'K1' ? 'อนุบาล 1' : lv === 'K2' ? 'อนุบาล 2' : 'อนุบาล 3'}
                   </button>
                 ))}

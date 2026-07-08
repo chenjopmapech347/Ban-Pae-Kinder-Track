@@ -5,8 +5,7 @@ import FormReportsTab from './FormReportsTab';
 import { callClaude, buildWeeklySummaryPrompt } from '../../utils/aiHelper';
 
 // ── constants ─────────────────────────────────────────────────────────────────
-// ALL_CLASSES ดึงจาก AppContext แบบ dynamic
-const CLASS_MAP   = { K1:['อ.1/1','อ.1/2'], K2:['อ.2/1','อ.2/2'], K3:['อ.3/1','อ.3/2','อ.3/3'] };
+// CLASS_MAP ดึงจาก AppContext (classMap) ใน each component แบบ dynamic
 const LEVEL_META  = [
   { level:'K1', label:'อนุบาล 1', color:'#059669', bg:'#ecfdf5' },
   { level:'K2', label:'อนุบาล 2', color:'#b45309', bg:'#fffbeb' },
@@ -464,8 +463,9 @@ function ViewClass({ students, assessmentTopics, indicators, activities }) {
 }
 
 function ViewStudent({ students, assessmentTopics, indicators, activities, schoolName }) {
+  const { classMap: CLASS_MAP } = useApp();
   const [selLevel, setLevel] = useState('K1');
-  const [selClass, setClass] = useState('อ.1/1');
+  const [selClass, setClass] = useState(() => CLASS_MAP?.K1?.[0] ?? '');
   const lv = LEVEL_META.find(m => m.level === selLevel);
 
   const classStudents = useMemo(() =>
@@ -482,7 +482,7 @@ function ViewStudent({ students, assessmentTopics, indicators, activities, schoo
     return scores.length ? (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1) : null;
   };
 
-  const handleLevelChange = lv => { setLevel(lv); setClass(CLASS_MAP[lv][0]); };
+  const handleLevelChange = lv => { setLevel(lv); setClass(CLASS_MAP[lv]?.[0] ?? ''); };
 
   return (
     <div>
@@ -616,13 +616,14 @@ function TrendCell({ prev, curr }) {
 }
 
 function ViewProgress({ students, assessmentTopics, indicators, activities }) {
+  const { classMap: CLASS_MAP } = useApp();
   const [selLevel, setLevel]   = useState('K1');
-  const [selClass, setClass]   = useState('อ.1/1');
+  const [selClass, setClass]   = useState(() => CLASS_MAP?.K1?.[0] ?? '');
   const [selTopic, setTopic]   = useState(assessmentTopics[0]?.id ?? null);
   const [viewMode, setViewMode]= useState('student'); // 'student' | 'class'
   const lv = LEVEL_META.find(m => m.level === selLevel);
 
-  const handleLevelChange = lv => { setLevel(lv); setClass(CLASS_MAP[lv][0]); };
+  const handleLevelChange = lv => { setLevel(lv); setClass(CLASS_MAP[lv]?.[0] ?? ''); };
 
   const classStudents = useMemo(() =>
     students.filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
@@ -806,7 +807,7 @@ function ViewProgress({ students, assessmentTopics, indicators, activities }) {
             </thead>
             <tbody>
               {allClassSummary.map(({ cls, sts, rounds }) => {
-                const lvm = LEVEL_META.find(m => CLASS_MAP[m.level].includes(cls));
+                const lvm = LEVEL_META.find(m => (CLASS_MAP[m.level] ?? []).includes(cls));
                 const filled = rounds.filter(v => v !== null);
                 const lastVal = filled.length ? filled[filled.length-1] : null;
                 const prevVal = filled.length > 1 ? filled[filled.length-2] : null;
@@ -837,6 +838,7 @@ function ViewProgress({ students, assessmentTopics, indicators, activities }) {
 // VIEW: AI สรุปห้องเรียน
 // ═══════════════════════════════════════════════════════════════════════════════
 function ViewAISummary({ students, assessmentTopics, indicators, activities, aiApiKey, allClassNames }) {
+  const { classMap: CLASS_MAP } = useApp();
   const ALL_CLASSES = allClassNames ?? [];
   const [selClass, setClass] = useState(ALL_CLASSES[0] ?? '');
   const [aiText,   setAiText]  = useState('');

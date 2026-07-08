@@ -16,11 +16,7 @@ function PinCell({ pin }) {
   );
 }
 
-const CLASS_OPTIONS = {
-  K1: ['อ.1/1', 'อ.1/2'],
-  K2: ['อ.2/1', 'อ.2/2'],
-  K3: ['อ.3/1', 'อ.3/2', 'อ.3/3'],
-};
+// CLASS_OPTIONS ดึงจาก classMap ใน AppContext (dynamic)
 
 const POSITION_OPTIONS = [
   'ครูผู้ช่วย',
@@ -36,14 +32,15 @@ const POSITION_OPTIONS = [
 ];
 
 export default function TeachersTab() {
-  const { teachers, setTeachers, handleImport } = useApp();
+  const { teachers, setTeachers, handleImport, classMap } = useApp();
+  const CLASS_OPTIONS = classMap; // dynamic จาก AppContext
   const [isModal, setIsModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm]       = useState({});
 
   const openNew  = () => {
     setEditing(null);
-    setForm({ firstName:'', lastName:'', position:'', level:'K1', className:'อ.1/1', email:'', phone:'', line:'', facebook:'', instagram:'', tiktok:'', youtube:'' });
+    setForm({ firstName:'', lastName:'', position:'', level:'K1', className: CLASS_OPTIONS?.K1?.[0] ?? '', email:'', phone:'', line:'', facebook:'', instagram:'', tiktok:'', youtube:'' });
     setIsModal(true);
   };
   const openEdit = t => { setEditing(t); setForm(t); setIsModal(true); };

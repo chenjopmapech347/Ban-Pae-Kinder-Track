@@ -706,6 +706,16 @@ export function AppProvider({ children }) {
     [classes],
   );
 
+  // แผนที่ห้องเรียนจัดกลุ่มตามระดับชั้น { K1: ['อ.1/1', ...], K2: [...], K3: [...] }
+  const classMap = useMemo(() => {
+    const map = { K1: [], K2: [], K3: [] };
+    (classes ?? []).forEach(c => {
+      const name = c.name ?? c.id;
+      if (name && map[c.level]) map[c.level].push(name);
+    });
+    return map;
+  }, [classes]);
+
   const value = {
     role,
     user,
@@ -775,6 +785,7 @@ export function AppProvider({ children }) {
     syncPullFromCloud,
     isSupabaseConfigured,
     allClassNames,
+    classMap,
     // Firebase
     isFirebaseConfigured,
     firebaseUser,

@@ -598,9 +598,80 @@ export function AppProvider({ children }) {
           attendance: recomputeAttendanceFromDailyRecords(merged, s.id),
         })),
       );
+
+      // ── Auto-sync: เมื่อครูบันทึกการมาเรียน → เช็คอัตโนมัติในทุก tab ──
+      // เฉพาะนักเรียนที่สถานะ "มา" และยังไม่มีข้อมูลในวันนั้น (ไม่ overwrite)
+      const [jsYear, moNum, dayNum] = date.split('-').map(Number);
+      const thaiYear = jsYear + 543;
+      const month    = moNum;
+      const day      = dayNum;
+
+      // รวบรวม studentId ที่มาเรียน จัดกลุ่มตามห้อง
+      const byClass = {};
+      Object.entries(recordsByStudentId).forEach(([id, rec]) => {
+        if (rec.attendance !== 'มา') return;
+        const stu = students.find(s => String(s.id) === String(id));
+        if (!stu) return;
+        (byClass[stu.className] ??= []).push(String(id));
+      });
+
+      const monthStr = String(month).padStart(2, '0');
+      const makeKey  = (cls) => `${cls}__${academicYear}__${thaiYear}-${monthStr}`;
+
+      // Milk, Lunch, ToothBrush → เครื่องหมาย 'H'
+      const patchH = (prev, setter) => {
+        const next = { ...prev };
+        Object.entries(byClass).forEach(([cls, ids]) => {
+          const k   = makeKey(cls);
+          const rec = next[k]
+            ? { ...next[k], students: { ...next[k].students } }
+            : { id: k, className: cls, academicYear, year: thaiYear, month, students: {} };
+          ids.forEach(id => {
+            const sData = rec.students[id] ?? { days: {} };
+            if (!(day in (sData.days ?? {}))) {
+              rec.students[id] = { ...sData, days: { ...(sData.days ?? {}), [day]: 'H' } };
+            }
+          });
+          next[k] = rec;
+        });
+        setter(next);
+      };
+      patchH(milkRecords,       setMilkRecords);
+      patchH(lunchRecords,      setLunchRecords);
+      patchH(toothBrushRecords, setToothBrushRecords);
+
+      // IllnessCheck → เครื่องหมาย { v: '√', sep: 0, home: false, fam: false, note: '' }
+      setIllnessCheckRecords(prev => {
+        const next = { ...prev };
+        Object.entries(byClass).forEach(([cls, ids]) => {
+          const k   = makeKey(cls);
+          const rec = next[k]
+            ? { ...next[k], students: { ...next[k].students } }
+            : { id: k, className: cls, academicYear, year: thaiYear, month, students: {} };
+          ids.forEach(id => {
+            const sData = rec.students[id] ?? { days: {}, weight: 0, height: 0 };
+            if (!(day in (sData.days ?? {}))) {
+              rec.students[id] = {
+                ...sData,
+                days: { ...(sData.days ?? {}), [day]: { v: '√', sep: 0, home: false, fam: false, note: '' } },
+              };
+            }
+          });
+          next[k] = rec;
+        });
+        return next;
+      });
+
       return { ok: true };
     },
-    [dailyRecords, setDailyRecords, setStudents],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      dailyRecords, setDailyRecords, setStudents, students, academicYear,
+      milkRecords,       setMilkRecords,
+      lunchRecords,      setLunchRecords,
+      toothBrushRecords, setToothBrushRecords,
+      setIllnessCheckRecords,
+    ],
   );
 
   const saveDailyHygiene = useCallback(

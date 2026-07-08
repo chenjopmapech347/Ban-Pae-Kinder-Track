@@ -1,5 +1,7 @@
 // MediaTab.jsx — ทะเบียนผลิตสื่อ / นวัตกรรมการเรียนการสอน
 import { useState, useMemo } from 'react';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { storage } from '../../lib/firebase';
 import { useApp } from '../../context/AppContext';
 
 // ── ประเภทการนำไปใช้ประกอบการสอน ──────────────────────────────────────────
@@ -21,7 +23,8 @@ const EMPTY_FORM = {
   ai:            false,   // สื่อ AI
   category:      'ใหม่', // ประเภทสื่อ: เก่า / ใหม่
   note:          '',      // หมายเหตุ
-  imageUrl:      '',      // รูปภาพ (base64)
+  imageUrl:      '',      // URL จาก Firebase Storage
+  imagePath:     '',      // Storage path (สำหรับลบไฟล์)
 };
 
 // ── สร้างข้อความ "ประกอบการสอนหน่วย" จาก record ──────────────────────────
@@ -107,23 +110,37 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
   const [editId, setEditId]     = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [imgPreview, setImgPreview] = useState('');
+  const [imgFile, setImgFile]   = useState(null);   // File object รอ upload
+  const [uploading, setUploading] = useState(false);
+
+  // อัปโหลดรูปไป Firebase Storage → คืน { url, path }
+  async function uploadToStorage(file, recordId) {
+    const ext  = file.name.split('.').pop();
+    const path = `media-images/${recordId}.${ext}`;
+    const sRef = ref(storage, path);
+    await uploadBytes(sRef, file);
+    const url  = await getDownloadURL(sRef);
+    return { url, path };
+  }
+
+  // ลบรูปจาก Storage (ถ้ามี imagePath)
+  async function deleteFromStorage(imagePath) {
+    if (!imagePath || !storage) return;
+    try { await deleteObject(ref(storage, imagePath)); } catch (_) {}
+  }
 
   function handleImageChange(e) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { alert('รูปภาพต้องมีขนาดไม่เกิน 2MB'); return; }
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const b64 = ev.target.result;
-      setForm(f => ({ ...f, imageUrl: b64 }));
-      setImgPreview(b64);
-    };
-    reader.readAsDataURL(file);
+    if (file.size > 10 * 1024 * 1024) { alert('รูปภาพต้องมีขนาดไม่เกิน 10MB'); return; }
+    setImgFile(file);
+    setImgPreview(URL.createObjectURL(file));
   }
 
   function removeImage() {
-    setForm(f => ({ ...f, imageUrl: '' }));
+    setImgFile(null);
     setImgPreview('');
+    setForm(f => ({ ...f, imageUrl: '', imagePath: '' }));
   }
   const [selClass, setSelClass] = useState(teacherClassFilter ?? '');
 
@@ -147,24 +164,50 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
     [mediaRecords, cn]
   );
 
-  function save() {
+  async function save() {
     if (!form.item.trim()) return;
-    if (editId) {
-      setMediaRecords(prev => prev.map(r =>
-        r.id === editId ? { ...r, ...form, className: cn } : r
-      ));
-      setEditId(null);
-    } else {
-      setMediaRecords(prev => [...(prev ?? []), {
-        ...form,
-        id: Date.now(),
-        className: cn,
-        createdAt: new Date().toISOString(),
-      }]);
+    setUploading(true);
+    try {
+      let imageUrl  = form.imageUrl;
+      let imagePath = form.imagePath;
+
+      if (imgFile && storage) {
+        // ถ้าแก้ไขและมีรูปเก่า → ลบทิ้งก่อน
+        if (editId && form.imagePath) await deleteFromStorage(form.imagePath);
+        const id = editId ?? Date.now();
+        const result = await uploadToStorage(imgFile, id);
+        imageUrl  = result.url;
+        imagePath = result.path;
+      } else if (!imgFile && !form.imageUrl) {
+        // ลบรูปออก — ถ้าเป็น edit และมี path เก่า ลบออกจาก Storage
+        if (editId && form.imagePath) await deleteFromStorage(form.imagePath);
+        imagePath = '';
+      }
+
+      const finalForm = { ...form, imageUrl, imagePath };
+
+      if (editId) {
+        setMediaRecords(prev => prev.map(r =>
+          r.id === editId ? { ...r, ...finalForm, className: cn } : r
+        ));
+        setEditId(null);
+      } else {
+        setMediaRecords(prev => [...(prev ?? []), {
+          ...finalForm,
+          id: Date.now(),
+          className: cn,
+          createdAt: new Date().toISOString(),
+        }]);
+      }
+      setForm(EMPTY_FORM);
+      setImgPreview('');
+      setImgFile(null);
+      setShowForm(false);
+    } catch (err) {
+      alert('อัปโหลดรูปภาพไม่สำเร็จ: ' + err.message);
+    } finally {
+      setUploading(false);
     }
-    setForm(EMPTY_FORM);
-    setImgPreview('');
-    setShowForm(false);
   }
 
   function startEdit(r) {
@@ -173,14 +216,16 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
       ctxExperience: r.ctxExperience ?? false,
       ctxGame:       r.ctxGame       ?? false,
       ctxCorner:     r.ctxCorner     ?? false,
-      unitName:      r.unitName      ?? (r.topic ?? ''), // backward compat
+      unitName:      r.unitName      ?? (r.topic ?? ''),
       handmade:      r.handmade      ?? false,
       ai:            r.ai            ?? false,
       category:      r.category      ?? 'ใหม่',
       note:          r.note          ?? '',
       imageUrl:      r.imageUrl      ?? '',
+      imagePath:     r.imagePath     ?? '',
     });
     setImgPreview(r.imageUrl ?? '');
+    setImgFile(null);
     setEditId(r.id);
     setShowForm(true);
   }
@@ -188,14 +233,16 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
   function cancelForm() {
     setForm(EMPTY_FORM);
     setImgPreview('');
+    setImgFile(null);
     setEditId(null);
     setShowForm(false);
   }
 
-  function del(id) {
-    if (window.confirm('ลบรายการนี้?')) {
-      setMediaRecords(prev => prev.filter(r => r.id !== id));
-    }
+  async function del(id) {
+    if (!window.confirm('ลบรายการนี้?')) return;
+    const r = (mediaRecords ?? []).find(rec => rec.id === id);
+    if (r?.imagePath) await deleteFromStorage(r.imagePath);
+    setMediaRecords(prev => prev.filter(rec => rec.id !== id));
   }
 
   const inp = { width: '100%', padding: '.4rem .6rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '.85rem', fontFamily: 'inherit', boxSizing: 'border-box' };
@@ -347,9 +394,9 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
               style={{ padding: '.4rem 1rem', borderRadius: '8px', border: '1.5px solid #d1d5db', background: 'white', fontFamily: 'inherit', fontSize: '.85rem', cursor: 'pointer' }}>
               ยกเลิก
             </button>
-            <button type="button" onClick={save} disabled={!form.item.trim()}
-              style={{ padding: '.4rem 1.2rem', borderRadius: '8px', border: 'none', background: form.item.trim() ? '#0891b2' : '#cbd5e1', color: 'white', fontFamily: 'inherit', fontWeight: 700, fontSize: '.85rem', cursor: form.item.trim() ? 'pointer' : 'default' }}>
-              {editId ? '💾 บันทึกการแก้ไข' : '✅ บันทึก'}
+            <button type="button" onClick={save} disabled={!form.item.trim() || uploading}
+              style={{ padding: '.4rem 1.2rem', borderRadius: '8px', border: 'none', background: (form.item.trim() && !uploading) ? '#0891b2' : '#cbd5e1', color: 'white', fontFamily: 'inherit', fontWeight: 700, fontSize: '.85rem', cursor: (form.item.trim() && !uploading) ? 'pointer' : 'default' }}>
+              {uploading ? '⏳ กำลังอัปโหลด...' : editId ? '💾 บันทึกการแก้ไข' : '✅ บันทึก'}
             </button>
           </div>
         </div>

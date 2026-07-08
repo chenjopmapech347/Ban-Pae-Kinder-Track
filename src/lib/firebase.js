@@ -5,6 +5,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
@@ -23,17 +24,19 @@ export const isFirebaseConfigured = Boolean(
 );
 
 // Init เฉพาะเมื่อ config ครบ
-let _db = null, _auth = null;
+let _db = null, _auth = null, _storage = null;
 
 if (isFirebaseConfigured) {
   try {
-    const app = initializeApp(firebaseConfig);
-    _db   = getFirestore(app);
-    _auth = getAuth(app);
+    const app  = initializeApp(firebaseConfig);
+    _db        = getFirestore(app);
+    _auth      = getAuth(app);
+    _storage   = getStorage(app);
   } catch (e) {
     console.warn('[KinderTrack] Firebase init failed:', e.message);
   }
 }
 
-export const db   = _db;
-export const auth = _auth;
+export const db      = _db;
+export const auth    = _auth;
+export const storage = _storage;

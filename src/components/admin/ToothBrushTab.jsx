@@ -46,6 +46,25 @@ function countH(days) {
   return Object.values(days ?? {}).filter(v => v === 'H').length;
 }
 
+// เติม H อัตโนมัติสำหรับวันใหม่ที่ยังไม่มีข้อมูล
+function patchCurrentMonth(rec, yr, mo) {
+  const todayJs = new Date();
+  const todayThaiYear = todayJs.getFullYear() + 543;
+  const todayMonth = todayJs.getMonth() + 1;
+  const todayDay = todayJs.getDate();
+  if (rec.year !== todayThaiYear || rec.month !== todayMonth) return rec;
+  const patched = { ...rec, students: { ...rec.students } };
+  Object.entries(rec.students ?? {}).forEach(([sid, sData]) => {
+    const days = { ...(sData.days ?? {}) };
+    let changed = false;
+    for (let d = 1; d <= todayDay; d++) {
+      if (!isWeekend(yr, mo, d) && !(d in days)) { days[d] = 'H'; changed = true; }
+    }
+    if (changed) patched.students[sid] = { ...sData, days };
+  });
+  return patched;
+}
+
 // สร้าง record เริ่มต้น: H ทุกวันธรรมดา (ไม่ pre-fill วันในอนาคต)
 function makeDefaultRecord(k, cls, ay, yr, mo, sd, studs) {
   const todayJs = new Date();
@@ -99,7 +118,7 @@ export default function ToothBrushTab({ teacherClassFilter = null }) {
 
   const [draft, setDraft] = useState(() => {
     const ex = toothBrushRecords[key];
-    if (ex) return ex;
+    if (ex) return patchCurrentMonth(ex, selYear, selMonth);
     const initStuds = students.filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)')).sort((a,b)=>Number(a.id)-Number(b.id));
     return makeDefaultRecord(key, selClass, academicYear, selYear, selMonth, 20, initStuds);
   });
@@ -108,7 +127,7 @@ export default function ToothBrushTab({ teacherClassFilter = null }) {
     const k = recKey(cls, academicYear, yr, mo);
     const ex = toothBrushRecords[k];
     if (ex) {
-      setDraft(ex);
+      setDraft(patchCurrentMonth(ex, yr, mo));
       setSchoolDays(ex.schoolDays ?? 20);
     } else {
       const studs = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)')).sort((a,b)=>Number(a.id)-Number(b.id));

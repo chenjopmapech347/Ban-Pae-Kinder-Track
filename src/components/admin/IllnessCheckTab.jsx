@@ -51,6 +51,27 @@ function defaultDay() {
   return { v: '√', sep: 0, home: false, fam: false, note: '' };
 }
 
+// เติม √ อัตโนมัติสำหรับวันใหม่ที่ยังไม่มีข้อมูล
+function patchCurrentMonth(rec, yr, mo) {
+  const todayJs = new Date();
+  const todayThaiYear = todayJs.getFullYear() + 543;
+  const todayMonth = todayJs.getMonth() + 1;
+  const todayDay = todayJs.getDate();
+  if (rec.year !== todayThaiYear || rec.month !== todayMonth) return rec;
+  const firstDow = new Date(yr - 543, mo - 1, 1).getDay();
+  const isWknd = (day) => { const dow = (firstDow + day - 1) % 7; return dow === 0 || dow === 6; };
+  const patched = { ...rec, students: { ...rec.students } };
+  Object.entries(rec.students ?? {}).forEach(([sid, sData]) => {
+    const days = { ...(sData.days ?? {}) };
+    let changed = false;
+    for (let d = 1; d <= todayDay; d++) {
+      if (!isWknd(d) && !(d in days)) { days[d] = defaultDay(); changed = true; }
+    }
+    if (changed) patched.students[sid] = { ...sData, days };
+  });
+  return patched;
+}
+
 // สร้าง record เปล่าพร้อม pre-fill √ ทุกวันที่ไม่ใช่วันหยุด (ไม่ pre-fill วันในอนาคต)
 function makeDefaultRecord(k, cls, ay, yr, mo, studs) {
   const todayJs = new Date();
@@ -246,7 +267,7 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
   // โหลด/สร้าง draft
   const [draft, setDraft] = useState(() => {
     const ex = illnessCheckRecords[key];
-    if (ex) return ex;
+    if (ex) return patchCurrentMonth(ex, selYear, selMonth);
     const initStuds = students.filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)')).sort((a,b)=>Number(a.id)-Number(b.id));
     return makeDefaultRecord(key, selClass, academicYear, selYear, selMonth, initStuds);
   });
@@ -256,7 +277,7 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
     const k = recKey(cls, academicYear, yr, mo);
     const ex = illnessCheckRecords[k];
     if (ex) {
-      setDraft(ex);
+      setDraft(patchCurrentMonth(ex, yr, mo));
     } else {
       const studs = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)')).sort((a,b)=>Number(a.id)-Number(b.id));
       setDraft(makeDefaultRecord(k, cls, academicYear, yr, mo, studs));

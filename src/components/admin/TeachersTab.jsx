@@ -22,6 +22,19 @@ const CLASS_OPTIONS = {
   K3: ['อ.3/1', 'อ.3/2', 'อ.3/3'],
 };
 
+const POSITION_OPTIONS = [
+  'ครูผู้ช่วย',
+  'ครู',
+  'ครูชำนาญการ',
+  'ครูชำนาญการพิเศษ',
+  'ครูเชี่ยวชาญ',
+  'ครูเชี่ยวชาญพิเศษ',
+  'ครูอัตราจ้าง',
+  'ครูพี่เลี้ยง',
+  'พนักงานจ้าง',
+  'อื่นๆ',
+];
+
 export default function TeachersTab() {
   const { teachers, setTeachers, handleImport } = useApp();
   const [isModal, setIsModal] = useState(false);
@@ -30,7 +43,7 @@ export default function TeachersTab() {
 
   const openNew  = () => {
     setEditing(null);
-    setForm({ firstName:'', lastName:'', level:'K1', className:'อ.1/1', email:'', phone:'', line:'', facebook:'', instagram:'', tiktok:'', youtube:'' });
+    setForm({ firstName:'', lastName:'', position:'', level:'K1', className:'อ.1/1', email:'', phone:'', line:'', facebook:'', instagram:'', tiktok:'', youtube:'' });
     setIsModal(true);
   };
   const openEdit = t => { setEditing(t); setForm(t); setIsModal(true); };
@@ -81,6 +94,7 @@ export default function TeachersTab() {
               <tr key={t.id} className="hover-row">
                 <td>
                   <div className="font-bold">{t.name}</div>
+                  {t.position && <div style={{ fontSize:'.78rem', color:'#7c3aed', fontWeight:600 }}>{t.position}</div>}
                   {t.email && <div style={{ fontSize:'.78rem', color:'#6b7280' }}>{t.email}</div>}
                 </td>
                 <td><span className={'badge badge-' + t.level.toLowerCase()}>{t.level}</span></td>
@@ -133,6 +147,17 @@ export default function TeachersTab() {
                     value={form.lastName ?? ''}
                     onChange={e => setForm({ ...form, lastName: e.target.value })} />
                 </div>
+              </div>
+
+              {/* ตำแหน่ง */}
+              <div>
+                <label style={{ display:'block',marginBottom:'.3rem',fontWeight:600,fontSize:'.85rem' }}>ตำแหน่ง</label>
+                <select className="input" value={form.position ?? ''} onChange={e => setForm({ ...form, position: e.target.value })}>
+                  <option value="">— เลือกตำแหน่ง —</option>
+                  {POSITION_OPTIONS.map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
               </div>
 
               {/* ระดับชั้น + ห้องเรียน */}

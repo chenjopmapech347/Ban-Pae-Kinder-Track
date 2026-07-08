@@ -35,15 +35,10 @@ function defaultStudentEntry() {
   }, { note: '' });
 }
 
-// สร้าง record เปล่าพร้อม pre-fill ผ่านทุกคน ทุกรายการ (เฉพาะสัปดาห์ที่เริ่มแล้ว)
+// สร้าง record เปล่า (ตารางว่าง — ครูกดเลือกเอง)
 function makeDefaultRecord(k, cls, ay, wkNo, wkDate, studs) {
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const weekStart = wkDate ? new Date(wkDate) : null;
-  const weekHasStarted = !weekStart || weekStart <= today;
   const studsData = {};
-  studs.forEach(s => {
-    studsData[s.id] = weekHasStarted ? defaultStudentEntry() : emptyStudentEntry();
-  });
+  studs.forEach(s => { studsData[s.id] = emptyStudentEntry(); });
   return { id: k, className: cls, academicYear: ay, weekNo: wkNo, weekDate: wkDate, students: studsData };
 }
 
@@ -152,6 +147,23 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
           [studentId]: { ...entry, [itemId]: days },
         },
       };
+    });
+  }
+
+  // กด checkbox บนหัวตาราง → เลือก/ยกเลิกทุกคนในคอลัมน์นั้น
+  function toggleColumn(itemId, dayIdx) {
+    const allChecked = classStudents.length > 0 &&
+      classStudents.every(s => draft.students[s.id]?.[itemId]?.[dayIdx] === true);
+    setSaved(false);
+    setDraft(prev => {
+      const newStudents = { ...prev.students };
+      classStudents.forEach(s => {
+        const entry = newStudents[s.id] ?? emptyStudentEntry();
+        const days = [...(entry[itemId] ?? [false, false, false])];
+        days[dayIdx] = !allChecked;
+        newStudents[s.id] = { ...entry, [itemId]: days };
+      });
+      return { ...prev, students: newStudents };
     });
   }
 
@@ -318,7 +330,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
       <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center', marginBottom: '.75rem', fontSize: '.72rem', flexWrap: 'wrap' }}>
         <span style={{ background: '#d1fae5', color: '#065f46', fontWeight: 700, padding: '2px 10px', borderRadius: '6px', border: '1px solid #a7f3d0' }}>/ ผ่าน</span>
         <span style={{ color: '#9ca3af' }}>· ยังไม่ได้ตรวจ</span>
-        <span style={{ color: '#6b7280' }}>· คลิกเพื่อเปลี่ยนสถานะ | ตัวเลข 1,2,3 = วันที่ตรวจในสัปดาห์</span>
+        <span style={{ color: '#6b7280' }}>· ☑ checkbox บนหัวตาราง = เลือก/ยกเลิกทั้งคอลัมน์ | คลิกช่องนักเรียน = เปลี่ยนรายคน</span>
       </div>
 
       {/* ── Table ── */}
@@ -329,16 +341,16 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
           <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '.75rem' }}>
             <thead>
               <tr>
-                <th rowSpan={2} style={th({ minWidth: '32px' })}>ที่</th>
-                <th rowSpan={2} style={th({ minWidth: '160px', textAlign: 'left' })}>ชื่อ-สกุล</th>
+                <th rowSpan={3} style={th({ minWidth: '32px' })}>ที่</th>
+                <th rowSpan={3} style={th({ minWidth: '160px', textAlign: 'left' })}>ชื่อ-สกุล</th>
                 {CHECK_ITEMS.map(item => (
                   <th key={item.id} colSpan={DAYS_PER_WEEK}
                     style={th({ background: '#eff6ff', color: '#1e40af', fontWeight: 800 })}>
                     {item.emoji} {item.label}
                   </th>
                 ))}
-                <th rowSpan={2} style={th({ minWidth: '60px' })}>ผ่าน<br/>ทั้งหมด</th>
-                <th rowSpan={2} style={th({ minWidth: '80px' })}>หมายเหตุ</th>
+                <th rowSpan={3} style={th({ minWidth: '60px' })}>ผ่าน<br/>ทั้งหมด</th>
+                <th rowSpan={3} style={th({ minWidth: '80px' })}>หมายเหตุ</th>
               </tr>
               <tr>
                 {CHECK_ITEMS.map(item =>
@@ -348,6 +360,33 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                       วัน{d}
                     </th>
                   ))
+                )}
+              </tr>
+              {/* แถว checkbox เลือกทั้งคอลัมน์ */}
+              <tr>
+                {CHECK_ITEMS.map(item =>
+                  [0, 1, 2].map(dayIdx => {
+                    const allChecked = classStudents.length > 0 &&
+                      classStudents.every(s => draft.students[s.id]?.[item.id]?.[dayIdx] === true);
+                    return (
+                      <td key={`cb-${item.id}-${dayIdx}`}
+                        onClick={() => toggleColumn(item.id, dayIdx)}
+                        title={allChecked ? 'ยกเลิกทั้งคอลัมน์' : 'เลือกทั้งคอลัมน์'}
+                        style={{
+                          textAlign: 'center', cursor: 'pointer', userSelect: 'none',
+                          border: '1px solid #d1d5db', padding: '3px 2px',
+                          background: allChecked ? '#d1fae5' : '#f8fafc',
+                        }}>
+                        <input
+                          type="checkbox"
+                          checked={allChecked}
+                          onChange={() => toggleColumn(item.id, dayIdx)}
+                          onClick={e => e.stopPropagation()}
+                          style={{ cursor: 'pointer', width: '13px', height: '13px', accentColor: '#059669' }}
+                        />
+                      </td>
+                    );
+                  })
                 )}
               </tr>
             </thead>

@@ -41,16 +41,22 @@ function printMediaList(records, cn, schoolName, teacher, academicYear) {
     .sub{text-align:center;font-size:10pt;margin:.15rem 0}
     .info{text-align:center;font-size:10pt;margin:.15rem 0}
     table{width:100%;border-collapse:collapse;margin-top:.6rem;font-size:9.5pt}
-    th,td{border:1px solid #555;padding:3px 5px;vertical-align:top}
+    th,td{border:1px solid #555;padding:3px 5px;vertical-align:middle}
     th{background:#ddd;text-align:center;font-weight:700}
     .tc{text-align:center}
     .tl{text-align:left}
-    .ctx{font-size:8.5pt;line-height:1.6}
+    .ctx{font-size:8.5pt;line-height:1.6;vertical-align:top}
+    .img-cell{text-align:center;padding:3px}
+    .img-cell img{width:60px;height:45px;object-fit:cover;border-radius:4px;border:1px solid #ccc}
+    .no-img{color:#aaa;font-size:8pt}
     @media print{@page{margin:1.5cm;size:A4 portrait}body{margin:0}}
   `;
   const rows = records.map((r, i) => `
     <tr>
       <td class="tc">${i + 1}</td>
+      <td class="img-cell">${r.imageUrl
+        ? `<img src="${r.imageUrl}" alt="${r.item ?? ''}" />`
+        : '<span class="no-img">—</span>'}</td>
       <td class="tl">${r.item ?? ''}</td>
       <td class="tl ctx">${buildCtxText(r).replace(/\n/g, '<br/>')}</td>
       <td class="tc">${r.handmade ? '✓' : ''}</td>
@@ -71,6 +77,7 @@ function printMediaList(records, cn, schoolName, teacher, academicYear) {
         <thead>
           <tr>
             <th rowspan="2" style="width:26px">ที่</th>
+            <th rowspan="2" style="width:70px">รูปภาพ</th>
             <th rowspan="2" style="min-width:150px" class="tl">รายการสื่อ/นวัตกรรม</th>
             <th rowspan="2" style="min-width:120px" class="tl">ประกอบการสอนหน่วย</th>
             <th rowspan="2" style="width:52px">สื่อ<br/>ทำมือ</th>

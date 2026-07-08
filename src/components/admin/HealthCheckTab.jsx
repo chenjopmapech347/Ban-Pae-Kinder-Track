@@ -35,10 +35,15 @@ function defaultStudentEntry() {
   }, { note: '' });
 }
 
-// สร้าง record เปล่าพร้อม pre-fill ผ่านทุกคน ทุกรายการ
+// สร้าง record เปล่าพร้อม pre-fill ผ่านทุกคน ทุกรายการ (เฉพาะสัปดาห์ที่เริ่มแล้ว)
 function makeDefaultRecord(k, cls, ay, wkNo, wkDate, studs) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const weekStart = wkDate ? new Date(wkDate) : null;
+  const weekHasStarted = !weekStart || weekStart <= today;
   const studsData = {};
-  studs.forEach(s => { studsData[s.id] = defaultStudentEntry(); });
+  studs.forEach(s => {
+    studsData[s.id] = weekHasStarted ? defaultStudentEntry() : emptyStudentEntry();
+  });
   return { id: k, className: cls, academicYear: ay, weekNo: wkNo, weekDate: wkDate, students: studsData };
 }
 

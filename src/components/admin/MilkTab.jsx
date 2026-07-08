@@ -26,14 +26,22 @@ function recKey(className, academicYear, year, month) {
 function nextSym(cur) { const i = CYCLE.indexOf(cur ?? ''); return CYCLE[(i + 1) % CYCLE.length]; }
 function countH(days) { return Object.values(days ?? {}).filter(v => v === 'H').length; }
 
-// สร้าง record เริ่มต้น: H ทุกวันธรรมดา
+// สร้าง record เริ่มต้น: H ทุกวันธรรมดา (ไม่ pre-fill วันในอนาคต)
 function makeDefaultRecord(k, cls, ay, yr, mo, sd, studs) {
+  const todayJs = new Date();
+  const todayThaiYear = todayJs.getFullYear() + 543;
+  const todayMonth = todayJs.getMonth() + 1;
+  const todayDay = todayJs.getDate();
+  const isCurrentMonth = yr === todayThaiYear && mo === todayMonth;
+
   const nDays = daysInMonth(yr, mo);
   const studsData = {};
   studs.forEach(s => {
     const days = {};
     for (let d = 1; d <= nDays; d++) {
-      if (!isWeekend(yr, mo, d)) days[d] = 'H';
+      if (isWeekend(yr, mo, d)) continue;
+      if (isCurrentMonth && d > todayDay) continue;
+      days[d] = 'H';
     }
     studsData[s.id] = { days };
   });

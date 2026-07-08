@@ -51,8 +51,14 @@ function defaultDay() {
   return { v: '√', sep: 0, home: false, fam: false, note: '' };
 }
 
-// สร้าง record เปล่าพร้อม pre-fill √ ทุกวันที่ไม่ใช่วันหยุด
+// สร้าง record เปล่าพร้อม pre-fill √ ทุกวันที่ไม่ใช่วันหยุด (ไม่ pre-fill วันในอนาคต)
 function makeDefaultRecord(k, cls, ay, yr, mo, studs) {
+  const todayJs = new Date();
+  const todayThaiYear = todayJs.getFullYear() + 543;
+  const todayMonth = todayJs.getMonth() + 1;
+  const todayDay = todayJs.getDate();
+  const isCurrentMonth = yr === todayThaiYear && mo === todayMonth;
+
   const nDays = daysInMonth(yr, mo);
   const firstDow = new Date(yr - 543, mo - 1, 1).getDay();
   const isWknd = (day) => { const dow = (firstDow + day - 1) % 7; return dow === 0 || dow === 6; };
@@ -60,7 +66,9 @@ function makeDefaultRecord(k, cls, ay, yr, mo, studs) {
   studs.forEach(s => {
     const days = {};
     for (let d = 1; d <= nDays; d++) {
-      if (!isWknd(d)) days[d] = defaultDay();
+      if (isWknd(d)) continue;
+      if (isCurrentMonth && d > todayDay) continue;
+      days[d] = defaultDay();
     }
     studsData[s.id] = { days, weight: 0, height: 0 };
   });

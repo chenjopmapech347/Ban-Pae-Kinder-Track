@@ -39,6 +39,20 @@ function countH(days) {
   return Object.values(days ?? {}).filter(v => v === 'H').length;
 }
 
+// สร้าง record เริ่มต้น: H ทุกวันธรรมดา
+function makeDefaultRecord(k, cls, ay, yr, mo, sd, studs) {
+  const nDays = daysInMonth(yr, mo);
+  const studsData = {};
+  studs.forEach(s => {
+    const days = {};
+    for (let d = 1; d <= nDays; d++) {
+      if (!isWeekend(yr, mo, d)) days[d] = 'H';
+    }
+    studsData[s.id] = { days };
+  });
+  return { id: k, className: cls, academicYear: ay, year: yr, month: mo, schoolDays: sd, students: studsData };
+}
+
 // ── LunchTab ──────────────────────────────────────────────────────────────────
 export default function LunchTab({ teacherClassFilter = null }) {
   const {
@@ -70,17 +84,24 @@ export default function LunchTab({ teacherClassFilter = null }) {
 
   const [draft, setDraft] = useState(() => {
     const ex = lunchRecords[key];
-    return ex ?? { id: key, className: selClass, academicYear, year: selYear, month: selMonth, schoolDays: 20, students: {} };
+    if (ex) return ex;
+    const initStuds = students.filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)')).sort((a,b)=>Number(a.id)-Number(b.id));
+    return makeDefaultRecord(key, selClass, academicYear, selYear, selMonth, 20, initStuds);
   });
 
   const switchRecord = useCallback((cls, yr, mo) => {
     const k = recKey(cls, academicYear, yr, mo);
     const ex = lunchRecords[k];
-    const rec = ex ?? { id: k, className: cls, academicYear, year: yr, month: mo, schoolDays: 20, students: {} };
-    setDraft(rec);
-    setSchoolDays(rec.schoolDays ?? 20);
+    if (ex) {
+      setDraft(ex);
+      setSchoolDays(ex.schoolDays ?? 20);
+    } else {
+      const studs = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)')).sort((a,b)=>Number(a.id)-Number(b.id));
+      setDraft(makeDefaultRecord(k, cls, academicYear, yr, mo, 20, studs));
+      setSchoolDays(20);
+    }
     setSaved(false);
-  }, [lunchRecords, academicYear]);
+  }, [lunchRecords, academicYear, students]);
 
   function handleClassChange(cls) { setSelClass(cls); switchRecord(cls, selYear, selMonth); }
   function handleYearChange(yr)   { const y=Number(yr); setSelYear(y);  switchRecord(selClass, y, selMonth); }

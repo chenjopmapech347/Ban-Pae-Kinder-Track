@@ -46,6 +46,27 @@ function emptyDay() {
   return { v: '', sep: 0, home: false, fam: false, note: '' };
 }
 
+// Default day entry — √ มาเรียนปกติ
+function defaultDay() {
+  return { v: '√', sep: 0, home: false, fam: false, note: '' };
+}
+
+// สร้าง record เปล่าพร้อม pre-fill √ ทุกวันที่ไม่ใช่วันหยุด
+function makeDefaultRecord(k, cls, ay, yr, mo, studs) {
+  const nDays = daysInMonth(yr, mo);
+  const firstDow = new Date(yr - 543, mo - 1, 1).getDay();
+  const isWknd = (day) => { const dow = (firstDow + day - 1) % 7; return dow === 0 || dow === 6; };
+  const studsData = {};
+  studs.forEach(s => {
+    const days = {};
+    for (let d = 1; d <= nDays; d++) {
+      if (!isWknd(d)) days[d] = defaultDay();
+    }
+    studsData[s.id] = { days, weight: 0, height: 0 };
+  });
+  return { id: k, className: cls, academicYear: ay, year: yr, month: mo, students: studsData };
+}
+
 // นับวันป่วย
 function countSick(days) {
   return Object.values(days ?? {}).filter(d => ['C','H','D'].includes(d?.v)).length;
@@ -218,16 +239,22 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
   const [draft, setDraft] = useState(() => {
     const ex = illnessCheckRecords[key];
     if (ex) return ex;
-    return { id: key, className: selClass, academicYear, year: selYear, month: selMonth, students: {} };
+    const initStuds = students.filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)')).sort((a,b)=>Number(a.id)-Number(b.id));
+    return makeDefaultRecord(key, selClass, academicYear, selYear, selMonth, initStuds);
   });
 
   // sync draft เมื่อ key เปลี่ยน
   const switchRecord = useCallback((cls, yr, mo) => {
     const k = recKey(cls, academicYear, yr, mo);
     const ex = illnessCheckRecords[k];
-    setDraft(ex ?? { id: k, className: cls, academicYear, year: yr, month: mo, students: {} });
+    if (ex) {
+      setDraft(ex);
+    } else {
+      const studs = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)')).sort((a,b)=>Number(a.id)-Number(b.id));
+      setDraft(makeDefaultRecord(k, cls, academicYear, yr, mo, studs));
+    }
     setSaved(false);
-  }, [illnessCheckRecords, academicYear]);
+  }, [illnessCheckRecords, academicYear, students]);
 
   function handleClassChange(cls) { setSelClass(cls); switchRecord(cls, selYear, selMonth); }
   function handleYearChange(yr)   { const y=Number(yr); setSelYear(y);  switchRecord(selClass, y, selMonth); }

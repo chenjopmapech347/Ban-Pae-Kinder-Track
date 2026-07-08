@@ -27,6 +27,21 @@ function emptyStudentEntry() {
   }, { note: '' });
 }
 
+// สร้าง student entry pre-filled — ผ่านทุกรายการ
+function defaultStudentEntry() {
+  return CHECK_ITEMS.reduce((acc, item) => {
+    acc[item.id] = [true, true, true];
+    return acc;
+  }, { note: '' });
+}
+
+// สร้าง record เปล่าพร้อม pre-fill ผ่านทุกคน ทุกรายการ
+function makeDefaultRecord(k, cls, ay, wkNo, wkDate, studs) {
+  const studsData = {};
+  studs.forEach(s => { studsData[s.id] = defaultStudentEntry(); });
+  return { id: k, className: cls, academicYear: ay, weekNo: wkNo, weekDate: wkDate, students: studsData };
+}
+
 // นับจำนวนผ่านในแถว
 function countPass(entry) {
   return CHECK_ITEMS.reduce((n, item) => n + entry[item.id].filter(Boolean).length, 0);
@@ -85,10 +100,8 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
   const [draft, setDraft] = useState(() => {
     const existing = healthCheckRecords[key];
     if (existing) return existing;
-    return {
-      id: key, className: selClass, academicYear, weekNo, weekDate,
-      students: {},
-    };
+    const initStuds = students.filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)')).sort((a,b)=>Number(a.id)-Number(b.id));
+    return makeDefaultRecord(key, selClass, academicYear, weekNo, weekDate, initStuds);
   });
 
   // เมื่อเปลี่ยน key ให้โหลด record ใหม่
@@ -97,14 +110,11 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
     if (existing) {
       setDraft(existing);
     } else {
-      setDraft({
-        id: newKey, className: newClass, academicYear,
-        weekNo: newWeekNo, weekDate: newWeekDate,
-        students: {},
-      });
+      const studs = students.filter(s => s.className === newClass && !s.name.startsWith('(ว่าง)')).sort((a,b)=>Number(a.id)-Number(b.id));
+      setDraft(makeDefaultRecord(newKey, newClass, academicYear, newWeekNo, newWeekDate, studs));
     }
     setSaved(false);
-  }, [healthCheckRecords, academicYear]);
+  }, [healthCheckRecords, academicYear, students]);
 
   function handleClassChange(cls) {
     setSelClass(cls);

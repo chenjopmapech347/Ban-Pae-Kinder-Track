@@ -213,7 +213,56 @@ export default function AttendanceTab({ defaultClass }) {
   const [filterClass,  setFilterClass]  = useState(defaultClass ?? 'ทั้งหมด');
   const [viewMode,     setViewMode]     = useState('card');  // 'card' | 'table'
   const [showHygiene,  setShowHygiene]  = useState(false);
-  const [markingClass, setMarkingClass] = useState(null);   // cls being bulk-marked
+
+  // ── draft สำหรับวันที่เลือก ────────────────────────────────────────────
+  // { [cls]: { [studentId]: 'มา'|'ขาด'|'ลา'|'ป่วย' } }
+  const [classDrafts,  setClassDrafts]  = useState({});
+  const [dirtyClasses, setDirtyClasses] = useState(new Set());
+
+  // โหลด/รีเซ็ต draft เมื่อเปลี่ยนวันที่หรือ dailyRecords อัปเดต
+  useEffect(() => {
+    if (mainView !== 'daily') return;
+    const newDrafts = {};
+    ALL_CLASSES.forEach(cls => {
+      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'));
+      const draft = {};
+      sts.forEach(s => {
+        const rec = getDayRecord(dailyRecords, selectedDate, s.id);
+        draft[s.id] = rec?.attendance ?? 'มา'; // default: มา
+      });
+      newDrafts[cls] = draft;
+    });
+    setClassDrafts(newDrafts);
+    setDirtyClasses(new Set());
+  }, [selectedDate, mainView]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // วน: มา → ขาด → ลา → ป่วย → มา
+  const ATT_CYCLE = ['มา', 'ขาด', 'ลา', 'ป่วย'];
+  function cycleStudentAtt(cls, studentId) {
+    const cur  = classDrafts[cls]?.[studentId] ?? 'มา';
+    const next = ATT_CYCLE[(ATT_CYCLE.indexOf(cur) + 1) % ATT_CYCLE.length];
+    setClassDrafts(prev => ({ ...prev, [cls]: { ...prev[cls], [studentId]: next } }));
+    setDirtyClasses(prev => new Set([...prev, cls]));
+  }
+
+  // รีเซ็ตทั้งห้องเป็น "มา"
+  function resetAllPresent(cls) {
+    const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'));
+    const draft = {};
+    sts.forEach(s => { draft[s.id] = 'มา'; });
+    setClassDrafts(prev => ({ ...prev, [cls]: draft }));
+    setDirtyClasses(prev => new Set([...prev, cls]));
+  }
+
+  // บันทึกห้องนี้
+  function handleSaveClass(cls) {
+    const patch = {};
+    Object.entries(classDrafts[cls] ?? {}).forEach(([id, att]) => {
+      patch[id] = { attendance: att };
+    });
+    saveDailyAttendance(selectedDate, patch);
+    setDirtyClasses(prev => { const n = new Set(prev); n.delete(cls); return n; });
+  }
 
   // ── สรุปรายเดือน ──────────────────────────────────────────────────────
   const [selMonth, setSelMonth] = useState(() => todayISO().slice(0, 7)); // YYYY-MM
@@ -241,16 +290,6 @@ export default function AttendanceTab({ defaultClass }) {
     }).filter(sec => sec.rows.length > 0);
   }, [dailyRecords, selMonth, filterClass, students, teachers]);
 
-  // bulk mark ห้องทั้งห้องเป็น "มา"
-  const handleMarkAllPresent = (cls) => {
-    const clsStudents = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'));
-    if (!clsStudents.length) return;
-    const patch = {};
-    clsStudents.forEach(s => { patch[s.id] = { attendance: 'มา' }; });
-    saveDailyAttendance(selectedDate, patch);
-    setMarkingClass(null);
-  };
-
   const isToday = selectedDate === todayISO();
   const dateLabel = formatDateThai(selectedDate);
 
@@ -265,13 +304,14 @@ export default function AttendanceTab({ defaultClass }) {
     const real = students.filter(s => !s.name.startsWith('(ว่าง)'));
     const counts = { มา: 0, ขาด: 0, ลา: 0, ป่วย: 0, none: 0 };
     real.forEach(s => {
-      const r = getDayRecord(dailyRecords, selectedDate, s.id);
-      const att = r?.attendance;
-      if (att && counts[att] !== undefined) counts[att]++;
+      const att = classDrafts[s.className]?.[s.id]
+        ?? getDayRecord(dailyRecords, selectedDate, s.id)?.attendance
+        ?? 'มา';
+      if (counts[att] !== undefined) counts[att]++;
       else counts.none++;
     });
     return { counts, total: real.length };
-  }, [students, dailyRecords, selectedDate]);
+  }, [students, dailyRecords, selectedDate, classDrafts]);
 
   // ── ข้อมูลรายห้อง ─────────────────────────────────────────────────
   const classSections = useMemo(() => {
@@ -280,13 +320,14 @@ export default function AttendanceTab({ defaultClass }) {
       const teacher = teachers?.find(t => t.className === cls);
       const rows = sts.map(s => {
         const rec = getDayRecord(dailyRecords, selectedDate, s.id);
-        return { ...s, rec };
+        const draftAtt = classDrafts[cls]?.[s.id] ?? rec?.attendance ?? 'มา';
+        return { ...s, rec, draftAtt };
       });
       const counts = {};
-      ATT_OPTS.forEach(o => { counts[o] = rows.filter(r => r.rec?.attendance === o).length; });
+      ATT_OPTS.forEach(o => { counts[o] = rows.filter(r => r.draftAtt === o).length; });
       return { cls, teacher, rows, counts, total: sts.length };
     });
-  }, [displayClasses, students, dailyRecords, selectedDate, teachers]);
+  }, [displayClasses, students, dailyRecords, selectedDate, teachers, classDrafts]);
 
   return (
     <div className="animate-fade">
@@ -549,43 +590,32 @@ export default function AttendanceTab({ defaultClass }) {
               <div style={{ flex: 1, minWidth: '200px' }}>
                 <ClassSummaryBar counts={counts} total={total} />
               </div>
-              {/* ── ปุ่มเลือกทั้งหมด ── */}
-              {markingClass === cls ? (
-                <div style={{ display: 'flex', gap: '.4rem', flexShrink: 0 }}>
-                  <span style={{ fontSize: '.78rem', fontWeight: 700, color: '#374151', alignSelf: 'center' }}>
-                    ยืนยันเช็คชื่อทั้งห้อง?
-                  </span>
-                  <button
-                    onClick={() => handleMarkAllPresent(cls)}
-                    style={{
-                      padding: '.25rem .7rem', borderRadius: '8px', border: 'none',
-                      background: '#10b981', color: 'white', fontFamily: 'inherit',
-                      fontWeight: 700, fontSize: '.75rem', cursor: 'pointer',
-                    }}
-                  >✅ ยืนยัน</button>
-                  <button
-                    onClick={() => setMarkingClass(null)}
-                    style={{
-                      padding: '.25rem .7rem', borderRadius: '8px', border: '1.5px solid #e5e7eb',
-                      background: 'white', color: '#6b7280', fontFamily: 'inherit',
-                      fontWeight: 700, fontSize: '.75rem', cursor: 'pointer',
-                    }}
-                  >ยกเลิก</button>
-                </div>
-              ) : (
+              {/* ── ปุ่มบันทึก + รีเซ็ต ── */}
+              <div style={{ display: 'flex', gap: '.4rem', flexShrink: 0 }}>
                 <button
-                  onClick={() => setMarkingClass(cls)}
+                  onClick={() => resetAllPresent(cls)}
                   style={{
-                    padding: '.25rem .75rem', borderRadius: '8px', flexShrink: 0,
+                    padding: '.25rem .65rem', borderRadius: '8px',
                     border: '1.5px solid #10b981', background: '#f0fdf4',
                     color: '#065f46', fontFamily: 'inherit',
-                    fontWeight: 700, fontSize: '.75rem', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: '.3rem',
+                    fontWeight: 700, fontSize: '.73rem', cursor: 'pointer',
                   }}
                 >
-                  ☑️ เลือกทั้งหมด (มา)
+                  ✅ มาทั้งหมด
                 </button>
-              )}
+                <button
+                  onClick={() => handleSaveClass(cls)}
+                  style={{
+                    padding: '.25rem .75rem', borderRadius: '8px', border: 'none',
+                    background: dirtyClasses.has(cls) ? '#7c3aed' : '#e5e7eb',
+                    color: dirtyClasses.has(cls) ? 'white' : '#9ca3af',
+                    fontFamily: 'inherit', fontWeight: 700, fontSize: '.73rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  💾 บันทึก{dirtyClasses.has(cls) ? '' : ' (บันทึกแล้ว)'}
+                </button>
+              </div>
             </div>
 
             {/* Progress bar */}
@@ -611,16 +641,21 @@ export default function AttendanceTab({ defaultClass }) {
                 gap: '.5rem',
               }}>
                 {rows.map((s, idx) => {
-                  const att = s.rec?.attendance;
-                  const c   = att ? (ATT_COLOR[att] ?? ATT_COLOR['-']) : ATT_COLOR['-'];
+                  const att   = s.draftAtt;
+                  const c     = ATT_COLOR[att] ?? ATT_COLOR['-'];
                   const isBoy = s.name.includes('ชาย');
                   return (
-                    <div key={s.id} style={{
-                      background: c.bg, borderRadius: '12px',
-                      padding: '.6rem .85rem',
-                      display: 'flex', alignItems: 'center', gap: '.6rem',
-                      border: `1.5px solid ${att ? c.dot + '40' : '#e5e7eb'}`,
-                    }}>
+                    <div key={s.id}
+                      onClick={() => cycleStudentAtt(cls, s.id)}
+                      title="คลิกเพื่อเปลี่ยนสถานะ"
+                      style={{
+                        background: c.bg, borderRadius: '12px',
+                        padding: '.6rem .85rem',
+                        display: 'flex', alignItems: 'center', gap: '.6rem',
+                        border: `1.5px solid ${c.dot}40`,
+                        cursor: 'pointer', userSelect: 'none',
+                        transition: 'transform .1s',
+                      }}>
                       <div style={{
                         width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
                         background: isBoy ? '#dbeafe' : '#fce7f3',
@@ -638,9 +673,9 @@ export default function AttendanceTab({ defaultClass }) {
                           {s.name.replace('เด็กชาย', 'ด.ช.').replace('เด็กหญิง', 'ด.ญ.')}
                         </div>
                         <div style={{ fontSize: '.7rem', color: c.color, opacity: .8, marginTop: '.1rem' }}>
-                          {att ?? '⏳ ยังไม่บันทึก'}
+                          {att}
                         </div>
-                        {showHygiene && att && (
+                        {showHygiene && (
                           <div style={{ display: 'flex', gap: '.25rem', marginTop: '.25rem', flexWrap: 'wrap' }}>
                             {s.rec?.milk  && <span style={{ fontSize: '.65rem', background: '#d1fae5', color: '#065f46', borderRadius: '5px', padding: '0 .3rem' }}>🥛</span>}
                             {s.rec?.brush && <span style={{ fontSize: '.65rem', background: '#dbeafe', color: '#1e40af', borderRadius: '5px', padding: '0 .3rem' }}>🪥</span>}
@@ -653,12 +688,10 @@ export default function AttendanceTab({ defaultClass }) {
                           </div>
                         )}
                       </div>
-                      {att && (
-                        <div style={{
-                          width: 10, height: 10, borderRadius: '50%',
-                          background: c.dot, flexShrink: 0,
-                        }} />
-                      )}
+                      <div style={{
+                        width: 10, height: 10, borderRadius: '50%',
+                        background: c.dot, flexShrink: 0,
+                      }} />
                     </div>
                   );
                 })}
@@ -683,24 +716,22 @@ export default function AttendanceTab({ defaultClass }) {
                   </thead>
                   <tbody>
                     {rows.map((s, idx) => {
-                      const att = s.rec?.attendance;
-                      const c   = att ? (ATT_COLOR[att] ?? ATT_COLOR['-']) : ATT_COLOR['-'];
+                      const att = s.draftAtt;
+                      const c   = ATT_COLOR[att] ?? ATT_COLOR['-'];
                       return (
-                        <tr key={s.id} className="hover-row">
+                        <tr key={s.id} className="hover-row"
+                          onClick={() => cycleStudentAtt(cls, s.id)}
+                          style={{ cursor: 'pointer', userSelect: 'none' }}>
                           <td style={{ color: 'var(--text-muted)', textAlign: 'center' }}>{idx + 1}</td>
                           <td style={{ fontWeight: 600 }}>
                             {s.name.replace('เด็กชาย', 'ด.ช.').replace('เด็กหญิง', 'ด.ญ.')}
                           </td>
                           <td style={{ textAlign: 'center' }}>
-                            {att ? (
-                              <span style={{
-                                background: c.bg, color: c.color,
-                                borderRadius: '8px', padding: '.15rem .55rem',
-                                fontWeight: 700, fontSize: '.78rem',
-                              }}>{att}</span>
-                            ) : (
-                              <span style={{ color: '#d1d5db', fontSize: '.78rem' }}>⏳</span>
-                            )}
+                            <span style={{
+                              background: c.bg, color: c.color,
+                              borderRadius: '8px', padding: '.15rem .55rem',
+                              fontWeight: 700, fontSize: '.78rem',
+                            }}>{att}</span>
                           </td>
                           {showHygiene && <>
                             <td style={{ textAlign: 'center' }}>
@@ -752,12 +783,8 @@ export default function AttendanceTab({ defaultClass }) {
             {o}
           </span>
         ))}
-        <span style={{ display: 'flex', alignItems: 'center', gap: '.35rem', fontSize: '.78rem', color: '#6b7280' }}>
-          <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#d1d5db', display: 'inline-block' }} />
-          ยังไม่บันทึก
-        </span>
         <span style={{ marginLeft: 'auto', fontSize: '.72rem', color: '#9ca3af', fontStyle: 'italic' }}>
-          🔄 ข้อมูลอัปเดตจาก localStorage อัตโนมัติ
+          💡 คลิกการ์ด/แถวนักเรียนเพื่อเปลี่ยนสถานะ · กด 💾 บันทึก เพื่อยืนยัน
         </span>
       </div>
     </div>

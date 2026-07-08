@@ -224,7 +224,8 @@ function printClassReport(classStudents, className, indicators, activities, asse
 // SUB-VIEWS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function ViewTopic({ students, assessmentTopics, indicators, activities }) {
+function ViewTopic({ students, assessmentTopics, indicators, activities, allClassNames }) {
+  const ALL_CLASSES = allClassNames ?? [];
   const [selTopic, setTopic] = useState(assessmentTopics[0]?.id ?? null);
   const topObj = assessmentTopics.find(t => t.id === selTopic);
   const topicInds = useMemo(() => indicators.filter(i => i.domainId === selTopic), [indicators, selTopic]);
@@ -266,7 +267,8 @@ function ViewTopic({ students, assessmentTopics, indicators, activities }) {
   );
 }
 
-function ViewIndicator({ students, assessmentTopics, indicators, activities }) {
+function ViewIndicator({ students, assessmentTopics, indicators, activities, allClassNames }) {
+  const ALL_CLASSES = allClassNames ?? [];
   const [selTopic, setTopic] = useState(assessmentTopics[0]?.id ?? null);
   const topicInds = useMemo(() => indicators.filter(i => i.domainId === selTopic), [indicators, selTopic]);
   const realStudents = cls => students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'));
@@ -308,7 +310,8 @@ function ViewIndicator({ students, assessmentTopics, indicators, activities }) {
   );
 }
 
-function ViewActivity({ students, assessmentTopics, indicators, activities }) {
+function ViewActivity({ students, assessmentTopics, indicators, activities, allClassNames }) {
+  const ALL_CLASSES = allClassNames ?? [];
   const [selTopic, setTopic] = useState(assessmentTopics[0]?.id ?? null);
   const [selInd, setInd]     = useState(null);
   const topicInds = useMemo(() => indicators.filter(i => i.domainId === selTopic), [indicators, selTopic]);
@@ -417,7 +420,8 @@ function ViewLevel({ students, assessmentTopics, indicators, activities }) {
   );
 }
 
-function ViewClass({ students, assessmentTopics, indicators, activities }) {
+function ViewClass({ students, assessmentTopics, indicators, activities, allClassNames }) {
+  const ALL_CLASSES = allClassNames ?? [];
   const topicScoreFn = (topic, s) => {
     const inds = indicators.filter(i => i.domainId === topic.id);
     const acts = activities.filter(a => inds.find(i => i.id === a.indicatorId));
@@ -511,7 +515,7 @@ function ViewStudent({ students, assessmentTopics, indicators, activities, schoo
         <div>
           <label style={{ fontSize:'.73rem', fontWeight:800, color:'var(--text-muted)', textTransform:'uppercase', display:'block', marginBottom:'.3rem' }}>ห้องเรียน</label>
           <div style={{ display:'flex', gap:'.4rem', flexWrap:'wrap' }}>
-            {CLASS_MAP[selLevel].map(cls => {
+            {(CLASS_MAP[selLevel] ?? []).map(cls => {
               const active = selClass === cls;
               const cnt = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)')).length;
               return (
@@ -615,8 +619,9 @@ function TrendCell({ prev, curr }) {
   return <span style={{ fontWeight:900, fontSize:'1rem', color: t.color }}>{t.icon}</span>;
 }
 
-function ViewProgress({ students, assessmentTopics, indicators, activities }) {
+function ViewProgress({ students, assessmentTopics, indicators, activities, allClassNames }) {
   const { classMap: CLASS_MAP } = useApp();
+  const ALL_CLASSES = allClassNames ?? [];
   const [selLevel, setLevel]   = useState('K1');
   const [selClass, setClass]   = useState(() => CLASS_MAP?.K1?.[0] ?? '');
   const [selTopic, setTopic]   = useState(assessmentTopics[0]?.id ?? null);
@@ -705,7 +710,7 @@ function ViewProgress({ students, assessmentTopics, indicators, activities }) {
             </div>
             <div style={{ display:'flex', gap:'.4rem', flexWrap:'wrap', alignItems:'center' }}>
               <span style={{ fontSize:'.73rem', fontWeight:800, color:'var(--text-muted)', minWidth:'48px' }}>ห้อง</span>
-              {CLASS_MAP[selLevel].map(cls => {
+              {(CLASS_MAP[selLevel] ?? []).map(cls => {
                 const active = selClass === cls;
                 return (
                   <div key={cls} onClick={() => setClass(cls)} style={{

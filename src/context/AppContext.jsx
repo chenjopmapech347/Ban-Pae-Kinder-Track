@@ -700,6 +700,12 @@ export function AppProvider({ children }) {
     [setStudents],
   );
 
+  // รายชื่อห้องเรียนทั้งหมด (dynamic — ไม่ hardcode)
+  const allClassNames = useMemo(
+    () => (classes ?? []).map(c => c.name ?? c.id).filter(Boolean).sort(),
+    [classes],
+  );
+
   const value = {
     role,
     user,
@@ -768,6 +774,7 @@ export function AppProvider({ children }) {
     syncPushToCloud,
     syncPullFromCloud,
     isSupabaseConfigured,
+    allClassNames,
     // Firebase
     isFirebaseConfigured,
     firebaseUser,

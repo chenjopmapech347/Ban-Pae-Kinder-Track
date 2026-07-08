@@ -2,13 +2,13 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { AttendanceBarChart, ClassRadarChart } from '../DevelopmentChart';
 
-const ALL_CLASSES = ['อ.1/1', 'อ.1/2', 'อ.2/1', 'อ.2/2', 'อ.3/1', 'อ.3/2', 'อ.3/3'];
 const ROUNDS = [1, 2, 3, 4];
 
 export default function OverviewTab() {
   const {
-    students, teachers, assessmentTopics, announcements, setAnnouncements,
+    students, teachers, assessmentTopics, announcements, setAnnouncements, allClassNames,
   } = useApp();
+  const ALL_CLASSES = allClassNames;
 
   // ── สถานะการประเมินแยกตามห้อง × ครั้ง ──────────────────────────────────────
   const pendingMatrix = useMemo(() => {

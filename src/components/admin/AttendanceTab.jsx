@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { getDayRecord } from '../../utils/attendance';
 import { todayISO, formatDateThai } from '../../utils/helpers';
 
-const ALL_CLASSES = ['อ.1/1', 'อ.1/2', 'อ.2/1', 'อ.2/2', 'อ.3/1', 'อ.3/2', 'อ.3/3'];
+// ALL_CLASSES ดึงจาก AppContext แบบ dynamic ภายในคอมโพเนนต์
 
 const ATT_OPTS  = ['มา', 'ขาด', 'ลา', 'ป่วย'];
 const ATT_COLOR = {
@@ -206,7 +206,8 @@ function printRollCall(classSections, selMonth, schoolName, schoolLogo) {
 }
 
 export default function AttendanceTab({ defaultClass }) {
-  const { students, dailyRecords, teachers, saveDailyAttendance, schoolName, schoolLogo } = useApp();
+  const { students, dailyRecords, teachers, saveDailyAttendance, schoolName, schoolLogo, allClassNames } = useApp();
+  const ALL_CLASSES = allClassNames;
 
   const [mainView,     setMainView]     = useState('daily');   // 'daily' | 'monthly'
   const [selectedDate, setSelectedDate] = useState(todayISO());

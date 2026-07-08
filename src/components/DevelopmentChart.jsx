@@ -9,6 +9,7 @@
  *                    indicators={[]} activities={[]} />
  */
 import { useState, useEffect } from 'react';
+import { useApp } from '../context/AppContext';
 import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -199,7 +200,6 @@ export function AssessmentProgressBars({ topics = [], summary = {} }) {
 }
 
 /* ── ClassRadarChart — per-class radar with selector + auto-rotate ── */
-const ALL_CLASSES = ['อ.1/1', 'อ.1/2', 'อ.2/1', 'อ.2/2', 'อ.3/1', 'อ.3/2', 'อ.3/3'];
 const CLASS_COLORS = {
   'อ.1/1': '#3b82f6', 'อ.1/2': '#6366f1',
   'อ.2/1': '#10b981', 'อ.2/2': '#059669',
@@ -207,6 +207,8 @@ const CLASS_COLORS = {
 };
 
 export function ClassRadarChart({ students = [], topics = [] }) {
+  const { allClassNames } = useApp();
+  const ALL_CLASSES = allClassNames;
   const [selectedClass, setSelectedClass] = useState(null); // null = auto-rotate
   const [currentIdx, setCurrentIdx] = useState(0);
 

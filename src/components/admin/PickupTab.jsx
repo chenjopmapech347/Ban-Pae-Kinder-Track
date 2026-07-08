@@ -15,7 +15,7 @@ import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { todayISO, formatDateThai } from '../../utils/helpers';
 
-const ALL_CLASSES = ['อ.1/1', 'อ.1/2', 'อ.2/1', 'อ.2/2', 'อ.3/1', 'อ.3/2', 'อ.3/3'];
+// ALL_CLASSES ดึงจาก allClassNames ใน AppContext
 
 const RELATIONS = ['บิดา', 'มารดา', 'ย่า-ยาย', 'ปู่-ตา', 'อื่นๆ'];
 
@@ -123,7 +123,8 @@ function printPickupSheet(rows, dateStr, className, schoolName, teacher, schoolL
 }
 
 export default function PickupTab({ defaultClass }) {
-  const { students, teachers, pickupRecords, setPickupRecords, classes } = useApp();
+  const { students, teachers, pickupRecords, setPickupRecords, classes, allClassNames } = useApp();
+  const ALL_CLASSES = allClassNames;
 
   const classList = useMemo(
     () => (classes ?? []).map(c => c.name ?? c.id).filter(Boolean).sort(),

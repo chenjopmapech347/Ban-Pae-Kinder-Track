@@ -1,6 +1,5 @@
 import { useState } from 'react';
-
-const ALL_CLASSES = ['อ.1/1', 'อ.1/2', 'อ.2/1', 'อ.2/2', 'อ.3/1', 'อ.3/2', 'อ.3/3'];
+import { useApp } from '../context/AppContext';
 
 const emptyStudent = {
   // ── ข้อมูลพื้นฐาน ──────────────────────────────────────
@@ -45,6 +44,8 @@ const emptyStudent = {
 const set = (fd, key, val) => ({ ...fd, [key]: val });
 
 export default function StudentModal({ isOpen, onClose, onSave, editingStudent, anchorY }) {
+  const { allClassNames } = useApp();
+  const ALL_CLASSES = allClassNames;
   const [activeSubTab, setActiveSubTab] = useState('personal');
   const [formData, setFormData] = useState(() => ({ ...emptyStudent, ...(editingStudent ?? {}) }));
 

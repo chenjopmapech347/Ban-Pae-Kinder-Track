@@ -9,12 +9,12 @@ export default function StudentsTab() {
   const {
     students, setStudents, assessmentTopics,
     handleImport, setSelectedStudent,
-    schoolName, schoolLogo, academicYear,
+    schoolName, schoolLogo, academicYear, allClassNames,
   } = useApp();
 
   // ── ฟังก์ชันพิมพ์รายชื่อนักเรียน (รูปแบบแบบสำรวจ) ──
   const printRoster = (termNo = 1) => {
-    const ALL_CLASSES = ['อ.1/1','อ.1/2','อ.2/1','อ.2/2','อ.3/1','อ.3/2','อ.3/3'];
+    const ALL_CLASSES = allClassNames;
     // กรองห้องตามที่เลือก
     let CLASS_ORDER;
     if (selectedClass !== 'all') {

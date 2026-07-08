@@ -5,7 +5,7 @@ import FormReportsTab from './FormReportsTab';
 import { callClaude, buildWeeklySummaryPrompt } from '../../utils/aiHelper';
 
 // ── constants ─────────────────────────────────────────────────────────────────
-const ALL_CLASSES = ['อ.1/1','อ.1/2','อ.2/1','อ.2/2','อ.3/1','อ.3/2','อ.3/3'];
+// ALL_CLASSES ดึงจาก AppContext แบบ dynamic
 const CLASS_MAP   = { K1:['อ.1/1','อ.1/2'], K2:['อ.2/1','อ.2/2'], K3:['อ.3/1','อ.3/2','อ.3/3'] };
 const LEVEL_META  = [
   { level:'K1', label:'อนุบาล 1', color:'#059669', bg:'#ecfdf5' },
@@ -836,8 +836,9 @@ function ViewProgress({ students, assessmentTopics, indicators, activities }) {
 // ═══════════════════════════════════════════════════════════════════════════════
 // VIEW: AI สรุปห้องเรียน
 // ═══════════════════════════════════════════════════════════════════════════════
-function ViewAISummary({ students, assessmentTopics, indicators, activities, aiApiKey }) {
-  const [selClass, setClass] = useState(ALL_CLASSES[0]);
+function ViewAISummary({ students, assessmentTopics, indicators, activities, aiApiKey, allClassNames }) {
+  const ALL_CLASSES = allClassNames ?? [];
+  const [selClass, setClass] = useState(ALL_CLASSES[0] ?? '');
   const [aiText,   setAiText]  = useState('');
   const [loading,  setLoading] = useState(false);
   const [error,    setError]   = useState('');
@@ -972,7 +973,8 @@ function ViewAISummary({ students, assessmentTopics, indicators, activities, aiA
 // MAIN
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function ReportsTab({ teacherClassFilter = null }) {
-  const { students: allStudents, assessmentTopics, indicators, activities, schools, activityLogs, aiApiKey } = useApp();
+  const { students: allStudents, assessmentTopics, indicators, activities, schools, activityLogs, aiApiKey, allClassNames } = useApp();
+  const ALL_CLASSES = allClassNames;
   const [subTab, setSubTab] = useState('forms');
   const schoolName = schools?.[0]?.name ?? 'โรงเรียน';
 
@@ -984,7 +986,7 @@ export default function ReportsTab({ teacherClassFilter = null }) {
     [allStudents, teacherClassFilter],
   );
 
-  const props = { students, assessmentTopics, indicators, activities, schoolName, aiApiKey };
+  const props = { students, assessmentTopics, indicators, activities, schoolName, aiApiKey, allClassNames };
 
   return (
     <div className="glass p-6 animate-fade">

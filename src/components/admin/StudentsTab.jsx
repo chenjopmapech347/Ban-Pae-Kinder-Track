@@ -144,6 +144,26 @@ export default function StudentsTab() {
     alert(`✅ ตั้ง PIN ให้นักเรียน ${updated.length} คน เรียบร้อยแล้ว`);
   };
 
+  // ── bulk-assign classroom ──
+  const [assignOpen, setAssignOpen]   = useState(false);
+  const [assignLevel, setAssignLevel] = useState('K1');
+  const [assignClass, setAssignClass] = useState('อ.1/1');
+  const ASSIGN_CLASS_MAP = {
+    K1: ['อ.1/1', 'อ.1/2'],
+    K2: ['อ.2/1', 'อ.2/2'],
+    K3: ['อ.3/1', 'อ.3/2', 'อ.3/3'],
+  };
+  const noClassStudents = students.filter(s => !s.className && !s.name.startsWith('(ว่าง)'));
+  const assignTargets   = students.filter(s => s.level === assignLevel && !s.className && !s.name.startsWith('(ว่าง)'));
+
+  const handleBulkAssign = () => {
+    if (!assignClass) return;
+    const ids = new Set(assignTargets.map(s => s.id));
+    setStudents(prev => prev.map(s => ids.has(s.id) ? { ...s, className: assignClass } : s));
+    alert(`✅ กำหนดห้อง ${assignClass} ให้นักเรียน ${assignTargets.length} คน เรียบร้อยแล้ว`);
+    setAssignOpen(false);
+  };
+
   const startAssess = (e, s) => {
     setAssessAnchorY(e.clientY);
     setAssessing(s);
@@ -258,6 +278,20 @@ export default function StudentsTab() {
           </button>
         </div>
       </div>
+
+      {/* ── แจ้งเตือน: นักเรียนไม่มีห้องเรียน ── */}
+      {noClassStudents.length > 0 && (
+        <div style={{ background:'#fef9c3', border:'1.5px solid #fbbf24', borderRadius:'10px', padding:'.65rem 1rem', marginBottom:'.75rem', display:'flex', alignItems:'center', gap:'.75rem', flexWrap:'wrap' }}>
+          <span style={{ fontSize:'.85rem', color:'#78350f', fontWeight:700 }}>
+            ⚠️ มีนักเรียน {noClassStudents.length} คน ยังไม่ได้กำหนดห้องเรียน — จะไม่แสดงในหน้าการมาเรียน
+          </span>
+          <button type="button"
+            style={{ marginLeft:'auto', padding:'.3rem .85rem', borderRadius:'8px', fontFamily:'inherit', fontSize:'.8rem', fontWeight:700, cursor:'pointer', background:'#92400e', color:'white', border:'none' }}
+            onClick={() => { setAssignLevel('K1'); setAssignClass('อ.1/1'); setAssignOpen(true); }}>
+            🏠 กำหนดห้องเรียน
+          </button>
+        </div>
+      )}
 
       {/* ── Filter: ระดับชั้น → ห้องเรียน ── */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem', marginBottom: '1rem' }}>
@@ -434,6 +468,67 @@ export default function StudentsTab() {
               }}
               onCancel={() => { setAssessing(null); setAssessAnchorY(null); }}
             />
+          </div>
+        </div>
+      )}
+      {/* ── Modal: bulk assign classroom ── */}
+      {assignOpen && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:400 }}
+          onClick={e => { if (e.target === e.currentTarget) setAssignOpen(false); }}>
+          <div className="glass animate-pop" style={{ width:'100%', maxWidth:'420px', padding:'1.5rem', borderRadius:'16px' }}
+            onClick={e => e.stopPropagation()}>
+            <h4 style={{ margin:'0 0 .25rem', fontWeight:800, fontSize:'1.05rem' }}>🏠 กำหนดห้องเรียน</h4>
+            <p style={{ margin:'0 0 1rem', fontSize:'.8rem', color:'var(--text-muted)' }}>
+              กำหนดห้องเรียนให้นักเรียนที่ยังไม่มีห้อง โดยเลือกระดับชั้น → ห้อง
+            </p>
+
+            <div style={{ marginBottom:'.75rem' }}>
+              <label style={{ display:'block', fontWeight:700, fontSize:'.83rem', marginBottom:'.3rem' }}>ระดับชั้น</label>
+              <div style={{ display:'flex', gap:'.4rem' }}>
+                {['K1','K2','K3'].map(lv => (
+                  <button key={lv} type="button"
+                    style={{ flex:1, padding:'.35rem', borderRadius:'8px', fontFamily:'inherit', fontWeight:700, fontSize:'.82rem', cursor:'pointer',
+                      background: assignLevel===lv ? '#7c3aed' : '#f5f3ff',
+                      color: assignLevel===lv ? 'white' : '#7c3aed',
+                      border: '1.5px solid #7c3aed' }}
+                    onClick={() => { setAssignLevel(lv); setAssignClass(ASSIGN_CLASS_MAP[lv][0]); }}>
+                    {lv === 'K1' ? 'อนุบาล 1' : lv === 'K2' ? 'อนุบาล 2' : 'อนุบาล 3'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ marginBottom:'.75rem' }}>
+              <label style={{ display:'block', fontWeight:700, fontSize:'.83rem', marginBottom:'.3rem' }}>ห้องเรียน</label>
+              <div style={{ display:'flex', gap:'.4rem', flexWrap:'wrap' }}>
+                {(ASSIGN_CLASS_MAP[assignLevel] || []).map(cls => (
+                  <button key={cls} type="button"
+                    style={{ padding:'.35rem .85rem', borderRadius:'8px', fontFamily:'inherit', fontWeight:700, fontSize:'.82rem', cursor:'pointer',
+                      background: assignClass===cls ? '#059669' : '#f0fdf4',
+                      color: assignClass===cls ? 'white' : '#059669',
+                      border: '1.5px solid #059669' }}
+                    onClick={() => setAssignClass(cls)}>
+                    {cls}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ background:'#f0fdf4', borderRadius:'8px', padding:'.6rem .85rem', marginBottom:'1rem', fontSize:'.82rem', color:'#065f46' }}>
+              {assignTargets.length > 0
+                ? `✅ จะกำหนดห้อง "${assignClass}" ให้นักเรียน ${assignTargets.length} คน (ระดับ ${assignLevel} ที่ยังไม่มีห้อง)`
+                : `ℹ️ ไม่มีนักเรียนระดับ ${assignLevel} ที่รอกำหนดห้อง`}
+            </div>
+
+            <div style={{ display:'flex', gap:'.6rem' }}>
+              <button type="button" className="btn flex-1" onClick={() => setAssignOpen(false)}>ยกเลิก</button>
+              <button type="button" className="btn btn-primary flex-1"
+                disabled={assignTargets.length === 0}
+                style={{ opacity: assignTargets.length === 0 ? .5 : 1 }}
+                onClick={handleBulkAssign}>
+                🏠 กำหนดห้องเรียน
+              </button>
+            </div>
           </div>
         </div>
       )}

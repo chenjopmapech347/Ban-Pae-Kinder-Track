@@ -409,9 +409,14 @@ export function AppProvider({ children }) {
           return { ok: true };
         }
         // ตรวจสอบ username + PIN กับครูทุกคนในระบบ
-        const matchedTeacher = teachers.find(
-          (t) => t.username === credentials.username && t.pin === credentials.pin
-        );
+        // fallback: ถ้าไม่มี username ให้ลองจับคู่ด้วย email หรือชื่อ-นามสกุล
+        const matchedTeacher = teachers.find((t) => {
+          const inputU = credentials.username?.trim().toLowerCase();
+          const byUsername = t.username?.trim().toLowerCase() === inputU;
+          const byEmail    = t.email?.trim().toLowerCase() === inputU;
+          const byName     = t.name?.trim() === credentials.username?.trim();
+          return (byUsername || byEmail || byName) && t.pin === credentials.pin;
+        });
         if (!matchedTeacher) {
           return { ok: false, message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' };
         }
@@ -497,17 +502,59 @@ export function AppProvider({ children }) {
         const dataRows = rows.slice(1);
 
         if (type === 'students') {
-          const newStudents = dataRows.map((row) => ({
-            id: Date.now() + Math.random(),
-            name: row[0],
-            level: row[1] || 'K1',
-            age: parseInt(row[2], 10) || 5,
-            weight: parseFloat(row[3]) || 0,
-            height: parseFloat(row[4]) || 0,
-            assessments: {},
-            attendance: { present: 0, absent: 0, total: 0 },
-            parentPin: String(1000 + Math.floor(Math.random() * 9000)),
-          }));
+          // Header columns (full template):
+          // 0:ชื่อ-นามสกุล 1:ชื่อเล่น 2:เพศ 3:เลขประจำตัว 4:เลขบัตรประชาชน
+          // 5:ระดับ 6:ห้องเรียน 7:อายุ 8:น้ำหนัก 9:ส่วนสูง 10:parentPin
+          // 11:ชื่อบิดา 12:อาชีพบิดา 13:ชื่อมารดา 14:อาชีพมารดา 15:เบอร์ผู้ปกครอง 16:ที่อยู่
+          const header = rows[0];
+          const idx = (col) => header.findIndex(h => h === col);
+          const iName   = idx('ชื่อ-นามสกุล');
+          const iNick   = idx('ชื่อเล่น');
+          const iGender = idx('เพศ');
+          const iCode   = idx('เลขประจำตัว');
+          const iNid    = idx('เลขบัตรประชาชน');
+          const iLevel  = idx('ระดับ');
+          const iClass  = idx('ห้องเรียน');
+          const iAge    = idx('อายุ');
+          const iWeight = idx('น้ำหนัก');
+          const iHeight = idx('ส่วนสูง');
+          const iPin    = idx('parentPin');
+          const iFather = idx('ชื่อบิดา');
+          const iMother = idx('ชื่อมารดา');
+          const iPhone  = idx('เบอร์ผู้ปกครอง');
+          const iAddr   = idx('ที่อยู่');
+          // Fallback for minimal CSV (name,level,age,weight,height)
+          const isMinimal = iName === -1;
+          const newStudents = dataRows
+            .filter(row => row.some(c => c))
+            .map((row) => {
+              const name      = isMinimal ? row[0] : (row[iName]   || '');
+              const level     = isMinimal ? (row[1] || 'K1')        : (row[iLevel]  || 'K1');
+              const className = isMinimal ? ''                       : (row[iClass]  || '');
+              const age       = isMinimal ? parseInt(row[2]) || 5   : (parseInt(row[iAge]) || 5);
+              const weight    = isMinimal ? parseFloat(row[3]) || 0 : (parseFloat(row[iWeight]) || 0);
+              const height    = isMinimal ? parseFloat(row[4]) || 0 : (parseFloat(row[iHeight]) || 0);
+              return {
+                id:           Date.now() + Math.random(),
+                name,
+                nickname:     isMinimal ? '' : (row[iNick]   || ''),
+                gender:       isMinimal ? '' : (row[iGender] || ''),
+                studentCode:  isMinimal ? '' : (row[iCode]   || ''),
+                nationalId:   isMinimal ? '' : (row[iNid]    || ''),
+                level,
+                className,
+                age,
+                weight,
+                height,
+                parentPin:    isMinimal ? String(1000 + Math.floor(Math.random() * 9000)) : (row[iPin]    || String(1000 + Math.floor(Math.random() * 9000))),
+                fatherName:   isMinimal ? '' : (row[iFather] || ''),
+                motherName:   isMinimal ? '' : (row[iMother] || ''),
+                guardianPhone:isMinimal ? '' : (row[iPhone]  || ''),
+                address:      isMinimal ? '' : (row[iAddr]   || ''),
+                assessments:  {},
+                attendance:   { present: 0, absent: 0, total: 0 },
+              };
+            });
           setStudents((prev) => [...prev, ...newStudents]);
         } else if (type === 'teachers') {
           const newTeachers = dataRows.map((row) => ({

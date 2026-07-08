@@ -55,7 +55,7 @@ function CheckCell({ checked, onChange }) {
 export default function HealthCheckTab({ teacherClassFilter = null }) {
   const {
     students, classes, teachers, role, user,
-    academicYear,
+    academicYear, schoolLogo,
     healthCheckRecords, setHealthCheckRecords,
   } = useApp();
 
@@ -219,6 +219,7 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
   .hdc { background: #f9fafb; font-size: 8.5pt }
   .sig { margin-top: 28px; text-align: right; font-size: 10pt; line-height: 2 }
 </style></head><body>
+${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
 <h3>แบบบันทึกการตรวจสุขภาพประจำสัปดาห์</h3>
 <h3>ชั้น${selClass} &nbsp; ปีการศึกษา ${academicYear}</h3>
 <h3>สัปดาห์ที่ ${weekNo} &nbsp; วันที่ ${weekDate ? new Date(weekDate).toLocaleDateString('th-TH', { day:'numeric', month:'long', year:'numeric' }) : ''}</h3>

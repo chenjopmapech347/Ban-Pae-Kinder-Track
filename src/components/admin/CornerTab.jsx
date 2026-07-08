@@ -4,7 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { getMondayOf, getWeekLabel, genUniqueKey } from '../../utils/helpers';
 
 // ── พิมพ์แบบบันทึก ───────────────────────────────────────────────────────────
-function printCornerSheet(rows, CORNERS, weekNo, weekDate, className, schoolName, teacher, academicYear) {
+function printCornerSheet(rows, CORNERS, weekNo, weekDate, className, schoolName, teacher, academicYear, schoolLogo) {
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
     *{box-sizing:border-box}
@@ -30,6 +30,7 @@ function printCornerSheet(rows, CORNERS, weekNo, weekDate, className, schoolName
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
     <title>แบบบันทึกการใช้แหล่งเรียนรู้</title><style>${css}</style></head>
     <body>
+      ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
       <h2>แบบบันทึกการใช้แหล่งเรียนรู้นอกห้องเรียนรายสัปดาห์</h2>
       ${schoolName  ? `<div class="sub">${schoolName}${academicYear ? ` ปีการศึกษา ${academicYear}` : ''}</div>` : ''}
       ${teacherLine ? `<div class="sub">${teacherLine}  ห้อง ${className}</div>` : `<div class="sub">ห้อง ${className}</div>`}
@@ -158,7 +159,7 @@ export default function CornerTab({ teacherClassFilter = null }) {
   const {
     cornerRecords, setCornerRecords,
     cornerDefs, setCornerDefs,
-    students, teachers, classes, schoolName, academicYear,
+    students, teachers, classes, schoolName, schoolLogo, academicYear,
   } = useApp();
 
   const today = new Date().toISOString().slice(0, 10);
@@ -240,7 +241,7 @@ export default function CornerTab({ teacherClassFilter = null }) {
             style={{ padding:'.4rem .9rem', borderRadius:'8px', border:'1.5px solid rgba(255,255,255,.5)', background:'rgba(255,255,255,.15)', color:'white', fontFamily:'inherit', fontWeight:600, fontSize:'.82rem', cursor:'pointer' }}>
             ⚙️ จัดการมุม
           </button>
-          <button type="button" onClick={() => printCornerSheet(printRows, CORNERS, weekNo, monday, cn, schoolName, classTeacher, academicYear)}
+          <button type="button" onClick={() => printCornerSheet(printRows, CORNERS, weekNo, monday, cn, schoolName, classTeacher, academicYear, schoolLogo)}
             style={{ padding:'.4rem .9rem', borderRadius:'8px', border:'1.5px solid rgba(255,255,255,.5)', background:'rgba(255,255,255,.15)', color:'white', fontFamily:'inherit', fontWeight:600, fontSize:'.82rem', cursor:'pointer' }}>
             🖨️ พิมพ์
           </button>

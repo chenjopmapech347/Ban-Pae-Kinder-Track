@@ -34,6 +34,7 @@ export const STORAGE_KEYS = {
   cornerDefs:           'kt_cornerDefs',             // นิยามมุมแหล่งเรียนรู้นอกห้องเรียน (แก้ไขได้)
   innerCornerDefs:      'kt_innerCornerDefs',        // นิยามมุมประสบการณ์ในห้องเรียน (แก้ไขได้)
   aiApiKey:             'kt_aiApiKey',               // Claude API Key สำหรับฟีเจอร์ AI
+  schoolLogo:           'kt_schoolLogo',              // โลโก้โรงเรียน (base64 dataURL)
 };
 
 export function clearAllStorage() {

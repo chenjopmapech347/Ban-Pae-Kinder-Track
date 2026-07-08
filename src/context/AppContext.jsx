@@ -69,6 +69,7 @@ export function AppProvider({ children }) {
     'เด็กเล็กเบิกบาน วิชาการก้าวหน้า เยาวชนพัฒนา ปวงประชาร่วมใจ');
   const [schoolSlogan, setSchoolSlogan] = useLocalStorage(STORAGE_KEYS.schoolSlogan,
     'วินัยดี มีวิชา กีฬาเด่น เป็นโรงเรียนของชุมชน');
+  const [schoolLogo, setSchoolLogo] = useLocalStorage(STORAGE_KEYS.schoolLogo, '');
   const [academicYear, setAcademicYear] = useLocalStorage(STORAGE_KEYS.academicYear, '2569');
   const [dailyRecords, setDailyRecords] = useLocalStorage(STORAGE_KEYS.dailyRecords, {});
   const [qaData, setQaData] = useLocalStorage(STORAGE_KEYS.qaData, null);
@@ -615,6 +616,8 @@ export function AppProvider({ children }) {
     setLocalGovSlogan,
     schoolSlogan,
     setSchoolSlogan,
+    schoolLogo,
+    setSchoolLogo,
     academicYear,
     setAcademicYear,
     dailyRecords,

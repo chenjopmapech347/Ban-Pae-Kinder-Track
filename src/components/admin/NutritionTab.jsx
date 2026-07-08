@@ -137,7 +137,7 @@ function genderOf(student) {
 export default function NutritionTab({ teacherClassFilter = null }) {
   const {
     students, classes, teachers, role, user,
-    academicYear, schoolName,
+    academicYear, schoolName, schoolLogo,
     nutritionRecords, setNutritionRecords,
   } = useApp();
 
@@ -297,9 +297,11 @@ export default function NutritionTab({ teacherClassFilter = null }) {
   th { background: #e8f4fd; font-weight: bold }
   .sig { margin-top: 16px; display: flex; justify-content: space-between; font-size: 10pt; line-height: 2 }
 </style></head><body>
+${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
 <h3>การประเมินภาวะโภชนาการ</h3>
 <p>${schoolName || 'โรงเรียน...'}</p>
 <p>ครู/ผู้ดูแลเด็ก ${teacherName || '.......................'} &nbsp; ชั้น${selClass} &nbsp; จำนวนเด็กที่รับผิดชอบ ${classStudents.length} คน &nbsp; วันที่ ${thaiDateStr(selDate)}</p>
+<br/>
 <table>
   <thead>
     <tr>

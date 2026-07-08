@@ -538,6 +538,7 @@ function SummaryView({ students, indicators, activities, className, schoolName, 
   .hd{background:#f3f4f6;font-weight:bold}
   .nt{min-width:50px}
 </style></head><body>
+${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
 <h3>สรุปผลการประเมินพัฒนาการ เด็กปฐมวัย อายุ ${ageRange}</h3>
 <h3>ห้อง ${className} &nbsp; โรงเรียน${schoolName} &nbsp; ปีการศึกษา ${academicYear}</h3><br/>
 <table>
@@ -711,6 +712,7 @@ function DetailView({ students, indicators, activities, className, schoolName, a
   .hd2{background:#e0f2fe}
   .hd3{background:#fce7f3}
 </style></head><body>
+${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
 <h3>${stdDef.title}</h3>
 <h3>ห้อง ${className} &nbsp; อายุ ${ageRange} &nbsp; โรงเรียน${schoolName} &nbsp; ปีการศึกษา ${academicYear}</h3><br/>
 <table>
@@ -856,7 +858,7 @@ ${allRows}
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function DevelopmentalReportTab({ teacherClassFilter = null }) {
-  const { students, classes, indicators, activities, role, user, schoolName, academicYear } = useApp();
+  const { students, classes, indicators, activities, role, user, schoolName, schoolLogo, academicYear } = useApp();
 
   const isTeacher = role === 'teacher';
   const myClass = teacherClassFilter ?? (isTeacher ? user?.className : null);

@@ -10,6 +10,7 @@ export default function SettingsPage({ onBack }) {
     schoolVision, setSchoolVision,
     localGovSlogan, setLocalGovSlogan,
     schoolSlogan, setSchoolSlogan,
+    schoolLogo, setSchoolLogo,
     academicYears, setAcademicYears,
     resetAllData, authConfig, updateAuthConfig,
     exportBackupJson, importBackupJson,
@@ -178,6 +179,50 @@ export default function SettingsPage({ onBack }) {
                   </button>
                 </>
               )}
+            </div>
+          </div>
+
+          {/* ── Logo upload ── */}
+          <div style={{ marginBottom:'1.25rem', padding:'1rem', background:'#f8fafc', borderRadius:'12px', border:'1px solid #e2e8f0' }}>
+            <label style={{ display:'block', marginBottom:'.5rem', fontWeight:700, fontSize:'.85rem' }}>
+              🖼️ โลโก้โรงเรียน (ใช้ในรายงานที่พิมพ์ออก)
+            </label>
+            <div style={{ display:'flex', alignItems:'center', gap:'1rem', flexWrap:'wrap' }}>
+              {schoolLogo ? (
+                <img src={schoolLogo} alt="โลโก้โรงเรียน"
+                  style={{ height:'72px', width:'72px', objectFit:'contain', borderRadius:'8px', border:'1px solid #e2e8f0', background:'white', padding:'4px' }} />
+              ) : (
+                <div style={{ height:'72px', width:'72px', borderRadius:'8px', border:'2px dashed #cbd5e1',
+                  display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.75rem', color:'#94a3b8' }}>
+                  🏫
+                </div>
+              )}
+              <div style={{ display:'flex', flexDirection:'column', gap:'.4rem' }}>
+                <label style={{ cursor:'pointer' }}>
+                  <span className="btn btn-secondary" style={{ fontSize:'.8rem', padding:'.3rem .85rem', display:'inline-block' }}>
+                    📁 เลือกรูปโลโก้
+                  </span>
+                  <input type="file" accept="image/*" style={{ display:'none' }}
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = ev => setSchoolLogo(ev.target.result);
+                      reader.readAsDataURL(file);
+                      e.target.value = '';
+                    }} />
+                </label>
+                {schoolLogo && (
+                  <button type="button" onClick={() => setSchoolLogo('')}
+                    style={{ fontSize:'.75rem', color:'#dc2626', background:'none', border:'none',
+                      cursor:'pointer', textAlign:'left', fontFamily:'inherit', padding:0 }}>
+                    🗑️ ลบโลโก้
+                  </button>
+                )}
+                <p style={{ margin:0, fontSize:'.72rem', color:'#94a3b8' }}>
+                  รองรับ PNG, JPG, SVG · แนะนำ 200×200px ขึ้นไป
+                </p>
+              </div>
             </div>
           </div>
 

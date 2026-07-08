@@ -9,7 +9,7 @@ export default function StudentsTab() {
   const {
     students, setStudents, assessmentTopics,
     handleImport, setSelectedStudent,
-    schoolName, academicYear,
+    schoolName, schoolLogo, academicYear,
   } = useApp();
 
   // ── ฟังก์ชันพิมพ์รายชื่อนักเรียน (รูปแบบแบบสำรวจ) ──
@@ -40,6 +40,7 @@ export default function StudentsTab() {
         </tr>`).join('');
       return `
         <div class="page">
+          ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
           <div class="title">แบบสำรวจนักเรียน</div>
           <div class="sub">ประจำภาคเรียนที่ ${termNo} ปีการศึกษา ${academicYear}</div>
           <div class="sub">${schoolName || 'โรงเรียนเทศบาลบ้านเพ ๑'}</div>

@@ -67,7 +67,7 @@ const EMPTY_FORM = {
 };
 
 // ── พิมพ์รายชื่อรับ-ส่งรายวัน ─────────────────────────────────────────────
-function printPickupSheet(rows, dateStr, className, schoolName, teacher) {
+function printPickupSheet(rows, dateStr, className, schoolName, teacher, schoolLogo) {
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
     *{box-sizing:border-box}
@@ -97,6 +97,7 @@ function printPickupSheet(rows, dateStr, className, schoolName, teacher) {
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
     <title>รายชื่อรับ-ส่ง</title><style>${css}</style></head>
     <body>
+      ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
       <h2>รายชื่อนักเรียน${className ? ` ${className}` : ''}</h2>
       ${schoolName ? `<div class="sub">${schoolName}</div>` : ''}
       <div class="sub">${dateLabel}</div>
@@ -207,7 +208,7 @@ export default function PickupTab({ defaultClass }) {
   }
 
   // ── rows for print ──
-  const { schoolName } = useApp();
+  const { schoolName, schoolLogo } = useApp();
   const printRows = classStudents.map(s => {
     const rec = dayRecords[s.id] ?? {};
     const dropoffDisplay = rec.dropoffRelation
@@ -255,7 +256,7 @@ export default function PickupTab({ defaultClass }) {
             </div>
           ))}
           <button type="button"
-            onClick={() => printPickupSheet(printRows, selectedDate, filterClass, schoolName, teacher)}
+            onClick={() => printPickupSheet(printRows, selectedDate, filterClass, schoolName, teacher, schoolLogo)}
             style={{ padding: '.4rem .9rem', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,.5)', background: 'rgba(255,255,255,.15)', color: 'white', fontFamily: 'inherit', fontWeight: 600, fontSize: '.82rem', cursor: 'pointer' }}>
             🖨️ พิมพ์
           </button>

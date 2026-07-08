@@ -45,6 +45,7 @@ const REPORT_TYPES = [
 // 'print' = print-optimized (compact, fixed widths, auto window.print()),
 // 'preview' = screen-optimized (larger text, columns auto-fit to content)
 let RENDER_MODE = 'print';
+let _schoolLogo = '';
 
 function printHtml(title, html, landscape = true) {
   if (RENDER_MODE === 'preview') { previewHtml(title, html, landscape); return; }
@@ -66,9 +67,10 @@ function printHtml(title, html, landscape = true) {
     .pg{page-break-after:always}
     @media print{body{margin:0}@page{margin:1in;size:A4 ${landscape?'landscape':'portrait'}}}
   `;
+  const logoHtml = _schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${_schoolLogo}" style="height:70px;object-fit:contain"/></div>` : '';
   const w = window.open('','_blank','width=1100,height=750');
   if (!w) { alert('กรุณาอนุญาต popup'); return; }
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title><style>${css}</style></head><body>${html}<script>setTimeout(()=>window.print(),600)</` + `script></body></html>`);
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title><style>${css}</style></head><body>${logoHtml}${html}<script>setTimeout(()=>window.print(),600)</` + `script></body></html>`);
   w.document.close();
 }
 
@@ -127,6 +129,7 @@ function previewHtml(title, html, landscape = true) {
       @page{margin:1in;size:A4 ${landscape?'landscape':'portrait'}}
     }
   `;
+  const logoHtml = _schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${_schoolLogo}" style="height:70px;object-fit:contain"/></div>` : '';
   const w = window.open('','_blank','width=1200,height=850');
   if (!w) { alert('กรุณาอนุญาต popup'); return; }
   w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>ตัวอย่าง: ${title}</title><style>${css}</style></head><body>
@@ -134,7 +137,7 @@ function previewHtml(title, html, landscape = true) {
       <span>👁️ ตัวอย่างก่อนพิมพ์ — ${title}</span>
       <button onclick="window.print()">🖨️ พิมพ์</button>
     </div>
-    <div class="preview-content">${html}</div>
+    <div class="preview-content">${logoHtml}${html}</div>
   </body></html>`);
   w.document.close();
 }
@@ -513,6 +516,7 @@ export default function FormReportsTab({ teacherClassFilter = null, defaultRepor
   const {
     students, teachers, classes, schools,
     dailyRecords, assessmentTopics, indicators, activities,
+    schoolLogo,
   } = useApp();
 
   const [selReport,  setSelReport]  = useState(defaultReport);
@@ -560,8 +564,8 @@ export default function FormReportsTab({ teacherClassFilter = null, defaultRepor
     }
   };
 
-  const handlePrint = () => { RENDER_MODE = 'print'; runReport(); };
-  const handlePreview = () => { RENDER_MODE = 'preview'; runReport(); };
+  const handlePrint = () => { RENDER_MODE = 'print'; _schoolLogo = schoolLogo; runReport(); };
+  const handlePreview = () => { RENDER_MODE = 'preview'; _schoolLogo = schoolLogo; runReport(); };
 
   return (
     <div>

@@ -43,7 +43,7 @@ function countH(days) {
 export default function LunchTab({ teacherClassFilter = null }) {
   const {
     students, classes, teachers, role, user,
-    academicYear,
+    academicYear, schoolLogo,
     lunchRecords, setLunchRecords,
   } = useApp();
 
@@ -198,6 +198,7 @@ export default function LunchTab({ teacherClassFilter = null }) {
   .footd{ background: #fef9c3; color: '#78350f'; font-weight: 700 }
   .sig  { margin-top: 14px; display: flex; justify-content: space-between; font-size: 9pt; line-height: 2 }
 </style></head><body>
+${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
 <h3>บันทึกการรับประทานอาหารกลางวัน</h3>
 <h4>เดือน ${THAI_MONTHS[selMonth]} พ.ศ. ${selYear} &nbsp;&nbsp;&nbsp; เวลาเรียนในรอบเดือน ${schoolDays} วัน</h4>
 <h4>ชั้น${selClass} &nbsp; ครู ${teacherName || '.........................'} &nbsp; จำนวน ${classStudents.length} คน</h4>

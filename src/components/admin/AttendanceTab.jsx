@@ -58,7 +58,7 @@ function ClassSummaryBar({ counts, total }) {
 }
 
 // ── สรุปเวลาเรียนรายเดือน — พิมพ์ ─────────────────────────────────────────
-function printMonthlySummary(classSections, monthLabel, schoolName) {
+function printMonthlySummary(classSections, monthLabel, schoolName, schoolLogo) {
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
     *{box-sizing:border-box}
@@ -86,6 +86,7 @@ function printMonthlySummary(classSections, monthLabel, schoolName) {
       </tr>`).join('');
     return `
       <div class="${isLast ? '' : 'pg'}">
+        ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
         <h2>สรุปเวลาเรียนประจำเดือน ${monthLabel}</h2>
         <div class="sub">${schoolName || 'โรงเรียนเทศบาลบ้านเพ ๑'} · ห้อง ${cls}${teacher ? ' · ' + teacher.name : ''}</div>
         <table>
@@ -103,7 +104,7 @@ function printMonthlySummary(classSections, monthLabel, schoolName) {
 // ── บัญชีเรียกชื่อ — พิมพ์ ────────────────────────────────────────────────
 // marks: มา = ว่าง, ป่วย = ป, ลา = ล, ขาด = ข  (ตามคำอธิบายบัญชีเรียกชื่อ)
 const DAY_ABBR = ['อา','จ','อ','พ','พฤ','ศ','ส']; // 0=Sun … 6=Sat
-function printRollCall(classSections, selMonth, schoolName) {
+function printRollCall(classSections, selMonth, schoolName, schoolLogo) {
   const [yr, mo] = selMonth.split('-').map(Number);
   const daysInMonth = new Date(yr, mo, 0).getDate();
   // build day-header cells: date number + day abbr
@@ -170,6 +171,7 @@ function printRollCall(classSections, selMonth, schoolName) {
 
     return `
       <div class="${isLast?'':'pg'}">
+        ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
         <h2>บัญชีเรียกชื่อ ประจำเดือน ${thMonthYear}</h2>
         <div class="sub">${schoolName||''} · ห้อง ${cls}${teacher?' · ครู'+teacher.name:''}</div>
         <div class="sub" style="font-size:8px;margin-bottom:4px">มาเรียน = ว่าง &nbsp;|&nbsp; ป่วย = ป &nbsp;|&nbsp; ลา = ล &nbsp;|&nbsp; ขาด = ข</div>
@@ -204,7 +206,7 @@ function printRollCall(classSections, selMonth, schoolName) {
 }
 
 export default function AttendanceTab({ defaultClass }) {
-  const { students, dailyRecords, teachers, saveDailyAttendance, schoolName } = useApp();
+  const { students, dailyRecords, teachers, saveDailyAttendance, schoolName, schoolLogo } = useApp();
 
   const [mainView,     setMainView]     = useState('daily');   // 'daily' | 'monthly'
   const [selectedDate, setSelectedDate] = useState(todayISO());
@@ -404,7 +406,7 @@ export default function AttendanceTab({ defaultClass }) {
               const [y, m] = selMonth.split('-');
               const thMonth = new Date(Number(y), Number(m) - 1, 1)
                 .toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
-              printMonthlySummary(monthlyData, thMonth, schoolName);
+              printMonthlySummary(monthlyData, thMonth, schoolName, schoolLogo);
             }}
             style={{
               padding: '.4rem 1rem', borderRadius: '8px', border: 'none',
@@ -414,7 +416,7 @@ export default function AttendanceTab({ defaultClass }) {
             🖨️ พิมพ์สรุป
           </button>
           <button type="button"
-            onClick={() => printRollCall(monthlyData, selMonth, schoolName)}
+            onClick={() => printRollCall(monthlyData, selMonth, schoolName, schoolLogo)}
             style={{
               padding: '.4rem 1rem', borderRadius: '8px', border: 'none',
               background: '#7c3aed', color: 'white', fontFamily: 'inherit',

@@ -178,7 +178,7 @@ function DayDetailModal({ studentName, day, month, year, entry, onSave, onClose 
 export default function IllnessCheckTab({ teacherClassFilter = null }) {
   const {
     students, classes, teachers, role, user,
-    academicYear,
+    academicYear, schoolName, schoolLogo,
     illnessCheckRecords, setIllnessCheckRecords,
   } = useApp();
 
@@ -346,9 +346,10 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
   .note { font-size: 8pt; margin-top: 10px }
   .sig  { margin-top: 16px; display: flex; justify-content: space-between; font-size: 9pt; line-height: 2 }
 </style></head><body>
+${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
 <h3>แบบคัดกรองอาการป่วยรายห้องเรียน</h3>
-<h4>ครู/ผู้ดูแลเด็ก ${teacherName || '...................................'} &nbsp; ชั้น${selClass} &nbsp; จำนวนเด็กที่รับผิดชอบ ${classStudents.length} คน</h4>
-<h4>ประจำเดือน ${THAI_MONTHS[selMonth]} พ.ศ.${selYear}</h4>
+<h4>ห้อง ${selClass} &nbsp;|&nbsp; เดือน ${THAI_MONTHS[selMonth]} พ.ศ.${selYear} &nbsp;|&nbsp; ${schoolName || ''}</h4>
+<h4>ครู/ผู้ดูแลเด็ก ${teacherName || '...................................'} &nbsp; จำนวนเด็กที่รับผิดชอบ ${classStudents.length} คน</h4>
 <br/>
 <table>
   <thead>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { exportAttendanceLogExcel } from '../utils/exportExcel';
 import { firebaseCreateUser, firebaseSendReset } from '../lib/firebaseAuth';
+import GrowthReferencePanel from '../components/GrowthReferencePanel';
 
 export default function SettingsPage({ onBack }) {
   const {
@@ -450,6 +451,15 @@ export default function SettingsPage({ onBack }) {
           <div className="text-xs text-muted mt-3">
             🔒 Key เก็บในเครื่องของคุณเท่านั้น ไม่ส่งออกไปไหน · ใช้ claude-haiku (ประหยัด ~$0.001/ครั้ง)
           </div>
+        </div>
+
+        {/* ─── Growth Reference ─── */}
+        <div className="glass p-6" style={{ border:'1.5px solid #bbf7d0' }}>
+          <h3 className="mb-1">📊 เกณฑ์อ้างอิงน้ำหนักและส่วนสูง</h3>
+          <p className="text-sm text-muted mb-4">
+            WHO Child Growth Standards 2006 / กรมอนามัย 2563 — อายุ 2–7 ปี (±1SD / ±2SD)
+          </p>
+          <GrowthReferencePanel />
         </div>
 
         {/* ─── Danger zone ─── */}

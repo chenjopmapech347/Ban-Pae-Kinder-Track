@@ -481,6 +481,7 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
     studentReportRecords, setStudentReportRecords,
     indicators, activities, assessmentTopics,
     aiApiKey,
+    measurementDates,
   } = useApp();
 
   const [aiCommentLoading, setAiCommentLoading] = useState({ 1: false, 2: false });
@@ -523,7 +524,16 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
     };
   }, [recKey, studentReportRecords, selStudentId, academicYear]);
 
-  const physData       = rec?.physicalRecords ?? emptyPhys();
+  // ดึงข้อมูลจากบันทึก — ถ้ายังไม่มีวันที่ ให้ใช้ค่าเริ่มต้นจากเมนู "กำหนดวันวัดน้ำหนัก/ส่วนสูง"
+  const physData = (() => {
+    const raw = rec?.physicalRecords ?? emptyPhys();
+    if (!measurementDates) return raw;
+    const result = {};
+    PHYS_KEYS.forEach(k => {
+      result[k] = { ...raw[k], date: raw[k].date || (measurementDates[k] ?? '') };
+    });
+    return result;
+  })();
   const healthServices = rec?.healthServices ?? [];
   const teacherComments  = rec?.teacherComments  ?? { term1: '', term2: '' };
   const parentComments   = rec?.parentComments   ?? { term1: '', term2: '' };

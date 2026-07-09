@@ -107,6 +107,12 @@ export function AppProvider({ children }) {
   const [milkRecords,         setMilkRecords]         = useLocalStorage(STORAGE_KEYS.milkRecords,         {});
   const [nutritionRecords,    setNutritionRecords]    = useLocalStorage(STORAGE_KEYS.nutritionRecords,    {});
   const [studentReportRecords, setStudentReportRecords] = useLocalStorage(STORAGE_KEYS.studentReportRecords, {});
+  const [measurementDates, setMeasurementDates] = useLocalStorage(STORAGE_KEYS.measurementDates, {
+    t1m1: '', // ภาคเรียน 1 ครั้งที่ 1 (อ้างอิง มิ.ย.)
+    t1m2: '', // ภาคเรียน 1 ครั้งที่ 2 (อ้างอิง ก.ย.)
+    t2m1: '', // ภาคเรียน 2 ครั้งที่ 1 (อ้างอิง ธ.ค.)
+    t2m2: '', // ภาคเรียน 2 ครั้งที่ 2 (อ้างอิง ก.พ.)
+  });
 
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [evaluatingStudent, setEvaluatingStudent] = useState(null);
@@ -938,6 +944,9 @@ export function AppProvider({ children }) {
     // Student Report Book (อ.01)
     studentReportRecords,
     setStudentReportRecords,
+    // Measurement dates config (อ.01 physical section)
+    measurementDates,
+    setMeasurementDates,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

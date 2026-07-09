@@ -36,6 +36,7 @@ export const STORAGE_KEYS = {
   aiApiKey:             'kt_aiApiKey',               // Claude API Key สำหรับฟีเจอร์ AI
   schoolLogo:           'kt_schoolLogo',              // โลโก้โรงเรียน (base64 dataURL)
   currentTerm:          'kt_currentTerm',             // ภาคเรียนปัจจุบัน ('1' หรือ '2')
+  measurementDates:     'kt_measurementDates',        // วันกำหนดวัดน้ำหนัก/ส่วนสูง 4 ครั้ง (อ.01)
 };
 
 export function clearAllStorage() {

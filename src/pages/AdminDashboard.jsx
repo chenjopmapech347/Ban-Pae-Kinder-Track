@@ -35,6 +35,7 @@ const AIChatTab              = lazy(() => import('../components/AIChatTab'));
 const ClassAssignTab         = lazy(() => import('../components/admin/ClassAssignTab'));
 const MeasurementDatesTab    = lazy(() => import('../components/admin/MeasurementDatesTab'));
 const SystemLogTab           = lazy(() => import('../components/admin/SystemLogTab'));
+const HelpTab                = lazy(() => import('../components/admin/HelpTab'));
 
 const TAB_GROUPS = [
   {
@@ -101,6 +102,13 @@ const TAB_GROUPS = [
       { id: 'systemlog',        label: '📋 บันทึกการใช้งานระบบ'    },
     ],
   },
+  {
+    label: 'ช่วยเหลือ',
+    color: '#7c3aed',
+    tabs: [
+      { id: 'help', label: '📖 คู่มือการใช้งาน' },
+    ],
+  },
 ];
 
 export default function AdminDashboard() {
@@ -157,6 +165,7 @@ export default function AdminDashboard() {
           {activeTab === 'standards'        && <StandardsMapTab />}
           {activeTab === 'measurementdates' && <MeasurementDatesTab />}
           {activeTab === 'systemlog'        && <SystemLogTab />}
+          {activeTab === 'help'             && <HelpTab />}
         </Suspense>
       </div>
     </div>

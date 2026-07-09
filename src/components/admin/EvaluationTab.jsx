@@ -217,7 +217,7 @@ export default function EvaluationTab() {
     if (selActivity && selIndicator && selClass) {
       classStudents.forEach(s => {
         const actData = s.assessments?.indicators?.[selIndicator]?.[selActivity];
-        init[s.id] = actData?.[`r${round}`] ?? 0;   // โหลดคะแนนครั้งที่เลือก
+        init[s.id] = actData?.[`r${round}`] ?? 3;   // โหลดคะแนนครั้งที่เลือก — default 3 (ดีมาก)
       });
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSaved(false);

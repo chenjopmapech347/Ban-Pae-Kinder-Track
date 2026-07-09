@@ -585,7 +585,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                 <th rowSpan={2} style={th({ minWidth:'44px' })}>ส่วนสูง</th>
                 {dayArr.map(d => (
                   <th key={d} style={{
-                    ...th({ minWidth:'22px', maxWidth:'26px', fontSize:'.65rem' }),
+                    ...th({ minWidth:'28px', fontSize:'.68rem', padding:'2px 1px' }),
                     background: isWeekend(d) ? '#f3f4f6' : '#dbeafe',
                     color: isWeekend(d) ? '#9ca3af' : '#1e40af',
                   }}>{d}</th>
@@ -674,6 +674,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                     border:'1px solid #d1d5db', textAlign:'center', fontSize:'.65rem', padding:'1px',
                     fontWeight:700, color: ds.present > 0 ? '#065f46' : '#d1d5db',
                     background: ds.present === classStudents.length ? '#d1fae5' : 'white',
+                    minWidth:'26px',
                   }}>
                     {ds.present > 0 ? ds.present : ''}
                   </td>
@@ -686,6 +687,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                   <td key={i} style={{
                     border:'1px solid #d1d5db', textAlign:'center', fontSize:'.65rem', padding:'1px',
                     fontWeight:700, color: ds.sick > 0 ? '#991b1b' : '#d1d5db',
+                    minWidth:'26px',
                     background: ds.sick > 0 ? '#fee2e2' : 'white',
                   }}>
                     {ds.sick > 0 ? ds.sick : ''}

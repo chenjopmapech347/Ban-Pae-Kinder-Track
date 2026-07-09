@@ -11,6 +11,7 @@ export default function StudentsTab() {
     students, setStudents, assessmentTopics,
     handleImport, setSelectedStudent,
     schoolName, schoolLogo, academicYear, allClassNames, classMap,
+    addSystemLog, user,
   } = useApp();
 
   // ── ฟังก์ชันพิมพ์รายชื่อนักเรียน (รูปแบบแบบสำรวจ) ──
@@ -404,7 +405,12 @@ export default function StudentsTab() {
                       <button className="btn btn-sm"
                         onClick={() => { setEditingItem(s); setIsModalOpen(true); }}>แก้ไข</button>
                       <button className="btn btn-sm" style={{ color: 'var(--danger)' }}
-                        onClick={() => { if(confirm('ลบข้อมูลนักเรียน?')) setStudents(students.filter(x => x.id !== s.id)); }}>ลบ</button>
+                        onClick={() => {
+                          if(confirm('ลบข้อมูลนักเรียน?')) {
+                            setStudents(students.filter(x => x.id !== s.id));
+                            addSystemLog?.('delete_student', `ลบนักเรียน: ${s.name} — ${s.className ?? ''}`, user?.name ?? 'admin');
+                          }
+                        }}>ลบ</button>
                     </div>
                   </td>
                 </tr>
@@ -422,8 +428,13 @@ export default function StudentsTab() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={data => {
-          if (editingItem) setStudents(students.map(s => s.id === editingItem.id ? { ...s, ...data } : s));
-          else setStudents([...students, { ...data, id: Date.now() }]);
+          if (editingItem) {
+            setStudents(students.map(s => s.id === editingItem.id ? { ...s, ...data } : s));
+            addSystemLog?.('edit_student', `แก้ไขนักเรียน: ${data.name} — ${data.className ?? ''}`, user?.name ?? 'admin');
+          } else {
+            setStudents([...students, { ...data, id: Date.now() }]);
+            addSystemLog?.('add_student', `เพิ่มนักเรียนใหม่: ${data.name} — ${data.className ?? ''}`, user?.name ?? 'admin');
+          }
           setIsModalOpen(false);
         }}
         editingStudent={editingItem}

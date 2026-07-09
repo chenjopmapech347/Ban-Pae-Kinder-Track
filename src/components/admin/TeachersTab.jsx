@@ -35,7 +35,7 @@ const POSITION_OPTIONS = [
 ];
 
 export default function TeachersTab() {
-  const { teachers, setTeachers, handleImport, classMap } = useApp();
+  const { teachers, setTeachers, handleImport, classMap, addSystemLog, user } = useApp();
   const CLASS_OPTIONS = classMap; // dynamic จาก AppContext
   const [isModal, setIsModal] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -57,8 +57,13 @@ export default function TeachersTab() {
     // Build display name from firstName + lastName
     const displayName = [form.firstName, form.lastName].filter(Boolean).join(' ');
     const saved = { ...form, name: displayName || form.name || '' };
-    if (editing) setTeachers(teachers.map(t => t.id === editing.id ? { ...t, ...saved } : t));
-    else setTeachers([...teachers, { ...saved, id: Date.now(), status: 'Active' }]);
+    if (editing) {
+      setTeachers(teachers.map(t => t.id === editing.id ? { ...t, ...saved } : t));
+      addSystemLog?.('edit_teacher', `แก้ไขข้อมูลครู: ${saved.name}`, user?.name ?? 'admin');
+    } else {
+      setTeachers([...teachers, { ...saved, id: Date.now(), status: 'Active' }]);
+      addSystemLog?.('add_teacher', `เพิ่มครูใหม่: ${saved.name} — ${saved.className ?? ''}`, user?.name ?? 'admin');
+    }
     setIsModal(false);
   };
 
@@ -115,7 +120,10 @@ export default function TeachersTab() {
                   <div className="row-actions">
                     <button className="btn btn-sm" onClick={() => openEdit(t)}>แก้ไข</button>
                     <button className="btn btn-sm" style={{ color:'var(--danger)' }}
-                      onClick={() => setTeachers(teachers.filter(x => x.id !== t.id))}>ลบ</button>
+                      onClick={() => {
+                        setTeachers(teachers.filter(x => x.id !== t.id));
+                        addSystemLog?.('delete_teacher', `ลบครู: ${t.name}`, user?.name ?? 'admin');
+                      }}>ลบ</button>
                   </div>
                 </td>
               </tr>

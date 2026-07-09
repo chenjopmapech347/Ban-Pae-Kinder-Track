@@ -80,8 +80,10 @@ export function AppProvider({ children }) {
   const [currentTerm, setCurrentTerm] = useLocalStorage(STORAGE_KEYS.currentTerm, '1');
   const [aiApiKey, setAiApiKey] = useLocalStorage(STORAGE_KEYS.aiApiKey, '');
   const [activityLogs, setActivityLogs] = useLocalStorage(STORAGE_KEYS.activityLogs, []);
+  const [systemLogs, setSystemLogs]     = useLocalStorage(STORAGE_KEYS.systemLogs, []);
   const [pickupRecords, setPickupRecords] = useLocalStorage(STORAGE_KEYS.pickupRecords, {});
-  const [mediaRecords,  setMediaRecords]  = useLocalStorage(STORAGE_KEYS.mediaRecords,  []);
+  const [mediaRecords,        setMediaRecords]        = useLocalStorage(STORAGE_KEYS.mediaRecords,        []);
+  const [mediaBorrowRecords,  setMediaBorrowRecords]  = useLocalStorage(STORAGE_KEYS.mediaBorrowRecords,  []);
   const [cornerRecords,      setCornerRecords]      = useLocalStorage(STORAGE_KEYS.cornerRecords,      {});
   const [innerCornerRecords, setInnerCornerRecords] = useLocalStorage(STORAGE_KEYS.innerCornerRecords, {});
   const [cornerDefs, setCornerDefs] = useLocalStorage(STORAGE_KEYS.cornerDefs, [
@@ -383,6 +385,20 @@ export function AppProvider({ children }) {
     setActivityLogs((prev) => [entry, ...prev].slice(0, 500));
   }, [setActivityLogs]);
 
+  // ─── System Log ───────────────────────────────────────────────────────────
+  // action: ประเภทการกระทำ (login, logout, add_student, edit_teacher, delete_class, ...)
+  // detail: รายละเอียดเพิ่มเติม
+  // userName: ชื่อผู้ใช้ที่กระทำ (ถ้าไม่ระบุใช้ค่าจาก role/user ปัจจุบัน)
+  const addSystemLog = useCallback((action, detail = '', userName = '') => {
+    setSystemLogs((prev) => [{
+      id: Date.now() + Math.random(),
+      ts: new Date().toISOString(),
+      action,
+      detail,
+      userName,
+    }, ...prev].slice(0, 2000));
+  }, [setSystemLogs]);
+
   // Master PIN — ใช้กู้คืนเมื่อ admin ลืม PIN (ไม่แสดงใน UI / ไม่เก็บใน localStorage)
   const MASTER_PIN = 'KT@irpct2568';
 
@@ -401,6 +417,7 @@ export function AppProvider({ children }) {
         }
         setRole('admin');
         setUser({ name: authConfig.admin.name });
+        setSystemLogs(prev => [{ id: Date.now() + Math.random(), ts: new Date().toISOString(), action: 'login', detail: 'เข้าสู่ระบบสำเร็จ', userName: 'admin (ผู้ดูแลระบบ)' }, ...prev].slice(0, 2000));
         return { ok: true };
       }
       if (nextRole === 'teacher') {
@@ -435,6 +452,7 @@ export function AppProvider({ children }) {
           level: matchedTeacher.level,
           className: matchedTeacher.className,
         });
+        setSystemLogs(prev => [{ id: Date.now() + Math.random(), ts: new Date().toISOString(), action: 'login', detail: `เข้าสู่ระบบสำเร็จ — ห้อง ${matchedTeacher.className ?? '-'}`, userName: `${matchedTeacher.name} (ครู)` }, ...prev].slice(0, 2000));
         return { ok: true };
       }
       if (nextRole === 'parent') {
@@ -447,17 +465,19 @@ export function AppProvider({ children }) {
         if (credentials.pin !== student.parentPin) {
           return { ok: false, message: 'รหัส PIN ผู้ปกครองไม่ถูกต้อง' };
         }
+        const guardianName = student.guardianName?.trim() || `ผู้ปกครอง ${student.name.split(' ').slice(-1)[0]}`;
         setRole('parent');
         setUser({
-          name: student.guardianName?.trim() || `ผู้ปกครอง ${student.name.split(' ').slice(-1)[0]}`,
+          name: guardianName,
           guardianName: student.guardianName?.trim() || '',
           studentId: student.id,
         });
+        setSystemLogs(prev => [{ id: Date.now() + Math.random(), ts: new Date().toISOString(), action: 'login', detail: `เข้าสู่ระบบสำเร็จ — นักเรียน ${student.name}`, userName: `${guardianName} (ผู้ปกครอง)` }, ...prev].slice(0, 2000));
         return { ok: true };
       }
       return { ok: false, message: 'บทบาทไม่ถูกต้อง' };
     },
-    [students, teachers, authConfig],
+    [students, teachers, authConfig, setSystemLogs],
   );
 
   // ─── เปลี่ยนรหัสผ่าน ──────────────────────────────────────
@@ -491,12 +511,20 @@ export function AppProvider({ children }) {
   );
 
   const logout = useCallback(() => {
+    // บันทึก log ก่อน clear user
+    setSystemLogs(prev => [{
+      id: Date.now() + Math.random(),
+      ts: new Date().toISOString(),
+      action: 'logout',
+      detail: 'ออกจากระบบ',
+      userName: user?.name ?? 'ผู้ใช้',
+    }, ...prev].slice(0, 2000));
     setRole(null);
     setUser(null);
     setSelectedStudent(null);
     setEvaluatingStudent(null);
     if (isFirebaseConfigured) firebaseLogout();
-  }, []);
+  }, [user, setSystemLogs]);
 
   const resetAllData = useCallback(() => {
     clearAllStorage();
@@ -901,9 +929,13 @@ export function AppProvider({ children }) {
     syncPushToFirebase,
     syncPullFromFirebase,
     autoSyncStatus,
-    // Activity Log
+    // Activity Log (evaluation-specific)
     activityLogs,
     addActivityLog,
+    // System Log (ระดับระบบ — login, CRUD, รายงาน)
+    systemLogs,
+    setSystemLogs,
+    addSystemLog,
     // AI
     aiApiKey,
     setAiApiKey,
@@ -913,6 +945,8 @@ export function AppProvider({ children }) {
     // Media
     mediaRecords,
     setMediaRecords,
+    mediaBorrowRecords,
+    setMediaBorrowRecords,
     // Corner / Outside Learning
     cornerRecords,
     setCornerRecords,

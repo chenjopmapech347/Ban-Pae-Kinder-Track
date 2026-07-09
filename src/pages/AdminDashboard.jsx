@@ -20,6 +20,7 @@ const PickupTab              = lazy(() => import('../components/admin/PickupTab'
 const NationalStandardsTab   = lazy(() => import('../components/admin/NationalStandardsTab'));
 const AnnouncementsTab       = lazy(() => import('../components/admin/AnnouncementsTab'));
 const MediaTab               = lazy(() => import('../components/admin/MediaTab'));
+const MediaBorrowTab         = lazy(() => import('../components/admin/MediaBorrowTab'));
 const CornerTab              = lazy(() => import('../components/admin/CornerTab'));
 const InnerCornerTab         = lazy(() => import('../components/admin/InnerCornerTab'));
 const DevelopmentalReportTab = lazy(() => import('../components/admin/DevelopmentalReportTab'));
@@ -33,6 +34,7 @@ const StudentReportTab       = lazy(() => import('../components/admin/StudentRep
 const AIChatTab              = lazy(() => import('../components/AIChatTab'));
 const ClassAssignTab         = lazy(() => import('../components/admin/ClassAssignTab'));
 const MeasurementDatesTab    = lazy(() => import('../components/admin/MeasurementDatesTab'));
+const SystemLogTab           = lazy(() => import('../components/admin/SystemLogTab'));
 
 const TAB_GROUPS = [
   {
@@ -78,6 +80,7 @@ const TAB_GROUPS = [
       { id: 'teachers',    label: '👩‍🏫 ครู'                   },
       { id: 'classes',     label: '🏫 ห้องเรียน'              },
       { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ'        },
+      { id: 'mediaborrow', label: '🔄 ยืม-คืนสื่อ'             },
       { id: 'corner',      label: '🌿 แหล่งเรียนรู้นอกห้อง'  },
       { id: 'innercorner', label: '🏡 มุมประสบการณ์ในห้อง'   },
       { id: 'devreport',   label: '📑 รายงานพัฒนาการ'         },
@@ -95,6 +98,7 @@ const TAB_GROUPS = [
       { id: 'holidays',   label: '🏖️ วันหยุด'             },
       { id: 'standards',        label: '🗺️ มาตรฐานปฐมวัย'           },
       { id: 'measurementdates', label: '📏 วันวัดน้ำหนัก/ส่วนสูง' },
+      { id: 'systemlog',        label: '📋 บันทึกการใช้งานระบบ'    },
     ],
   },
 ];
@@ -140,6 +144,7 @@ export default function AdminDashboard() {
           {activeTab === 'teachers'       && <TeachersTab />}
           {activeTab === 'classes'        && <ClassesTab />}
           {activeTab === 'media'          && <MediaTab viewMode="entry" />}
+          {activeTab === 'mediaborrow'    && <MediaBorrowTab />}
           {activeTab === 'corner'         && <CornerTab />}
           {activeTab === 'innercorner'    && <InnerCornerTab />}
           {activeTab === 'devreport'      && <DevelopmentalReportTab />}
@@ -151,6 +156,7 @@ export default function AdminDashboard() {
           {activeTab === 'holidays'       && <HolidaysTab />}
           {activeTab === 'standards'        && <StandardsMapTab />}
           {activeTab === 'measurementdates' && <MeasurementDatesTab />}
+          {activeTab === 'systemlog'        && <SystemLogTab />}
         </Suspense>
       </div>
     </div>

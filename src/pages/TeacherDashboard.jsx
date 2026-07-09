@@ -8,6 +8,7 @@ import DashboardSidebar from '../components/ui/DashboardSidebar';
 const EvaluationTab          = lazy(() => import('../components/admin/EvaluationTab'));
 const ReportsTab             = lazy(() => import('../components/admin/ReportsTab'));
 const MediaTab               = lazy(() => import('../components/admin/MediaTab'));
+const MediaBorrowTab         = lazy(() => import('../components/admin/MediaBorrowTab'));
 const CornerTab              = lazy(() => import('../components/admin/CornerTab'));
 const InnerCornerTab         = lazy(() => import('../components/admin/InnerCornerTab'));
 const DevelopmentalReportTab = lazy(() => import('../components/admin/DevelopmentalReportTab'));
@@ -69,7 +70,7 @@ const TEACHER_TAB_GROUPS = [
     label: 'สื่อและสภาพแวดล้อม',
     color: '#d97706',
     tabs: [
-      { id: 'medialist',   label: '📋 รายการทะเบียนสื่อ'    },  /* 📋 not 📚 */
+      { id: 'mediaborrow', label: '🔄 รายการยืม-คืนสื่อ'     },
       { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ'      },
       { id: 'corner',      label: '🌿 แหล่งเรียนรู้นอกห้อง' },
       { id: 'innercorner', label: '🏡 มุมประสบการณ์ในห้อง'  },
@@ -553,7 +554,7 @@ export default function TeacherDashboard() {
           {activeTab === 'activitylog'   && <ActivityLogTab />}
 
           {/* ── Media & environment ── */}
-          {activeTab === 'medialist'   && <MediaTab teacherClassFilter={myClass} viewMode="report" />}
+          {activeTab === 'mediaborrow' && <MediaBorrowTab teacherClassFilter={myClass} />}
           {activeTab === 'media'       && <MediaTab teacherClassFilter={myClass} viewMode="entry" />}
           {activeTab === 'corner'      && <CornerTab teacherClassFilter={myClass} />}
           {activeTab === 'innercorner' && <InnerCornerTab teacherClassFilter={myClass} />}

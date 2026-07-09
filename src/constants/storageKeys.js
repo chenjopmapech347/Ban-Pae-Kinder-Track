@@ -16,8 +16,10 @@ export const STORAGE_KEYS = {
   activities:       'kt_activities',
   schoolTerms:      'kt_schoolTerms',
   activityLogs:     'kt_activityLogs',
+  systemLogs:       'kt_systemLogs',       // บันทึกการใช้งานระบบ (login, CRUD, รายงาน)
   pickupRecords:    'kt_pickupRecords',
-  mediaRecords:     'kt_mediaRecords',
+  mediaRecords:       'kt_mediaRecords',
+  mediaBorrowRecords: 'kt_mediaBorrowRecords', // รายการยืม-คืนสื่อการสอน
   cornerRecords:      'kt_cornerRecords',      // การใช้แหล่งเรียนรู้นอกห้องเรียนรายสัปดาห์
   innerCornerRecords: 'kt_innerCornerRecords', // การใช้มุมประสบการณ์ภายในห้องเรียนรายสัปดาห์
   healthCheckRecords:  'kt_healthCheckRecords',  // การตรวจสุขภาพประจำสัปดาห์

@@ -480,17 +480,18 @@ function printDev(students, teachers, schoolName, cn, topics, indicators, activi
   const tName = teacherName(teachers, cn);
   const tpList = (topics ?? []);
   const tHdr1 = tpList.map(t=>`<th colspan="3" style="font-size:8px">${t.emoji||''}${t.label}</th>`).join('');
-  const tHdr2 = tpList.map(()=>`<th style="font-size:7.5px">1</th><th style="font-size:7.5px">2</th><th style="font-size:7.5px">สรุป</th>`).join('');
+  const tHdr2 = tpList.map(()=>`<th style="font-size:7.5px">ค1</th><th style="font-size:7.5px">ค2</th><th style="font-size:7.5px">สรุป</th>`).join('');
   const rows = sts.map((s,idx) => {
     const cells = tpList.map(t => {
       const inds = (indicators??[]).filter(i=>i.domainId===t.id);
-      const r1sc = inds.flatMap(ind=>(activities??[]).filter(a=>a.indicatorId===ind.id)
-        .map(act=>s.assessments?.indicators?.[ind.id]?.[act.id]?.r1??null)).filter(v=>v!==null);
-      const r2sc = inds.flatMap(ind=>(activities??[]).filter(a=>a.indicatorId===ind.id)
-        .map(act=>s.assessments?.indicators?.[ind.id]?.[act.id]?.r2??null)).filter(v=>v!==null);
-      const r1 = r1sc.length?Math.round(r1sc.reduce((a,b)=>a+b,0)/r1sc.length):'';
-      const r2 = r2sc.length?Math.round(r2sc.reduce((a,b)=>a+b,0)/r2sc.length):'';
-      return `<td>${r1}</td><td>${r2}</td><td style="font-weight:700">${r2||r1||''}</td>`;
+      // ค1 = ครึ่งภาคเรียนแรก (เฉลี่ย r1+r2), ค2 = ครึ่งภาคเรียนหลัง (เฉลี่ย r3+r4)
+      const getRnd = (rKey) => inds.flatMap(ind=>(activities??[]).filter(a=>a.indicatorId===ind.id)
+        .map(act=>s.assessments?.indicators?.[ind.id]?.[act.id]?.[rKey]??null)).filter(v=>v!==null);
+      const h1sc = [...getRnd('r1'), ...getRnd('r2')];
+      const h2sc = [...getRnd('r3'), ...getRnd('r4')];
+      const k1 = h1sc.length?Math.round(h1sc.reduce((a,b)=>a+b,0)/h1sc.length):'';
+      const k2 = h2sc.length?Math.round(h2sc.reduce((a,b)=>a+b,0)/h2sc.length):'';
+      return `<td>${k1}</td><td>${k2}</td><td style="font-weight:700">${k2||k1||''}</td>`;
     }).join('');
     return `<tr><td>${idx+1}</td><td class="tl">${s.name}</td>${cells}</tr>`;
   }).join('');

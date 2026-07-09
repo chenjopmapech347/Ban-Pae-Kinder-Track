@@ -2,6 +2,7 @@
 import { useApp } from '../../context/AppContext';
 import { INDICATORS_DATA } from '../../data/indicatorsData';
 import { getStandardsByDomain } from '../../data/flatIndicators';
+import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 
 // ── CSV helpers ───────────────────────────────────────────────────────────────
 
@@ -150,18 +151,12 @@ function CsvImportModal({ isOpen, onClose, onImport, existingIndicators }) {
   const handleClose = () => { onClose(); setParsed(null); };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300 }}>
-      <div className="glass animate-pop" style={{
-        width: '100%', maxWidth: '580px', maxHeight: '90vh',
-        overflowY: 'auto', padding: '2rem',
-      }}>
-        <h3 style={{ marginBottom: '1.25rem' }}>📥 นำเข้าตัวบ่งชี้จาก CSV</h3>
-
+    <Modal isOpen={true} onClose={handleClose} title="📥 นำเข้าตัวบ่งชี้จาก CSV" size="lg">
+      <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {/* Step 1: เลือกไฟล์ */}
         <div style={{
           border: '2px dashed #c4b5fd', borderRadius: '14px',
-          padding: '1.5rem', textAlign: 'center', marginBottom: '1rem',
+          padding: '1.5rem', textAlign: 'center',
           background: '#faf5ff', cursor: 'pointer',
         }} onClick={() => fileRef.current?.click()}>
           <div style={{ fontSize: '2rem', marginBottom: '.5rem' }}>📂</div>
@@ -255,10 +250,8 @@ function CsvImportModal({ isOpen, onClose, onImport, existingIndicators }) {
                 </div>
 
                 <div style={{ display: 'flex', gap: '.75rem' }}>
-                  <button type="button" className="btn flex-1" onClick={handleClose}>ยกเลิก</button>
-                  <button type="button" className="btn btn-primary flex-1" onClick={handleImport}>
-                    💾 นำเข้า {parsed.indicators.length} รายการ
-                  </button>
+                  <ModalCancelBtn onClick={handleClose} />
+                  <ModalConfirmBtn onClick={handleImport} label={`💾 นำเข้า ${parsed.indicators.length} รายการ`} />
                 </div>
               </>
             )}
@@ -272,12 +265,10 @@ function CsvImportModal({ isOpen, onClose, onImport, existingIndicators }) {
         )}
 
         {!parsed && !loading && (
-          <button type="button" className="btn w-full" onClick={handleClose} style={{ marginTop: '.5rem' }}>
-            ยกเลิก
-          </button>
+          <ModalCancelBtn onClick={handleClose} />
         )}
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -285,8 +276,6 @@ function CsvImportModal({ isOpen, onClose, onImport, existingIndicators }) {
 function IndicatorModal({ isOpen, onClose, onSave, editing, domains }) {
   const blank = { domainId: domains[0]?.id ?? '', standardId: '', indicatorCode: '', label: '' };
   const [form, setForm] = useState(editing ?? blank);
-
-  if (!isOpen) return null;
 
   const standards = getStandardsByDomain(form.domainId);
 
@@ -303,48 +292,45 @@ function IndicatorModal({ isOpen, onClose, onSave, editing, domains }) {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
-      <div className="glass p-8 animate-pop" style={{ width: '100%', maxWidth: '480px' }}>
-        <h3 className="mb-5">{editing ? '✏️ แก้ไขตัวบ่งชี้' : '➕ เพิ่มตัวบ่งชี้ใหม่'}</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>ด้านพัฒนาการ</label>
-            <select className="input" value={form.domainId}
-              onChange={e => setForm({ ...form, domainId: e.target.value, standardId: '' })}>
-              {domains.map(d => <option key={d.id} value={d.id}>{d.emoji} ด้าน{d.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>มาตรฐาน</label>
-            <select className="input" value={form.standardId}
-              onChange={e => setForm({ ...form, standardId: e.target.value })}>
-              <option value="">— เลือกมาตรฐาน —</option>
-              {getStandardsByDomain(form.domainId).map(s => (
-                <option key={s.id} value={s.id}>{s.title}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>
-              รหัสตัวบ่งชี้ <span style={{ color: 'var(--danger)' }}>*</span>
-            </label>
-            <input className="input" placeholder="เช่น 3.1, 5.2" value={form.indicatorCode}
-              onChange={e => setForm({ ...form, indicatorCode: e.target.value })} />
-          </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>
-              ชื่อ/คำอธิบายตัวบ่งชี้ <span style={{ color: 'var(--danger)' }}>*</span>
-            </label>
-            <input className="input" placeholder="เช่น ตัวบ่งชี้ที่ 3.1 ..." value={form.label}
-              onChange={e => setForm({ ...form, label: e.target.value })} />
-          </div>
-          <div style={{ display: 'flex', gap: '.75rem', marginTop: '.5rem' }}>
-            <button type="button" className="btn flex-1" onClick={onClose}>ยกเลิก</button>
-            <button type="button" className="btn btn-primary flex-1" onClick={handleSave}>💾 บันทึก</button>
-          </div>
+    <Modal isOpen={isOpen} onClose={onClose} title={editing ? '✏️ แก้ไขตัวบ่งชี้' : '➕ เพิ่มตัวบ่งชี้ใหม่'} size="md">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div>
+          <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>ด้านพัฒนาการ</label>
+          <select className="input" value={form.domainId}
+            onChange={e => setForm({ ...form, domainId: e.target.value, standardId: '' })}>
+            {domains.map(d => <option key={d.id} value={d.id}>{d.emoji} ด้าน{d.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>มาตรฐาน</label>
+          <select className="input" value={form.standardId}
+            onChange={e => setForm({ ...form, standardId: e.target.value })}>
+            <option value="">— เลือกมาตรฐาน —</option>
+            {getStandardsByDomain(form.domainId).map(s => (
+              <option key={s.id} value={s.id}>{s.title}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>
+            รหัสตัวบ่งชี้ <span style={{ color: 'var(--danger)' }}>*</span>
+          </label>
+          <input className="input" placeholder="เช่น 3.1, 5.2" value={form.indicatorCode}
+            onChange={e => setForm({ ...form, indicatorCode: e.target.value })} />
+        </div>
+        <div>
+          <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>
+            ชื่อ/คำอธิบายตัวบ่งชี้ <span style={{ color: 'var(--danger)' }}>*</span>
+          </label>
+          <input className="input" placeholder="เช่น ตัวบ่งชี้ที่ 3.1 ..." value={form.label}
+            onChange={e => setForm({ ...form, label: e.target.value })} />
+        </div>
+        <div style={{ display: 'flex', gap: '.75rem', marginTop: '.5rem' }}>
+          <ModalCancelBtn onClick={onClose} />
+          <ModalConfirmBtn onClick={handleSave} label="💾 บันทึก" />
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 

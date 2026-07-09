@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 
 const EMPTY = { label: '', date: '' };
 
@@ -133,58 +134,51 @@ export default function HolidaysTab() {
       </div>
 
       {/* ── Modal ── */}
-      {isOpen && (
-        <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}
-          onClick={e => { if (e.target === e.currentTarget) setIsOpen(false); }}
-        >
-          <div className="glass animate-pop" style={{ width: '100%', maxWidth: '360px', padding: '1.5rem', borderRadius: '16px' }}>
-            <h4 style={{ margin: '0 0 1.25rem', fontWeight: 800, fontSize: '1.05rem' }}>📅 เพิ่มวันหยุด / กิจกรรม</h4>
-
-            {/* ชื่อวันหยุด */}
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', fontWeight: 700, fontSize: '.83rem', marginBottom: '.35rem', color: '#4b5563' }}>
-                ชื่อวันหยุด / กิจกรรม
-              </label>
-              <input
-                className="input"
-                placeholder="เช่น วันสงกรานต์, วันหยุดพิเศษ..."
-                value={form.label}
-                onChange={e => setForm({ ...form, label: e.target.value })}
-                autoFocus
-              />
-            </div>
-
-            {/* Calendar */}
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', fontWeight: 700, fontSize: '.83rem', marginBottom: '.5rem', color: '#4b5563' }}>
-                เลือกวันที่
-              </label>
-              <div style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: '12px', padding: '.85rem' }}>
-                <MiniCalendar value={form.date} onChange={d => setForm({ ...form, date: d })} />
-              </div>
-              {form.date && (
-                <div style={{ marginTop: '.5rem', textAlign: 'center', fontSize: '.82rem', color: '#7c3aed', fontWeight: 700 }}>
-                  ✅ {toThaiDate(form.date)}
-                </div>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div style={{ display: 'flex', gap: '.6rem' }}>
-              <button type="button" className="btn flex-1" onClick={() => setIsOpen(false)}>ยกเลิก</button>
-              <button
-                type="button" className="btn btn-primary flex-1"
-                onClick={handleSave}
-                disabled={!form.label.trim() || !form.date}
-                style={{ opacity: (!form.label.trim() || !form.date) ? .5 : 1 }}
-              >
-                + บันทึก
-              </button>
-            </div>
-          </div>
+      <Modal
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        title="📅 เพิ่มวันหยุด / กิจกรรม"
+        size="sm"
+      >
+        {/* ชื่อวันหยุด */}
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', fontWeight: 700, fontSize: '.83rem', marginBottom: '.35rem', color: '#4b5563' }}>
+            ชื่อวันหยุด / กิจกรรม
+          </label>
+          <input
+            className="input"
+            placeholder="เช่น วันสงกรานต์, วันหยุดพิเศษ..."
+            value={form.label}
+            onChange={e => setForm({ ...form, label: e.target.value })}
+            autoFocus
+          />
         </div>
-      )}
+
+        {/* Calendar */}
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', fontWeight: 700, fontSize: '.83rem', marginBottom: '.5rem', color: '#4b5563' }}>
+            เลือกวันที่
+          </label>
+          <div style={{ background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: '12px', padding: '.85rem' }}>
+            <MiniCalendar value={form.date} onChange={d => setForm({ ...form, date: d })} />
+          </div>
+          {form.date && (
+            <div style={{ marginTop: '.5rem', textAlign: 'center', fontSize: '.82rem', color: '#7c3aed', fontWeight: 700 }}>
+              ✅ {toThaiDate(form.date)}
+            </div>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: '.6rem' }}>
+          <ModalCancelBtn onClick={() => setIsOpen(false)} />
+          <ModalConfirmBtn
+            onClick={handleSave}
+            label="+ บันทึก"
+            color={(!form.label.trim() || !form.date) ? '#c4b5fd' : '#7c3aed'}
+          />
+        </div>
+      </Modal>
     </div>
   );
 }

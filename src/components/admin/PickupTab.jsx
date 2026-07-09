@@ -14,6 +14,7 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { todayISO, formatDateThai } from '../../utils/helpers';
+import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 
 // ALL_CLASSES ดึงจาก allClassNames ใน AppContext
 
@@ -459,24 +460,16 @@ export default function PickupTab({ defaultClass }) {
       </div>
 
       {/* ── Modal ── */}
-      {modal && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 9999, padding: '1rem', overflowY: 'auto',
-        }}
-          onClick={e => { if (e.target === e.currentTarget) setModal(null); }}
-        >
-          <div style={{
-            background: 'white', borderRadius: '20px', width: '100%', maxWidth: '520px',
-            padding: '1.75rem', boxShadow: '0 20px 60px rgba(0,0,0,.2)',
-          }}>
-            <div style={{ fontWeight: 800, fontSize: '1.05rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '.6rem' }}>
-              🚌 รับ-ส่ง — <span style={{ color: '#f59e0b' }}>{shortName(modal.student.name)}</span>
-            </div>
-
+      <Modal
+        isOpen={!!modal}
+        onClose={() => setModal(null)}
+        title={modal ? `🚌 รับ-ส่ง — ${shortName(modal.student.name)}` : '🚌 รับ-ส่ง'}
+        size="md"
+      >
+        {modal && (
+          <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto' }}>
             {/* ── Section: ผู้ส่ง ── */}
-            <div style={{ background: '#fffbeb', borderRadius: '12px', padding: '1rem', marginBottom: '1rem', border: '1.5px solid #fde68a' }}>
+            <div style={{ background: '#fffbeb', borderRadius: '12px', padding: '1rem', border: '1.5px solid #fde68a' }}>
               <div style={{ fontWeight: 700, fontSize: '.82rem', color: '#92400e', marginBottom: '.65rem' }}>🌅 ผู้ส่ง (ตอนเช้า)</div>
               <div style={{ display: 'flex', gap: '.35rem', flexWrap: 'wrap', marginBottom: '.55rem' }}>
                 <button type="button" onClick={() => setForm(f => ({ ...f, dropoffRelation: '' }))}
@@ -509,7 +502,7 @@ export default function PickupTab({ defaultClass }) {
             </div>
 
             {/* ── Section: ผู้รับ ── */}
-            <div style={{ background: '#f0fdf4', borderRadius: '12px', padding: '1rem', marginBottom: '1rem', border: '1.5px solid #86efac' }}>
+            <div style={{ background: '#f0fdf4', borderRadius: '12px', padding: '1rem', border: '1.5px solid #86efac' }}>
               <div style={{ fontWeight: 700, fontSize: '.82rem', color: '#14532d', marginBottom: '.65rem' }}>🌆 ผู้รับ (ตอนเย็น)</div>
               <div style={{ display: 'flex', gap: '.35rem', flexWrap: 'wrap', marginBottom: '.55rem' }}>
                 {RELATIONS.map(r => {
@@ -541,7 +534,7 @@ export default function PickupTab({ defaultClass }) {
             </div>
 
             {/* ── หมายเหตุ ── */}
-            <div style={{ marginBottom: '1.25rem' }}>
+            <div>
               <div style={{ fontWeight: 700, fontSize: '.82rem', color: '#374151', marginBottom: '.5rem' }}>📝 หมายเหตุ</div>
               <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
                 {NOTE_OPTS.map(n => (
@@ -557,17 +550,13 @@ export default function PickupTab({ defaultClass }) {
             </div>
 
             {/* Buttons */}
-            <div style={{ display: 'flex', gap: '.6rem', justifyContent: 'flex-end' }}>
-              <button onClick={() => setModal(null)} style={{ padding: '.5rem 1.25rem', borderRadius: '10px', border: '1.5px solid #e5e7eb', background: 'white', color: '#6b7280', fontFamily: 'inherit', fontWeight: 700, fontSize: '.9rem', cursor: 'pointer' }}>
-                ยกเลิก
-              </button>
-              <button onClick={saveRecord} style={{ padding: '.5rem 1.4rem', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg,#f59e0b,#f97316)', color: 'white', fontFamily: 'inherit', fontWeight: 800, fontSize: '.9rem', cursor: 'pointer' }}>
-                💾 บันทึก
-              </button>
+            <div style={{ display: 'flex', gap: '.6rem' }}>
+              <ModalCancelBtn onClick={() => setModal(null)} />
+              <ModalConfirmBtn onClick={saveRecord} label="💾 บันทึก" />
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 }

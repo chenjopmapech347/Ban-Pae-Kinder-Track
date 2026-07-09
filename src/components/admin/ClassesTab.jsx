@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 
 export default function ClassesTab() {
   const { classes, setClasses } = useApp();
@@ -40,23 +41,23 @@ export default function ClassesTab() {
         ))}
       </div>
 
-      {isModal && (
-        <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100 }}>
-          <div className="glass p-8 w-full max-w-md animate-pop">
-            <h3 className="mb-4">{editing ? 'แก้ไขห้องเรียน' : 'เพิ่มห้องเรียนใหม่'}</h3>
-            <form onSubmit={handleSave} style={{ display:'flex',flexDirection:'column',gap:'1rem' }}>
-              <div><label style={{ display:'block',marginBottom:'.35rem' }}>ชื่อห้องเรียน</label>
-                <input className="input" value={form.name||''} onChange={e=>setForm({...form,name:e.target.value})} required /></div>
-              <div><label style={{ display:'block',marginBottom:'.35rem' }}>จำนวนนักเรียน</label>
-                <input className="input" type="number" value={form.count||0} onChange={e=>setForm({...form,count:Number(e.target.value)})} /></div>
-              <div className="flex gap-2">
-                <button type="button" className="btn flex-1" onClick={()=>setIsModal(false)}>ยกเลิก</button>
-                <button type="submit" className="btn btn-primary flex-1">บันทึก</button>
-              </div>
-            </form>
+      <Modal
+        isOpen={isModal}
+        onClose={() => setIsModal(false)}
+        title={editing ? 'แก้ไขห้องเรียน' : 'เพิ่มห้องเรียนใหม่'}
+        size="sm"
+      >
+        <form onSubmit={handleSave} style={{ display:'flex',flexDirection:'column',gap:'1rem' }}>
+          <div><label style={{ display:'block',marginBottom:'.35rem' }}>ชื่อห้องเรียน</label>
+            <input className="input" value={form.name||''} onChange={e=>setForm({...form,name:e.target.value})} required /></div>
+          <div><label style={{ display:'block',marginBottom:'.35rem' }}>จำนวนนักเรียน</label>
+            <input className="input" type="number" value={form.count||0} onChange={e=>setForm({...form,count:Number(e.target.value)})} /></div>
+          <div className="flex gap-2 mt-2">
+            <ModalCancelBtn onClick={() => setIsModal(false)} />
+            <ModalConfirmBtn type="submit" label="💾 บันทึก" />
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
     </div>
   );
 }

@@ -219,6 +219,7 @@ export default function AttendanceTab({ defaultClass }) {
   // { [cls]: { [studentId]: 'มา'|'ขาด'|'ลา'|'ป่วย' } }
   const [classDrafts,  setClassDrafts]  = useState({});
   const [dirtyClasses, setDirtyClasses] = useState(new Set());
+  const [autoFillMsg,  setAutoFillMsg]  = useState(null); // { cls, present, absent }
 
   // โหลด/รีเซ็ต draft เมื่อเปลี่ยนวันที่หรือ dailyRecords อัปเดต
   useEffect(() => {
@@ -255,14 +256,20 @@ export default function AttendanceTab({ defaultClass }) {
     setDirtyClasses(prev => new Set([...prev, cls]));
   }
 
-  // บันทึกห้องนี้
+  // บันทึกห้องนี้ + auto-fill modules อัตโนมัติ
   function handleSaveClass(cls) {
     const patch = {};
+    let present = 0, absent = 0;
     Object.entries(classDrafts[cls] ?? {}).forEach(([id, att]) => {
       patch[id] = { attendance: att };
+      if (att === 'มา') present++;
+      else if (['ขาด','ลา','ป่วย'].includes(att)) absent++;
     });
     saveDailyAttendance(selectedDate, patch);
     setDirtyClasses(prev => { const n = new Set(prev); n.delete(cls); return n; });
+    // แสดง auto-fill toast
+    setAutoFillMsg({ cls, present, absent });
+    setTimeout(() => setAutoFillMsg(null), 5000);
   }
 
   // ── สรุปรายเดือน ──────────────────────────────────────────────────────
@@ -788,6 +795,34 @@ export default function AttendanceTab({ defaultClass }) {
           💡 คลิกการ์ด/แถวนักเรียนเพื่อเปลี่ยนสถานะ · กด 💾 บันทึก เพื่อยืนยัน
         </span>
       </div>
+
+      {/* ── Auto-fill Toast ── */}
+      {autoFillMsg && (
+        <div style={{
+          position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 9999,
+          background: 'linear-gradient(135deg,#059669,#10b981)',
+          color: 'white', borderRadius: '14px',
+          padding: '1rem 1.4rem', boxShadow: '0 8px 24px rgba(5,150,105,.35)',
+          maxWidth: '380px', animation: 'fadeIn .25s ease',
+        }}>
+          <div style={{ fontWeight: 800, fontSize: '.95rem', marginBottom: '.4rem' }}>
+            ✅ บันทึกการมาเรียน + เติมข้อมูลอัตโนมัติ
+          </div>
+          <div style={{ fontSize: '.82rem', opacity: .92, marginBottom: '.5rem' }}>
+            ห้อง <strong>{autoFillMsg.cls}</strong> ·{' '}
+            มา <strong>{autoFillMsg.present}</strong> คน ·{' '}
+            ขาด/ลา/ป่วย <strong>{autoFillMsg.absent}</strong> คน
+          </div>
+          <div style={{ fontSize: '.75rem', opacity: .85 }}>
+            🏥 ตรวจสุขภาพ &nbsp;·&nbsp; 🥛 ดื่มนม &nbsp;·&nbsp; 🍱 อาหารกลางวัน<br/>
+            🪥 แปรงฟัน &nbsp;·&nbsp; 🤒 คัดกรองอาการป่วย<br/>
+            🌿 แหล่งเรียนรู้นอก &nbsp;·&nbsp; 🏠 มุมประสบการณ์ในห้อง
+          </div>
+          <div style={{ fontSize: '.72rem', opacity: .75, marginTop: '.35rem', fontStyle: 'italic' }}>
+            (ไม่ overwrite ข้อมูลที่ครูบันทึกไว้แล้ว)
+          </div>
+        </div>
+      )}
     </div>
   );
 }

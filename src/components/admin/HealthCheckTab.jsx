@@ -11,59 +11,58 @@ const CHECK_ITEMS = [
   { id: 'nail',  label: 'เล็บ',     emoji: '💅' },
 ];
 
-// จำนวนวันตรวจต่อสัปดาห์ (ค่าคงที่ตามแบบฟอร์ม = 3 วัน)
-const DAYS_PER_WEEK = 3;
+// 3 ครั้งต่อหมวดต่อวัน (v1=ครั้งที่1, v2=ครั้งที่2, v3=ครั้งที่3)
+const VISITS = ['v1', 'v2', 'v3'];
+const TOTAL_COLS = CHECK_ITEMS.length * VISITS.length; // 18
 
-// สร้าง record key
-function recordKey(className, academicYear, weekNo) {
-  return `${className}__${academicYear}__w${weekNo}`;
-}
+// สีประจำคะแนน
+const SCORE_STYLE = {
+  3: { bg: '#d1fae5', color: '#065f46' },
+  2: { bg: '#fef3c7', color: '#92400e' },
+  1: { bg: '#fee2e2', color: '#dc2626' },
+};
 
-// สร้าง student entry เริ่มต้น (ยังไม่ตรวจ)
+// สร้าง student entry เริ่มต้น — ทุก sub-column เป็น null (ยังไม่ตรวจ)
 function emptyStudentEntry() {
-  return CHECK_ITEMS.reduce((acc, item) => {
-    acc[item.id] = [false, false, false];
-    return acc;
-  }, { note: '' });
+  return {
+    ...CHECK_ITEMS.reduce((acc, item) => {
+      acc[item.id] = { v1: null, v2: null, v3: null };
+      return acc;
+    }, {}),
+    note: '',
+  };
 }
 
-// สร้าง student entry pre-filled — ผ่านทุกรายการ
-function defaultStudentEntry() {
-  return CHECK_ITEMS.reduce((acc, item) => {
-    acc[item.id] = [true, true, true];
-    return acc;
-  }, { note: '' });
+// record key รายวัน
+function recordKey(className, academicYear, date) {
+  return `${className}__${academicYear}__${date}`;
 }
 
-// สร้าง record เปล่า (ตารางว่าง — ครูกดเลือกเอง)
-function makeDefaultRecord(k, cls, ay, wkNo, wkDate, studs) {
+// สร้าง record เปล่า
+function makeDefaultRecord(k, cls, ay, date, studs) {
   const studsData = {};
   studs.forEach(s => { studsData[s.id] = emptyStudentEntry(); });
-  return { id: k, className: cls, academicYear: ay, weekNo: wkNo, weekDate: wkDate, students: studsData };
+  return { id: k, className: cls, academicYear: ay, date, students: studsData };
 }
 
-// นับจำนวนผ่านในแถว
-function countPass(entry) {
-  return CHECK_ITEMS.reduce((n, item) => n + entry[item.id].filter(Boolean).length, 0);
+// format วันที่เป็นภาษาไทย
+function toThaiDate(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleDateString('th-TH', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  });
 }
 
-// ── CheckCell ─────────────────────────────────────────────────────────────────
-function CheckCell({ checked, onChange }) {
-  return (
-    <td
-      onClick={onChange}
-      style={{
-        textAlign: 'center', cursor: 'pointer', userSelect: 'none',
-        border: '1px solid #e5e7eb', padding: '4px 2px', minWidth: '26px',
-        background: checked ? '#d1fae5' : 'white',
-        fontSize: '.85rem', fontWeight: 700, color: checked ? '#065f46' : '#e5e7eb',
-        transition: 'background .1s',
-      }}
-      title={checked ? 'ผ่าน (คลิกเพื่อยกเลิก)' : 'คลิกเพื่อทำเครื่องหมาย'}
-    >
-      {checked ? '/' : '·'}
-    </td>
-  );
+// นับ sub-columns ที่มีคะแนน (รองรับทั้ง format ใหม่ {v1,v2,v3} และ format เก่า boolean)
+function countFilled(entry) {
+  let n = 0;
+  CHECK_ITEMS.forEach(item => {
+    const val = entry[item.id];
+    if (val == null) return;
+    if (typeof val === 'boolean') { if (val) n++; return; } // backward compat
+    VISITS.forEach(v => { if (val[v] != null) n++; });
+  });
+  return n;
 }
 
 // ── HealthCheckTab ────────────────────────────────────────────────────────────
@@ -77,18 +76,23 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
   const isTeacher = role === 'teacher';
   const myClass   = teacherClassFilter ?? (isTeacher ? user?.className : null);
 
-  // ── Selectors ─────────────────────────────────────────────────────────────
+  const todayIso = new Date().toISOString().slice(0, 10);
+
   const [selClass, setSelClass] = useState(() => myClass ?? (classes[0]?.name ?? ''));
-  const [weekNo,   setWeekNo]   = useState(1);
-  const [weekDate, setWeekDate] = useState(() => {
-    const d = new Date(); d.setDate(d.getDate() - d.getDay() + 1); // Monday
-    return d.toISOString().slice(0, 10);
+  const [selDate,  setSelDate]  = useState(todayIso);
+  const [saved,    setSaved]    = useState(false);
+
+  // คะแนนใน dropdown ของแต่ละ sub-column (ค่าเริ่มต้น 3 ทุกช่อง)
+  const [colScore, setColScore] = useState(() => {
+    const init = {};
+    CHECK_ITEMS.forEach(item => {
+      VISITS.forEach(v => { init[`${item.id}_${v}`] = 3; });
+    });
+    return init;
   });
-  const [saved, setSaved] = useState(false);
 
-  const key = useMemo(() => recordKey(selClass, academicYear, weekNo), [selClass, academicYear, weekNo]);
+  const key = useMemo(() => recordKey(selClass, academicYear, selDate), [selClass, academicYear, selDate]);
 
-  // กรองนักเรียนในห้อง เรียงตาม id
   const classStudents = useMemo(() =>
     students
       .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
@@ -96,74 +100,104 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
     [students, selClass]
   );
 
-  // โหลด record ปัจจุบัน หรือสร้างใหม่
   const [draft, setDraft] = useState(() => {
     const existing = healthCheckRecords[key];
     if (existing) return existing;
-    const initStuds = students.filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)')).sort((a,b)=>Number(a.id)-Number(b.id));
-    return makeDefaultRecord(key, selClass, academicYear, weekNo, weekDate, initStuds);
+    const initStuds = students
+      .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
+      .sort((a, b) => Number(a.id) - Number(b.id));
+    return makeDefaultRecord(key, selClass, academicYear, selDate, initStuds);
   });
 
-  // เมื่อเปลี่ยน key ให้โหลด record ใหม่
-  const loadRecord = useCallback((newKey, newClass, newWeekNo, newWeekDate) => {
+  const loadRecord = useCallback((newKey, newClass, newDate) => {
     const existing = healthCheckRecords[newKey];
     if (existing) {
       setDraft(existing);
     } else {
-      const studs = students.filter(s => s.className === newClass && !s.name.startsWith('(ว่าง)')).sort((a,b)=>Number(a.id)-Number(b.id));
-      setDraft(makeDefaultRecord(newKey, newClass, academicYear, newWeekNo, newWeekDate, studs));
+      const studs = students
+        .filter(s => s.className === newClass && !s.name.startsWith('(ว่าง)'))
+        .sort((a, b) => Number(a.id) - Number(b.id));
+      setDraft(makeDefaultRecord(newKey, newClass, academicYear, newDate, studs));
     }
     setSaved(false);
   }, [healthCheckRecords, academicYear, students]);
 
   function handleClassChange(cls) {
     setSelClass(cls);
-    const k = recordKey(cls, academicYear, weekNo);
-    loadRecord(k, cls, weekNo, weekDate);
-  }
-  function handleWeekChange(wk) {
-    const w = Number(wk);
-    setWeekNo(w);
-    const k = recordKey(selClass, academicYear, w);
-    loadRecord(k, selClass, w, weekDate);
-  }
-  function handleWeekDateChange(d) {
-    setWeekDate(d);
-    setDraft(prev => ({ ...prev, weekDate: d }));
-    setSaved(false);
+    const k = recordKey(cls, academicYear, selDate);
+    loadRecord(k, cls, selDate);
   }
 
-  // แก้ไข checkbox
-  function toggleCheck(studentId, itemId, dayIdx) {
+  function handleDateChange(d) {
+    setSelDate(d);
+    const k = recordKey(selClass, academicYear, d);
+    loadRecord(k, selClass, d);
+  }
+
+  // ── คลิก cell รายคน — วนรอบ null → 3 → 2 → 1 → null ─────────────────────
+  function cycleCell(studentId, itemId, visitKey) {
     setSaved(false);
     setDraft(prev => {
       const entry = prev.students[studentId] ?? emptyStudentEntry();
-      const days  = [...(entry[itemId] ?? [false, false, false])];
-      days[dayIdx] = !days[dayIdx];
+      const itemVal = entry[itemId];
+      // รองรับ format เก่า (boolean) → แปลงเป็น {v1,v2,v3} ก่อน
+      const itemObj = (itemVal && typeof itemVal === 'object' && !Array.isArray(itemVal))
+        ? itemVal
+        : { v1: null, v2: null, v3: null };
+      const current = itemObj[visitKey] ?? null;
+      const next = current === null ? 3 : current === 3 ? 2 : current === 2 ? 1 : null;
       return {
         ...prev,
         students: {
           ...prev.students,
-          [studentId]: { ...entry, [itemId]: days },
+          [studentId]: {
+            ...entry,
+            [itemId]: { ...itemObj, [visitKey]: next },
+          },
         },
       };
     });
   }
 
-  // กด checkbox บนหัวตาราง → เลือก/ยกเลิกทุกคนในคอลัมน์นั้น
-  function toggleColumn(itemId, dayIdx) {
-    const allChecked = classStudents.length > 0 &&
-      classStudents.every(s => draft.students[s.id]?.[itemId]?.[dayIdx] === true);
+  // ── checkbox หัวคอลัมน์ — fill ทุกคนด้วยคะแนนจาก dropdown ──────────────────
+  function fillColumn(itemId, visitKey) {
+    const score = colScore[`${itemId}_${visitKey}`];
+    const allHave = classStudents.length > 0 &&
+      classStudents.every(s => {
+        const itemVal = (draft.students[s.id] ?? emptyStudentEntry())[itemId];
+        const itemObj = (itemVal && typeof itemVal === 'object' && !Array.isArray(itemVal))
+          ? itemVal : { v1: null, v2: null, v3: null };
+        return itemObj[visitKey] === score;
+      });
     setSaved(false);
     setDraft(prev => {
       const newStudents = { ...prev.students };
       classStudents.forEach(s => {
         const entry = newStudents[s.id] ?? emptyStudentEntry();
-        const days = [...(entry[itemId] ?? [false, false, false])];
-        days[dayIdx] = !allChecked;
-        newStudents[s.id] = { ...entry, [itemId]: days };
+        const itemVal = entry[itemId];
+        const itemObj = (itemVal && typeof itemVal === 'object' && !Array.isArray(itemVal))
+          ? itemVal : { v1: null, v2: null, v3: null };
+        newStudents[s.id] = {
+          ...entry,
+          [itemId]: { ...itemObj, [visitKey]: allHave ? null : score },
+        };
       });
       return { ...prev, students: newStudents };
+    });
+  }
+
+  // ── คลิกชื่อ — toggle ทุก sub-column (fill 3 ถ้าไม่ครบ, clear ถ้าครบทุกช่อง) ──
+  function toggleRow(studentId) {
+    const entry = draft.students[studentId] ?? emptyStudentEntry();
+    const filled = countFilled(entry);
+    const fillVal = filled === TOTAL_COLS ? null : 3;
+    setSaved(false);
+    setDraft(prev => {
+      const newEntry = { ...prev.students[studentId] ?? emptyStudentEntry() };
+      CHECK_ITEMS.forEach(item => {
+        newEntry[item.id] = { v1: fillVal, v2: fillVal, v3: fillVal };
+      });
+      return { ...prev, students: { ...prev.students, [studentId]: newEntry } };
     });
   }
 
@@ -171,32 +205,22 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
     setSaved(false);
     setDraft(prev => {
       const entry = prev.students[studentId] ?? emptyStudentEntry();
-      return {
-        ...prev,
-        students: { ...prev.students, [studentId]: { ...entry, note: val } },
-      };
+      return { ...prev, students: { ...prev.students, [studentId]: { ...entry, note: val } } };
     });
   }
 
-  // บันทึก
   function handleSave() {
-    setHealthCheckRecords(prev => ({ ...prev, [key]: { ...draft, weekDate } }));
+    setHealthCheckRecords(prev => ({ ...prev, [key]: { ...draft, date: selDate } }));
     setSaved(true);
   }
 
-  // ล้างข้อมูลสัปดาห์นี้
   function handleClear() {
-    if (!window.confirm(`ล้างข้อมูลการตรวจสุขภาพสัปดาห์ที่ ${weekNo} ห้อง ${selClass}?`)) return;
-    const blank = {
-      id: key, className: selClass, academicYear, weekNo, weekDate,
-      students: {},
-    };
-    setDraft(blank);
+    if (!window.confirm(`ล้างข้อมูลการตรวจสุขภาพวันที่ ${selDate} ห้อง ${selClass}?`)) return;
+    setDraft(makeDefaultRecord(key, selClass, academicYear, selDate, classStudents));
     setHealthCheckRecords(prev => { const n = { ...prev }; delete n[key]; return n; });
     setSaved(false);
   }
 
-  // ตรวจสอบครูผู้สอน
   const teacherName = useMemo(() => {
     if (isTeacher) return user?.name ?? '';
     const t = teachers.find(t => t.className === selClass);
@@ -207,64 +231,64 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
   function handlePrint() {
     const rows = classStudents.map((s, idx) => {
       const entry = draft.students[s.id] ?? emptyStudentEntry();
-      let cells = '';
-      CHECK_ITEMS.forEach(item => {
-        entry[item.id].forEach(d => {
-          cells += `<td class="cc">${d ? '/' : ''}</td>`;
-        });
-      });
+      const cells = CHECK_ITEMS.flatMap(item =>
+        VISITS.map(v => {
+          const itemVal = entry[item.id];
+          const itemObj = (itemVal && typeof itemVal === 'object' && !Array.isArray(itemVal))
+            ? itemVal : { v1: null, v2: null, v3: null };
+          const sc = itemObj[v] ?? null;
+          return `<td class="cc">${sc != null ? sc : ''}</td>`;
+        })
+      ).join('');
+      const filled = countFilled(entry);
       return `<tr>
         <td class="no">${idx + 1}</td>
         <td class="nm">${s.name}</td>
         ${cells}
+        <td class="cc">${filled > 0 ? filled + '/' + TOTAL_COLS : ''}</td>
         <td class="nt">${entry.note ?? ''}</td>
       </tr>`;
     }).join('');
 
-    // header rows
     const itemCols = CHECK_ITEMS.map(item =>
-      `<th colspan="${DAYS_PER_WEEK}" class="hd">${item.label}</th>`
+      `<th class="hd" colspan="3">${item.label}</th>`
     ).join('');
-    const dayCols = CHECK_ITEMS.map(() =>
-      [1,2,3].map(d => `<th class="hdc">${d}</th>`).join('')
+
+    const visitLabels = CHECK_ITEMS.flatMap(() =>
+      [1, 2, 3].map(n => `<th class="hd">ครั้ง${n}</th>`)
     ).join('');
 
     const win = window.open('', '_blank');
     win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-<title>แบบบันทึกการตรวจสุขภาพประจำสัปดาห์</title>
+<title>แบบบันทึกการตรวจสุขภาพประจำวัน</title>
 <style>
   @page { size: A4 landscape; margin: 10mm }
   body { font-family: 'TH Sarabun New', Sarabun, sans-serif; font-size: 11pt }
   h3 { text-align: center; margin: 2px 0; font-size: 13pt }
   table { border-collapse: collapse; width: 100% }
-  td, th { border: 1px solid #444; padding: 2px 4px; text-align: center; font-size: 9pt }
-  .nm { text-align: left; min-width: 130px; font-size: 9.5pt }
-  .no { min-width: 24px }
-  .cc { min-width: 22px }
+  td, th { border: 1px solid #444; padding: 2px 3px; text-align: center; font-size: 9pt }
+  .nm { text-align: left; min-width: 110px }
+  .no { min-width: 22px }
+  .cc { min-width: 20px }
   .nt { min-width: 60px }
-  .hd { background: #f3f4f6; font-weight: bold; font-size: 9.5pt }
-  .hdc { background: #f9fafb; font-size: 8.5pt }
-  .sig { margin-top: 28px; text-align: right; font-size: 10pt; line-height: 2 }
+  .hd { background: #f3f4f6; font-weight: bold }
+  .sig { margin-top: 24px; text-align: right; font-size: 10pt; line-height: 2 }
 </style></head><body>
-${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
-<h3>แบบบันทึกการตรวจสุขภาพประจำสัปดาห์</h3>
+${schoolLogo ? `<div style="text-align:center;margin-bottom:6px"><img src="${schoolLogo}" style="height:60px;object-fit:contain"/></div>` : ''}
+<h3>แบบบันทึกการตรวจสุขภาพประจำวัน</h3>
 <h3>ชั้น${selClass} &nbsp; ปีการศึกษา ${academicYear}</h3>
-<h3>สัปดาห์ที่ ${weekNo} &nbsp; วันที่ ${weekDate ? new Date(weekDate).toLocaleDateString('th-TH', { day:'numeric', month:'long', year:'numeric' }) : ''}</h3>
+<h3>วันที่ ${toThaiDate(selDate)}</h3>
 <br/>
 <table>
   <thead>
     <tr>
-      <th rowspan="2" class="hd">ที่</th>
-      <th rowspan="2" class="hd">ชื่อ-สกุล</th>
-      <th colspan="${CHECK_ITEMS.length * DAYS_PER_WEEK}" class="hd">รายการที่ตรวจ</th>
-      <th rowspan="2" class="hd">หมายเหตุ</th>
+      <th class="hd" rowspan="2">ที่</th>
+      <th class="hd" rowspan="2">ชื่อ-สกุล</th>
+      ${itemCols}
+      <th class="hd" rowspan="2">รวม</th>
+      <th class="hd" rowspan="2">หมายเหตุ</th>
     </tr>
-    <tr>${itemCols}</tr>
-    <tr>
-      <th class="hdc"></th><th class="hdc"></th>
-      ${dayCols}
-      <th class="hdc"></th>
-    </tr>
+    <tr>${visitLabels}</tr>
   </thead>
   <tbody>${rows}</tbody>
 </table>
@@ -278,11 +302,16 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
     win.print();
   }
 
+  const recordCount = useMemo(() =>
+    Object.keys(healthCheckRecords).filter(k => k.startsWith(`${selClass}__${academicYear}__`)).length,
+    [healthCheckRecords, selClass, academicYear]
+  );
+
   // ─── UI ────────────────────────────────────────────────────────────────────
   return (
     <div className="glass p-6 animate-fade">
       <div className="page-header mb-4">
-        <h3>🏥 การตรวจสุขภาพประจำสัปดาห์</h3>
+        <h3>🏥 การตรวจสุขภาพประจำวัน</h3>
       </div>
 
       {/* ── Controls ── */}
@@ -291,7 +320,6 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
         background: '#f8fafc', borderRadius: '12px', padding: '.75rem 1rem',
         border: '1px solid #e2e8f0', marginBottom: '1.25rem',
       }}>
-        {/* ห้อง */}
         {!myClass && (
           <div>
             <label style={lbl}>ห้องเรียน</label>
@@ -301,36 +329,44 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
             </select>
           </div>
         )}
-
-        {/* สัปดาห์ที่ */}
         <div>
-          <label style={lbl}>สัปดาห์ที่</label>
-          <input type="number" className="input" min={1} max={52} value={weekNo}
-            onChange={e => handleWeekChange(e.target.value)}
-            style={{ fontSize: '.8rem', padding: '.3rem .6rem', width: '80px' }} />
-        </div>
-
-        {/* วันที่ */}
-        <div>
-          <label style={lbl}>วันที่ (วันแรกของสัปดาห์)</label>
-          <input type="date" className="input" value={weekDate}
-            onChange={e => handleWeekDateChange(e.target.value)}
+          <label style={lbl}>วันที่ตรวจ</label>
+          <input type="date" className="input" value={selDate}
+            onChange={e => handleDateChange(e.target.value)}
             style={{ fontSize: '.8rem', padding: '.3rem .6rem' }} />
         </div>
-
-        {/* Info */}
+        <div style={{ display: 'flex', gap: '.35rem', alignSelf: 'flex-end' }}>
+          <button type="button" className="btn btn-secondary"
+            style={{ fontSize: '.75rem', padding: '.3rem .65rem' }}
+            onClick={() => {
+              const d = new Date(selDate); d.setDate(d.getDate() - 1);
+              handleDateChange(d.toISOString().slice(0, 10));
+            }}>◀ วันก่อน</button>
+          <button type="button" className="btn btn-secondary"
+            style={{ fontSize: '.75rem', padding: '.3rem .65rem', background: todayIso === selDate ? '#eff6ff' : undefined }}
+            onClick={() => handleDateChange(todayIso)}>วันนี้</button>
+          <button type="button" className="btn btn-secondary"
+            style={{ fontSize: '.75rem', padding: '.3rem .65rem' }}
+            onClick={() => {
+              const d = new Date(selDate); d.setDate(d.getDate() + 1);
+              handleDateChange(d.toISOString().slice(0, 10));
+            }}>วันถัดไป ▶</button>
+        </div>
         <div style={{ marginLeft: 'auto', textAlign: 'right', fontSize: '.72rem', color: '#6b7280' }}>
           <div>ห้อง <strong>{selClass}</strong> · {classStudents.length} คน</div>
           <div>ปีการศึกษา {academicYear}</div>
           {teacherName && <div>ครู {teacherName}</div>}
+          <div style={{ color: recordCount > 0 ? '#059669' : '#9ca3af' }}>มีข้อมูล {recordCount} วัน</div>
         </div>
       </div>
 
       {/* ── Legend ── */}
       <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center', marginBottom: '.75rem', fontSize: '.72rem', flexWrap: 'wrap' }}>
-        <span style={{ background: '#d1fae5', color: '#065f46', fontWeight: 700, padding: '2px 10px', borderRadius: '6px', border: '1px solid #a7f3d0' }}>/ ผ่าน</span>
-        <span style={{ color: '#9ca3af' }}>· ยังไม่ได้ตรวจ</span>
-        <span style={{ color: '#6b7280' }}>· ☑ checkbox บนหัวตาราง = เลือก/ยกเลิกทั้งคอลัมน์ | คลิกช่องนักเรียน = เปลี่ยนรายคน</span>
+        <span style={{ background: '#d1fae5', color: '#065f46', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', border: '1px solid #a7f3d0' }}>3 ดีมาก</span>
+        <span style={{ background: '#fef3c7', color: '#92400e', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', border: '1px solid #fde68a' }}>2 พอใช้</span>
+        <span style={{ background: '#fee2e2', color: '#dc2626', fontWeight: 700, padding: '2px 8px', borderRadius: '6px', border: '1px solid #fca5a5' }}>1 ต้องพัฒนา</span>
+        <span style={{ color: '#9ca3af' }}>· ยังไม่ตรวจ</span>
+        <span style={{ color: '#6b7280' }}>| เลือกคะแนน dropdown → คลิก ☑ = fill ทั้งคอลัมน์ | คลิก cell = เปลี่ยนรายคน (วน 3→2→1→ว่าง)</span>
       </div>
 
       {/* ── Table ── */}
@@ -338,49 +374,75 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
         <div style={{ textAlign: 'center', color: '#9ca3af', padding: '3rem' }}>ไม่พบนักเรียนในห้อง {selClass}</div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ borderCollapse: 'collapse', width: '100%', fontSize: '.75rem' }}>
+          <table style={{ borderCollapse: 'collapse', fontSize: '.73rem', tableLayout: 'auto' }}>
             <thead>
+              {/* แถว 1: หัวหมวด (colspan=3) */}
               <tr>
-                <th rowSpan={3} style={th({ minWidth: '32px' })}>ที่</th>
-                <th rowSpan={3} style={th({ minWidth: '160px', textAlign: 'left' })}>ชื่อ-สกุล</th>
+                <th rowSpan={3} style={th({ minWidth: '28px' })}>ที่</th>
+                <th rowSpan={3} style={th({ minWidth: '140px', textAlign: 'left' })}>ชื่อ-สกุล</th>
                 {CHECK_ITEMS.map(item => (
-                  <th key={item.id} colSpan={DAYS_PER_WEEK}
-                    style={th({ background: '#eff6ff', color: '#1e40af', fontWeight: 800 })}>
+                  <th key={item.id} colSpan={3}
+                    style={th({ background: '#eff6ff', color: '#1e40af', fontWeight: 800, whiteSpace: 'nowrap' })}>
                     {item.emoji} {item.label}
                   </th>
                 ))}
-                <th rowSpan={3} style={th({ minWidth: '60px' })}>ผ่าน<br/>ทั้งหมด</th>
-                <th rowSpan={3} style={th({ minWidth: '80px' })}>หมายเหตุ</th>
+                <th rowSpan={3} style={th({ minWidth: '38px' })}>รวม<br/><span style={{ fontSize: '.62rem', fontWeight: 400, color: '#9ca3af' }}>/{TOTAL_COLS}</span></th>
+                <th rowSpan={3} style={th({ minWidth: '70px' })}>หมายเหตุ</th>
               </tr>
+
+              {/* แถว 2: dropdown score (แทน วัน1/วัน2/วัน3) */}
               <tr>
-                {CHECK_ITEMS.map(item =>
-                  [1, 2, 3].map(d => (
-                    <th key={`${item.id}-${d}`}
-                      style={th({ background: '#f1f5f9', fontSize: '.65rem', color: '#475569' })}>
-                      วัน{d}
-                    </th>
-                  ))
+                {CHECK_ITEMS.flatMap(item =>
+                  VISITS.map(v => {
+                    const ck = `${item.id}_${v}`;
+                    return (
+                      <th key={`sel-${ck}`} style={th({ padding: '2px 1px', background: '#f0f9ff' })}>
+                        <select
+                          value={colScore[ck]}
+                          onChange={e => setColScore(prev => ({ ...prev, [ck]: Number(e.target.value) }))}
+                          onClick={e => e.stopPropagation()}
+                          style={{
+                            width: '34px', fontSize: '.72rem',
+                            border: '1px solid #bfdbfe', borderRadius: '4px',
+                            padding: '1px 0', background: 'white',
+                            cursor: 'pointer', fontWeight: 700, textAlign: 'center',
+                          }}>
+                          <option value={3}>3</option>
+                          <option value={2}>2</option>
+                          <option value={1}>1</option>
+                        </select>
+                      </th>
+                    );
+                  })
                 )}
               </tr>
-              {/* แถว checkbox เลือกทั้งคอลัมน์ */}
-              <tr>
-                {CHECK_ITEMS.map(item =>
-                  [0, 1, 2].map(dayIdx => {
-                    const allChecked = classStudents.length > 0 &&
-                      classStudents.every(s => draft.students[s.id]?.[item.id]?.[dayIdx] === true);
+
+              {/* แถว 3: checkbox fill ทั้งคอลัมน์ */}
+              <tr style={{ background: '#f8fafc' }}>
+                {CHECK_ITEMS.flatMap(item =>
+                  VISITS.map(v => {
+                    const ck = `${item.id}_${v}`;
+                    const score = colScore[ck];
+                    const allHave = classStudents.length > 0 &&
+                      classStudents.every(s => {
+                        const itemVal = (draft.students[s.id] ?? emptyStudentEntry())[item.id];
+                        const obj = (itemVal && typeof itemVal === 'object' && !Array.isArray(itemVal))
+                          ? itemVal : { v1: null, v2: null, v3: null };
+                        return obj[v] === score;
+                      });
                     return (
-                      <td key={`cb-${item.id}-${dayIdx}`}
-                        onClick={() => toggleColumn(item.id, dayIdx)}
-                        title={allChecked ? 'ยกเลิกทั้งคอลัมน์' : 'เลือกทั้งคอลัมน์'}
+                      <td key={`cb-${ck}`}
+                        onClick={() => fillColumn(item.id, v)}
+                        title={`Fill ทั้งคอลัมน์ด้วยคะแนน ${score} (คลิกซ้ำ = ล้าง)`}
                         style={{
                           textAlign: 'center', cursor: 'pointer', userSelect: 'none',
-                          border: '1px solid #d1d5db', padding: '3px 2px',
-                          background: allChecked ? '#d1fae5' : '#f8fafc',
+                          border: '1px solid #d1d5db', padding: '2px',
+                          background: allHave ? '#d1fae5' : '#f8fafc',
                         }}>
                         <input
                           type="checkbox"
-                          checked={allChecked}
-                          onChange={() => toggleColumn(item.id, dayIdx)}
+                          checked={allHave}
+                          onChange={() => fillColumn(item.id, v)}
                           onClick={e => e.stopPropagation()}
                           style={{ cursor: 'pointer', width: '13px', height: '13px', accentColor: '#059669' }}
                         />
@@ -390,31 +452,60 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                 )}
               </tr>
             </thead>
+
             <tbody>
               {classStudents.map((s, idx) => {
                 const entry = draft.students[s.id] ?? emptyStudentEntry();
-                const passCount = countPass(entry);
-                const totalChecks = CHECK_ITEMS.length * DAYS_PER_WEEK;
+                const filled = countFilled(entry);
+                const allFilled = filled === TOTAL_COLS;
                 return (
                   <tr key={s.id} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
                     <td style={{ textAlign: 'center', border: '1px solid #e5e7eb', padding: '3px', color: '#6b7280' }}>{idx + 1}</td>
-                    <td style={{ border: '1px solid #e5e7eb', padding: '3px 8px', whiteSpace: 'nowrap' }}>{s.name}</td>
-                    {CHECK_ITEMS.map(item =>
-                      [0, 1, 2].map(dayIdx => (
-                        <CheckCell
-                          key={`${item.id}-${dayIdx}`}
-                          checked={entry[item.id]?.[dayIdx] ?? false}
-                          onChange={() => toggleCheck(s.id, item.id, dayIdx)}
-                        />
-                      ))
+                    <td
+                      onClick={() => toggleRow(s.id)}
+                      title="คลิกเพื่อ fill ทุกช่องด้วยคะแนน 3 (คลิกซ้ำ = ล้างทั้งแถว)"
+                      style={{
+                        border: '1px solid #e5e7eb', padding: '3px 7px',
+                        whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none',
+                        fontWeight: allFilled ? 700 : 400,
+                        color: allFilled ? '#065f46' : '#1f2937',
+                      }}>
+                      {s.name}
+                    </td>
+
+                    {CHECK_ITEMS.flatMap(item =>
+                      VISITS.map(v => {
+                        const itemVal = entry[item.id];
+                        const itemObj = (itemVal && typeof itemVal === 'object' && !Array.isArray(itemVal))
+                          ? itemVal : { v1: null, v2: null, v3: null };
+                        const sc = itemObj[v] ?? null;
+                        const style = sc != null ? SCORE_STYLE[sc] : null;
+                        return (
+                          <td
+                            key={`${item.id}-${v}`}
+                            onClick={() => cycleCell(s.id, item.id, v)}
+                            title={`${item.label} ครั้งที่ ${VISITS.indexOf(v) + 1} — คลิกเพื่อเปลี่ยนคะแนน`}
+                            style={{
+                              textAlign: 'center', cursor: 'pointer', userSelect: 'none',
+                              border: '1px solid #e5e7eb', padding: '3px 1px', minWidth: '28px',
+                              background: style?.bg ?? 'white',
+                              fontWeight: 800, fontSize: '.8rem',
+                              color: style?.color ?? '#d1d5db',
+                              transition: 'background .1s',
+                            }}>
+                            {sc != null ? sc : '·'}
+                          </td>
+                        );
+                      })
                     )}
+
                     <td style={{
                       textAlign: 'center', border: '1px solid #e5e7eb', padding: '3px',
-                      fontWeight: 800, fontSize: '.78rem',
-                      color: passCount === totalChecks ? '#065f46' : passCount > 0 ? '#92400e' : '#9ca3af',
-                      background: passCount === totalChecks ? '#d1fae5' : passCount > 0 ? '#fef3c7' : 'white',
+                      fontWeight: 700, fontSize: '.72rem',
+                      color: allFilled ? '#065f46' : filled > 0 ? '#92400e' : '#9ca3af',
+                      background: allFilled ? '#d1fae5' : filled > 0 ? '#fef3c7' : 'white',
                     }}>
-                      {passCount > 0 ? `${passCount}/${totalChecks}` : '—'}
+                      {filled > 0 ? `${filled}/${TOTAL_COLS}` : '—'}
                     </td>
                     <td style={{ border: '1px solid #e5e7eb', padding: '2px 4px' }}>
                       <input
@@ -424,7 +515,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                         placeholder="—"
                         style={{
                           border: 'none', outline: 'none', width: '100%',
-                          background: 'transparent', fontSize: '.72rem', color: '#374151',
+                          background: 'transparent', fontSize: '.7rem', color: '#374151',
                         }}
                       />
                     </td>
@@ -432,22 +523,28 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                 );
               })}
             </tbody>
-            {/* สรุปแต่ละหมวด */}
+
+            {/* สรุป: จำนวนที่กรอกแต่ละ sub-column */}
             <tfoot>
               <tr style={{ background: '#f1f5f9' }}>
-                <td colSpan={2} style={{ border: '1px solid #d1d5db', textAlign: 'center', fontWeight: 800, fontSize: '.72rem', color: '#475569', padding: '3px 6px' }}>
-                  จำนวน ✓
+                <td colSpan={2} style={{ border: '1px solid #d1d5db', textAlign: 'center', fontWeight: 800, fontSize: '.68rem', color: '#475569', padding: '3px 6px' }}>
+                  จำนวนที่ตรวจ
                 </td>
-                {CHECK_ITEMS.map(item =>
-                  [0, 1, 2].map(dayIdx => {
-                    const count = classStudents.filter(s => draft.students[s.id]?.[item.id]?.[dayIdx]).length;
+                {CHECK_ITEMS.flatMap(item =>
+                  VISITS.map(v => {
+                    const count = classStudents.filter(s => {
+                      const itemVal = (draft.students[s.id] ?? emptyStudentEntry())[item.id];
+                      const obj = (itemVal && typeof itemVal === 'object' && !Array.isArray(itemVal))
+                        ? itemVal : { v1: null, v2: null, v3: null };
+                      return obj[v] != null;
+                    }).length;
                     return (
-                      <td key={`sum-${item.id}-${dayIdx}`}
+                      <td key={`sum-${item.id}-${v}`}
                         style={{
                           border: '1px solid #d1d5db', textAlign: 'center',
-                          fontWeight: 800, fontSize: '.72rem', padding: '3px',
-                          color: count === classStudents.length ? '#065f46' : count > 0 ? '#92400e' : '#9ca3af',
-                          background: count === classStudents.length ? '#d1fae5' : count > 0 ? '#fef3c7' : 'white',
+                          fontWeight: 700, fontSize: '.68rem', padding: '3px',
+                          color: count === classStudents.length ? '#065f46'
+                            : count > 0 ? '#92400e' : '#9ca3af',
                         }}>
                         {count > 0 ? count : '—'}
                       </td>
@@ -464,49 +561,40 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
 
       {/* ── Actions ── */}
       <div style={{ display: 'flex', gap: '.6rem', marginTop: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-        <button className="btn btn-primary" onClick={handleSave}>
-          💾 บันทึก
-        </button>
-        <button className="btn btn-secondary" onClick={handlePrint}>
-          🖨️ พิมพ์แบบฟอร์ม
-        </button>
+        <button className="btn btn-primary" onClick={handleSave}>💾 บันทึก</button>
+        <button className="btn btn-secondary" onClick={handlePrint}>🖨️ พิมพ์แบบฟอร์ม</button>
         <button
           type="button" onClick={handleClear}
           style={{ padding: '.35rem .9rem', borderRadius: '8px', border: '1px solid #fca5a5', background: '#fff5f5', color: '#dc2626', fontFamily: 'inherit', fontSize: '.8rem', cursor: 'pointer' }}>
-          🗑️ ล้างข้อมูลสัปดาห์นี้
+          🗑️ ล้างข้อมูลวันนี้
         </button>
-
-        {saved && (
-          <span style={{ color: '#059669', fontWeight: 700, fontSize: '.82rem' }}>✅ บันทึกแล้ว</span>
-        )}
-
-        {/* Weekly overview — สรุปสัปดาห์ที่มีข้อมูล */}
-        <div style={{ marginLeft: 'auto', fontSize: '.72rem', color: '#6b7280' }}>
-          มีข้อมูล {Object.keys(healthCheckRecords).filter(k => k.startsWith(`${selClass}__${academicYear}__`)).length} สัปดาห์
-        </div>
+        {saved && <span style={{ color: '#059669', fontWeight: 700, fontSize: '.82rem' }}>✅ บันทึกแล้ว</span>}
       </div>
 
       {/* ── History panel ── */}
-      <WeekHistory
+      <DayHistory
         healthCheckRecords={healthCheckRecords}
         selClass={selClass}
         academicYear={academicYear}
-        currentWeekNo={weekNo}
-        onSelect={wk => handleWeekChange(wk)}
+        currentDate={selDate}
+        onSelect={d => handleDateChange(d)}
       />
     </div>
   );
 }
 
-// ── WeekHistory ───────────────────────────────────────────────────────────────
-function WeekHistory({ healthCheckRecords, selClass, academicYear, currentWeekNo, onSelect }) {
-  const weeks = useMemo(() => {
+// ── DayHistory ────────────────────────────────────────────────────────────────
+function DayHistory({ healthCheckRecords, selClass, academicYear, currentDate, onSelect }) {
+  const days = useMemo(() => {
+    const prefix = `${selClass}__${academicYear}__`;
     return Object.values(healthCheckRecords)
       .filter(r => r.className === selClass && r.academicYear === academicYear)
-      .sort((a, b) => a.weekNo - b.weekNo);
+      .map(r => r.date ?? r.id?.replace(prefix, ''))
+      .filter(Boolean)
+      .sort((a, b) => b.localeCompare(a));
   }, [healthCheckRecords, selClass, academicYear]);
 
-  if (weeks.length === 0) return null;
+  if (days.length === 0) return null;
 
   return (
     <div style={{
@@ -514,26 +602,27 @@ function WeekHistory({ healthCheckRecords, selClass, academicYear, currentWeekNo
       background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0',
     }}>
       <div style={{ fontSize: '.75rem', fontWeight: 800, color: '#475569', marginBottom: '.5rem' }}>
-        📅 ประวัติการตรวจสุขภาพ — ห้อง {selClass} ปีการศึกษา {academicYear}
+        📅 ประวัติการตรวจสุขภาพ — ห้อง {selClass} ปีการศึกษา {academicYear} ({days.length} วัน)
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.35rem' }}>
-        {weeks.map(r => (
-          <button key={r.weekNo} type="button" onClick={() => onSelect(r.weekNo)}
-            style={{
-              padding: '.25rem .65rem', borderRadius: '8px', fontFamily: 'inherit', cursor: 'pointer',
-              fontSize: '.75rem', fontWeight: r.weekNo === currentWeekNo ? 800 : 500,
-              background: r.weekNo === currentWeekNo ? '#3b82f6' : 'white',
-              color: r.weekNo === currentWeekNo ? 'white' : '#374151',
-              border: `1.5px solid ${r.weekNo === currentWeekNo ? '#3b82f6' : '#e5e7eb'}`,
-            }}>
-            สัปดาห์ {r.weekNo}
-            {r.weekDate && (
-              <span style={{ fontSize: '.65rem', opacity: .8, marginLeft: '.3rem' }}>
-                ({new Date(r.weekDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })})
+        {days.map(d => {
+          const isActive = d === currentDate;
+          return (
+            <button key={d} type="button" onClick={() => onSelect(d)}
+              style={{
+                padding: '.25rem .65rem', borderRadius: '8px', fontFamily: 'inherit', cursor: 'pointer',
+                fontSize: '.75rem', fontWeight: isActive ? 800 : 500,
+                background: isActive ? '#3b82f6' : 'white',
+                color: isActive ? 'white' : '#374151',
+                border: `1.5px solid ${isActive ? '#3b82f6' : '#e5e7eb'}`,
+              }}>
+              {new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}
+              <span style={{ fontSize: '.65rem', opacity: .75, marginLeft: '.25rem' }}>
+                ({new Date(d).toLocaleDateString('th-TH', { weekday: 'short' })})
               </span>
-            )}
-          </button>
-        ))}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -542,8 +631,9 @@ function WeekHistory({ healthCheckRecords, selClass, academicYear, currentWeekNo
 // ── Style helpers ─────────────────────────────────────────────────────────────
 function th(extra = {}) {
   return {
-    border: '1px solid #d1d5db', padding: '3px 5px',
-    background: '#f9fafb', fontWeight: 700, fontSize: '.72rem', ...extra,
+    border: '1px solid #d1d5db', padding: '4px 3px',
+    background: '#f9fafb', fontWeight: 700, fontSize: '.7rem',
+    textAlign: 'center', ...extra,
   };
 }
 const lbl = {

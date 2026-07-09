@@ -1,5 +1,49 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
+import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
+import { WHO_W_A, WHO_H_A, nearestKey, calcWHResult } from '../GrowthReferencePanel';
+
+// ── ฟังก์ชันคำนวณโภชนาการ (กรมอนามัย ±1.5SD) ────────────────────────────────
+function calcWeightAge(weight, ageYear, ageMonth, gender) {
+  const k = nearestKey(ageYear, ageMonth);
+  const ref = WHO_W_A[k]; if (!ref) return '';
+  const [mb, sb, mg, sg] = ref;
+  const [med, sd] = gender === 'ชาย' ? [mb, sb] : [mg, sg];
+  const z = (weight - med) / sd;
+  if (z < -2)   return 'น้ำหนักน้อยกว่าเกณฑ์';
+  if (z < -1.5) return 'น้ำหนักค่อนข้างน้อย';
+  if (z <= 1.5) return 'น้ำหนักตามเกณฑ์';
+  if (z <= 2)   return 'น้ำหนักค่อนข้างมาก';
+  return 'น้ำหนักมากกว่าเกณฑ์';
+}
+function calcHeightAge(height, ageYear, ageMonth, gender) {
+  const k = nearestKey(ageYear, ageMonth);
+  const ref = WHO_H_A[k]; if (!ref) return '';
+  const [mb, sb, mg, sg] = ref;
+  const [med, sd] = gender === 'ชาย' ? [mb, sb] : [mg, sg];
+  const z = (height - med) / sd;
+  if (z < -2)   return 'เตี้ย';
+  if (z < -1.5) return 'ค่อนข้างเตี้ย';
+  if (z <= 1.5) return 'ส่วนสูงตามเกณฑ์';
+  if (z <= 2)   return 'ค่อนข้างสูง';
+  return 'สูง';
+}
+function calcWeightHeight(weight, height, gender) {
+  return calcWHResult(weight, height, gender);
+}
+function autoCalcNutrition(row, gender) {
+  return {
+    weightForAge:    calcWeightAge(row.weight, row.ageYear, row.ageMonth, gender),
+    heightForAge:    calcHeightAge(row.height, row.ageYear, row.ageMonth, gender),
+    weightForHeight: calcWeightHeight(row.weight, row.height, gender),
+  };
+}
+function genderOf(student) {
+  if (student.gender) return student.gender;
+  if (student.name?.includes('ชาย')) return 'ชาย';
+  if (student.name?.includes('หญิง')) return 'หญิง';
+  return 'ชาย';
+}
 
 // ── สัญลักษณ์การบันทึก ────────────────────────────────────────────────────────
 // √  = มาเรียนปกติ
@@ -97,23 +141,16 @@ function DayDetailModal({ studentName, day, month, year, entry, onSave, onClose 
   const [local, setLocal] = useState({ ...emptyDay(), ...entry });
 
   return (
-    <div style={{
-      position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:1000,
-      display:'flex', alignItems:'center', justifyContent:'center',
-    }} onClick={onClose}>
-      <div style={{
-        background:'white', borderRadius:'16px', padding:'1.5rem',
-        width:'340px', boxShadow:'0 20px 60px rgba(0,0,0,.3)',
-      }} onClick={e => e.stopPropagation()}>
-        <div style={{ fontWeight:800, fontSize:'1rem', marginBottom:'.25rem', color:'#1e293b' }}>
-          {studentName}
-        </div>
-        <div style={{ fontSize:'.78rem', color:'#6b7280', marginBottom:'1rem' }}>
-          วันที่ {day} {THAI_MONTHS[month]} {year}
-        </div>
-
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title={studentName}
+      subtitle={`วันที่ ${day} ${THAI_MONTHS[month]} ${year}`}
+      size="sm"
+    >
+      <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
         {/* สถานะ */}
-        <div style={{ marginBottom:'.75rem' }}>
+        <div>
           <label style={lbl}>สถานะ</label>
           <div style={{ display:'flex', gap:'.35rem', flexWrap:'wrap' }}>
             {SYMBOLS.map(s => (
@@ -133,7 +170,7 @@ function DayDetailModal({ studentName, day, month, year, entry, onSave, onClose 
 
         {/* การแยกเด็ก (แสดงเฉพาะตอนป่วย C/H/D) */}
         {['C','H','D'].includes(local.v) && (
-          <div style={{ marginBottom:'.75rem' }}>
+          <div>
             <label style={lbl}>การแยกเด็กป่วย</label>
             <div style={{ display:'flex', gap:'.35rem' }}>
               {[[0,'ไม่แยก'],[1,'แยกนอนที่ห้อง'],[2,'ส่งกลับบ้าน']].map(([v,label]) => (
@@ -153,7 +190,7 @@ function DayDetailModal({ studentName, day, month, year, entry, onSave, onClose 
         )}
 
         {/* Checkboxes */}
-        <div style={{ display:'flex', gap:'1rem', marginBottom:'.75rem' }}>
+        <div style={{ display:'flex', gap:'1rem' }}>
           <label style={{ display:'flex', alignItems:'center', gap:'.4rem', cursor:'pointer', fontSize:'.8rem' }}>
             <input type="checkbox" checked={local.home}
               onChange={e => setLocal(p=>({...p,home:e.target.checked}))} />
@@ -167,7 +204,7 @@ function DayDetailModal({ studentName, day, month, year, entry, onSave, onClose 
         </div>
 
         {/* หมายเหตุ */}
-        <div style={{ marginBottom:'1rem' }}>
+        <div>
           <label style={lbl}>หมายเหตุ</label>
           <input type="text" className="input" value={local.note}
             onChange={e => setLocal(p=>({...p,note:e.target.value}))}
@@ -175,12 +212,12 @@ function DayDetailModal({ studentName, day, month, year, entry, onSave, onClose 
             style={{ fontSize:'.8rem', width:'100%' }} />
         </div>
 
-        <div style={{ display:'flex', gap:'.5rem', justifyContent:'flex-end' }}>
-          <button className="btn btn-secondary" onClick={onClose}>ยกเลิก</button>
-          <button className="btn btn-primary" onClick={() => { onSave(local); onClose(); }}>บันทึก</button>
+        <div style={{ display:'flex', gap:'.5rem' }}>
+          <ModalCancelBtn onClick={onClose} />
+          <ModalConfirmBtn onClick={() => { onSave(local); onClose(); }} label="บันทึก" />
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -190,6 +227,7 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
     students, classes, teachers, role, user,
     academicYear, schoolName, schoolLogo,
     illnessCheckRecords, setIllnessCheckRecords,
+    nutritionRecords, setNutritionRecords,
   } = useApp();
 
   const isTeacher = role === 'teacher';
@@ -203,6 +241,7 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
   const [selYear,  setSelYear]  = useState(currentThaiYear);
   const [selMonth, setSelMonth] = useState(currentMonth);
   const [saved,    setSaved]    = useState(false);
+  const [autoFillNutrition, setAutoFillNutrition] = useState(null); // { count, date }
 
   // Modal state
   const [modal, setModal] = useState(null); // { studentId, studentName, day }
@@ -306,8 +345,50 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
   }
 
   function handleSave() {
+    // 1. บันทึกคัดกรองอาการป่วย (เดิม)
     setIllnessCheckRecords(prev => ({ ...prev, [key]: draft }));
     setSaved(true);
+
+    // 2. Auto-fill โภชนาการ — เฉพาะนักเรียนที่มีน้ำหนักหรือส่วนสูงบันทึกไว้
+    const studentsWithMeasure = classStudents.filter(s => {
+      const sData = draft.students[s.id];
+      return sData && ((sData.weight ?? 0) > 0 || (sData.height ?? 0) > 0);
+    });
+    if (studentsWithMeasure.length === 0) return;
+
+    const today = new Date().toISOString().slice(0, 10);
+    const nutritionKey = `${selClass}__${academicYear}__${today}`;
+
+    setNutritionRecords(prev => {
+      const next         = { ...prev };
+      const existing     = next[nutritionKey];
+      const existingStu  = existing?.students ?? {};
+      const newStudents  = { ...existingStu };
+
+      studentsWithMeasure.forEach(s => {
+        const sData  = draft.students[s.id];
+        const exStu  = existingStu[s.id];
+        const row = {
+          ageYear:  exStu?.ageYear  ?? (typeof s.age === 'number' ? s.age : 5),
+          ageMonth: exStu?.ageMonth ?? 0,
+          weight: sData.weight ?? 0,
+          height: sData.height ?? 0,
+        };
+        newStudents[s.id] = { ...row, ...autoCalcNutrition(row, genderOf(s)) };
+      });
+
+      next[nutritionKey] = {
+        id: nutritionKey,
+        className: selClass,
+        academicYear,
+        assessmentDate: today,
+        students: newStudents,
+      };
+      return next;
+    });
+
+    setAutoFillNutrition({ count: studentsWithMeasure.length, date: today });
+    setTimeout(() => setAutoFillNutrition(null), 6000);
   }
 
   function handleClear() {
@@ -633,6 +714,31 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
           <span style={{ color:'#991b1b' }}>ป่วย {classStudents.filter(s => countSick(draft.students[s.id]?.days)>0).length} คน</span>
         </div>
       </div>
+
+      {/* ── Auto-fill Nutrition Toast ── */}
+      {autoFillNutrition && (
+        <div style={{
+          position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 9999,
+          background: 'linear-gradient(135deg,#0891b2,#06b6d4)',
+          color: 'white', borderRadius: '14px',
+          padding: '1rem 1.4rem', boxShadow: '0 8px 24px rgba(8,145,178,.35)',
+          maxWidth: '360px',
+        }}>
+          <div style={{ fontWeight: 800, fontSize: '.95rem', marginBottom: '.4rem' }}>
+            ⚖️ เติมข้อมูลโภชนาการอัตโนมัติ
+          </div>
+          <div style={{ fontSize: '.82rem', opacity: .92, marginBottom: '.4rem' }}>
+            ห้อง <strong>{selClass}</strong> · นักเรียน <strong>{autoFillNutrition.count}</strong> คน
+          </div>
+          <div style={{ fontSize: '.75rem', opacity: .85 }}>
+            🏷️ วันที่บันทึก: {autoFillNutrition.date}<br/>
+            📐 คำนวณ น้ำหนักเทียบอายุ / ส่วนสูงเทียบอายุ / ส่วนสูงเทียบน้ำหนัก อัตโนมัติ (WHO 2006)
+          </div>
+          <div style={{ fontSize: '.72rem', opacity: .75, marginTop: '.3rem', fontStyle: 'italic' }}>
+            (ตรวจสอบผลได้ที่แท็บ ⚖️ โภชนาการ)
+          </div>
+        </div>
+      )}
 
       {/* ── Month History ── */}
       <MonthHistory

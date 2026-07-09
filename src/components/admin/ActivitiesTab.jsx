@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { INDICATORS_DATA } from '../../data/indicatorsData';
+import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 
 // ── Modal เพิ่ม/แก้ไขกิจกรรม ───────────────────────────────────────────────
-function ActivityModal({ isOpen, onClose, onSave, editing, indicators, presetIndicatorId, anchorY }) {
+function ActivityModal({ isOpen, onClose, onSave, editing, indicators, presetIndicatorId }) {
   const blank = {
     indicatorId: presetIndicatorId ?? indicators[0]?.id ?? '',
     itemLabel: '',
@@ -12,7 +13,7 @@ function ActivityModal({ isOpen, onClose, onSave, editing, indicators, presetInd
   };
   const [form, setForm] = useState(() => editing ?? blank);
 
-  // จัดกลุ่มตัวบ่งชี้ตาม domain — must be before any early return (Rules of Hooks)
+  // จัดกลุ่มตัวบ่งชี้ตาม domain
   const byDomain = useMemo(() => {
     const map = {};
     indicators.forEach(ind => {
@@ -21,8 +22,6 @@ function ActivityModal({ isOpen, onClose, onSave, editing, indicators, presetInd
     });
     return map;
   }, [indicators]);
-
-  if (!isOpen) return null;
 
   const handleSave = () => {
     if (!form.no.trim() || !form.label.trim()) return alert('กรุณากรอกหมายเลขและชื่อกิจกรรม');
@@ -38,72 +37,67 @@ function ActivityModal({ isOpen, onClose, onSave, editing, indicators, presetInd
     onClose();
   };
 
-  const MODAL_H = 480; // ประมาณความสูง modal
-  const top = Math.max(16, Math.min(
-    (anchorY ?? window.innerHeight / 2) - 160,
-    window.innerHeight - MODAL_H - 16
-  ));
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 200, overflowY: 'auto', paddingTop: top + 'px', paddingBottom: '16px' }}
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={editing ? '✏️ แก้ไขกิจกรรม' : '➕ เพิ่มกิจกรรมใหม่'}
+      size="md"
     >
-      <div className="glass p-8 animate-pop" style={{ width: '100%', maxWidth: '500px', maxHeight: '90vh', overflowY: 'auto' }}>
-        <h3 className="mb-5">{editing ? '✏️ แก้ไขกิจกรรม' : '➕ เพิ่มกิจกรรมใหม่'}</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
+        <div>
+          <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>
+            ตัวบ่งชี้ที่เชื่อมโยง <span style={{ color: 'var(--danger)' }}>*</span>
+          </label>
+          <select className="input" value={form.indicatorId}
+            onChange={e => setForm({ ...form, indicatorId: e.target.value })}>
+            <option value="">— เลือกตัวบ่งชี้ —</option>
+            {Object.entries(byDomain).map(([domainId, dom]) => (
+              <optgroup key={domainId} label={`${dom.emoji} ด้าน${dom.label}`}>
+                {dom.items.map(ind => (
+                  <option key={ind.id} value={ind.id}>
+                    [{ind.indicatorCode}] {ind.label.length > 50 ? ind.label.slice(0, 50) + '…' : ind.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>
+            รายการพิจารณา (ไม่บังคับ)
+          </label>
+          <input className="input" placeholder="เช่น รายการพิจารณาที่ 3.1.1"
+            value={form.itemLabel}
+            onChange={e => setForm({ ...form, itemLabel: e.target.value })} />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '.75rem' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>
-              ตัวบ่งชี้ที่เชื่อมโยง <span style={{ color: 'var(--danger)' }}>*</span>
+              หมายเลข <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
-            <select className="input" value={form.indicatorId}
-              onChange={e => setForm({ ...form, indicatorId: e.target.value })}>
-              <option value="">— เลือกตัวบ่งชี้ —</option>
-              {Object.entries(byDomain).map(([domainId, dom]) => (
-                <optgroup key={domainId} label={`${dom.emoji} ด้าน${dom.label}`}>
-                  {dom.items.map(ind => (
-                    <option key={ind.id} value={ind.id}>
-                      [{ind.indicatorCode}] {ind.label.length > 50 ? ind.label.slice(0, 50) + '…' : ind.label}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+            <input className="input" placeholder="เช่น 8" value={form.no}
+              onChange={e => setForm({ ...form, no: e.target.value })} />
           </div>
-
           <div>
             <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>
-              รายการพิจารณา (ไม่บังคับ)
+              ชื่อกิจกรรม <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
-            <input className="input" placeholder="เช่น รายการพิจารณาที่ 3.1.1"
-              value={form.itemLabel}
-              onChange={e => setForm({ ...form, itemLabel: e.target.value })} />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: '.75rem' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>
-                หมายเลข <span style={{ color: 'var(--danger)' }}>*</span>
-              </label>
-              <input className="input" placeholder="เช่น 8" value={form.no}
-                onChange={e => setForm({ ...form, no: e.target.value })} />
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>
-                ชื่อกิจกรรม <span style={{ color: 'var(--danger)' }}>*</span>
-              </label>
-              <input className="input" placeholder="เช่น ยืนขาเดียว 3 วินาที (GM)"
-                value={form.label}
-                onChange={e => setForm({ ...form, label: e.target.value })} />
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '.75rem', marginTop: '.5rem' }}>
-            <button type="button" className="btn flex-1" onClick={onClose}>ยกเลิก</button>
-            <button type="button" className="btn btn-primary flex-1" onClick={handleSave}>💾 บันทึก</button>
+            <input className="input" placeholder="เช่น ยืนขาเดียว 3 วินาที (GM)"
+              value={form.label}
+              onChange={e => setForm({ ...form, label: e.target.value })} />
           </div>
         </div>
+
+        <div style={{ display: 'flex', gap: '.75rem', marginTop: '.5rem' }}>
+          <ModalCancelBtn onClick={onClose} />
+          <ModalConfirmBtn onClick={handleSave} label="💾 บันทึก" />
+        </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
@@ -118,10 +112,8 @@ export default function ActivitiesTab() {
   const [isModal,         setIsModal]         = useState(false);
   const [editing,         setEditing]         = useState(null);
   const [search,          setSearch]          = useState('');
-  const [anchorY,         setAnchorY]         = useState(null);
 
-  const openModal = (e, act = null, indId = null) => {
-    setAnchorY(e.clientY);
+  const openModal = (act = null, indId = null) => {
     setEditing(act);
     if (indId) setActiveIndicator(indId);
     setIsModal(true);
@@ -174,7 +166,7 @@ export default function ActivitiesTab() {
         <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <input className="input" style={{ maxWidth: '180px' }} placeholder="🔍 ค้นหา..."
             value={search} onChange={e => setSearch(e.target.value)} />
-          <button className="btn btn-primary" onClick={e => openModal(e)}>
+          <button className="btn btn-primary" onClick={() => openModal()}>
             + เพิ่มกิจกรรม
           </button>
         </div>
@@ -267,7 +259,7 @@ export default function ActivitiesTab() {
                   {ind?.label ?? indId}
                 </span>
                 <button type="button"
-                  onClick={e => openModal(e, null, indId)}
+                  onClick={() => openModal(null, indId)}
                   style={{
                     marginLeft: 'auto', padding: '.2rem .6rem', border: 'none',
                     borderRadius: '6px', background: domain?.color ?? '#7c3aed',
@@ -302,7 +294,7 @@ export default function ActivitiesTab() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '.4rem', flexShrink: 0 }}>
-                      <button className="btn btn-sm" onClick={e => openModal(e, act)}>แก้ไข</button>
+                      <button className="btn btn-sm" onClick={() => openModal(act)}>แก้ไข</button>
                       <button className="btn btn-sm" style={{ color: 'var(--danger)' }}
                         onClick={() => handleDelete(act.id)}>ลบ</button>
                     </div>
@@ -321,12 +313,11 @@ export default function ActivitiesTab() {
 
       <ActivityModal
         isOpen={isModal}
-        onClose={() => { setIsModal(false); setEditing(null); setAnchorY(null); }}
+        onClose={() => { setIsModal(false); setEditing(null); }}
         onSave={handleSave}
         editing={editing}
         indicators={indicators}
         presetIndicatorId={activeIndicator !== 'all' ? activeIndicator : null}
-        anchorY={anchorY}
       />
     </div>
   );

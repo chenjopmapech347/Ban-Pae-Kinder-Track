@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { getMondayOf, getWeekLabel, genUniqueKey } from '../../utils/helpers';
+import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 
 // ── พิมพ์แบบบันทึก ───────────────────────────────────────────────────────────
 function printCornerSheet(rows, CORNERS, weekNo, weekDate, className, schoolName, teacher, academicYear, schoolLogo) {
@@ -77,20 +78,12 @@ function ManageDefsModal({ defs, onSave, onClose }) {
   function moveUp(i)   { if (i === 0) return; setList(prev => { const a = [...prev]; [a[i-1], a[i]] = [a[i], a[i-1]]; return a; }); }
   function moveDown(i) { if (i === list.length-1) return; setList(prev => { const a = [...prev]; [a[i], a[i+1]] = [a[i+1], a[i]]; return a; }); }
 
-  const overlay = { position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' };
-  const modal   = { background:'white', borderRadius:'18px', width:'100%', maxWidth:'460px', maxHeight:'85vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,.25)' };
-  const hdr     = { background:'linear-gradient(135deg,#0284c7,#38bdf8)', color:'white', padding:'1rem 1.25rem', borderRadius:'18px 18px 0 0', display:'flex', alignItems:'center', justifyContent:'space-between' };
-  const row     = { display:'flex', alignItems:'center', gap:'.5rem', padding:'.5rem .75rem', borderRadius:'10px', background:'#f0f9ff', border:'1px solid #e0f2fe', marginBottom:'.4rem' };
-  const btn     = (bg='#e0f2fe', color='#0369a1') => ({ background:bg, color, border:'none', borderRadius:'7px', padding:'.28rem .55rem', cursor:'pointer', fontFamily:'inherit', fontWeight:700, fontSize:'.78rem' });
+  const row = { display:'flex', alignItems:'center', gap:'.5rem', padding:'.5rem .75rem', borderRadius:'10px', background:'#f0f9ff', border:'1px solid #e0f2fe', marginBottom:'.4rem' };
+  const btn = (bg='#e0f2fe', color='#0369a1') => ({ background:bg, color, border:'none', borderRadius:'7px', padding:'.28rem .55rem', cursor:'pointer', fontFamily:'inherit', fontWeight:700, fontSize:'.78rem' });
 
   return (
-    <div style={overlay} onClick={e => e.target === e.currentTarget && onClose()}>
-      <div style={modal}>
-        <div style={hdr}>
-          <span style={{ fontWeight:800, fontSize:'1rem' }}>⚙️ จัดการมุมแหล่งเรียนรู้</span>
-          <button onClick={onClose} style={{ background:'none', border:'none', color:'white', fontSize:'1.3rem', cursor:'pointer', lineHeight:1 }}>×</button>
-        </div>
-        <div style={{ padding:'1rem 1.25rem' }}>
+    <Modal isOpen={true} onClose={onClose} title="⚙️ จัดการมุมแหล่งเรียนรู้" size="md">
+        <div>
 
           {/* รายการปัจจุบัน */}
           <div style={{ marginBottom:'.75rem', fontWeight:700, fontSize:'.85rem', color:'#0369a1' }}>
@@ -139,18 +132,11 @@ function ManageDefsModal({ defs, onSave, onClose }) {
 
           {/* ปุ่มบันทึก */}
           <div style={{ display:'flex', gap:'.5rem', marginTop:'1.25rem', justifyContent:'flex-end' }}>
-            <button onClick={onClose}
-              style={{ padding:'.45rem 1rem', borderRadius:'9px', border:'1.5px solid #e5e7eb', background:'white', fontFamily:'inherit', fontWeight:600, cursor:'pointer' }}>
-              ยกเลิก
-            </button>
-            <button onClick={() => { onSave(list); onClose(); }}
-              style={{ padding:'.45rem 1.25rem', borderRadius:'9px', background:'linear-gradient(135deg,#0284c7,#38bdf8)', color:'white', border:'none', fontFamily:'inherit', fontWeight:700, cursor:'pointer' }}>
-              💾 บันทึกการเปลี่ยนแปลง
-            </button>
+            <ModalCancelBtn onClick={onClose} />
+            <ModalConfirmBtn onClick={() => { onSave(list); onClose(); }} label="💾 บันทึกการเปลี่ยนแปลง" />
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
 

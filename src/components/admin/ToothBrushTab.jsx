@@ -46,44 +46,13 @@ function countH(days) {
   return Object.values(days ?? {}).filter(v => v === 'H').length;
 }
 
-// เติม H อัตโนมัติสำหรับวันใหม่ที่ยังไม่มีข้อมูล
-function patchCurrentMonth(rec, yr, mo) {
-  const todayJs = new Date();
-  const todayThaiYear = todayJs.getFullYear() + 543;
-  const todayMonth = todayJs.getMonth() + 1;
-  const todayDay = todayJs.getDate();
-  if (rec.year !== todayThaiYear || rec.month !== todayMonth) return rec;
-  const patched = { ...rec, students: { ...rec.students } };
-  Object.entries(rec.students ?? {}).forEach(([sid, sData]) => {
-    const days = { ...(sData.days ?? {}) };
-    let changed = false;
-    for (let d = 1; d <= todayDay; d++) {
-      if (!isWeekend(yr, mo, d) && !(d in days)) { days[d] = 'H'; changed = true; }
-    }
-    if (changed) patched.students[sid] = { ...sData, days };
-  });
-  return patched;
-}
+// ไม่ patch อัตโนมัติ — ครูใช้ checkbox เลือกเอง
+function patchCurrentMonth(rec) { return rec; }
 
-// สร้าง record เริ่มต้น: H ทุกวันธรรมดา (ไม่ pre-fill วันในอนาคต)
+// สร้าง record เริ่มต้น: ตารางว่าง (ครูกด checkbox เพื่อ fill)
 function makeDefaultRecord(k, cls, ay, yr, mo, sd, studs) {
-  const todayJs = new Date();
-  const todayThaiYear = todayJs.getFullYear() + 543;
-  const todayMonth = todayJs.getMonth() + 1;
-  const todayDay = todayJs.getDate();
-  const isCurrentMonth = yr === todayThaiYear && mo === todayMonth;
-
-  const nDays = daysInMonth(yr, mo);
   const studsData = {};
-  studs.forEach(s => {
-    const days = {};
-    for (let d = 1; d <= nDays; d++) {
-      if (isWeekend(yr, mo, d)) continue;
-      if (isCurrentMonth && d > todayDay) continue;
-      days[d] = 'H';
-    }
-    studsData[s.id] = { days };
-  });
+  studs.forEach(s => { studsData[s.id] = { days: {} }; });
   return { id: k, className: cls, academicYear: ay, year: yr, month: mo, schoolDays: sd, students: studsData };
 }
 
@@ -164,14 +133,17 @@ export default function ToothBrushTab({ teacherClassFilter = null }) {
     });
   }
 
-  // กรอกทุกคนในวันนั้นเป็น H (ทั้งห้อง)
-  function markAllH(day) {
+  // toggle H ทั้งคอลัมน์ — checked → H, unchecked → ว่าง
+  function toggleAllH(day) {
+    if (isWeekend(selYear, selMonth, day)) return;
+    const allH = classStudents.length > 0 &&
+      classStudents.every(s => draft.students[s.id]?.days?.[day] === 'H');
     setSaved(false);
     setDraft(prev => {
       const updated = { ...prev.students };
       classStudents.forEach(s => {
         const sData = updated[s.id] ?? { days: {} };
-        updated[s.id] = { ...sData, days: { ...(sData.days ?? {}), [day]: 'H' } };
+        updated[s.id] = { ...sData, days: { ...(sData.days ?? {}), [day]: allH ? '' : 'H' } };
       });
       return { ...prev, students: updated };
     });
@@ -348,7 +320,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
             {sym} {label}
           </span>
         ))}
-        <span style={{ color:'#6b7280' }}>คลิก = วนสถานะ · ดับเบิลคลิกหัวคอลัมน์ = H ทั้งห้อง</span>
+        <span style={{ color:'#6b7280' }}>คลิก = วนสถานะ · ☑️ ช่องใต้วันที่ = H/ว่าง ทั้งห้อง</span>
       </div>
 
       {/* ── Table ── */}
@@ -360,25 +332,21 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
             <thead>
               {/* Row 1: วันที่ */}
               <tr>
-                <th rowSpan={2} style={th({ minWidth:'32px', background:'#fef9c3', color:'#713f12' })}>เลขที่</th>
-                <th rowSpan={2} style={th({ minWidth:'110px', textAlign:'left', padding:'2px 6px', background:'#fef9c3', color:'#713f12' })}>ชื่อ-นามสกุล</th>
+                <th rowSpan={3} style={th({ minWidth:'32px', background:'#fef9c3', color:'#713f12' })}>เลขที่</th>
+                <th rowSpan={3} style={th({ minWidth:'110px', textAlign:'left', padding:'2px 6px', background:'#fef9c3', color:'#713f12' })}>ชื่อ-นามสกุล</th>
                 {dayArr.map(d => {
                   const wknd = isWeekend(selYear, selMonth, d);
                   return (
-                    <th key={d}
-                      onDoubleClick={() => !wknd && markAllH(d)}
-                      title={wknd ? '' : 'ดับเบิลคลิกเพื่อ H ทุกคน'}
-                      style={{
-                        ...th({ minWidth:'22px', maxWidth:'26px', fontSize:'.65rem' }),
-                        background: wknd ? '#e5e7eb' : '#fef9c3',
-                        color: wknd ? '#9ca3af' : '#92400e',
-                        cursor: wknd ? 'default' : 'pointer',
-                      }}>
+                    <th key={d} style={{
+                      ...th({ minWidth:'22px', maxWidth:'26px', fontSize:'.65rem' }),
+                      background: wknd ? '#e5e7eb' : '#fef9c3',
+                      color: wknd ? '#9ca3af' : '#92400e',
+                    }}>
                       {d}
                     </th>
                   );
                 })}
-                <th rowSpan={2} style={th({ minWidth:'32px', background:'#fef08a', color:'#713f12', fontWeight:800 })}>รวม<br/>เวลา</th>
+                <th rowSpan={3} style={th({ minWidth:'32px', background:'#fef08a', color:'#713f12', fontWeight:800 })}>รวม<br/>เวลา</th>
               </tr>
               {/* Row 2: วันในสัปดาห์ */}
               <tr>
@@ -393,6 +361,35 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                     }}>
                       {DOW_SHORT[dow]}
                     </th>
+                  );
+                })}
+              </tr>
+              {/* Row 3: Checkbox — คลิก = H ทั้งคอลัมน์ */}
+              <tr>
+                {dayArr.map(d => {
+                  const wknd = isWeekend(selYear, selMonth, d);
+                  if (wknd) return (
+                    <td key={d} style={{ border:'1px solid #e5e7eb', background:'#e5e7eb', padding:'1px' }} />
+                  );
+                  const allH = classStudents.length > 0 &&
+                    classStudents.every(s => draft.students[s.id]?.days?.[d] === 'H');
+                  return (
+                    <td key={d}
+                      onClick={() => toggleAllH(d)}
+                      title={allH ? 'ยกเลิก H ทั้งคอลัมน์' : 'H ทุกคน'}
+                      style={{
+                        textAlign:'center', cursor:'pointer', padding:'2px',
+                        border:'1px solid #d1d5db',
+                        background: allH ? '#fef9c3' : '#f9fafb',
+                      }}>
+                      <input
+                        type="checkbox"
+                        checked={allH}
+                        onChange={() => toggleAllH(d)}
+                        onClick={e => e.stopPropagation()}
+                        style={{ cursor:'pointer', width:'11px', height:'11px', accentColor:'#d97706' }}
+                      />
+                    </td>
                   );
                 })}
               </tr>

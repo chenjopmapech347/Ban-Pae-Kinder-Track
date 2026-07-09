@@ -1,12 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { version as APP_VERSION } from '../../package.json';
-
-// ─── Staff tabs ────────────────────────────────────────────────────────────────
-const STAFF_TABS = [
-  { id: 'teacher', label: 'ครู',     icon: '👨‍🏫', color: '#7c3aed' },
-  { id: 'admin',   label: 'แอดมิน', icon: '🛡️', color: '#f43f5e' },
-];
 
 // ─── Live Feed Ticker ─────────────────────────────────────────────────────────
 function LiveTicker({ items }) {
@@ -102,37 +96,96 @@ function ClassCard({ cls, studentCount, topics }) {
 }
 
 // ─── Login Modal ──────────────────────────────────────────────────────────────
+// Role badge config
+const ROLE_BADGE = {
+  admin:   { icon: '🛡️', label: 'แอดมิน',    bg: '#fee2e2', color: '#dc2626', btnBg: 'linear-gradient(135deg,#f43f5e,#fb7185)', shadow: '#f43f5e40' },
+  teacher: { icon: '👨‍🏫', label: 'ครู',        bg: '#ede9fe', color: '#7c3aed', btnBg: 'linear-gradient(135deg,#7c3aed,#8b5cf6)', shadow: '#7c3aed40' },
+  parent:  { icon: '👨‍👩‍👧', label: 'ผู้ปกครอง', bg: '#d1fae5', color: '#059669', btnBg: 'linear-gradient(135deg,#f59e0b,#fbbf24)', shadow: '#f59e0b40' },
+};
+
 function LoginModal({ onClose }) {
   const { login, students, teachers, authConfig, isFirebaseConfigured } = useApp();
 
-  const [roleTab, setRoleTab]         = useState('teacher');
-  const [username, setUsername]       = useState('');
-  const [pin, setPin]                 = useState('');
-  const [studentCode, setStudentCode] = useState('');
-  const [mode, setMode]               = useState('staff');
-  const [error, setError]             = useState('');
-  const [loading, setLoading]         = useState(false);
+  const [username, setUsername] = useState('');
+  const [pin, setPin]           = useState('');
+  const [error, setError]       = useState('');
+  const [loading, setLoading]   = useState(false);
 
-  const foundStudent = students.find(s => {
-    const q = studentCode.trim();
-    return (s.code && s.code === q) || (s.parentPin && s.parentPin === q) || String(s.id) === q;
-  }) ?? null;
+  // ── Live role detection ──────────────────────────────────────────────────────
+  const detectedRole = useMemo(() => {
+    const u = username.trim().toLowerCase();
+    if (!u) return null;
+    // Admin: username must be 'admin'
+    if (u === 'admin') return 'admin';
+    // Teacher: check username / email / name fields
+    const isTeacher = teachers.some(t =>
+      t.username?.trim().toLowerCase() === u ||
+      t.email?.trim().toLowerCase() === u ||
+      t.name?.trim() === username.trim()
+    );
+    if (isTeacher) return 'teacher';
+    // Parent: student code / id / parentPin
+    const q = username.trim();
+    const isParent = students.some(s =>
+      (s.code && s.code === q) || String(s.id) === q || (s.parentPin && s.parentPin === q)
+    );
+    if (isParent) return 'parent';
+    return null;
+  }, [username, teachers, students]);
 
-  const activeTab = STAFF_TABS.find(t => t.id === roleTab) ?? STAFF_TABS[0];
+  // Teacher name hint
+  const detectedTeacher = detectedRole === 'teacher'
+    ? teachers.find(t => {
+        const u = username.trim().toLowerCase();
+        return t.username?.trim().toLowerCase() === u ||
+          t.email?.trim().toLowerCase() === u ||
+          t.name?.trim() === username.trim();
+      })
+    : null;
 
+  // Student card for parent
+  const foundStudent = detectedRole === 'parent'
+    ? (students.find(s => {
+        const q = username.trim();
+        return (s.code && s.code === q) || String(s.id) === q || (s.parentPin && s.parentPin === q);
+      }) ?? null)
+    : null;
+
+  const badge = detectedRole ? ROLE_BADGE[detectedRole] : null;
+
+  // ── Submit ───────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    let result;
-    if (mode === 'parent') {
-      if (!foundStudent) { setError('ไม่พบนักเรียนที่มีรหัสนี้'); setLoading(false); return; }
-      result = login('parent', { pin, studentId: foundStudent.id });
-    } else {
-      result = login(roleTab, { username, pin });
+    const u = username.trim();
+
+    // Try admin
+    if (u.toLowerCase() === 'admin') {
+      const result = login('admin', { username: 'admin', pin });
+      setLoading(false);
+      if (!result.ok) setError(result.message);
+      return;
     }
+
+    // Try teacher
+    const teacherResult = login('teacher', { username: u, pin });
+    if (teacherResult.ok) { setLoading(false); return; }
+
+    // Try parent (username = student code / id)
+    const student = students.find(s =>
+      (s.code && s.code === u) || String(s.id) === u || (s.parentPin && s.parentPin === u)
+    );
+    if (student) {
+      const parentResult = login('parent', { studentId: student.id, pin });
+      setLoading(false);
+      if (!parentResult.ok) setError('รหัส PIN ไม่ถูกต้อง');
+      return;
+    }
+
+    // Nothing matched
     setLoading(false);
-    if (!result.ok) setError(result.message);
+    setError('ไม่พบบัญชีผู้ใช้นี้ กรุณาตรวจสอบ username หรือรหัสนักเรียน');
   };
 
   return (
@@ -160,7 +213,7 @@ function LoginModal({ onClose }) {
           <div style={{ marginBottom: '.75rem' }}>
             <img src="/logo.png" alt="โลโก้" style={{
               width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover',
-              boxShadow: '0 4px 16px rgba(124,58,237,.25)'
+              boxShadow: '0 4px 16px rgba(124,58,237,.25)',
             }} onError={e => { e.target.style.display = 'none'; }} />
           </div>
           <h1 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#1e1b4b', marginBottom: '.2rem' }}>
@@ -178,127 +231,97 @@ function LoginModal({ onClose }) {
           )}
         </div>
 
-        {/* Mode switch */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.5rem',
-          marginBottom: '1.25rem', background: '#f5f3ff', padding: '.4rem', borderRadius: '16px',
-        }}>
-          {[{ id: 'staff', label: '🏫 ครู / แอดมิน' }, { id: 'parent', label: '👨‍👩‍👧 ผู้ปกครอง' }].map(m => (
-            <button key={m.id} type="button"
-              onClick={() => { setMode(m.id); setError(''); setPin(''); setUsername(''); }}
-              style={{
-                padding: '.6rem', borderRadius: '12px', border: 'none',
-                fontFamily: 'inherit', fontWeight: 700, fontSize: '.82rem', cursor: 'pointer',
-                transition: 'all .2s',
-                background: mode === m.id ? 'white' : 'transparent',
-                color: mode === m.id ? '#7c3aed' : 'var(--text-muted)',
-                boxShadow: mode === m.id ? '0 2px 8px rgba(0,0,0,.1)' : 'none',
-              }}>{m.label}</button>
-          ))}
-        </div>
-
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {mode === 'staff' && (
-            <>
-              <div style={{
-                display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '.5rem',
-                background: '#faf9ff', padding: '.35rem', borderRadius: '12px',
-              }}>
-                {STAFF_TABS.map(tab => (
-                  <button key={tab.id} type="button"
-                    onClick={() => { setRoleTab(tab.id); setError(''); }}
-                    style={{
-                      padding: '.5rem', borderRadius: '10px', border: 'none',
-                      fontFamily: 'inherit', fontWeight: 700, fontSize: '.82rem', cursor: 'pointer',
-                      transition: 'all .2s',
-                      background: roleTab === tab.id ? 'white' : 'transparent',
-                      color: roleTab === tab.id ? tab.color : 'var(--text-muted)',
-                      boxShadow: roleTab === tab.id ? '0 2px 6px rgba(0,0,0,.1)' : 'none',
-                    }}>{tab.icon} {tab.label}</button>
-                ))}
-              </div>
+
+          {/* Username */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 700 }}>
+              👤 ชื่อผู้ใช้ / รหัสประจำตัว
+            </label>
+            <input className="input" type="text" value={username}
+              onChange={e => { setUsername(e.target.value); setError(''); }}
+              placeholder="admin · ชื่อครู · หรือรหัสนักเรียน"
+              required autoComplete="username" autoFocus />
+          </div>
+
+          {/* Role detection badge — แสดงทันทีที่พิมพ์ username ถูก */}
+          {badge && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '.75rem',
+              background: badge.bg, border: `1.5px solid ${badge.color}30`,
+              borderRadius: '14px', padding: '.7rem 1rem',
+              animation: 'fadeIn .2s ease',
+            }}>
+              <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>{badge.icon}</span>
               <div>
-                <label style={{ display: 'block', marginBottom: '.35rem' }}>👤 ชื่อผู้ใช้</label>
-                <input className="input" type="text" value={username}
-                  onChange={e => setUsername(e.target.value)}
-                  placeholder={roleTab === 'admin' ? 'admin' : 'เช่น chalada, somchai'}
-                  required autoComplete="username" />
+                <div style={{ fontWeight: 800, fontSize: '.82rem', color: badge.color }}>
+                  พบบัญชี: {badge.label}
+                </div>
+                {detectedTeacher && (
+                  <div style={{ fontSize: '.72rem', color: badge.color, opacity: .75, marginTop: '.1rem' }}>
+                    {detectedTeacher.name}
+                  </div>
+                )}
+                {detectedRole === 'parent' && foundStudent && (
+                  <div style={{ fontSize: '.72rem', color: badge.color, opacity: .75, marginTop: '.1rem' }}>
+                    {foundStudent.name} · ชั้น {foundStudent.className}
+                  </div>
+                )}
               </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '.35rem' }}>🔑 รหัสผ่าน (PIN)</label>
-                <input className="input" type="password" value={pin}
-                  onChange={e => setPin(e.target.value)}
-                  placeholder={roleTab === 'admin' ? 'รหัสแอดมิน' : 'เช่น kru01, kru02'}
-                  required style={{ fontSize: '1.1rem', letterSpacing: '.15em' }} />
-              </div>
-            </>
+            </div>
           )}
 
-          {mode === 'parent' && (
-            <>
+          {/* Parent: student card */}
+          {detectedRole === 'parent' && foundStudent && (
+            <div style={{
+              borderRadius: '14px', padding: '.85rem 1rem',
+              background: '#d1fae5', border: '1.5px solid #6ee7b7',
+              display: 'flex', alignItems: 'center', gap: '.75rem',
+            }}>
+              <span style={{ fontSize: '1.6rem', flexShrink: 0 }}>
+                {foundStudent.gender === 'ชาย' ? '👦' : '👧'}
+              </span>
               <div>
-                <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 700 }}>
-                  🔢 รหัสประจำตัวบุตรหลาน
-                </label>
-                <input className="input" type="text" inputMode="numeric" value={studentCode}
-                  onChange={e => { setStudentCode(e.target.value); setError(''); }}
-                  placeholder="เช่น 1420" autoComplete="off"
-                  style={{ fontSize: '1.15rem', letterSpacing: '.1em', fontWeight: 700 }} />
+                <div style={{ fontWeight: 800, fontSize: '.95rem', color: '#065f46' }}>{foundStudent.name}</div>
+                <div style={{ fontSize: '.75rem', color: '#059669', marginTop: '.1rem' }}>
+                  ชั้น {foundStudent.className} · รหัส {foundStudent.code}
+                </div>
               </div>
-              {studentCode.trim() !== '' && (
-                <div style={{
-                  borderRadius: '14px', padding: '.85rem 1rem',
-                  background: foundStudent ? '#d1fae5' : '#fee2e2',
-                  border: `1.5px solid ${foundStudent ? '#6ee7b7' : '#fca5a5'}`,
-                  display: 'flex', alignItems: 'center', gap: '.75rem',
-                }}>
-                  <span style={{ fontSize: '1.6rem', flexShrink: 0 }}>
-                    {foundStudent ? (foundStudent.gender === 'ชาย' ? '👦' : '👧') : '❓'}
-                  </span>
-                  <div>
-                    {foundStudent ? (
-                      <>
-                        <div style={{ fontWeight: 800, fontSize: '.95rem', color: '#065f46' }}>{foundStudent.name}</div>
-                        <div style={{ fontSize: '.75rem', color: '#059669', marginTop: '.1rem' }}>
-                          ชั้น {foundStudent.className} · รหัส {foundStudent.code}
-                        </div>
-                      </>
-                    ) : (
-                      <div style={{ fontWeight: 700, color: '#991b1b', fontSize: '.88rem' }}>ไม่พบนักเรียนที่มีรหัสนี้</div>
-                    )}
-                  </div>
-                </div>
-              )}
-              {foundStudent && (
-                <div>
-                  <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 700 }}>🔑 รหัส PIN ผู้ปกครอง</label>
-                  <input className="input" type="password" value={pin}
-                    onChange={e => setPin(e.target.value)}
-                    placeholder="กรอก PIN" required autoFocus
-                    style={{ fontSize: '1.25rem', letterSpacing: '.25em' }} />
-                  <div className="text-xs text-muted mt-2">
-                    💡 PIN คือรหัสประจำตัวนักเรียน ถ้าไม่ทราบให้ติดต่อครูประจำชั้น
-                  </div>
-                </div>
-              )}
-            </>
+            </div>
           )}
+
+          {/* PIN */}
+          <div>
+            <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 700 }}>
+              🔑 รหัสผ่าน (PIN)
+            </label>
+            <input className="input" type="password" value={pin}
+              onChange={e => setPin(e.target.value)}
+              placeholder={
+                detectedRole === 'admin'   ? 'รหัสแอดมิน' :
+                detectedRole === 'parent'  ? 'PIN ผู้ปกครอง' :
+                detectedRole === 'teacher' ? 'เช่น kru01, kru02' :
+                'รหัสผ่าน / PIN'
+              }
+              required style={{ fontSize: '1.1rem', letterSpacing: '.15em' }} />
+            {detectedRole === 'parent' && (
+              <div className="text-xs text-muted mt-2">
+                💡 PIN คือรหัสประจำตัวนักเรียน ถ้าไม่ทราบให้ติดต่อครูประจำชั้น
+              </div>
+            )}
+          </div>
 
           {error && <div className="alert alert-error animate-slide">❌ {error}</div>}
 
-          {(mode !== 'parent' || foundStudent) && (
-            <button type="submit" className="btn btn-lg w-full" disabled={loading}
-              style={{
-                background: mode === 'parent'
-                  ? 'linear-gradient(135deg,#f59e0b,#fbbf24)'
-                  : `linear-gradient(135deg,${activeTab.color},${activeTab.color}cc)`,
-                color: 'white',
-                boxShadow: `0 6px 20px ${mode === 'parent' ? '#f59e0b' : activeTab.color}40`,
-                marginTop: '.25rem',
-              }}>
-              {loading ? '⏳ กำลังเข้าสู่ระบบ...' : '🚀 เข้าสู่ระบบ'}
-            </button>
-          )}
+          <button type="submit" className="btn btn-lg w-full" disabled={loading}
+            style={{
+              background: badge?.btnBg ?? 'linear-gradient(135deg,#7c3aed,#8b5cf6)',
+              color: 'white',
+              boxShadow: `0 6px 20px ${badge?.shadow ?? '#7c3aed40'}`,
+              marginTop: '.25rem',
+            }}>
+            {loading ? '⏳ กำลังเข้าสู่ระบบ...' : '🚀 เข้าสู่ระบบ'}
+          </button>
         </form>
 
         {/* PIN hint */}
@@ -462,8 +485,8 @@ const GUIDE_ROLES = [
       {
         icon: '🔑', title: 'การเข้าสู่ระบบ',
         items: [
-          'เลือก "ผู้ปกครอง" ที่หน้า Login',
-          'Username: รหัสประจำตัวนักเรียน (เช่น 68001)',
+          'ใส่รหัสประจำตัวนักเรียนในช่อง "ชื่อผู้ใช้" (เช่น 68001)',
+          'ระบบจะแสดงชื่อบุตรหลานให้ยืนยันโดยอัตโนมัติ',
           'รหัสผ่าน (PIN): รหัสประจำตัวนักเรียน (ตัวเดียวกัน)',
           'กรณีจำรหัสไม่ได้ — ติดต่อครูประจำชั้น',
         ],

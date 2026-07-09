@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { STORAGE_KEYS, clearAllStorage } from '../constants/storageKeys';
 import { DEFAULT_AUTH_CONFIG, TEST_ACCOUNTS } from '../constants/auth';
@@ -14,6 +14,7 @@ import {
 } from '../data/initialData';
 import { INITIAL_INDICATORS, INITIAL_ACTIVITIES } from '../data/flatIndicators';
 import { mergeDayRecords, recomputeAttendanceFromDailyRecords } from '../utils/attendance';
+import { getMondayOf } from '../utils/helpers';
 import { buildAppSnapshot, validateSnapshot } from '../utils/appSnapshot';
 import { pullSnapshotFromCloud, pushSnapshotToCloud } from '../lib/cloudSync';
 import { isSupabaseConfigured } from '../lib/supabase';
@@ -76,6 +77,7 @@ export function AppProvider({ children }) {
   const [indicators, setIndicators] = useLocalStorage(STORAGE_KEYS.indicators, INITIAL_INDICATORS);
   const [activities, setActivities] = useLocalStorage(STORAGE_KEYS.activities, INITIAL_ACTIVITIES);
   const [schoolTerms, setSchoolTerms] = useLocalStorage(STORAGE_KEYS.schoolTerms, {});
+  const [currentTerm, setCurrentTerm] = useLocalStorage(STORAGE_KEYS.currentTerm, '1');
   const [aiApiKey, setAiApiKey] = useLocalStorage(STORAGE_KEYS.aiApiKey, '');
   const [activityLogs, setActivityLogs] = useLocalStorage(STORAGE_KEYS.activityLogs, []);
   const [pickupRecords, setPickupRecords] = useLocalStorage(STORAGE_KEYS.pickupRecords, {});
@@ -606,13 +608,17 @@ export function AppProvider({ children }) {
       const month    = moNum;
       const day      = dayNum;
 
-      // รวบรวม studentId ที่มาเรียน จัดกลุ่มตามห้อง
-      const byClass = {};
+      // รวบรวม studentId จัดกลุ่มตามห้อง แยกมา vs ขาด/ลา/ป่วย
+      const byClass = {};        // นักเรียนที่ "มา"
+      const byClassAbsent = {}; // นักเรียนที่ "ขาด" / "ลา" / "ป่วย"
       Object.entries(recordsByStudentId).forEach(([id, rec]) => {
-        if (rec.attendance !== 'มา') return;
         const stu = students.find(s => String(s.id) === String(id));
         if (!stu) return;
-        (byClass[stu.className] ??= []).push(String(id));
+        if (rec.attendance === 'มา') {
+          (byClass[stu.className] ??= []).push(String(id));
+        } else if (['ขาด', 'ลา', 'ป่วย'].includes(rec.attendance)) {
+          (byClassAbsent[stu.className] ??= []).push(String(id));
+        }
       });
 
       const monthStr = String(month).padStart(2, '0');
@@ -640,9 +646,32 @@ export function AppProvider({ children }) {
       patchH(lunchRecords,      setLunchRecords);
       patchH(toothBrushRecords, setToothBrushRecords);
 
-      // IllnessCheck → เครื่องหมาย { v: '√', sep: 0, home: false, fam: false, note: '' }
+      // Milk, Lunch, ToothBrush → นักเรียนขาด/ลา/ป่วย → เครื่องหมาย 'X'
+      const patchX = (prev, setter) => {
+        const next = { ...prev };
+        Object.entries(byClassAbsent).forEach(([cls, ids]) => {
+          const k   = makeKey(cls);
+          const rec = next[k]
+            ? { ...next[k], students: { ...next[k].students } }
+            : { id: k, className: cls, academicYear, year: thaiYear, month, students: {} };
+          ids.forEach(id => {
+            const sData = rec.students[id] ?? { days: {} };
+            if (!(day in (sData.days ?? {}))) {
+              rec.students[id] = { ...sData, days: { ...(sData.days ?? {}), [day]: 'X' } };
+            }
+          });
+          next[k] = rec;
+        });
+        setter(next);
+      };
+      patchX(milkRecords,       setMilkRecords);
+      patchX(lunchRecords,      setLunchRecords);
+      patchX(toothBrushRecords, setToothBrushRecords);
+
+      // IllnessCheck → นักเรียนที่มา: { v: '√' } | นักเรียนขาด/ลา/ป่วย: { v: 'X' }
       setIllnessCheckRecords(prev => {
         const next = { ...prev };
+        // มา → √
         Object.entries(byClass).forEach(([cls, ids]) => {
           const k   = makeKey(cls);
           const rec = next[k]
@@ -659,6 +688,74 @@ export function AppProvider({ children }) {
           });
           next[k] = rec;
         });
+        // ขาด/ลา/ป่วย → X
+        Object.entries(byClassAbsent).forEach(([cls, ids]) => {
+          const k   = makeKey(cls);
+          const rec = next[k]
+            ? { ...next[k], students: { ...next[k].students } }
+            : { id: k, className: cls, academicYear, year: thaiYear, month, students: {} };
+          ids.forEach(id => {
+            const sData = rec.students[id] ?? { days: {}, weight: 0, height: 0 };
+            if (!(day in (sData.days ?? {}))) {
+              rec.students[id] = {
+                ...sData,
+                days: { ...(sData.days ?? {}), [day]: { v: 'X', sep: 0, home: false, fam: false, note: '' } },
+              };
+            }
+          });
+          next[k] = rec;
+        });
+        return next;
+      });
+
+      // ── HealthCheck (รายวัน) → ผ่านทุกหมวดอัตโนมัติสำหรับนักเรียนที่มา ──
+      // key: className__academicYear__YYYY-MM-DD (ISO date)
+      setHealthCheckRecords(prev => {
+        const next = { ...prev };
+        Object.entries(byClass).forEach(([cls, ids]) => {
+          const k = `${cls}__${academicYear}__${date}`;
+          const rec = next[k]
+            ? { ...next[k], students: { ...next[k].students } }
+            : { id: k, className: cls, academicYear, date, students: {} };
+          ids.forEach(id => {
+            if (!rec.students[id]) {
+              rec.students[id] = {
+                body: true, hair: true, cloth: true,
+                ear: true, mouth: true, nail: true, note: '',
+              };
+            }
+          });
+          next[k] = rec;
+        });
+        return next;
+      });
+
+      // ── Corner & InnerCorner (รายสัปดาห์) → เพิ่มนักเรียนใหม่เข้า record ──
+      // key: className||YYYY-MM-DD (วันจันทร์ต้นสัปดาห์)
+      const monday = getMondayOf(date);
+      setCornerRecords(prev => {
+        const next = { ...prev };
+        Object.entries(byClass).forEach(([cls, ids]) => {
+          const weekKey  = `${cls}||${monday}`;
+          const weekData = next[weekKey] ?? {};
+          const emptyRec = Object.fromEntries((cornerDefs ?? []).map(c => [c.key, false]));
+          const updated  = { ...weekData };
+          ids.forEach(id => { if (!updated[id]) updated[id] = { ...emptyRec }; });
+          next[weekKey] = updated;
+        });
+        return next;
+      });
+
+      setInnerCornerRecords(prev => {
+        const next = { ...prev };
+        Object.entries(byClass).forEach(([cls, ids]) => {
+          const weekKey  = `${cls}||${monday}`;
+          const weekData = next[weekKey] ?? {};
+          const emptyRec = Object.fromEntries((innerCornerDefs ?? []).map(c => [c.key, false]));
+          const updated  = { ...weekData };
+          ids.forEach(id => { if (!updated[id]) updated[id] = { ...emptyRec }; });
+          next[weekKey] = updated;
+        });
         return next;
       });
 
@@ -671,6 +768,9 @@ export function AppProvider({ children }) {
       lunchRecords,      setLunchRecords,
       toothBrushRecords, setToothBrushRecords,
       setIllnessCheckRecords,
+      healthCheckRecords, setHealthCheckRecords,
+      cornerRecords,      setCornerRecords,      cornerDefs,
+      innerCornerRecords, setInnerCornerRecords, innerCornerDefs,
     ],
   );
 
@@ -763,6 +863,8 @@ export function AppProvider({ children }) {
     setActivities,
     schoolTerms,
     setSchoolTerms,
+    currentTerm,
+    setCurrentTerm,
     importStudentAssessmentExcel,
     importQaStandardExcel,
     selectedStudent,

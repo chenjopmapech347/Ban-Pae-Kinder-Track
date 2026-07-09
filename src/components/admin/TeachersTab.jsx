@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 
 function PinCell({ pin }) {
   const [show, setShow] = useState(false);
@@ -121,13 +122,12 @@ export default function TeachersTab() {
         </table>
       </div>
 
-      {isModal && (
-        <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100 }}
-          onClick={e => { if (e.target === e.currentTarget) setIsModal(false); }}>
-          <div className="glass p-8 w-full animate-pop"
-            style={{ maxWidth:'560px', maxHeight:'90vh', overflowY:'auto' }}
-            onClick={e => e.stopPropagation()}>
-            <h3 className="mb-4">{editing ? 'แก้ไขข้อมูลครู' : 'เพิ่มคุณครูใหม่'}</h3>
+      <Modal
+        isOpen={isModal}
+        onClose={() => setIsModal(false)}
+        title={editing ? 'แก้ไขข้อมูลครู' : 'เพิ่มคุณครูใหม่'}
+        size="lg"
+      >
             <form onSubmit={handleSave} style={{ display:'flex',flexDirection:'column',gap:'.85rem' }}>
 
               {/* ชื่อ + นามสกุล */}
@@ -238,13 +238,11 @@ export default function TeachersTab() {
               </div>
 
               <div className="flex gap-2 mt-2">
-                <button type="button" className="btn flex-1" onClick={() => setIsModal(false)}>ยกเลิก</button>
-                <button type="submit" className="btn btn-primary flex-1">💾 บันทึก</button>
+                <ModalCancelBtn onClick={() => setIsModal(false)} />
+                <ModalConfirmBtn type="submit" label="💾 บันทึก" />
               </div>
             </form>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

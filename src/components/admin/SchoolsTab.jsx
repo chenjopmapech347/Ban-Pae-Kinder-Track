@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 
 const AFFILIATION_OPTIONS = [
   'สังกัดเทศบาล',
@@ -55,37 +56,30 @@ export default function SchoolsTab() {
         ))}
       </div>
 
-      {isModal && (
-        <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100 }}>
-          <div className="glass p-8 w-full max-w-md animate-pop">
-            <h3 className="mb-4">{editing?'แก้ไขโรงเรียน':'เพิ่มโรงเรียนใหม่'}</h3>
-            <form onSubmit={handleSave} style={{ display:'flex',flexDirection:'column',gap:'.85rem' }}>
-              {[['name','ชื่อโรงเรียน'],['address','ที่อยู่'],['phone','เบอร์โทร'],['principal','ชื่อผู้อำนวยการ']].map(([k,l])=>(
-                <div key={k}><label style={{ display:'block',marginBottom:'.35rem' }}>{l}</label>
-                  <input className="input" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} /></div>
-              ))}
-              <div>
-                <label style={{ display:'block',marginBottom:'.35rem' }}>สังกัด</label>
-                <select
-                  className="input"
-                  value={form.affiliation || ''}
-                  onChange={e => setForm({ ...form, affiliation: e.target.value })}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <option value="">— เลือกสังกัด —</option>
-                  {AFFILIATION_OPTIONS.map(opt => (
-                    <option key={opt} value={opt}>{opt}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex gap-2 mt-2">
-                <button type="button" className="btn flex-1" onClick={()=>setIsModal(false)}>ยกเลิก</button>
-                <button type="submit" className="btn btn-primary flex-1">บันทึก</button>
-              </div>
-            </form>
+      <Modal
+        isOpen={isModal}
+        onClose={() => setIsModal(false)}
+        title={editing ? 'แก้ไขโรงเรียน' : 'เพิ่มโรงเรียนใหม่'}
+        size="md"
+      >
+        <form onSubmit={handleSave} style={{ display:'flex',flexDirection:'column',gap:'.85rem' }}>
+          {[['name','ชื่อโรงเรียน'],['address','ที่อยู่'],['phone','เบอร์โทร'],['principal','ชื่อผู้อำนวยการ']].map(([k,l])=>(
+            <div key={k}><label style={{ display:'block',marginBottom:'.35rem' }}>{l}</label>
+              <input className="input" value={form[k]||''} onChange={e=>setForm({...form,[k]:e.target.value})} /></div>
+          ))}
+          <div>
+            <label style={{ display:'block',marginBottom:'.35rem' }}>สังกัด</label>
+            <select className="input" value={form.affiliation||''} onChange={e=>setForm({...form,affiliation:e.target.value})} style={{ cursor:'pointer' }}>
+              <option value="">— เลือกสังกัด —</option>
+              {AFFILIATION_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
           </div>
-        </div>
-      )}
+          <div className="flex gap-2 mt-2">
+            <ModalCancelBtn onClick={() => setIsModal(false)} />
+            <ModalConfirmBtn type="submit" label="💾 บันทึก" />
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

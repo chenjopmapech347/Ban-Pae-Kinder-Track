@@ -30,6 +30,7 @@ function AppShell() {
   const {
     role, user, logout,
     academicYears, academicYear, setAcademicYear,
+    currentTerm, setCurrentTerm,
     evaluatingStudent, setEvaluatingStudent,
     selectedStudent,
     isSettingsOpen, setIsSettingsOpen,
@@ -72,6 +73,11 @@ function AppShell() {
             {academicYears.map((y) => (
               <option key={y} value={y}>ปีการศึกษา {y}</option>
             ))}
+          </select>
+
+          <select value={currentTerm} onChange={(e) => setCurrentTerm(e.target.value)}>
+            <option value="1">ภาคเรียนที่ 1</option>
+            <option value="2">ภาคเรียนที่ 2</option>
           </select>
 
           {/* ── Firebase auto-sync status indicator ── */}

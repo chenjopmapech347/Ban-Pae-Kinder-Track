@@ -30,6 +30,7 @@ const MilkTab                = lazy(() => import('../components/admin/MilkTab'))
 const NutritionTab           = lazy(() => import('../components/admin/NutritionTab'));
 const StudentReportTab       = lazy(() => import('../components/admin/StudentReportTab'));
 const AIChatTab              = lazy(() => import('../components/AIChatTab'));
+const ClassAssignTab         = lazy(() => import('../components/admin/ClassAssignTab'));
 
 const TAB_GROUPS = [
   {
@@ -71,6 +72,7 @@ const TAB_GROUPS = [
     color: '#059669',
     tabs: [
       { id: 'students',    label: '👶 นักเรียน'                },
+      { id: 'classassign', label: '🚪 จัดนักเรียนเข้าห้อง'    },
       { id: 'teachers',    label: '👩‍🏫 ครู'                    },
       { id: 'classes',     label: '🏫 ห้องเรียน'               },
       { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ'         },
@@ -169,6 +171,7 @@ export default function AdminDashboard() {
       {activeTab === 'nutrition'    && <NutritionTab />}
       {activeTab === 'studentreport' && <StudentReportTab />}
       {activeTab === 'students'     && <StudentsTab />}
+      {activeTab === 'classassign'  && <ClassAssignTab />}
       {activeTab === 'teachers'   && <TeachersTab />}
       {activeTab === 'classes'     && <ClassesTab />}
       {activeTab === 'media'       && <MediaTab viewMode="entry" />}

@@ -1,6 +1,11 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
-import GrowthReferencePanel, { WHO_W_A, WHO_H_A, nearestKey } from '../GrowthReferencePanel';
+import GrowthReferencePanel, { WHO_W_A, WHO_H_A, nearestKey, calcWHResult } from '../GrowthReferencePanel';
+import {
+  Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+  AlignmentType, WidthType, BorderStyle, ShadingType, VerticalAlign,
+  PageOrientation,
+} from 'docx';
 
 // ── ตัวเลือกผลประเมิน ────────────────────────────────────────────────────────
 const WEIGHT_AGE_OPTS = [
@@ -12,9 +17,9 @@ const WEIGHT_AGE_OPTS = [
 ];
 const HEIGHT_AGE_OPTS = [
   'ส่วนสูงตามเกณฑ์',
-  'ส่วนสูงค่อนข้างเตี้ย',
+  'ค่อนข้างเตี้ย',
   'เตี้ย',
-  'ส่วนสูงค่อนข้างสูง',
+  'ค่อนข้างสูง',
   'สูง',
 ];
 const WEIGHT_HEIGHT_OPTS = [
@@ -31,8 +36,9 @@ function resultColor(val) {
   if (!val) return { bg:'white', color:'#9ca3af' };
   if (val.includes('ตามเกณฑ์') || val === 'สมส่วน') return { bg:'#d1fae5', color:'#065f46' };
   if (val.includes('ค่อนข้าง'))  return { bg:'#fef3c7', color:'#92400e' };
+  if (val === 'ค่อนข้างสูง' || val === 'ค่อนข้างเตี้ย') return { bg:'#fef3c7', color:'#92400e' };
   if (val.includes('มากกว่า') || val.includes('อ้วน')) return { bg:'#fee2e2', color:'#991b1b' };
-  if (val.includes('น้อยกว่า') || val === 'ผอม' || val === 'เตี้ย') return { bg:'#ede9fe', color:'#6d28d9' };
+  if (val.includes('น้อยกว่า') || val === 'ผอม' || val === 'เตี้ย' || val === 'สูง') return { bg:'#ede9fe', color:'#6d28d9' };
   return { bg:'#f9fafb', color:'#374151' };
 }
 
@@ -42,10 +48,10 @@ function calcWeightAge(weight, ageYear, ageMonth, gender) {
   const [mb, sb, mg, sg] = ref;
   const [med, sd] = gender === 'ชาย' ? [mb, sb] : [mg, sg];
   const z = (weight - med) / sd;
-  if (z < -2)  return 'น้ำหนักน้อยกว่าเกณฑ์';
-  if (z < -1)  return 'น้ำหนักค่อนข้างน้อย';
-  if (z <= 1)  return 'น้ำหนักตามเกณฑ์';
-  if (z <= 2)  return 'น้ำหนักค่อนข้างมาก';
+  if (z < -2)    return 'น้ำหนักน้อยกว่าเกณฑ์';
+  if (z < -1.5)  return 'น้ำหนักค่อนข้างน้อย';
+  if (z <= 1.5)  return 'น้ำหนักตามเกณฑ์';
+  if (z <= 2)    return 'น้ำหนักค่อนข้างมาก';
   return 'น้ำหนักมากกว่าเกณฑ์';
 }
 
@@ -55,30 +61,22 @@ function calcHeightAge(height, ageYear, ageMonth, gender) {
   const [mb, sb, mg, sg] = ref;
   const [med, sd] = gender === 'ชาย' ? [mb, sb] : [mg, sg];
   const z = (height - med) / sd;
-  if (z < -2)  return 'เตี้ย';
-  if (z < -1)  return 'ส่วนสูงค่อนข้างเตี้ย';
-  if (z <= 1)  return 'ส่วนสูงตามเกณฑ์';
-  if (z <= 2)  return 'ส่วนสูงค่อนข้างสูง';
+  if (z < -2)    return 'เตี้ย';
+  if (z < -1.5)  return 'ค่อนข้างเตี้ย';
+  if (z <= 1.5)  return 'ส่วนสูงตามเกณฑ์';
+  if (z <= 2)    return 'ค่อนข้างสูง';
   return 'สูง';
 }
 
-function calcWeightHeight(weight, height) {
-  // ใช้ BMI อย่างง่าย (เด็กอนุบาล 3-6 ปี)
-  if (!weight || !height) return '';
-  const bmi = weight / ((height / 100) ** 2);
-  if (bmi < 13.5) return 'ผอม';
-  if (bmi < 14.5) return 'ค่อนข้างผอม';
-  if (bmi < 17.5) return 'สมส่วน';
-  if (bmi < 19.0) return 'ท้วม';
-  if (bmi < 21.0) return 'เริ่มอ้วน';
-  return 'อ้วน';
+function calcWeightHeight(weight, height, gender = 'ชาย') {
+  return calcWHResult(weight, height, gender);
 }
 
 function autoCalc(row, gender) {
   return {
     weightForAge:    calcWeightAge(row.weight, row.ageYear, row.ageMonth, gender),
     heightForAge:    calcHeightAge(row.height, row.ageYear, row.ageMonth, gender),
-    weightForHeight: calcWeightHeight(row.weight, row.height),
+    weightForHeight: calcWeightHeight(row.weight, row.height, gender),
   };
 }
 
@@ -213,6 +211,181 @@ export default function NutritionTab({ teacherClassFilter = null }) {
     setNutritionRecords(prev => { const n = { ...prev }; delete n[key]; return n; });
     setDraft(buildDraft(null, classStudents));
     setSaved(false);
+  }
+
+  // ── Export Word (.docx) ──────────────────────────────────────────────────────
+  async function handleExportDocx() {
+    const FONT = 'TH Sarabun New';
+    // A4 landscape content width (16838 - 2×720 margin = 15398 DXA)
+    const colWidths = [600, 3300, 750, 700, 748, 1000, 1000, 2433, 2434, 2433];
+    const totalWidth = colWidths.reduce((a, b) => a + b, 0);
+
+    const solidBorder = { style: BorderStyle.SINGLE, size: 4, color: '888888' };
+    const cellBorders = {
+      top: solidBorder, bottom: solidBorder,
+      left: solidBorder, right: solidBorder,
+    };
+    const noBorder = { style: BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+    const noBorders = {
+      top: noBorder, bottom: noBorder,
+      left: noBorder, right: noBorder,
+    };
+
+    function mkCell(lines, width, opts = {}) {
+      const { bold = false, rowSpan, columnSpan, bg, align = AlignmentType.CENTER } = opts;
+      const arr = Array.isArray(lines) ? lines : [lines];
+      return new TableCell({
+        borders: cellBorders,
+        width: { size: width, type: WidthType.DXA },
+        ...(rowSpan > 1 && { rowSpan }),
+        ...(columnSpan > 1 && { columnSpan }),
+        verticalAlign: VerticalAlign.CENTER,
+        margins: { top: 60, bottom: 60, left: 80, right: 80 },
+        ...(bg && { shading: { fill: bg, type: ShadingType.CLEAR } }),
+        children: arr.map(text => new Paragraph({
+          alignment: align,
+          children: [new TextRun({ text: String(text ?? ''), bold, font: FONT, size: 20 })],
+        })),
+      });
+    }
+
+    const hBg = 'C8E6C9'; // green header
+    const ageBg = 'A5D6A7';
+
+    const headerRow1 = new TableRow({
+      tableHeader: true,
+      children: [
+        mkCell('เลขที่',               colWidths[0], { bold: true, rowSpan: 2, bg: hBg }),
+        mkCell('ชื่อ นามสกุล',         colWidths[1], { bold: true, rowSpan: 2, bg: hBg }),
+        mkCell('เพศ',                  colWidths[2], { bold: true, rowSpan: 2, bg: hBg }),
+        mkCell('อายุ', colWidths[3] + colWidths[4], { bold: true, columnSpan: 2, bg: ageBg }),
+        mkCell(['น้ำหนัก','(ก.ก.)'],   colWidths[5], { bold: true, rowSpan: 2, bg: 'FFF9C4' }),
+        mkCell(['ส่วนสูง','(ซ.ม.)'],   colWidths[6], { bold: true, rowSpan: 2, bg: 'BBDEFB' }),
+        mkCell('น้ำหนักเทียบกับอายุ',  colWidths[7], { bold: true, rowSpan: 2, bg: hBg }),
+        mkCell('ส่วนสูงเทียบกับอายุ',  colWidths[8], { bold: true, rowSpan: 2, bg: hBg }),
+        mkCell('ส่วนสูงเทียบกับน้ำหนัก', colWidths[9], { bold: true, rowSpan: 2, bg: hBg }),
+      ],
+    });
+
+    const headerRow2 = new TableRow({
+      tableHeader: true,
+      children: [
+        mkCell('ปี',     colWidths[3], { bold: true, bg: ageBg }),
+        mkCell('เดือน',  colWidths[4], { bold: true, bg: ageBg }),
+      ],
+    });
+
+    const dataRows = classStudents.map((s, idx) => {
+      const r = draft[s.id] ?? {};
+      const gender = genderOf(s);
+      return new TableRow({
+        children: [
+          mkCell(String(idx + 1), colWidths[0]),
+          // ชื่อ — left aligned
+          new TableCell({
+            borders: cellBorders,
+            width: { size: colWidths[1], type: WidthType.DXA },
+            verticalAlign: VerticalAlign.CENTER,
+            margins: { top: 60, bottom: 60, left: 120, right: 80 },
+            children: [new Paragraph({
+              alignment: AlignmentType.LEFT,
+              children: [new TextRun({ text: s.name, font: FONT, size: 20 })],
+            })],
+          }),
+          mkCell(gender === 'ชาย' ? 'ชาย' : 'หญิง',    colWidths[2]),
+          mkCell(r.ageYear  != null ? String(r.ageYear)  : '', colWidths[3]),
+          mkCell(r.ageMonth != null ? String(r.ageMonth) : '', colWidths[4]),
+          mkCell(r.weight   ? String(r.weight)  : '',    colWidths[5]),
+          mkCell(r.height   ? String(r.height)  : '',    colWidths[6]),
+          mkCell(r.weightForAge    ?? '',                 colWidths[7]),
+          mkCell(r.heightForAge    ?? '',                 colWidths[8]),
+          mkCell(r.weightForHeight ?? '',                 colWidths[9]),
+        ],
+      });
+    });
+
+    function para(text, opts = {}) {
+      const { bold = false, size = 24, align = AlignmentType.CENTER, spaceBefore = 0 } = opts;
+      return new Paragraph({
+        alignment: align,
+        spacing: { before: spaceBefore },
+        children: [new TextRun({ text, bold, font: FONT, size })],
+      });
+    }
+
+    // ลายเซ็น — ตาราง 2 ช่อง ไม่มีเส้น
+    const halfW = Math.floor(totalWidth / 2);
+    function sigCell(lines) {
+      return new TableCell({
+        borders: noBorders,
+        width: { size: halfW, type: WidthType.DXA },
+        margins: { top: 120, bottom: 40, left: 0, right: 0 },
+        children: lines.map(t => new Paragraph({
+          alignment: AlignmentType.CENTER,
+          children: [new TextRun({ text: t, font: FONT, size: 20 })],
+        })),
+      });
+    }
+
+    const sigTable = new Table({
+      width: { size: totalWidth, type: WidthType.DXA },
+      columnWidths: [halfW, halfW],
+      rows: [new TableRow({
+        children: [
+          sigCell([
+            'ลงชื่อ .....................................',
+            `(${teacherName || '.............................'})`,
+            'ครูประจำชั้น',
+          ]),
+          sigCell([
+            'ลงชื่อ .....................................',
+            '(.............................................)',
+            'ผู้อำนวยการสถานศึกษา',
+          ]),
+        ],
+      })],
+    });
+
+    const doc = new Document({
+      sections: [{
+        properties: {
+          page: {
+            size: {
+              width: 11906,   // A4 short edge (portrait width) — docx-js swaps for landscape
+              height: 16838,  // A4 long edge
+              orientation: PageOrientation.LANDSCAPE,
+            },
+            margin: { top: 720, bottom: 720, left: 720, right: 720 },
+          },
+        },
+        children: [
+          para('การประเมินภาวะโภชนาการ', { bold: true, size: 32 }),
+          para(schoolName || 'โรงเรียน...', { size: 24 }),
+          para(
+            `ครู/ผู้ดูแลเด็ก ${teacherName || '.......................'} ชั้น ${selClass} จำนวนเด็กที่รับผิดชอบ ${classStudents.length} คน วันที่ ${thaiDateStr(selDate)}`,
+            { size: 22 }
+          ),
+          new Paragraph({ children: [] }),
+          new Table({
+            width: { size: totalWidth, type: WidthType.DXA },
+            columnWidths: colWidths,
+            rows: [headerRow1, headerRow2, ...dataRows],
+          }),
+          new Paragraph({ children: [] }),
+          sigTable,
+        ],
+      }],
+    });
+
+    const blob = await Packer.toBlob(doc);
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = `โภชนาการ_${selClass}_${selDate}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   const teacherName = useMemo(() => {
@@ -460,6 +633,11 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
           🔄 คำนวณทั้งหมด (อัตโนมัติ)
         </button>
         <button className="btn btn-secondary" onClick={handlePrint}>🖨️ พิมพ์แบบฟอร์ม</button>
+        <button type="button" className="btn btn-secondary"
+          style={{ background:'#ede9fe', color:'#6d28d9', borderColor:'#c4b5fd' }}
+          onClick={handleExportDocx}>
+          📄 Export Word (.docx)
+        </button>
         <button type="button" onClick={handleClear}
           style={{ padding:'.35rem .9rem', borderRadius:'8px', border:'1px solid #fca5a5', background:'#fff5f5', color:'#dc2626', fontFamily:'inherit', fontSize:'.8rem', cursor:'pointer' }}>
           🗑️ ล้างข้อมูลวันที่นี้

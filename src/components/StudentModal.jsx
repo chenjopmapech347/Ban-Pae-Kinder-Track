@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import Modal, { ModalCancelBtn, ModalConfirmBtn } from './Modal';
 
 const emptyStudent = {
   // ── ข้อมูลพื้นฐาน ──────────────────────────────────────
@@ -43,13 +44,11 @@ const emptyStudent = {
 
 const set = (fd, key, val) => ({ ...fd, [key]: val });
 
-export default function StudentModal({ isOpen, onClose, onSave, editingStudent, anchorY }) {
+export default function StudentModal({ isOpen, onClose, onSave, editingStudent }) {
   const { allClassNames } = useApp();
   const ALL_CLASSES = allClassNames;
   const [activeSubTab, setActiveSubTab] = useState('personal');
   const [formData, setFormData] = useState(() => ({ ...emptyStudent, ...(editingStudent ?? {}) }));
-
-  if (!isOpen) return null;
 
   const f = (key) => ({
     value: formData[key] ?? '',
@@ -62,13 +61,14 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent, 
     { id: 'address',  label: '3. ที่อยู่ / ติดต่อ' },
   ];
 
-  const content = (
-    <div className="modal-content glass" style={{ maxWidth: '850px', width: '95%' }}>
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="m-0">{editingStudent ? '📝 แก้ไขข้อมูลนักเรียน' : '👶 เพิ่มข้อมูลใหม่'}</h3>
-        <button type="button" className="btn" onClick={onClose}>✕</button>
-      </div>
-
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={editingStudent ? '📝 แก้ไขข้อมูลนักเรียน' : '👶 เพิ่มข้อมูลใหม่'}
+      size="xl"
+    >
+      <div style={{ padding: '1.5rem', overflowY: 'auto' }}>
       {/* ── Sub-tabs ── */}
       <div className="flex gap-2 mb-6 border-b">
         {TABS.map(t => (
@@ -284,39 +284,11 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent, 
         )}
 
         <div className="flex justify-end gap-2 mt-8">
-          <button type="button" className="btn" onClick={onClose}>ยกเลิก</button>
-          <button type="submit" className="btn btn-primary">💾 บันทึกข้อมูล</button>
+          <ModalCancelBtn onClick={onClose} />
+          <ModalConfirmBtn type="submit" label="💾 บันทึกข้อมูล" />
         </div>
       </form>
-    </div>
-  );
-
-  /* Anchored overlay — render near click position */
-  if (anchorY != null) {
-    return (
-      <div style={{
-        position: 'fixed', inset: 0,
-        background: 'rgba(0,0,0,.45)',
-        zIndex: 300,
-        overflowY: 'auto',
-        paddingTop: Math.max(12, anchorY - 120) + 'px',
-        paddingBottom: '24px',
-        display: 'flex', justifyContent: 'center', alignItems: 'flex-start',
-      }}
-        onClick={e => { if (e.target === e.currentTarget) onClose(); }}
-      >
-        <div style={{ width: '100%', maxWidth: '850px', margin: '0 1rem' }}
-          onClick={e => e.stopPropagation()}>
-          {content}
-        </div>
       </div>
-    );
-  }
-
-  /* Default — centered overlay */
-  return (
-    <div className="modal-overlay">
-      {content}
-    </div>
+    </Modal>
   );
 }

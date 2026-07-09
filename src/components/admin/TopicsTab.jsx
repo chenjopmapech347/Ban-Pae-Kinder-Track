@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 
 const FRAME_STYLE = {
   dcy:      { bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
@@ -87,23 +88,23 @@ export default function TopicsTab() {
         ))}
       </div>
 
-      {isModal && (
-        <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,.5)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:100 }}>
-          <div className="glass p-8 w-full max-w-md animate-pop">
-            <h3 className="mb-4">{editing ? 'แก้ไขหัวข้อ' : 'เพิ่มหัวข้อใหม่'}</h3>
-            <form onSubmit={handleSave} style={{ display:'flex',flexDirection:'column',gap:'1rem' }}>
-              <div><label style={{ display:'block',marginBottom:'.35rem' }}>ชื่อด้านพัฒนาการ</label>
-                <input className="input" value={form.label||''} onChange={e=>setForm({...form,label:e.target.value})} required /></div>
-              <div><label style={{ display:'block',marginBottom:'.35rem' }}>อิโมจิ</label>
-                <input className="input" value={form.emoji||''} onChange={e=>setForm({...form,emoji:e.target.value})} placeholder="เช่น 🏃, ❤️, 💡" /></div>
-              <div className="flex gap-2">
-                <button type="button" className="btn flex-1" onClick={()=>setIsModal(false)}>ยกเลิก</button>
-                <button type="submit" className="btn btn-primary flex-1">บันทึก</button>
-              </div>
-            </form>
+      <Modal
+        isOpen={isModal}
+        onClose={() => setIsModal(false)}
+        title={editing ? 'แก้ไขหัวข้อการประเมิน' : 'เพิ่มหัวข้อใหม่'}
+        size="sm"
+      >
+        <form onSubmit={handleSave} style={{ display:'flex',flexDirection:'column',gap:'1rem' }}>
+          <div><label style={{ display:'block',marginBottom:'.35rem' }}>ชื่อด้านพัฒนาการ</label>
+            <input className="input" value={form.label||''} onChange={e=>setForm({...form,label:e.target.value})} required /></div>
+          <div><label style={{ display:'block',marginBottom:'.35rem' }}>อิโมจิ</label>
+            <input className="input" value={form.emoji||''} onChange={e=>setForm({...form,emoji:e.target.value})} placeholder="เช่น 🏃, ❤️, 💡" /></div>
+          <div className="flex gap-2 mt-2">
+            <ModalCancelBtn onClick={() => setIsModal(false)} />
+            <ModalConfirmBtn type="submit" label="💾 บันทึก" />
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
     </div>
   );
 }

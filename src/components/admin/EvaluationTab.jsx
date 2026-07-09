@@ -23,6 +23,29 @@ function thaiDate(iso) {
   return `${d}/${m}/${Number(y) + 543}`;
 }
 
+// ── Daily stats helpers ───────────────────────────────────────────────────────
+// คำนวณจำนวนวันและอัตรา % จาก records ที่มี structure:
+// { [key]: { className, students: { [sid]: { days: { [day]: value } } } } }
+function computeMonthlyStats(records, studentId, className) {
+  let done = 0, total = 0;
+  Object.values(records ?? {}).forEach(rec => {
+    if (rec.className !== className) return;
+    const sData = rec.students?.[String(studentId)];
+    if (!sData?.days) return;
+    Object.values(sData.days).forEach(v => { total++; if (v) done++; });
+  });
+  return total > 0 ? { done, total, pct: Math.round(done / total * 100) } : null;
+}
+function pctColor(pct) {
+  return pct == null ? '#9ca3af' : pct >= 80 ? '#059669' : pct >= 60 ? '#b45309' : '#dc2626';
+}
+function pctBg(pct) {
+  return pct == null ? '#f3f4f6' : pct >= 80 ? '#d1fae5' : pct >= 60 ? '#fef3c7' : '#fee2e2';
+}
+function pctToScore(pct) {
+  return pct == null ? 3 : pct >= 80 ? 3 : pct >= 60 ? 2 : 1;
+}
+
 // ── Step indicator ────────────────────────────────────────────────────────────
 function StepBadge({ n, label, active, done }) {
   return (
@@ -155,9 +178,143 @@ function AISuggestionPanel({ students, assessmentTopics, indicators, activities,
   );
 }
 
+// ── Daily context panel (Options 1+2: แสดงสถิติ + เสนอคะแนนอัตโนมัติ) ────────
+function DailyContextPanel({ classStudents, toothBrushRecords, lunchRecords, milkRecords, selClass, onSuggest }) {
+  const [open, setOpen] = useState(false);
+  const [from, setFrom] = useState('tooth');
+
+  const stats = useMemo(() => {
+    const result = {};
+    classStudents.forEach(s => {
+      result[s.id] = {
+        attend: s.attendance?.total > 0
+          ? { done: s.attendance.present, total: s.attendance.total,
+              pct: Math.round(s.attendance.present / s.attendance.total * 100) }
+          : null,
+        tooth: computeMonthlyStats(toothBrushRecords, s.id, selClass),
+        lunch: computeMonthlyStats(lunchRecords,       s.id, selClass),
+        milk:  computeMonthlyStats(milkRecords,        s.id, selClass),
+      };
+    });
+    return result;
+  }, [classStudents, toothBrushRecords, lunchRecords, milkRecords, selClass]);
+
+  const SOURCES = [
+    { key: 'attend', label: '✅ มาเรียน' },
+    { key: 'tooth',  label: '🪥 แปรงฟัน' },
+    { key: 'lunch',  label: '🍱 อาหาร' },
+    { key: 'milk',   label: '🥛 นม' },
+  ];
+
+  function handleSuggest() {
+    const suggested = {};
+    classStudents.forEach(s => {
+      const st = stats[s.id]?.[from];
+      suggested[s.id] = pctToScore(st?.pct ?? null);
+    });
+    onSuggest(suggested);
+  }
+
+  return (
+    <div style={{ marginTop: '1rem', border: '1.5px solid #ddd6fe', borderRadius: '14px', overflow: 'hidden' }}>
+      {/* ── Toggle header ── */}
+      <button type="button" onClick={() => setOpen(o => !o)} style={{
+        width: '100%', textAlign: 'left',
+        background: open ? '#f5f3ff' : '#faf5ff',
+        border: 'none', padding: '.6rem 1.1rem', cursor: 'pointer', fontFamily: 'inherit',
+        display: 'flex', alignItems: 'center', gap: '.6rem',
+      }}>
+        <span style={{ fontSize: '.78rem', fontWeight: 800, color: '#7c3aed',
+          textTransform: 'uppercase', letterSpacing: '.05em' }}>
+          📊 ข้อมูลกิจกรรมประจำวัน (เชื่อมโยงตัวบ่งชี้)
+        </span>
+        <span style={{ marginLeft: 'auto', fontSize: '.82rem', color: '#7c3aed' }}>{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && (
+        <div style={{ padding: '1rem 1.2rem', background: 'white' }}>
+          {/* ── Auto-suggest bar ── */}
+          <div style={{
+            display: 'flex', gap: '.75rem', flexWrap: 'wrap', alignItems: 'center',
+            background: '#faf5ff', border: '1.5px solid #ddd6fe', borderRadius: '10px',
+            padding: '.6rem 1rem', marginBottom: '1rem',
+          }}>
+            <span style={{ fontSize: '.78rem', fontWeight: 700, color: '#7c3aed', flexShrink: 0 }}>💡 เสนอคะแนนจาก:</span>
+            <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
+              {SOURCES.map(src => (
+                <button key={src.key} type="button" onClick={() => setFrom(src.key)} style={{
+                  padding: '.22rem .65rem', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit',
+                  border: `1.5px solid ${from === src.key ? '#7c3aed' : '#e5e7eb'}`,
+                  background: from === src.key ? '#ede9fe' : 'white',
+                  color: from === src.key ? '#7c3aed' : '#6b7280',
+                  fontWeight: 700, fontSize: '.78rem',
+                }}>{src.label}</button>
+              ))}
+            </div>
+            <button type="button" onClick={handleSuggest} style={{
+              padding: '.28rem .9rem', borderRadius: '8px', border: 'none',
+              background: '#7c3aed', color: 'white', fontFamily: 'inherit',
+              fontWeight: 700, fontSize: '.8rem', cursor: 'pointer',
+            }}>✨ เสนอคะแนนทั้งห้อง</button>
+            <span style={{ fontSize: '.72rem', color: '#9ca3af' }}>≥80%→3 · 60-79%→2 · &lt;60%→1</span>
+          </div>
+
+          {/* ── Stats table ── */}
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.8rem' }}>
+              <thead>
+                <tr style={{ background: '#f8fafc' }}>
+                  <th style={{ padding: '7px 12px', border: '1px solid #e5e7eb', textAlign: 'left', fontWeight: 700 }}>ชื่อ-นามสกุล</th>
+                  {SOURCES.map(src => (
+                    <th key={src.key} style={{ padding: '7px 10px', border: '1px solid #e5e7eb',
+                      textAlign: 'center', fontWeight: 700, minWidth: '100px' }}>
+                      {src.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {classStudents.map((s, idx) => (
+                  <tr key={s.id} style={{ background: idx % 2 ? '#fafafa' : 'white' }}>
+                    <td style={{ padding: '6px 12px', border: '1px solid #e5e7eb', fontWeight: 600 }}>{s.name}</td>
+                    {SOURCES.map(src => {
+                      const st  = stats[s.id]?.[src.key];
+                      const pct = st?.pct ?? null;
+                      return (
+                        <td key={src.key} style={{ padding: '6px 10px', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                          {pct !== null ? (
+                            <span style={{
+                              background: pctBg(pct), color: pctColor(pct),
+                              borderRadius: '6px', padding: '2px 7px',
+                              fontWeight: 700, fontSize: '.78rem', display: 'inline-block',
+                            }}>{st.done}/{st.total} ({pct}%)</span>
+                          ) : (
+                            <span style={{ color: '#d1d5db', fontSize: '.75rem' }}>—</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ fontSize: '.71rem', color: '#9ca3af', marginTop: '.45rem' }}>
+            * รวมทุกเดือนที่บันทึกในปีการศึกษานี้ · คลิก "เสนอคะแนนทั้งห้อง" เพื่อเติมคะแนนอัตโนมัติ (ครูยังแก้ไขได้)
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function EvaluationTab() {
-  const { students, setStudents, assessmentTopics, indicators, activities, role, user, addActivityLog, aiApiKey, classMap: CLASS_MAP } = useApp();
+  const {
+    students, setStudents, assessmentTopics, indicators, activities,
+    role, user, addActivityLog, aiApiKey, classMap: CLASS_MAP,
+    toothBrushRecords, lunchRecords, milkRecords,
+  } = useApp();
 
   // teacher lock — auto-set class from user profile
   const isTeacher    = role === 'teacher';
@@ -655,6 +812,16 @@ export default function EvaluationTab() {
               </tbody>
             </table>
           </div>
+
+          {/* ── Daily context panel ── */}
+          <DailyContextPanel
+            classStudents={classStudents}
+            toothBrushRecords={toothBrushRecords}
+            lunchRecords={lunchRecords}
+            milkRecords={milkRecords}
+            selClass={selClass}
+            onSuggest={suggested => { setResults(prev => ({ ...prev, ...suggested })); setSaved(false); }}
+          />
 
           {/* Save bar */}
           <div style={{

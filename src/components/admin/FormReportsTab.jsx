@@ -39,6 +39,7 @@ const REPORT_TYPES = [
   { id:'teeth',       label:'การแปรงฟัน',                                                 icon:'🦷', hasCls:true,  hasMo:true  },
   { id:'attend',      label:'ลงเวลาเรียน',                                                icon:'📋', hasCls:true,  hasMo:true  },
   { id:'dev',         label:'การประเมินพัฒนาการ การศึกษาปฐมวัย',                          icon:'🌱', hasCls:true                },
+  { id:'cross',       label:'สรุปเชื่อมโยงกิจกรรมประจำวัน-ตัวบ่งชี้',                      icon:'🔗', hasCls:true                },
 ];
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -510,6 +511,89 @@ function printDev(students, teachers, schoolName, cn, topics, indicators, activi
     ${sigHtml(tName)}`, true);
 }
 
+// ── Helper: คำนวณสถิติรายเดือนจาก records (tooth / lunch / milk) ─────────────
+function computeMonthlyStatsRpt(records, studentId, className) {
+  let done = 0, total = 0;
+  Object.values(records ?? {}).forEach(rec => {
+    if (rec.className !== className) return;
+    const sData = rec.students?.[String(studentId)];
+    if (!sData?.days) return;
+    Object.values(sData.days).forEach(v => { total++; if (v) done++; });
+  });
+  return total > 0 ? { done, total, pct: Math.round(done / total * 100) } : null;
+}
+
+// 12. สรุปเชื่อมโยงกิจกรรมประจำวัน ↔ ตัวบ่งชี้พัฒนาการ
+function printCross(students, teachers, schoolName, cn, toothRecs, lunchRecs, milkRecs, topics, indicators, activities) {
+  const sts   = realSts(students, cn);
+  const tName = teacherName(teachers, cn);
+
+  function statCell(stat, forHtml = false) {
+    if (!stat) return forHtml ? `<td style="color:#ccc;text-align:center">—</td>` : '—';
+    const { done, total, pct } = stat;
+    const color = pct >= 80 ? '#059669' : pct >= 60 ? '#b45309' : '#dc2626';
+    const bg    = pct >= 80 ? '#d1fae5'  : pct >= 60 ? '#fef3c7'  : '#fee2e2';
+    return `<td style="background:${bg};color:${color};font-weight:700;text-align:center">${done}/${total}<br>(${pct}%)</td>`;
+  }
+
+  const rows = sts.map((s, idx) => {
+    // กิจกรรมประจำวัน
+    const attend = s.attendance?.total > 0
+      ? { done: s.attendance.present, total: s.attendance.total,
+          pct: Math.round(s.attendance.present / s.attendance.total * 100) }
+      : null;
+    const tooth  = computeMonthlyStatsRpt(toothRecs,  s.id, cn);
+    const lunch  = computeMonthlyStatsRpt(lunchRecs,  s.id, cn);
+    const milk   = computeMonthlyStatsRpt(milkRecs,   s.id, cn);
+
+    // คะแนนเฉลี่ยตัวบ่งชี้ทั้งหมด (ใช้คะแนนครั้งล่าสุดที่มี)
+    const allScores = (topics ?? []).flatMap(t =>
+      (indicators ?? []).filter(i => i.domainId === t.id).flatMap(ind =>
+        (activities ?? []).filter(a => a.indicatorId === ind.id).map(act => {
+          const d = s.assessments?.indicators?.[ind.id]?.[act.id];
+          return [4, 3, 2, 1].map(r => d?.[`r${r}`]).find(v => v) ?? null;
+        })
+      )
+    ).filter(v => v !== null);
+    const avgScore = allScores.length
+      ? (allScores.reduce((a, b) => a + b, 0) / allScores.length).toFixed(1)
+      : '—';
+
+    return `<tr>
+      <td style="text-align:center">${idx + 1}</td>
+      <td class="tl">${s.name}</td>
+      ${statCell(attend)}
+      ${statCell(tooth)}
+      ${statCell(lunch)}
+      ${statCell(milk)}
+      <td style="text-align:center;font-weight:800;font-size:11px">${avgScore}</td>
+    </tr>`;
+  }).join('');
+
+  printHtml(`สรุปเชื่อมโยงกิจกรรม-พัฒนาการ ${cn}`, `
+    <h2>สรุปเชื่อมโยงกิจกรรมประจำวัน กับ ผลการประเมินพัฒนาการ</h2>
+    <div class="sub">ห้อง ${cn} &nbsp;|&nbsp; ${schoolName}</div>
+    <table><thead>
+      <tr>
+        <th rowspan="2" style="width:26px">เลขที่</th>
+        <th rowspan="2" class="tl" style="min-width:110px">ชื่อ-สกุล</th>
+        <th colspan="4">กิจกรรมประจำวัน (วัน/อัตรา%)</th>
+        <th rowspan="2" style="min-width:55px">คะแนนเฉลี่ย<br>ตัวบ่งชี้</th>
+      </tr>
+      <tr>
+        <th>✅ มาเรียน</th>
+        <th>🪥 แปรงฟัน</th>
+        <th>🍱 อาหาร</th>
+        <th>🥛 นม</th>
+      </tr>
+    </thead><tbody>${rows}</tbody></table>
+    <div class="legend">
+      เกณฑ์อัตรา: ≥80% = ดีมาก · 60-79% = พอใช้ · &lt;60% = ต้องพัฒนา &nbsp;|&nbsp;
+      คะแนนตัวบ่งชี้: 3=ดีมาก · 2=พอใช้ · 1=ต้องพัฒนา
+    </div>
+    ${sigHtml(tName)}`, true);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -517,7 +601,7 @@ export default function FormReportsTab({ teacherClassFilter = null, defaultRepor
   const {
     students, teachers, classes, schools,
     dailyRecords, assessmentTopics, indicators, activities,
-    schoolLogo,
+    schoolLogo, toothBrushRecords, lunchRecords, milkRecords,
   } = useApp();
 
   const [selReport,  setSelReport]  = useState(defaultReport);
@@ -562,6 +646,7 @@ export default function FormReportsTab({ teacherClassFilter = null, defaultRepor
       case 'media':       printMedia(teachers, schoolName, cn); break;
       case 'attend':      printAttend(students, teachers, dailyRecords, schoolName, cn, selMonth); break;
       case 'dev':         printDev(students, teachers, schoolName, cn, assessmentTopics, indicators, activities); break;
+      case 'cross':       printCross(students, teachers, schoolName, cn, toothBrushRecords, lunchRecords, milkRecords, assessmentTopics, indicators, activities); break;
     }
   };
 

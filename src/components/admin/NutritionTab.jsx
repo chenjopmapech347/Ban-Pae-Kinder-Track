@@ -101,6 +101,17 @@ function genderOf(student) {
   return 'ชาย';
 }
 
+// ── ageAt — คำนวณอายุจากวันเกิด ณ วันที่ประเมิน ─────────────────────────────
+function ageAt(birthISO, dateISO) {
+  if (!birthISO || !dateISO) return null;
+  const birth = new Date(birthISO);
+  const at    = new Date(dateISO);
+  let years   = at.getFullYear() - birth.getFullYear();
+  let months  = at.getMonth()    - birth.getMonth();
+  if (months < 0) { years--; months += 12; }
+  return { ageYear: years, ageMonth: months };
+}
+
 // ── NutritionTab ──────────────────────────────────────────────────────────────
 export default function NutritionTab({ teacherClassFilter = null }) {
   const {
@@ -127,22 +138,24 @@ export default function NutritionTab({ teacherClassFilter = null }) {
   );
 
   // draft: { [studentId]: { ageYear, ageMonth, weight, height, weightForAge, heightForAge, weightForHeight } }
-  const [draft, setDraft] = useState(() => buildDraft(nutritionRecords[key], classStudents));
+  const [draft, setDraft] = useState(() => buildDraft(nutritionRecords[key], classStudents, selDate));
 
-  function buildDraft(existing, sList) {
+  function buildDraft(existing, sList, date) {
     const base = {};
     sList.forEach(s => {
-      const ex = existing?.students?.[s.id];
-      const gender = genderOf(s);
+      const ex  = existing?.students?.[s.id];
+      // คำนวณอายุจากวันเกิด ณ วันที่ประเมิน (ถ้ามี birthDate)
+      const computed = s.birthDate ? ageAt(s.birthDate, date) : null;
       const row = {
-        ageYear:    ex?.ageYear    ?? (typeof s.age === 'number' ? s.age : 5),
-        ageMonth:   ex?.ageMonth   ?? 0,
-        weight:     ex?.weight     ?? (s.weight ?? 0),
-        height:     ex?.height     ?? (s.height ?? 0),
+        ageYear:  computed?.ageYear  ?? ex?.ageYear  ?? (typeof s.age === 'number' ? s.age : 5),
+        ageMonth: computed?.ageMonth ?? ex?.ageMonth ?? 0,
+        hasBirthDate: Boolean(s.birthDate),   // flag สำหรับ UI
+        weight:   ex?.weight  ?? (s.weight ?? 0),
+        height:   ex?.height  ?? (s.height ?? 0),
         weightForAge:    ex?.weightForAge    ?? '',
         heightForAge:    ex?.heightForAge    ?? '',
         weightForHeight: ex?.weightForHeight ?? '',
-        locked:     Boolean(ex),
+        locked:   Boolean(ex),
       };
       base[s.id] = row;
     });
@@ -154,7 +167,7 @@ export default function NutritionTab({ teacherClassFilter = null }) {
     const sList = students
       .filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'))
       .sort((a, b) => Number(a.id) - Number(b.id));
-    setDraft(buildDraft(nutritionRecords[k], sList));
+    setDraft(buildDraft(nutritionRecords[k], sList, date));
     setSaved(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nutritionRecords, academicYear, students]);
@@ -209,7 +222,7 @@ export default function NutritionTab({ teacherClassFilter = null }) {
   function handleClear() {
     if (!window.confirm(`ล้างข้อมูลประเมิน ${thaiDateStr(selDate)} ห้อง ${selClass}?`)) return;
     setNutritionRecords(prev => { const n = { ...prev }; delete n[key]; return n; });
-    setDraft(buildDraft(null, classStudents));
+    setDraft(buildDraft(null, classStudents, selDate));
     setSaved(false);
   }
 
@@ -533,7 +546,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                 <th rowSpan={2} style={th({ minWidth:'36px' })}>เลขที่</th>
                 <th rowSpan={2} style={th({ minWidth:'160px', textAlign:'left', paddingLeft:'8px' })}>ชื่อ นามสกุล</th>
                 <th rowSpan={2} style={th({ minWidth:'44px' })}>เพศ</th>
-                <th colSpan={2} style={th({ background:'#bbf7d0', color:'#065f46' })}>อายุ</th>
+                <th colSpan={2} style={th({ background:'#bbf7d0', color:'#065f46' })} title="คำนวณจากวันเกิดนักเรียน ณ วันที่ประเมิน">อายุ 🎂</th>
                 <th rowSpan={2} style={th({ minWidth:'68px', background:'#fef9c3', color:'#78350f' })}>น้ำหนัก<br/>(ก.ก.)</th>
                 <th rowSpan={2} style={th({ minWidth:'68px', background:'#dbeafe', color:'#1e40af' })}>ส่วนสูง<br/>(ซ.ม.)</th>
                 <th rowSpan={2} style={th({ minWidth:'120px' })}>น้ำหนัก<br/>เทียบกับอายุ</th>
@@ -561,16 +574,34 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                       {gender === 'ชาย' ? '♂ ชาย' : '♀ หญิง'}
                     </td>
                     {/* อายุ ปี */}
-                    <td style={tdc()}>
-                      <input type="number" min={0} max={8} value={r.ageYear ?? ''}
-                        onChange={e => updateRow(s.id, { ageYear: Number(e.target.value) })}
-                        style={numInput} />
+                    <td style={tdc({ background: r.hasBirthDate ? '#f0fdf4' : undefined })}>
+                      {r.hasBirthDate ? (
+                        <div title="คำนวณจากวันเกิดอัตโนมัติ" style={{
+                          fontWeight: 700, fontSize: '.78rem', color: '#065f46',
+                          textAlign: 'center', padding: '2px 0',
+                        }}>
+                          {r.ageYear ?? 0}
+                        </div>
+                      ) : (
+                        <input type="number" min={0} max={8} value={r.ageYear ?? ''}
+                          onChange={e => updateRow(s.id, { ageYear: Number(e.target.value) })}
+                          style={numInput} />
+                      )}
                     </td>
                     {/* อายุ เดือน */}
-                    <td style={tdc()}>
-                      <input type="number" min={0} max={11} value={r.ageMonth ?? ''}
-                        onChange={e => updateRow(s.id, { ageMonth: Number(e.target.value) })}
-                        style={numInput} />
+                    <td style={tdc({ background: r.hasBirthDate ? '#f0fdf4' : undefined })}>
+                      {r.hasBirthDate ? (
+                        <div title="คำนวณจากวันเกิดอัตโนมัติ" style={{
+                          fontWeight: 700, fontSize: '.78rem', color: '#065f46',
+                          textAlign: 'center', padding: '2px 0',
+                        }}>
+                          {r.ageMonth ?? 0}
+                        </div>
+                      ) : (
+                        <input type="number" min={0} max={11} value={r.ageMonth ?? ''}
+                          onChange={e => updateRow(s.id, { ageMonth: Number(e.target.value) })}
+                          style={numInput} />
+                      )}
                     </td>
                     {/* น้ำหนัก */}
                     <td style={tdc({ background:'#fffde7' })}>

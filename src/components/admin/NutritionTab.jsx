@@ -540,7 +540,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
         <div style={{ textAlign:'center', color:'#9ca3af', padding:'3rem' }}>ไม่พบนักเรียนในห้อง {selClass}</div>
       ) : (
         <div style={{ overflowX:'auto' }}>
-          <table style={{ borderCollapse:'collapse', fontSize:'.75rem', width:'100%' }}>
+          <table style={{ borderCollapse:'collapse', fontSize:'.75rem' }}>
             <thead>
               <tr>
                 <th rowSpan={2} style={th({ minWidth:'36px' })}>เลขที่</th>

@@ -264,7 +264,7 @@ function DailyContextPanel({ classStudents, toothBrushRecords, lunchRecords, mil
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.8rem' }}>
               <thead>
                 <tr style={{ background: '#f8fafc' }}>
-                  <th style={{ padding: '7px 12px', border: '1px solid #e5e7eb', textAlign: 'left', fontWeight: 700 }}>ชื่อ-นามสกุล</th>
+                  <th style={{ padding: '7px 12px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 700 }}>ชื่อ-นามสกุล</th>
                   {SOURCES.map(src => (
                     <th key={src.key} style={{ padding: '7px 10px', border: '1px solid #e5e7eb',
                       textAlign: 'center', fontWeight: 700, minWidth: '100px' }}>

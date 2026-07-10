@@ -419,13 +419,13 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
               <tr style={{ background: '#f0f9ff' }}>
                 <th style={{ ...cell, width: '36px' }}>ที่</th>
                 <th style={{ ...cell, width: '70px' }}>รูปภาพ</th>
-                <th style={{ ...cell, textAlign: 'left', minWidth: '180px' }}>รายการสื่อ / นวัตกรรม</th>
-                <th style={{ ...cell, textAlign: 'left', minWidth: '180px' }}>ประกอบการสอนหน่วย</th>
+                <th style={{ ...cell, textAlign: 'center', minWidth: '180px' }}>รายการสื่อ / นวัตกรรม</th>
+                <th style={{ ...cell, textAlign: 'center', minWidth: '180px' }}>ประกอบการสอนหน่วย</th>
                 <th style={{ ...cell, width: '60px' }}>ทำมือ</th>
                 <th style={{ ...cell, width: '50px' }}>AI</th>
                 <th style={{ ...cell, width: '55px' }}>สื่อเก่า</th>
                 <th style={{ ...cell, width: '55px' }}>สื่อใหม่</th>
-                <th style={{ ...cell, textAlign: 'left', minWidth: '80px' }}>หมายเหตุ</th>
+                <th style={{ ...cell, textAlign: 'center', minWidth: '80px' }}>หมายเหตุ</th>
                 {viewMode === 'entry' && (
                   <th style={{ ...cell, width: '80px' }}>จัดการ</th>
                 )}

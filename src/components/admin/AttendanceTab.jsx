@@ -521,7 +521,7 @@ export default function AttendanceTab({ defaultClass }) {
                   <thead>
                     <tr>
                       <th style={{ width: '36px' }}>#</th>
-                      <th style={{ textAlign: 'left' }}>ชื่อ-นามสกุล</th>
+                      <th style={{ textAlign: 'center' }}>ชื่อ-นามสกุล</th>
                       <th style={{ width: '50px', background: '#d1fae5', color: '#065f46' }}>มา</th>
                       <th style={{ width: '50px', background: '#fee2e2', color: '#991b1b' }}>ขาด</th>
                       <th style={{ width: '50px', background: '#fef3c7', color: '#92400e' }}>ลา</th>

@@ -348,7 +348,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:6px"><img src="${sch
               {/* แถว 1: หัวหมวด (colspan=3) */}
               <tr>
                 <th rowSpan={3} style={th({ minWidth: '28px' })}>ที่</th>
-                <th rowSpan={3} style={th({ minWidth: '140px', textAlign: 'left' })}>ชื่อ-สกุล</th>
+                <th rowSpan={3} style={th({ minWidth: '140px', textAlign: 'center' })}>ชื่อ-สกุล</th>
                 {CHECK_ITEMS.map(item => (
                   <th key={item.id} colSpan={3}
                     style={th({ background: '#eff6ff', color: '#1e40af', fontWeight: 800, whiteSpace: 'nowrap' })}>

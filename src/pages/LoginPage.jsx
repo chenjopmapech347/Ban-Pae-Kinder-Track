@@ -916,7 +916,7 @@ export default function LoginPage() {
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr style={{ background: '#f9fafb' }}>
-                        <th style={{ padding: '.65rem 1.25rem', textAlign: 'left', fontSize: '.78rem', fontWeight: 700, color: '#6b7280' }}>ห้องเรียน</th>
+                        <th style={{ padding: '.65rem 1.25rem', textAlign: 'center', fontSize: '.78rem', fontWeight: 700, color: '#6b7280' }}>ห้องเรียน</th>
                         <th style={{ padding: '.65rem 1.25rem', textAlign: 'center', fontSize: '.78rem', fontWeight: 700, color: '#6b7280' }}>นักเรียน</th>
                         <th style={{ padding: '.65rem 1.25rem', textAlign: 'center', fontSize: '.78rem', fontWeight: 700, color: '#6b7280' }}>ระดับชั้น</th>
                       </tr>

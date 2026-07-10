@@ -769,8 +769,8 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.82rem' }}>
                   <thead>
                     <tr style={{ background: '#f3f4f6' }}>
-                      <th style={{ padding: '8px 10px', border: '1px solid #e5e7eb', textAlign: 'left', minWidth: '160px' }}>การวัด</th>
-                      <th style={{ padding: '8px 10px', border: '1px solid #e5e7eb', textAlign: 'left', minWidth: '140px' }}>
+                      <th style={{ padding: '8px 10px', border: '1px solid #e5e7eb', textAlign: 'center', minWidth: '160px' }}>การวัด</th>
+                      <th style={{ padding: '8px 10px', border: '1px solid #e5e7eb', textAlign: 'center', minWidth: '140px' }}>
                         วันที่วัด<br/>
                         <span style={{ fontWeight: 400, fontSize: '.72rem', color: '#9ca3af' }}>(เดือนอ้างอิง)</span>
                       </th>
@@ -856,7 +856,7 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
               <table style={{ borderCollapse: 'collapse', fontSize: '.84rem' }}>
                 <thead>
                   <tr style={{ background: '#f3f4f6' }}>
-                    <th style={{ padding: '8px 16px', border: '1px solid #e5e7eb', textAlign: 'left' }}>ภาคเรียน</th>
+                    <th style={{ padding: '8px 16px', border: '1px solid #e5e7eb', textAlign: 'center' }}>ภาคเรียน</th>
                     <th style={{ padding: '8px 16px', border: '1px solid #e5e7eb', textAlign: 'center' }}>เวลาเรียนเต็ม</th>
                     <th style={{ padding: '8px 16px', border: '1px solid #e5e7eb', textAlign: 'center' }}>มาเรียน</th>
                     <th style={{ padding: '8px 16px', border: '1px solid #e5e7eb', textAlign: 'center' }}>ไม่มาเรียน</th>
@@ -953,9 +953,9 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.82rem' }}>
                   <thead>
                     <tr style={{ background: '#f3f4f6' }}>
-                      <th style={{ padding: '8px 10px', border: '1px solid #e5e7eb', textAlign: 'left', width: '130px' }}>วัน/เดือน/ปี</th>
-                      <th style={{ padding: '8px 10px', border: '1px solid #e5e7eb', textAlign: 'left' }}>การให้ภูมิคุ้มกัน / บริการสุขภาพ</th>
-                      <th style={{ padding: '8px 10px', border: '1px solid #e5e7eb', textAlign: 'left' }}>หมายเหตุ</th>
+                      <th style={{ padding: '8px 10px', border: '1px solid #e5e7eb', textAlign: 'center', width: '130px' }}>วัน/เดือน/ปี</th>
+                      <th style={{ padding: '8px 10px', border: '1px solid #e5e7eb', textAlign: 'center' }}>การให้ภูมิคุ้มกัน / บริการสุขภาพ</th>
+                      <th style={{ padding: '8px 10px', border: '1px solid #e5e7eb', textAlign: 'center' }}>หมายเหตุ</th>
                       <th style={{ padding: '8px 10px', border: '1px solid #e5e7eb', textAlign: 'center', width: '60px' }}>ลบ</th>
                     </tr>
                   </thead>
@@ -1043,7 +1043,7 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
                                 <table style={{ borderCollapse: 'collapse', fontSize: '.76rem', width: '100%' }}>
                                   <thead>
                                     <tr style={{ background: '#f9fafb' }}>
-                                      <th style={{ padding: '4px 8px', border: '1px solid #e5e7eb', textAlign: 'left', fontWeight: 600 }}>สภาพที่พึงประสงค์</th>
+                                      <th style={{ padding: '4px 8px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 600 }}>สภาพที่พึงประสงค์</th>
                                       <th style={{ padding: '4px 8px', border: '1px solid #e5e7eb', textAlign: 'center', width: '90px', fontWeight: 600 }}>ภาคเรียน 1</th>
                                       <th style={{ padding: '4px 8px', border: '1px solid #e5e7eb', textAlign: 'center', width: '90px', fontWeight: 600 }}>ภาคเรียน 2</th>
                                     </tr>
@@ -1103,7 +1103,7 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
                   <thead>
                     <tr style={{ background: '#f3f4f6' }}>
                       <th style={{ padding: '7px 8px', border: '1px solid #e5e7eb', textAlign: 'center', width: '40px' }}>ลำดับ</th>
-                      <th style={{ padding: '7px 8px', border: '1px solid #e5e7eb', textAlign: 'left' }}>มาตรฐานคุณลักษณะที่พึงประสงค์</th>
+                      <th style={{ padding: '7px 8px', border: '1px solid #e5e7eb', textAlign: 'center' }}>มาตรฐานคุณลักษณะที่พึงประสงค์</th>
                       <th colSpan={3} style={{ padding: '7px 8px', border: '1px solid #e5e7eb', textAlign: 'center' }}>ภาคเรียน 1</th>
                       <th colSpan={3} style={{ padding: '7px 8px', border: '1px solid #e5e7eb', textAlign: 'center' }}>ภาคเรียน 2</th>
                       <th style={{ padding: '7px 8px', border: '1px solid #e5e7eb', textAlign: 'center', minWidth: '70px' }}>สรุปตลอดปี</th>
@@ -1176,7 +1176,7 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
               <table style={{ borderCollapse: 'collapse', fontSize: '.82rem' }}>
                 <thead>
                   <tr style={{ background: '#f3f4f6' }}>
-                    <th style={{ padding: '8px 16px', border: '1px solid #e5e7eb', textAlign: 'left', minWidth: '160px' }}>พัฒนาการ</th>
+                    <th style={{ padding: '8px 16px', border: '1px solid #e5e7eb', textAlign: 'center', minWidth: '160px' }}>พัฒนาการ</th>
                     {[3,2,1].map(n => (
                       <th key={n} style={{ padding: '8px 16px', border: '1px solid #e5e7eb', textAlign: 'center', width: '100px', ...levelColor(n) }}>
                         {n === 3 ? 'ปฏิบัติได้ดี' : n === 2 ? 'ปฏิบัติได้พอใช้' : 'ปรับปรุง'}<br/>

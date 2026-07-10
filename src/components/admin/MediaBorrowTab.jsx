@@ -437,14 +437,14 @@ export default function MediaBorrowTab({ teacherClassFilter = null }) {
             <thead>
               <tr style={{ background: '#fffbeb' }}>
                 <th style={{ ...cell, width: '32px', textAlign: 'center' }}>ที่</th>
-                <th style={{ ...cell, textAlign: 'left', minWidth: '160px' }}>ชื่อสื่อ / นวัตกรรม</th>
+                <th style={{ ...cell, textAlign: 'center', minWidth: '160px' }}>ชื่อสื่อ / นวัตกรรม</th>
                 <th style={{ ...cell, width: '72px', textAlign: 'center' }}>ห้อง</th>
-                <th style={{ ...cell, textAlign: 'left', minWidth: '110px' }}>ผู้ยืม</th>
+                <th style={{ ...cell, textAlign: 'center', minWidth: '110px' }}>ผู้ยืม</th>
                 <th style={{ ...cell, width: '90px', textAlign: 'center' }}>วันที่ยืม</th>
                 <th style={{ ...cell, width: '90px', textAlign: 'center' }}>กำหนดคืน</th>
                 <th style={{ ...cell, width: '80px', textAlign: 'center' }}>สถานะ</th>
                 <th style={{ ...cell, width: '90px', textAlign: 'center' }}>วันที่คืน</th>
-                <th style={{ ...cell, textAlign: 'left', minWidth: '70px' }}>หมายเหตุ</th>
+                <th style={{ ...cell, textAlign: 'center', minWidth: '70px' }}>หมายเหตุ</th>
                 <th style={{ ...cell, width: '100px', textAlign: 'center' }}>จัดการ</th>
               </tr>
             </thead>

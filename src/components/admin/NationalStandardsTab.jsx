@@ -438,7 +438,7 @@ export default function NationalStandardsTab() {
                   <thead>
                     <tr style={{ background: '#f1f5f9' }}>
                       {['ด้านพัฒนาการ', 'มาตรฐานแห่งชาติ', 'ตัวบ่งชี้ ดย./หลักสูตร', 'ดีมาก', 'พอใช้', 'ต้องพัฒนา', '% ดีมาก'].map(h => (
-                        <th key={h} style={{ padding: '.5rem .75rem', textAlign: 'left', fontWeight: 700, color: '#4b5563', whiteSpace: 'nowrap', borderBottom: '2px solid #e5e7eb' }}>{h}</th>
+                        <th key={h} style={{ padding: '.5rem .75rem', textAlign: 'center', fontWeight: 700, color: '#4b5563', whiteSpace: 'nowrap', borderBottom: '2px solid #e5e7eb' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -533,8 +533,8 @@ export default function NationalStandardsTab() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.78rem' }}>
                   <thead>
                     <tr style={{ background: '#f5f3ff' }}>
-                      <th style={{ padding: '.5rem .75rem', textAlign: 'left', fontWeight: 700, color: '#5b21b6', borderBottom: '2px solid #ddd6fe', whiteSpace: 'nowrap' }}>ครู</th>
-                      <th style={{ padding: '.5rem .75rem', textAlign: 'left', fontWeight: 700, color: '#5b21b6', borderBottom: '2px solid #ddd6fe', whiteSpace: 'nowrap' }}>ห้อง</th>
+                      <th style={{ padding: '.5rem .75rem', textAlign: 'center', fontWeight: 700, color: '#5b21b6', borderBottom: '2px solid #ddd6fe', whiteSpace: 'nowrap' }}>ครู</th>
+                      <th style={{ padding: '.5rem .75rem', textAlign: 'center', fontWeight: 700, color: '#5b21b6', borderBottom: '2px solid #ddd6fe', whiteSpace: 'nowrap' }}>ห้อง</th>
                       {STD2_ITEMS.map(it => (
                         <th key={it.id} style={{ padding: '.5rem .4rem', textAlign: 'center', fontWeight: 700, color: '#5b21b6', borderBottom: '2px solid #ddd6fe', whiteSpace: 'nowrap', fontSize: '.7rem' }}>
                           {it.id}

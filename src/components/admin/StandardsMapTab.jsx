@@ -184,10 +184,10 @@ export default function StandardsMapTab() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.8rem' }}>
               <thead>
                 <tr>
-                  <th style={{ background: '#1e40af', color: 'white', padding: '.6rem .85rem', textAlign: 'left', width: '28%' }}>มาตรฐาน ดย. (3.x–6.x)</th>
-                  <th style={{ background: '#15803d', color: 'white', padding: '.6rem .85rem', textAlign: 'left', width: '35%' }}>หลักสูตรปฐมวัย 2560</th>
-                  <th style={{ background: '#c2410c', color: 'white', padding: '.6rem .85rem', textAlign: 'left', width: '12%' }}>สมศ.</th>
-                  <th style={{ background: '#374151', color: 'white', padding: '.6rem .85rem', textAlign: 'left' }}>หลักฐานร่วม</th>
+                  <th style={{ background: '#1e40af', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '28%' }}>มาตรฐาน ดย. (3.x–6.x)</th>
+                  <th style={{ background: '#15803d', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '35%' }}>หลักสูตรปฐมวัย 2560</th>
+                  <th style={{ background: '#c2410c', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '12%' }}>สมศ.</th>
+                  <th style={{ background: '#374151', color: 'white', padding: '.6rem .85rem', textAlign: 'center' }}>หลักฐานร่วม</th>
                 </tr>
               </thead>
               <tbody>

@@ -78,11 +78,11 @@ export default function MeasurementDatesTab() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.88rem' }}>
             <thead>
               <tr style={{ background: '#f8fafc' }}>
-                <th style={{ padding: '10px 14px', border: '1px solid #e5e7eb', textAlign: 'left', minWidth: '200px', fontWeight: 700 }}>ครั้งที่</th>
-                <th style={{ padding: '10px 14px', border: '1px solid #e5e7eb', textAlign: 'left', minWidth: '200px', fontWeight: 700 }}>
+                <th style={{ padding: '10px 14px', border: '1px solid #e5e7eb', textAlign: 'center', minWidth: '200px', fontWeight: 700 }}>ครั้งที่</th>
+                <th style={{ padding: '10px 14px', border: '1px solid #e5e7eb', textAlign: 'center', minWidth: '200px', fontWeight: 700 }}>
                   เดือนที่วัด
                 </th>
-                <th style={{ padding: '10px 14px', border: '1px solid #e5e7eb', textAlign: 'left', fontWeight: 700 }}>แสดงผล (พ.ศ.)</th>
+                <th style={{ padding: '10px 14px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 700 }}>แสดงผล (พ.ศ.)</th>
                 <th style={{ padding: '10px 14px', border: '1px solid #e5e7eb', textAlign: 'center', width: '80px', fontWeight: 700 }}>ล้าง</th>
               </tr>
             </thead>
@@ -185,8 +185,8 @@ export default function MeasurementDatesTab() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.8rem' }}>
             <thead>
               <tr style={{ background: '#f3f4f6' }}>
-                <th style={{ padding: '7px 10px', border: '1px solid #e5e7eb', textAlign: 'left' }}>การวัด</th>
-                <th style={{ padding: '7px 10px', border: '1px solid #e5e7eb', textAlign: 'left' }}>เดือนที่วัด (ค่าเริ่มต้น)</th>
+                <th style={{ padding: '7px 10px', border: '1px solid #e5e7eb', textAlign: 'center' }}>การวัด</th>
+                <th style={{ padding: '7px 10px', border: '1px solid #e5e7eb', textAlign: 'center' }}>เดือนที่วัด (ค่าเริ่มต้น)</th>
               </tr>
             </thead>
             <tbody>

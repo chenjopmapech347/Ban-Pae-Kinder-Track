@@ -62,8 +62,8 @@ export default function QaStandardView() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
               <tr style={{ background: '#f8fafc', position: 'sticky', top: 0 }}>
-                <th style={{ padding: '0.75rem', textAlign: 'left' }}>มาตรฐาน</th>
-                <th style={{ padding: '0.75rem', textAlign: 'left' }}>ตัวบ่งชี้</th>
+                <th style={{ padding: '0.75rem', textAlign: 'center' }}>มาตรฐาน</th>
+                <th style={{ padding: '0.75rem', textAlign: 'center' }}>ตัวบ่งชี้</th>
                 <th style={{ padding: '0.75rem' }}>%</th>
               </tr>
             </thead>
@@ -86,7 +86,7 @@ export default function QaStandardView() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
             <thead>
               <tr style={{ background: '#f8fafc', position: 'sticky', top: 0 }}>
-                <th style={{ padding: '0.75rem', textAlign: 'left' }}>ตัวบ่งชี้</th>
+                <th style={{ padding: '0.75rem', textAlign: 'center' }}>ตัวบ่งชี้</th>
                 <th style={{ padding: '0.75rem' }}>ผ่าน</th>
                 <th style={{ padding: '0.75rem' }}>%</th>
               </tr>

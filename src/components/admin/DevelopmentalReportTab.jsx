@@ -343,7 +343,7 @@ function IndicatorTable({ students, indActivities }) {
           {/* Row 1: กิจกรรม headers + สรุปตัวบ่งชี้ */}
           <tr>
             <th rowSpan={3} style={{ border: '1px solid #d1d5db', padding: '3px 6px', background: '#f9fafb', fontSize: '.68rem', minWidth: '34px' }}>ลำดับ</th>
-            <th rowSpan={3} style={{ border: '1px solid #d1d5db', padding: '3px 8px', background: '#f9fafb', fontSize: '.68rem', minWidth: '130px', textAlign: 'left' }}>ชื่อ-สกุล</th>
+            <th rowSpan={3} style={{ border: '1px solid #d1d5db', padding: '3px 8px', background: '#f9fafb', fontSize: '.68rem', minWidth: '130px', textAlign: 'center' }}>ชื่อ-สกุล</th>
             {indActivities.map((a, i) => (
               <th key={a.id} colSpan={6}
                 style={{ border: '1px solid #d1d5db', padding: '3px', background: '#eff6ff', color: '#1e40af', fontWeight: 700, fontSize: '.68rem' }}>
@@ -462,7 +462,7 @@ function StandardSummary({ students, indicators, activities, stdDef, domDef }) {
       <table style={{ borderCollapse: 'collapse', fontSize: '.75rem' }}>
         <thead>
           <tr>
-            <th style={{ border: '1px solid #d1d5db', padding: '4px 10px', background: 'white', textAlign: 'left', fontSize: '.7rem' }}>ตัวบ่งชี้</th>
+            <th style={{ border: '1px solid #d1d5db', padding: '4px 10px', background: 'white', textAlign: 'center', fontSize: '.7rem' }}>ตัวบ่งชี้</th>
             <th style={{ border: '1px solid #d1d5db', padding: '4px 14px', background: '#e0f2fe', color: '#0369a1', fontSize: '.7rem' }}>ภาคเรียน 1</th>
             <th style={{ border: '1px solid #d1d5db', padding: '4px 14px', background: '#fce7f3', color: '#9d174d', fontSize: '.7rem' }}>ภาคเรียน 2</th>
           </tr>
@@ -569,7 +569,7 @@ ${rows}
           <thead>
             <tr>
               <th rowSpan={3} style={hdCell({ minWidth: '34px' })}>เลขที่</th>
-              <th rowSpan={3} style={hdCell({ minWidth: '130px', textAlign: 'left' })}>ชื่อ-สกุล</th>
+              <th rowSpan={3} style={hdCell({ minWidth: '130px', textAlign: 'center' })}>ชื่อ-สกุล</th>
               {DOMAIN_DEFS.map(dom => (
                 <th key={dom.id} colSpan={dom.stds.length * 2 + 2}
                   style={hdCell({ background: dom.bg, color: dom.color, fontWeight: 800, fontSize: '.72rem' })}>

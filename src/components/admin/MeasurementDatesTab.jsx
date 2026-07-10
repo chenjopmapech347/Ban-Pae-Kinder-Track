@@ -51,10 +51,10 @@ export default function MeasurementDatesTab() {
           <div style={{ fontSize: '2rem' }}>📏</div>
           <div style={{ flex: 1, minWidth: '220px' }}>
             <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#14532d', marginBottom: '.3rem' }}>
-              กำหนดวันวัดน้ำหนัก/ส่วนสูง ปีการศึกษา {academicYear}
+              กำหนดเดือนวัดน้ำหนัก/ส่วนสูง
             </div>
             <div style={{ fontSize: '.82rem', color: '#166534', lineHeight: 1.6 }}>
-              ตั้งค่าวันที่วัดน้ำหนักและส่วนสูงสำหรับ 4 ครั้งในปีการศึกษา
+              ตั้งค่าเดือนที่วัดน้ำหนักและส่วนสูงสำหรับ 4 ครั้งในปีการศึกษา
               เมื่อกำหนดแล้ว วันที่จะถูกนำไปใช้เป็นค่าเริ่มต้นในสมุดรายงานประจำตัวเด็ก (อ.01)
               ส่วน <strong>บันทึกพัฒนาการด้านร่างกาย (น้ำหนัก/ส่วนสูง)</strong> โดยอัตโนมัติ
             </div>
@@ -80,8 +80,7 @@ export default function MeasurementDatesTab() {
               <tr style={{ background: '#f8fafc' }}>
                 <th style={{ padding: '10px 14px', border: '1px solid #e5e7eb', textAlign: 'left', minWidth: '200px', fontWeight: 700 }}>ครั้งที่</th>
                 <th style={{ padding: '10px 14px', border: '1px solid #e5e7eb', textAlign: 'left', minWidth: '200px', fontWeight: 700 }}>
-                  วันที่วัด
-                  <div style={{ fontSize: '.72rem', fontWeight: 400, color: '#9ca3af' }}>(เดือนอ้างอิง)</div>
+                  เดือนที่วัด
                 </th>
                 <th style={{ padding: '10px 14px', border: '1px solid #e5e7eb', textAlign: 'left', fontWeight: 700 }}>แสดงผล (พ.ศ.)</th>
                 <th style={{ padding: '10px 14px', border: '1px solid #e5e7eb', textAlign: 'center', width: '80px', fontWeight: 700 }}>ล้าง</th>
@@ -143,7 +142,7 @@ export default function MeasurementDatesTab() {
 
         {/* ── หมายเหตุ ── */}
         <div style={{ marginTop: '1rem', padding: '.7rem 1rem', background: '#fefce8', border: '1px solid #fde047', borderRadius: '8px', fontSize: '.78rem', color: '#713f12' }}>
-          <strong>หมายเหตุ:</strong> วันที่ที่กำหนดจะถูกนำไปเติมอัตโนมัติในช่อง "วันที่วัด" ของสมุดรายงาน อ.01
+          <strong>หมายเหตุ:</strong> เดือนที่กำหนดจะถูกนำไปเติมอัตโนมัติในช่อง "เดือนที่วัด" ของสมุดรายงาน อ.01
           สำหรับนักเรียนที่ยังไม่ได้บันทึกข้อมูล ครูสามารถแก้ไขวันที่รายบุคคลได้ภายหลัง
         </div>
       </div>
@@ -187,7 +186,7 @@ export default function MeasurementDatesTab() {
             <thead>
               <tr style={{ background: '#f3f4f6' }}>
                 <th style={{ padding: '7px 10px', border: '1px solid #e5e7eb', textAlign: 'left' }}>การวัด</th>
-                <th style={{ padding: '7px 10px', border: '1px solid #e5e7eb', textAlign: 'left' }}>วันที่วัด (ค่าเริ่มต้น)</th>
+                <th style={{ padding: '7px 10px', border: '1px solid #e5e7eb', textAlign: 'left' }}>เดือนที่วัด (ค่าเริ่มต้น)</th>
               </tr>
             </thead>
             <tbody>

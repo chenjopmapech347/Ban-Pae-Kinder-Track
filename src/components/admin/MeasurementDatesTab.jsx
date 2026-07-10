@@ -9,11 +9,12 @@ const SLOTS = [
   { key: 't2m2', label: 'ภาคเรียน 2 ครั้งที่ 2', hint: 'อ้างอิงเดือน ก.พ.' },
 ];
 
-function thaiDate(iso) {
+function thaiMonth(iso) {
   if (!iso) return '—';
-  const [y, m, d] = iso.split('-');
+  const parts = iso.split('-');
+  const y = parts[0], m = parts[1];
   const MONTHS = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  return `${parseInt(d, 10)} ${MONTHS[parseInt(m, 10)]} ${parseInt(y, 10) + 543}`;
+  return `${MONTHS[parseInt(m, 10)]} ${parseInt(y, 10) + 543}`;
 }
 
 export default function MeasurementDatesTab() {
@@ -98,12 +99,12 @@ export default function MeasurementDatesTab() {
                     </td>
                     <td style={{ padding: '8px 14px', border: '1px solid #e5e7eb' }}>
                       <input
-                        type="date"
+                        type="month"
                         value={form[slot.key] ?? ''}
                         onChange={e => handleChange(slot.key, e.target.value)}
                         style={{
                           padding: '6px 10px', borderRadius: '8px', fontFamily: 'inherit',
-                          fontSize: '.85rem', width: '170px',
+                          fontSize: '.85rem', width: '160px',
                           border: isSet ? '1.5px solid #10b981' : '1.5px solid #d1d5db',
                           background: isSet ? '#f0fdf4' : 'white',
                         }}
@@ -111,7 +112,7 @@ export default function MeasurementDatesTab() {
                     </td>
                     <td style={{ padding: '10px 14px', border: '1px solid #e5e7eb' }}>
                       {isSet
-                        ? <span style={{ fontWeight: 600, color: '#065f46', fontSize: '.85rem' }}>{thaiDate(form[slot.key])}</span>
+                        ? <span style={{ fontWeight: 600, color: '#065f46', fontSize: '.85rem' }}>{thaiMonth(form[slot.key])}</span>
                         : <span style={{ color: '#d1d5db', fontSize: '.8rem' }}>ยังไม่กำหนด</span>
                       }
                     </td>

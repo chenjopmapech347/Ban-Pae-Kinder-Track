@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ตารางกิจกรรมประจำวัน</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'TH Sarabun New','Sarabun','Tahoma',sans-serif;
+  background: #f0f4f8;
+  color: #2c3e50;
+  padding: 20px;
+  font-size: 16px;
+}
+.container { max-width: 1140px; margin: 0 auto; }
+
+/* ─────────── HEADER ─────────── */
+.page-header {
+  text-align: center;
+  padding: 16px 0 8px;
+  margin-bottom: 22px;
+}
+.page-header h1 { font-size: 2em; font-weight: 800; color: #1a237e; }
+.page-header p  { color: #546e7a; margin-top: 4px; font-size: 0.96em; }
+
+/* ─────────── LEGEND ─────────── */
+.legend-box {
+  background: white;
+  border-radius: 12px;
+  padding: 12px 18px;
+  margin-bottom: 22px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+}
+.legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 0;
+}
+.legend-group {
+  display: flex;
+  align-items: center;
+  gap: 6px 14px;
+  flex-wrap: wrap;
+  padding: 4px 14px;
+}
+.legend-group-label {
+  font-size: 0.78em;
+  font-weight: 700;
+  color: #90a4ae;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.86em;
+  color: #444;
+}
+.ldot {
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(0,0,0,0.12);
+}
+.leg-sep {
+  width: 1px; background: #e0e0e0; align-self: stretch; margin: 0 4px;
+}
+
+/* ─────────── LEVEL BLOCK ─────────── */
+.level-block {
+  margin-bottom: 22px;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.09);
+}
+.level-hd {
+  padding: 11px 20px;
+  font-size: 1.05em;
+  font-weight: 700;
+  color: white;
+  letter-spacing: 0.03em;
+}
+.lv1 .level-hd { background: linear-gradient(90deg,#1565C0,#1976D2); }
+.lv2 .level-hd { background: linear-gradient(90deg,#2E7D32,#388E3C); }
+.lv3 .level-hd { background: linear-gradient(90deg,#6A1B9A,#7B1FA2); }
+.rooms-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  background: #dde3ea;
+}
+.room-card {
+  background: white;
+  padding: 14px 16px 12px;
+  flex: 1 1 340px;
+  min-width: 300px;
+}
+
+/* room header */
+.room-card-hd {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 9px;
+  padding-bottom: 7px;
+  border-bottom: 2px solid #eceff1;
+}
+.room-name {
+  font-size: 0.92em;
+  font-weight: 700;
+  color: #37474f;
+}
+.room-badges { display: flex; gap: 5px; }
+.badge {
+  font-size: 0.72em;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 20px;
+}
+.b-in  { background: #E3F2FD; color: #0D47A1; }
+.b-out { background: #E8F5E9; color: #1B5E20; }
+
+/* day row */
+.day-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px dashed #f0f4f0;
+}
+.day-row:last-child { border-bottom: none; }
+.day-label {
+  width: 72px; flex-shrink: 0;
+  font-size: 0.84em; font-weight: 700;
+  color: #546e7a; padding-top: 5px;
+}
+.day-acts {
+  flex: 1; display: flex;
+  flex-wrap: wrap; gap: 5px; padding: 2px 0;
+}
+.day-empty {
+  flex: 1; font-size: 0.75em;
+  color: #ccc; padding-top: 7px; font-style: italic;
+}
+
+/* ─────────── PILLS ─────────── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px 4px 8px;
+  border-radius: 20px;
+  font-size: 0.81em;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1.5px solid transparent;
+}
+.pt { font-size: 0.76em; font-weight: 500; opacity: 0.65; }
+
+/* pill colours */
+.p-eng { background:#FFFDE7; color:#E65100; border-color:#FFE082; }
+.p-ef  { background:#E3F2FD; color:#0D47A1; border-color:#90CAF9; }
+.p-com { background:#E0F7FA; color:#006064; border-color:#80DEEA; }
+.p-res { background:#F3E5F5; color:#6A1B9A; border-color:#CE93D8; }
+.p-gar { background:#E8F5E9; color:#1B5E20; border-color:#A5D6A7; }
+.p-wst { background:#FFF3E0; color:#BF360C; border-color:#FFAB91; }
+.p-pe  { background:#FCE4EC; color:#880E4F; border-color:#F48FB1; }
+
+/* ratio bar */
+.ratio-wrap {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ratio-label {
+  font-size: 0.74em; color: #90a4ae; white-space: nowrap;
+}
+.ratio-bar {
+  flex: 1; height: 8px; border-radius: 8px;
+  background: #E8F5E9; overflow: hidden;
+}
+.ratio-fill {
+  height: 100%; border-radius: 8px;
+  background: linear-gradient(90deg,#1565C0,#42A5F5);
+}
+
+/* ─────────── COMPARISON TABLE ─────────── */
+.section-card {
+  background: white;
+  border-radius: 14px;
+  padding: 20px 22px;
+  margin-bottom: 22px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+.section-card h2 {
+  font-size: 1.05em; font-weight: 700; color: #333;
+  margin-bottom: 14px; padding-bottom: 9px;
+  border-bottom: 2px solid #eceff1;
+  display: flex; align-items: center; gap: 8px;
+}
+.h2-badge {
+  font-size: 0.75em; padding: 2px 10px; border-radius: 20px;
+  font-weight: 600; background: #E8F5E9; color: #1B5E20;
+}
+
+/* generic styled table */
+.stbl { width: 100%; border-collapse: collapse; font-size: 0.88em; }
+.stbl th {
+  background: #eceff1; color: #546e7a; font-weight: 700;
+  padding: 9px 12px; border: 1px solid #cfd8dc; text-align: left;
+}
+.stbl td {
+  padding: 9px 12px; border: 1px solid #e4e8ec; vertical-align: middle;
+}
+.stbl tr:nth-child(even) td { background: #fafbfc; }
+
+.stag {
+  display: inline-block; padding: 2px 10px; border-radius: 12px;
+  font-size: 0.84em; font-weight: 600;
+}
+.s-in-cls { background:#FFFDE7; color:#E65100; }
+.s-in-bld { background:#E3F2FD; color:#0D47A1; }
+.s-out    { background:#E8F5E9; color:#1B5E20; }
+
+.check-yes { color:#1B5E20; font-size:1.15em; font-weight:700; }
+.check-no  { color:#B71C1C; font-size:1.15em; font-weight:700; }
+
+/* ratio table bars */
+.rbar-wrap { display:inline-flex; align-items:center; gap:6px; width:100%; }
+.rbar { width: 100px; height: 10px; border-radius: 10px; background: #E8F5E9; overflow:hidden; flex-shrink:0; }
+.rbar-in  { height:100%; border-radius:10px; background: #1565C0; }
+.rbar-txt { font-size:0.82em; color:#546e7a; white-space:nowrap; }
+
+/* observation box */
+.obs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 2px;
+}
+.obs-card {
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 0.88em;
+  line-height: 1.6;
+}
+.obs-good { background: #E8F5E9; border-left: 4px solid #2E7D32; }
+.obs-note { background: #E3F2FD; border-left: 4px solid #1565C0; }
+.obs-title { font-weight: 700; margin-bottom: 4px; }
+
+/* ─────────── PRINT ─────────── */
+@media print {
+  body { background: white; padding: 6px; }
+  .level-block, .section-card {
+    box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid;
+  }
+  .ratio-fill, .rbar-in { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}
+@media (max-width: 640px) {
+  .rooms-grid { display: block; }
+  .room-card { min-width: unset; }
+  .obs-grid { grid-template-columns: 1fr; }
+  .leg-sep { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ══════════════ HEADER ══════════════ -->
+<div class="page-header">
+  <h1>ตารางกิจกรรมประจำวัน</h1>
+  <p>เปรียบเทียบกิจกรรมกับแหล่งเรียนรู้ในและนอกห้องเรียน · ระดับอนุบาล ๑–๓</p>
+</div>
+
+<!-- ══════════════ LEGEND ══════════════ -->
+<div class="legend-box">
+  <div class="legend-row">
+    <div class="legend-group">
+      <span class="legend-group-label">📖 ในห้องเรียน</span>
+      <span class="legend-item"><span class="ldot" style="background:#FFFDE7;border-color:#FFE082"></span>Eng (ภาษาอังกฤษ)</span>
+    </div>
+    <div class="leg-sep"></div>
+    <div class="legend-group">
+      <span class="legend-group-label">🏫 แหล่งเรียนรู้ในอาคาร</span>
+      <span class="legend-item"><span class="ldot" style="background:#E3F2FD;border-color:#90CAF9"></span>ห้องสื่อ EF</span>
+      <span class="legend-item"><span class="ldot" style="background:#E0F7FA;border-color:#80DEEA"></span>คอมพิวเตอร์</span>
+      <span class="legend-item"><span class="ldot" style="background:#F3E5F5;border-color:#CE93D8"></span>ห้องแหล่งเรียนรู้</span>
+    </div>
+    <div class="leg-sep"></div>
+    <div class="legend-group">
+      <span class="legend-group-label">🌿 แหล่งเรียนรู้นอกอาคาร</span>
+      <span class="legend-item"><span class="ldot" style="background:#E8F5E9;border-color:#A5D6A7"></span>แปลงผัก</span>
+      <span class="legend-item"><span class="ldot" style="background:#FFF3E0;border-color:#FFAB91"></span>คัดแยกขยะ</span>
+      <span class="legend-item"><span class="ldot" style="background:#FCE4EC;border-color:#F48FB1"></span>พลศึกษา</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ อนุบาล ๑ ══════════════ -->
+<div class="level-block lv1">
+  <div class="level-hd">อนุบาล ๑</div>
+  <div class="rooms-grid">
+
+    <!-- ห้อง อ.1/1 — ในอาคาร 8, นอก 3 -->
+    <div class="room-card">
+      <div class="room-card-hd">
+        <span class="room-name">ห้อง อ.1/1</span>
+        <div class="room-badges">
+          <span class="badge b-in">🏫 ในอาคาร 8 ครั้ง</span>
+          <span class="badge b-out">🌿 นอก 3 ครั้ง</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">จันทร์</span>
+        <div class="day-acts">
+          <span class="pill p-ef"><span class="pt">08.30</span>ห้องสื่อ EF</span>
+          <span class="pill p-com"><span class="pt">09.30</span>คอมพิวเตอร์</span>
+          <span class="pill p-eng"><span class="pt">13.30</span>Eng</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">อังคาร</span>
+        <div class="day-acts">
+          <span class="pill p-res"><span class="pt">08.30</span>ห้องแหล่งเรียนรู้</span>
+          <span class="pill p-eng"><span class="pt">13.30</span>Eng</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">พุธ</span>
+        <div class="day-acts">
+          <span class="pill p-gar"><span class="pt">09.30</span>แปลงผัก</span>
+          <span class="pill p-eng"><span class="pt">13.30</span>Eng</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">พฤหัสบดี</span>
+        <div class="day-acts">
+          <span class="pill p-pe"><span class="pt">08.30</span>พลศึกษา</span>
+          <span class="pill p-wst"><span class="pt">09.30</span>คัดแยกขยะ</span>
+          <span class="pill p-eng"><span class="pt">13.30</span>Eng</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">ศุกร์</span>
+        <div class="day-acts">
+          <span class="pill p-eng"><span class="pt">13.30</span>Eng</span>
+        </div>
+      </div>
+      <div class="ratio-wrap">
+        <span class="ratio-label">สัดส่วน ใน:นอก</span>
+        <div class="ratio-bar"><div class="ratio-fill" style="width:73%"></div></div>
+        <span class="ratio-label">73% ใน · 27% นอก</span>
+      </div>
+    </div>
+
+    <!-- ห้อง อ.1/2 — ในอาคาร 8, นอก 3 -->
+    <div class="room-card">
+      <div class="room-card-hd">
+        <span class="room-name">ห้อง อ.1/2</span>
+        <div class="room-badges">
+          <span class="badge b-in">🏫 ในอาคาร 8 ครั้ง</span>
+          <span class="badge b-out">🌿 นอก 3 ครั้ง</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">จันทร์</span>
+        <div class="day-acts">
+          <span class="pill p-com"><span class="pt">08.30</span>คอมพิวเตอร์</span>
+          <span class="pill p-ef"><span class="pt">09.30</span>ห้องสื่อ EF</span>
+          <span class="pill p-eng"><span class="pt">14.30</span>Eng</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">อังคาร</span>
+        <div class="day-acts">
+          <span class="pill p-res"><span class="pt">09.30</span>ห้องแหล่งเรียนรู้</span>
+          <span class="pill p-gar"><span class="pt">13.30</span>แปลงผัก</span>
+          <span class="pill p-eng"><span class="pt">14.30</span>Eng</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">พุธ</span>
+        <div class="day-acts">
+          <span class="pill p-eng"><span class="pt">14.30</span>Eng</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">พฤหัสบดี</span>
+        <div class="day-acts">
+          <span class="pill p-pe"><span class="pt">08.30</span>พลศึกษา</span>
+          <span class="pill p-wst"><span class="pt">09.30</span>คัดแยกขยะ</span>
+          <span class="pill p-eng"><span class="pt">14.30</span>Eng</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">ศุกร์</span>
+        <div class="day-acts">
+          <span class="pill p-eng"><span class="pt">14.30</span>Eng</span>
+        </div>
+      </div>
+      <div class="ratio-wrap">
+        <span class="ratio-label">สัดส่วน ใน:นอก</span>
+        <div class="ratio-bar"><div class="ratio-fill" style="width:73%"></div></div>
+        <span class="ratio-label">73% ใน · 27% นอก</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════ อนุบาล ๒ ══════════════ -->
+<div class="level-block lv2">
+  <div class="level-hd">อนุบาล ๒</div>
+  <div class="rooms-grid">
+
+    <!-- ห้อง อ.2/1 — ในอาคาร 6, นอก 3 -->
+    <div class="room-card">
+      <div class="room-card-hd">
+        <span class="room-name">ห้อง อ.2/1</span>
+        <div class="room-badges">
+          <span class="badge b-in">🏫 ในอาคาร 6 ครั้ง</span>
+          <span class="badge b-out">🌿 นอก 3 ครั้ง</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">จันทร์</span>
+        <div class="day-acts">
+          <span class="pill p-eng"><span class="pt">08.30</span>Eng</span>
+          <span class="pill p-ef"><span class="pt">13.30</span>ห้องสื่อ EF</span>
+          <span class="pill p-com"><span class="pt">14.30</span>คอมพิวเตอร์</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">อังคาร</span>
+        <div class="day-acts">
+          <span class="pill p-gar"><span class="pt">09.30</span>แปลงผัก</span>
+          <span class="pill p-res"><span class="pt">13.30</span>ห้องแหล่งเรียนรู้</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">พุธ</span>
+        <div class="day-acts">
+          <span class="pill p-eng"><span class="pt">08.30</span>Eng</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">พฤหัสบดี</span>
+        <div class="day-acts">
+          <span class="pill p-wst"><span class="pt">08.30</span>คัดแยกขยะ</span>
+          <span class="pill p-pe"><span class="pt">09.30</span>พลศึกษา</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">ศุกร์</span>
+        <div class="day-acts">
+          <span class="pill p-eng"><span class="pt">08.30</span>Eng</span>
+        </div>
+      </div>
+      <div class="ratio-wrap">
+        <span class="ratio-label">สัดส่วน ใน:นอก</span>
+        <div class="ratio-bar"><div class="ratio-fill" style="width:67%"></div></div>
+        <span class="ratio-label">67% ใน · 33% นอก</span>
+      </div>
+    </div>
+
+    <!-- ห้อง อ.2/2 — ในอาคาร 6, นอก 3 -->
+    <div class="room-card">
+      <div class="room-card-hd">
+        <span class="room-name">ห้อง อ.2/2</span>
+        <div class="room-badges">
+          <span class="badge b-in">🏫 ในอาคาร 6 ครั้ง</span>
+          <span class="badge b-out">🌿 นอก 3 ครั้ง</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">จันทร์</span>
+        <div class="day-acts">
+          <span class="pill p-eng"><span class="pt">09.30</span>Eng</span>
+          <span class="pill p-com"><span class="pt">13.30</span>คอมพิวเตอร์</span>
+          <span class="pill p-ef"><span class="pt">14.30</span>ห้องสื่อ EF</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">อังคาร</span>
+        <div class="day-acts">
+          <span class="pill p-gar"><span class="pt">08.30</span>แปลงผัก</span>
+          <span class="pill p-res"><span class="pt">14.30</span>ห้องแหล่งเรียนรู้</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">พุธ</span>
+        <div class="day-acts">
+          <span class="pill p-eng"><span class="pt">09.30</span>Eng</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">พฤหัสบดี</span>
+        <div class="day-acts">
+          <span class="pill p-wst"><span class="pt">08.30</span>คัดแยกขยะ</span>
+          <span class="pill p-pe"><span class="pt">09.30</span>พลศึกษา</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">ศุกร์</span>
+        <div class="day-acts">
+          <span class="pill p-eng"><span class="pt">09.30</span>Eng</span>
+        </div>
+      </div>
+      <div class="ratio-wrap">
+        <span class="ratio-label">สัดส่วน ใน:นอก</span>
+        <div class="ratio-bar"><div class="ratio-fill" style="width:67%"></div></div>
+        <span class="ratio-label">67% ใน · 33% นอก</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════ อนุบาล ๓ ══════════════ -->
+<div class="level-block lv3">
+  <div class="level-hd">อนุบาล ๓</div>
+  <div class="rooms-grid">
+
+    <!-- ห้อง อ.3/1 — ในอาคาร 5, นอก 3 -->
+    <div class="room-card">
+      <div class="room-card-hd">
+        <span class="room-name">ห้อง อ.3/1</span>
+        <div class="room-badges">
+          <span class="badge b-in">🏫 ในอาคาร 5 ครั้ง</span>
+          <span class="badge b-out">🌿 นอก 3 ครั้ง</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">จันทร์</span>
+        <div class="day-acts">
+          <span class="pill p-gar"><span class="pt">08.30</span>แปลงผัก</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">อังคาร</span>
+        <div class="day-acts">
+          <span class="pill p-eng"><span class="pt">08.30</span>Eng</span>
+          <span class="pill p-ef"><span class="pt">09.30</span>ห้องสื่อ EF</span>
+          <span class="pill p-com"><span class="pt">13.00</span>คอมพิวเตอร์</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">พุธ</span>
+        <div class="day-acts">
+          <span class="pill p-res"><span class="pt">08.30</span>ห้องแหล่งเรียนรู้</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">พฤหัสบดี</span>
+        <div class="day-acts">
+          <span class="pill p-eng"><span class="pt">08.30</span>Eng</span>
+          <span class="pill p-wst"><span class="pt">09.30</span>คัดแยกขยะ</span>
+          <span class="pill p-pe"><span class="pt">10.30</span>พลศึกษา</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">ศุกร์</span>
+        <span class="day-empty">ไม่มีกิจกรรมพิเศษ</span>
+      </div>
+      <div class="ratio-wrap">
+        <span class="ratio-label">สัดส่วน ใน:นอก</span>
+        <div class="ratio-bar"><div class="ratio-fill" style="width:63%"></div></div>
+        <span class="ratio-label">63% ใน · 37% นอก</span>
+      </div>
+    </div>
+
+    <!-- ห้อง อ.3/2 — ในอาคาร 5, นอก 3 -->
+    <div class="room-card">
+      <div class="room-card-hd">
+        <span class="room-name">ห้อง อ.3/2</span>
+        <div class="room-badges">
+          <span class="badge b-in">🏫 ในอาคาร 5 ครั้ง</span>
+          <span class="badge b-out">🌿 นอก 3 ครั้ง</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">จันทร์</span>
+        <div class="day-acts">
+          <span class="pill p-gar"><span class="pt">09.30</span>แปลงผัก</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">อังคาร</span>
+        <div class="day-acts">
+          <span class="pill p-eng"><span class="pt">09.30</span>Eng</span>
+          <span class="pill p-ef"><span class="pt">10.30</span>ห้องสื่อ EF</span>
+          <span class="pill p-res"><span class="pt">12.00</span>ห้องแหล่งเรียนรู้</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">พุธ</span>
+        <div class="day-acts">
+          <span class="pill p-com"><span class="pt">10.30</span>คอมพิวเตอร์</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">พฤหัสบดี</span>
+        <div class="day-acts">
+          <span class="pill p-wst"><span class="pt">08.30</span>คัดแยกขยะ</span>
+          <span class="pill p-eng"><span class="pt">09.30</span>Eng</span>
+          <span class="pill p-pe"><span class="pt">10.30</span>พลศึกษา</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">ศุกร์</span>
+        <span class="day-empty">ไม่มีกิจกรรมพิเศษ</span>
+      </div>
+      <div class="ratio-wrap">
+        <span class="ratio-label">สัดส่วน ใน:นอก</span>
+        <div class="ratio-bar"><div class="ratio-fill" style="width:63%"></div></div>
+        <span class="ratio-label">63% ใน · 37% นอก</span>
+      </div>
+    </div>
+
+    <!-- ห้อง อ.3/3 — ในอาคาร 4, นอก 3 -->
+    <div class="room-card">
+      <div class="room-card-hd">
+        <span class="room-name">ห้อง อ.3/3</span>
+        <div class="room-badges">
+          <span class="badge b-in">🏫 ในอาคาร 4 ครั้ง</span>
+          <span class="badge b-out">🌿 นอก 3 ครั้ง</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">จันทร์</span>
+        <div class="day-acts">
+          <span class="pill p-gar"><span class="pt">10.30</span>แปลงผัก</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">อังคาร</span>
+        <div class="day-acts">
+          <span class="pill p-ef"><span class="pt">08.30</span>ห้องสื่อ EF</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">พุธ</span>
+        <div class="day-acts">
+          <span class="pill p-res"><span class="pt">09.30</span>ห้องแหล่งเรียนรู้</span>
+          <span class="pill p-com"><span class="pt">10.30</span>คอมพิวเตอร์</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">พฤหัสบดี</span>
+        <div class="day-acts">
+          <span class="pill p-wst"><span class="pt">08.30</span>คัดแยกขยะ</span>
+          <span class="pill p-eng"><span class="pt">10.30</span>Eng</span>
+          <span class="pill p-pe"><span class="pt">12.00</span>พลศึกษา</span>
+        </div>
+      </div>
+      <div class="day-row">
+        <span class="day-label">ศุกร์</span>
+        <span class="day-empty">ไม่มีกิจกรรมพิเศษ</span>
+      </div>
+      <div class="ratio-wrap">
+        <span class="ratio-label">สัดส่วน ใน:นอก</span>
+        <div class="ratio-bar"><div class="ratio-fill" style="width:57%"></div></div>
+        <span class="ratio-label">57% ใน · 43% นอก</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════ ตรวจสอบความสอดคล้อง ══════════════ -->
+<div class="section-card">
+  <h2>✅ ตรวจสอบความสอดคล้องของกิจกรรมกับแหล่งเรียนรู้ <span class="h2-badge">ตรงทุกรายการ</span></h2>
+  <table class="stbl">
+    <thead>
+      <tr>
+        <th>กิจกรรม</th>
+        <th>แหล่งเรียนรู้ที่กำหนด</th>
+        <th>ตำแหน่งที่ใช้จริงในตาราง</th>
+        <th>ประเภท</th>
+        <th style="text-align:center">สอดคล้อง</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="pill p-eng" style="font-size:0.82em">Eng (ภาษาอังกฤษ)</span></td>
+        <td>ห้องเรียนประจำ</td>
+        <td>สอนในห้องเรียนประจำ ช่วงเช้า/บ่าย</td>
+        <td><span class="stag s-in-cls">ในห้องเรียน</span></td>
+        <td style="text-align:center"><span class="check-yes">✔</span></td>
+      </tr>
+      <tr>
+        <td><span class="pill p-ef" style="font-size:0.82em">ห้องสื่อ EF</span></td>
+        <td>ห้องสื่อ EF (ห้องพิเศษในอาคาร)</td>
+        <td>ใช้ห้องสื่อ EF ในอาคารโรงเรียน</td>
+        <td><span class="stag s-in-bld">ในอาคาร</span></td>
+        <td style="text-align:center"><span class="check-yes">✔</span></td>
+      </tr>
+      <tr>
+        <td><span class="pill p-com" style="font-size:0.82em">คอมพิวเตอร์</span></td>
+        <td>ห้องคอมพิวเตอร์ (ห้องพิเศษในอาคาร)</td>
+        <td>ใช้ห้องคอมพิวเตอร์ในอาคารโรงเรียน</td>
+        <td><span class="stag s-in-bld">ในอาคาร</span></td>
+        <td style="text-align:center"><span class="check-yes">✔</span></td>
+      </tr>
+      <tr>
+        <td><span class="pill p-res" style="font-size:0.82em">ห้องแหล่งเรียนรู้</span></td>
+        <td>ห้องแหล่งเรียนรู้ (ห้องพิเศษในอาคาร)</td>
+        <td>ใช้ห้องแหล่งเรียนรู้ในอาคารโรงเรียน</td>
+        <td><span class="stag s-in-bld">ในอาคาร</span></td>
+        <td style="text-align:center"><span class="check-yes">✔</span></td>
+      </tr>
+      <tr>
+        <td><span class="pill p-gar" style="font-size:0.82em">แปลงผัก</span></td>
+        <td>แปลงเกษตร (นอกอาคาร)</td>
+        <td>ออกไปทำกิจกรรมที่แปลงผักนอกอาคาร</td>
+        <td><span class="stag s-out">นอกอาคาร</span></td>
+        <td style="text-align:center"><span class="check-yes">✔</span></td>
+      </tr>
+      <tr>
+        <td><span class="pill p-wst" style="font-size:0.82em">คัดแยกขยะ</span></td>
+        <td>จุดคัดแยกขยะ (นอกอาคาร)</td>
+        <td>ออกไปทำกิจกรรมที่จุดคัดแยกขยะนอกอาคาร</td>
+        <td><span class="stag s-out">นอกอาคาร</span></td>
+        <td style="text-align:center"><span class="check-yes">✔</span></td>
+      </tr>
+      <tr>
+        <td><span class="pill p-pe" style="font-size:0.82em">พลศึกษา (พละ)</span></td>
+        <td>สนามกีฬา / ลานอเนกประสงค์ (นอกอาคาร)</td>
+        <td>ออกไปทำกิจกรรมที่สนาม/ลานกีฬานอกอาคาร</td>
+        <td><span class="stag s-out">นอกอาคาร</span></td>
+        <td style="text-align:center"><span class="check-yes">✔</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════ เปรียบเทียบสัดส่วนทุกห้อง ══════════════ -->
+<div class="section-card">
+  <h2>📊 เปรียบเทียบสัดส่วนแหล่งเรียนรู้รายห้อง</h2>
+  <table class="stbl">
+    <thead>
+      <tr>
+        <th>ห้อง</th>
+        <th>ในอาคาร</th>
+        <th>นอกอาคาร</th>
+        <th>รวม/สัปดาห์</th>
+        <th style="min-width:200px">สัดส่วน ใน (🔵) : นอก (🟢)</th>
+        <th>ความสมดุล</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>อ.1/1</strong></td>
+        <td>8 ครั้ง</td><td>3 ครั้ง</td><td>11 ครั้ง</td>
+        <td>
+          <div class="rbar-wrap">
+            <div class="rbar"><div class="rbar-in" style="width:73%"></div></div>
+            <span class="rbar-txt">73% : 27%</span>
+          </div>
+        </td>
+        <td>✔ เหมาะสม</td>
+      </tr>
+      <tr>
+        <td><strong>อ.1/2</strong></td>
+        <td>8 ครั้ง</td><td>3 ครั้ง</td><td>11 ครั้ง</td>
+        <td>
+          <div class="rbar-wrap">
+            <div class="rbar"><div class="rbar-in" style="width:73%"></div></div>
+            <span class="rbar-txt">73% : 27%</span>
+          </div>
+        </td>
+        <td>✔ เหมาะสม</td>
+      </tr>
+      <tr>
+        <td><strong>อ.2/1</strong></td>
+        <td>6 ครั้ง</td><td>3 ครั้ง</td><td>9 ครั้ง</td>
+        <td>
+          <div class="rbar-wrap">
+            <div class="rbar"><div class="rbar-in" style="width:67%"></div></div>
+            <span class="rbar-txt">67% : 33%</span>
+          </div>
+        </td>
+        <td>✔ เหมาะสม</td>
+      </tr>
+      <tr>
+        <td><strong>อ.2/2</strong></td>
+        <td>6 ครั้ง</td><td>3 ครั้ง</td><td>9 ครั้ง</td>
+        <td>
+          <div class="rbar-wrap">
+            <div class="rbar"><div class="rbar-in" style="width:67%"></div></div>
+            <span class="rbar-txt">67% : 33%</span>
+          </div>
+        </td>
+        <td>✔ เหมาะสม</td>
+      </tr>
+      <tr>
+        <td><strong>อ.3/1</strong></td>
+        <td>5 ครั้ง</td><td>3 ครั้ง</td><td>8 ครั้ง</td>
+        <td>
+          <div class="rbar-wrap">
+            <div class="rbar"><div class="rbar-in" style="width:63%"></div></div>
+            <span class="rbar-txt">63% : 37%</span>
+          </div>
+        </td>
+        <td>✔ เหมาะสม</td>
+      </tr>
+      <tr>
+        <td><strong>อ.3/2</strong></td>
+        <td>5 ครั้ง</td><td>3 ครั้ง</td><td>8 ครั้ง</td>
+        <td>
+          <div class="rbar-wrap">
+            <div class="rbar"><div class="rbar-in" style="width:63%"></div></div>
+            <span class="rbar-txt">63% : 37%</span>
+          </div>
+        </td>
+        <td>✔ เหมาะสม</td>
+      </tr>
+      <tr>
+        <td><strong>อ.3/3</strong></td>
+        <td>4 ครั้ง</td><td>3 ครั้ง</td><td>7 ครั้ง</td>
+        <td>
+          <div class="rbar-wrap">
+            <div class="rbar"><div class="rbar-in" style="width:57%"></div></div>
+            <span class="rbar-txt">57% : 43%</span>
+          </div>
+        </td>
+        <td>✔ เหมาะสม</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════ ข้อสังเกต ══════════════ -->
+<div class="section-card">
+  <h2>💡 สรุปข้อสังเกต</h2>
+  <div class="obs-grid">
+    <div class="obs-card obs-good">
+      <div class="obs-title">✔ กิจกรรมสอดคล้องกับแหล่งเรียนรู้ทุกรายการ</div>
+      กิจกรรมทั้ง 7 ประเภทถูกจัดในแหล่งเรียนรู้ที่ถูกต้อง เช่น แปลงผัก/พละ/คัดแยกขยะ = นอกอาคาร · ห้อง EF/คอม/แหล่งเรียนรู้ = ในอาคาร · Eng = ในห้องเรียน
+    </div>
+    <div class="obs-card obs-good">
+      <div class="obs-title">✔ ทุกห้องได้ใช้แหล่งเรียนรู้เหมือนกันครบถ้วน</div>
+      แต่ละห้องได้ใช้แหล่งเรียนรู้ครบทั้ง 6 ประเภท (EF · คอม · แหล่งเรียนรู้ · แปลงผัก · คัดแยกขยะ · พละ) โดยหมุนเวียนวันที่ใช้ต่างกัน
+    </div>
+    <div class="obs-card obs-note">
+      <div class="obs-title">📈 กิจกรรมนอกอาคารสม่ำเสมอทุกระดับชั้น</div>
+      ทุกห้องมีกิจกรรมนอกอาคาร <strong>3 ครั้ง/สัปดาห์</strong> เท่ากันทุกระดับ แสดงถึงการให้ความสำคัญกับการเรียนรู้ภาคสนามสม่ำเสมอ
+    </div>
+    <div class="obs-card obs-note">
+      <div class="obs-title">📉 สัดส่วน Eng ลดลงตามระดับชั้น</div>
+      อ.1 = 5 ครั้ง/สัปดาห์ → อ.2 = 3 ครั้ง → อ.3 = 1–2 ครั้ง ทำให้สัดส่วนกิจกรรมนอกห้องเรียนเพิ่มขึ้นตามวัย (73% → 67% → 57–63%)
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+</body>
+</html>

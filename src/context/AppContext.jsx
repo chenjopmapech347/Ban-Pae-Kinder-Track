@@ -18,7 +18,8 @@ import { getMondayOf } from '../utils/helpers';
 import { buildAppSnapshot, validateSnapshot } from '../utils/appSnapshot';
 import { pullSnapshotFromCloud, pushSnapshotToCloud } from '../lib/cloudSync';
 import { isSupabaseConfigured } from '../lib/supabase';
-import { isFirebaseConfigured } from '../lib/firebase';
+import { isFirebaseConfigured, db } from '../lib/firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { pushSnapshotToFirebase, pullSnapshotFromFirebase } from '../lib/firebaseSync';
 import { firebaseLogin, firebaseLogout, onFirebaseAuthChange } from '../lib/firebaseAuth';
 import {
@@ -45,6 +46,19 @@ export function AppProvider({ children }) {
   const [classes, setClasses] = useLocalStorage(STORAGE_KEYS.classes, INITIAL_CLASSES);
   const [schools, setSchools] = useLocalStorage(STORAGE_KEYS.schools, INITIAL_SCHOOLS);
   const [holidays, setHolidays] = useLocalStorage(STORAGE_KEYS.holidays, INITIAL_HOLIDAYS);
+
+  // ── ตารางกิจกรรม (Firestore-backed) ──────────────────────────────────────
+  const [activitySchedule, setActivitySchedule] = useState([]);
+  useEffect(() => {
+    if (!isFirebaseConfigured || !db) return;
+    const unsub = onSnapshot(collection(db, 'activitySchedule'), snap => {
+      if (!snap.empty) {
+        setActivitySchedule(snap.docs.map(d => ({ ...d.data(), id: d.id })));
+      }
+    });
+    return () => unsub();
+  }, []);
+
   const [authConfig, setAuthConfig] = useLocalStorage(STORAGE_KEYS.authConfig, DEFAULT_AUTH_CONFIG);
   const [assessmentTopics, setAssessmentTopics] = useLocalStorage(
     STORAGE_KEYS.assessmentTopics,
@@ -654,23 +668,34 @@ export function AppProvider({ children }) {
       const month    = moNum;
       const day      = dayNum;
 
-      // รวบรวม studentId จัดกลุ่มตามห้อง แยกมา vs ขาด/ลา/ป่วย
-      const byClass = {};        // นักเรียนที่ "มา"
-      const byClassAbsent = {}; // นักเรียนที่ "ขาด" / "ลา" / "ป่วย"
+      // รวบรวม studentId จัดกลุ่มตามห้อง แยกมา / ขาด-ลา / ป่วย
+      const byClass        = {}; // มา
+      const byClassAbsent  = {}; // ขาด / ลา
+      const byClassSick    = {}; // ป่วย
       Object.entries(recordsByStudentId).forEach(([id, rec]) => {
         const stu = students.find(s => String(s.id) === String(id));
         if (!stu) return;
         if (rec.attendance === 'มา') {
           (byClass[stu.className] ??= []).push(String(id));
-        } else if (['ขาด', 'ลา', 'ป่วย'].includes(rec.attendance)) {
+        } else if (['ขาด', 'ลา'].includes(rec.attendance)) {
           (byClassAbsent[stu.className] ??= []).push(String(id));
+        } else if (rec.attendance === 'ป่วย') {
+          (byClassSick[stu.className] ??= []).push(String(id));
         }
       });
+
+      // รวม ขาด/ลา + ป่วย สำหรับกรณีที่ต้องการ X ทั้งคู่
+      const mergeClassMaps = (a, b) => {
+        const result = { ...a };
+        Object.entries(b).forEach(([cls, ids]) => { (result[cls] ??= []).push(...ids); });
+        return result;
+      };
+      const byClassAllAbsent = mergeClassMaps(byClassAbsent, byClassSick);
 
       const monthStr = String(month).padStart(2, '0');
       const makeKey  = (cls) => `${cls}__${academicYear}__${thaiYear}-${monthStr}`;
 
-      // Milk, Lunch, ToothBrush → เครื่องหมาย 'H'
+      // ── Milk, Lunch, ToothBrush → 'H' สำหรับนักเรียนที่มา ──
       const patchH = (prev, setter) => {
         const next = { ...prev };
         Object.entries(byClass).forEach(([cls, ids]) => {
@@ -692,10 +717,10 @@ export function AppProvider({ children }) {
       patchH(lunchRecords,      setLunchRecords);
       patchH(toothBrushRecords, setToothBrushRecords);
 
-      // Milk, Lunch, ToothBrush → นักเรียนขาด/ลา/ป่วย → เครื่องหมาย 'X'
-      const patchX = (prev, setter) => {
+      // ── Milk, Lunch, ToothBrush → 'X' สำหรับนักเรียนที่ขาด/ลา/ป่วย ──
+      const patchX = (prev, setter, absentMap) => {
         const next = { ...prev };
-        Object.entries(byClassAbsent).forEach(([cls, ids]) => {
+        Object.entries(absentMap).forEach(([cls, ids]) => {
           const k   = makeKey(cls);
           const rec = next[k]
             ? { ...next[k], students: { ...next[k].students } }
@@ -710,97 +735,148 @@ export function AppProvider({ children }) {
         });
         setter(next);
       };
-      patchX(milkRecords,       setMilkRecords);
-      patchX(lunchRecords,      setLunchRecords);
-      patchX(toothBrushRecords, setToothBrushRecords);
+      patchX(milkRecords,       setMilkRecords,       byClassAllAbsent);
+      patchX(lunchRecords,      setLunchRecords,      byClassAllAbsent);
+      patchX(toothBrushRecords, setToothBrushRecords, byClassAllAbsent);
 
-      // IllnessCheck → นักเรียนที่มา: { v: '√' } | นักเรียนขาด/ลา/ป่วย: { v: 'X' }
+      // ── IllnessCheck → มา:'√' | ขาด/ลา:'X' | ป่วย:'C' ──
       setIllnessCheckRecords(prev => {
         const next = { ...prev };
-        // มา → √
-        Object.entries(byClass).forEach(([cls, ids]) => {
-          const k   = makeKey(cls);
-          const rec = next[k]
-            ? { ...next[k], students: { ...next[k].students } }
-            : { id: k, className: cls, academicYear, year: thaiYear, month, students: {} };
-          ids.forEach(id => {
-            const sData = rec.students[id] ?? { days: {}, weight: 0, height: 0 };
-            if (!(day in (sData.days ?? {}))) {
-              rec.students[id] = {
-                ...sData,
-                days: { ...(sData.days ?? {}), [day]: { v: '√', sep: 0, home: false, fam: false, note: '' } },
-              };
-            }
+        const applyIllness = (classMap, statusVal) => {
+          Object.entries(classMap).forEach(([cls, ids]) => {
+            const k   = makeKey(cls);
+            const rec = next[k]
+              ? { ...next[k], students: { ...next[k].students } }
+              : { id: k, className: cls, academicYear, year: thaiYear, month, students: {} };
+            ids.forEach(id => {
+              const sData = rec.students[id] ?? { days: {}, weight: 0, height: 0 };
+              if (!(day in (sData.days ?? {}))) {
+                rec.students[id] = {
+                  ...sData,
+                  days: { ...(sData.days ?? {}), [day]: { v: statusVal, sep: 0, home: false, fam: false, note: '' } },
+                };
+              }
+            });
+            next[k] = rec;
           });
-          next[k] = rec;
-        });
-        // ขาด/ลา/ป่วย → X
-        Object.entries(byClassAbsent).forEach(([cls, ids]) => {
-          const k   = makeKey(cls);
-          const rec = next[k]
-            ? { ...next[k], students: { ...next[k].students } }
-            : { id: k, className: cls, academicYear, year: thaiYear, month, students: {} };
-          ids.forEach(id => {
-            const sData = rec.students[id] ?? { days: {}, weight: 0, height: 0 };
-            if (!(day in (sData.days ?? {}))) {
-              rec.students[id] = {
-                ...sData,
-                days: { ...(sData.days ?? {}), [day]: { v: 'X', sep: 0, home: false, fam: false, note: '' } },
-              };
-            }
-          });
-          next[k] = rec;
-        });
+        };
+        applyIllness(byClass,       '√');
+        applyIllness(byClassAbsent, 'X');
+        applyIllness(byClassSick,   'C'); // ป่วย → C (ไข้ทั่วไป) ครูเปลี่ยน H/D เองภายหลัง
         return next;
       });
 
-      // ── HealthCheck (รายวัน) → ผ่านทุกหมวดอัตโนมัติสำหรับนักเรียนที่มา ──
-      // key: className__academicYear__YYYY-MM-DD (ISO date)
-      setHealthCheckRecords(prev => {
-        const next = { ...prev };
-        Object.entries(byClass).forEach(([cls, ids]) => {
-          const k = `${cls}__${academicYear}__${date}`;
-          const rec = next[k]
-            ? { ...next[k], students: { ...next[k].students } }
-            : { id: k, className: cls, academicYear, date, students: {} };
-          ids.forEach(id => {
-            if (!rec.students[id]) {
-              rec.students[id] = {
-                body: true, hair: true, cloth: true,
-                ear: true, mouth: true, nail: true, note: '',
-              };
-            }
-          });
-          next[k] = rec;
-        });
-        return next;
-      });
+      // ── HealthCheck → เฉพาะวันจันทร์ (หรืออังคารถ้าจันทร์เป็นวันหยุด) ──
+      // key: className__academicYear__YYYY-MM-DD
+      // ค่า: null=ยังไม่ตรวจ | 1|2|3 = ครั้งที่ในเดือน
+      (() => {
+        const weekday = new Date(date).getDay(); // 0=อาทิตย์ 1=จันทร์ 2=อังคาร
 
-      // ── Corner & InnerCorner (รายสัปดาห์) → เพิ่มนักเรียนใหม่เข้า record ──
-      // key: className||YYYY-MM-DD (วันจันทร์ต้นสัปดาห์)
+        // ฟังก์ชันตรวจสอบว่า ISO date ตรงกับวันหยุดใน holidays หรือไม่
+        const isHoliday = (isoDate) => holidays.some(h => {
+          const [dd, mm, bYear] = h.date.split('/');
+          return `${parseInt(bYear, 10) - 543}-${mm}-${dd}` === isoDate;
+        });
+
+        let isHealthCheckDay = false;
+        if (weekday === 1) {
+          isHealthCheckDay = !isHoliday(date);       // จันทร์ที่ไม่ใช่วันหยุด
+        } else if (weekday === 2) {
+          // อังคาร — ตรวจสอบว่าจันทร์ก่อนหน้าเป็นวันหยุดไหม
+          const prevMon = new Date(date);
+          prevMon.setDate(prevMon.getDate() - 1);
+          const prevMonISO = prevMon.toISOString().split('T')[0];
+          isHealthCheckDay = isHoliday(prevMonISO);
+        }
+
+        if (!isHealthCheckDay) return;
+
+        // คำนวณครั้งที่ในเดือน (1–3) จากวันที่
+        const weekNum = Math.min(Math.ceil(dayNum / 7), 3);
+        const healthEntry = (val) => ({
+          body: val, hair: val, cloth: val,
+          ear: val,  mouth: val, nail: val, note: '',
+        });
+
+        setHealthCheckRecords(prev => {
+          const next = { ...prev };
+          // มา → เติมค่าครั้งที่ (weekNum)
+          Object.entries(byClass).forEach(([cls, ids]) => {
+            const k   = `${cls}__${academicYear}__${date}`;
+            const rec = next[k]
+              ? { ...next[k], students: { ...next[k].students } }
+              : { id: k, className: cls, academicYear, date, students: {} };
+            ids.forEach(id => { if (!rec.students[id]) rec.students[id] = healthEntry(weekNum); });
+            next[k] = rec;
+          });
+          // ขาด/ลา/ป่วย → บันทึก record เปล่า (null = ยังไม่ได้ตรวจ)
+          Object.entries(byClassAllAbsent).forEach(([cls, ids]) => {
+            const k   = `${cls}__${academicYear}__${date}`;
+            const rec = next[k]
+              ? { ...next[k], students: { ...next[k].students } }
+              : { id: k, className: cls, academicYear, date, students: {} };
+            ids.forEach(id => { if (!rec.students[id]) rec.students[id] = healthEntry(null); });
+            next[k] = rec;
+          });
+          return next;
+        });
+      })();
+
+      // ── Corner & InnerCorner (รายสัปดาห์) ──
+      // corner  = แหล่งเรียนรู้นอกห้อง: เติมตามกิจกรรมที่กำหนดในตาราง
+      // innerCorner = มุมประสบการณ์ในห้อง: เติมทุก key เมื่อนักเรียนมาเรียน
       const monday = getMondayOf(date);
+
+      // แผนที่ประเภทกิจกรรม → key ของ cornerDefs
+      const ACT_TO_CORNER = {
+        wst: ['wasteSort', 'organicWaste'],
+        gar: ['garden'],
+        ef:  ['learningRoom'],
+        com: ['computerRoom'],
+        res: ['learningRoom'],
+      };
+
+      // ชื่อวันภาษาไทยตาม index ของ getDay()
+      const THAI_DAY_NAMES = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+      const thaiDayName = THAI_DAY_NAMES[new Date(date).getDay()];
+
       setCornerRecords(prev => {
         const next = { ...prev };
         Object.entries(byClass).forEach(([cls, ids]) => {
           const weekKey  = `${cls}||${monday}`;
-          const weekData = next[weekKey] ?? {};
+          const weekData = { ...(next[weekKey] ?? {}) };
           const emptyRec = Object.fromEntries((cornerDefs ?? []).map(c => [c.key, false]));
-          const updated  = { ...weekData };
-          ids.forEach(id => { if (!updated[id]) updated[id] = { ...emptyRec }; });
-          next[weekKey] = updated;
+
+          // หาห้องที่ตรงกับ className แล้วดูกิจกรรมวันนี้
+          const room        = activitySchedule.find(r => r.name === `ห้อง ${cls}`);
+          const dayActs     = room?.days?.[thaiDayName] ?? [];
+          const keysToMark  = new Set(
+            dayActs.flatMap(([type]) => ACT_TO_CORNER[type] ?? [])
+          );
+
+          ids.forEach(id => {
+            const existing = weekData[id] ?? { ...emptyRec };
+            const updated  = { ...existing };
+            keysToMark.forEach(k => { updated[k] = true; });
+            weekData[id]   = updated;
+          });
+          next[weekKey] = weekData;
         });
         return next;
       });
 
       setInnerCornerRecords(prev => {
         const next = { ...prev };
+        // เติม innerCorner ทุก key = true สำหรับนักเรียนที่มา (มุมประสบการณ์ใช้ทุกวัน)
+        const allTrueRec = Object.fromEntries((innerCornerDefs ?? []).map(c => [c.key, true]));
+        const emptyRec   = Object.fromEntries((innerCornerDefs ?? []).map(c => [c.key, false]));
         Object.entries(byClass).forEach(([cls, ids]) => {
           const weekKey  = `${cls}||${monday}`;
-          const weekData = next[weekKey] ?? {};
-          const emptyRec = Object.fromEntries((innerCornerDefs ?? []).map(c => [c.key, false]));
-          const updated  = { ...weekData };
-          ids.forEach(id => { if (!updated[id]) updated[id] = { ...emptyRec }; });
-          next[weekKey] = updated;
+          const weekData = { ...(next[weekKey] ?? {}) };
+          ids.forEach(id => {
+            weekData[id] = { ...emptyRec, ...(weekData[id] ?? {}), ...allTrueRec };
+          });
+          next[weekKey] = weekData;
         });
         return next;
       });
@@ -817,6 +893,7 @@ export function AppProvider({ children }) {
       healthCheckRecords, setHealthCheckRecords,
       cornerRecords,      setCornerRecords,      cornerDefs,
       innerCornerRecords, setInnerCornerRecords, innerCornerDefs,
+      holidays, activitySchedule,
     ],
   );
 

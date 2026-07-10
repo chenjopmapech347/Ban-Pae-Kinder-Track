@@ -34,6 +34,7 @@ const StudentReportTab       = lazy(() => import('../components/admin/StudentRep
 const AIChatTab              = lazy(() => import('../components/AIChatTab'));
 const ClassAssignTab         = lazy(() => import('../components/admin/ClassAssignTab'));
 const MeasurementDatesTab    = lazy(() => import('../components/admin/MeasurementDatesTab'));
+const ActivityScheduleTab    = lazy(() => import('../components/admin/ActivityScheduleTab'));
 const SystemLogTab           = lazy(() => import('../components/admin/SystemLogTab'));
 const HelpTab                = lazy(() => import('../components/admin/HelpTab'));
 
@@ -98,8 +99,9 @@ const TAB_GROUPS = [
       { id: 'terms',      label: '📅 ภาคเรียน'            },
       { id: 'holidays',   label: '🏖️ วันหยุด'             },
       { id: 'standards',        label: '🗺️ มาตรฐานปฐมวัย'           },
-      { id: 'measurementdates', label: '📏 วันวัดน้ำหนัก/ส่วนสูง' },
-      { id: 'systemlog',        label: '📋 บันทึกการใช้งานระบบ'    },
+      { id: 'measurementdates',  label: '📏 เดือนวัดน้ำหนัก/ส่วนสูง'         },
+      { id: 'activityschedule', label: '🗓️ กิจกรรมภายใน-นอกห้องเรียน'       },
+      { id: 'systemlog',        label: '📋 บันทึกการใช้งานระบบ'              },
     ],
   },
   {
@@ -163,7 +165,8 @@ export default function AdminDashboard() {
           {activeTab === 'terms'          && <TermsTab />}
           {activeTab === 'holidays'       && <HolidaysTab />}
           {activeTab === 'standards'        && <StandardsMapTab />}
-          {activeTab === 'measurementdates' && <MeasurementDatesTab />}
+          {activeTab === 'measurementdates'  && <MeasurementDatesTab />}
+          {activeTab === 'activityschedule' && <ActivityScheduleTab />}
           {activeTab === 'systemlog'        && <SystemLogTab />}
           {activeTab === 'help'             && <HelpTab />}
         </Suspense>

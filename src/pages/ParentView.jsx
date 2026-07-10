@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { getQualityText } from '../utils/helpers';
 import { callClaude, buildParentSummaryPrompt } from '../utils/aiHelper';
@@ -14,7 +14,8 @@ const LEVEL_COLOR = {
 export default function ParentView() {
   const { user, students, setSelectedStudent, assessmentTopics,
     indicators: allIndicators, activities: allActivities,
-    aiApiKey, teachers, announcements } = useApp();
+    aiApiKey, teachers, announcements,
+    dailyRecords } = useApp();
 
   const [aiText, setAiText]       = useState('');
   const [aiLoading, setAiLoading] = useState(false);
@@ -52,11 +53,21 @@ export default function ParentView() {
     );
   }
 
-  const isBoy   = student.name.includes('ชาย');
-  const total   = student.attendance?.total ?? 0;
-  const present = student.attendance?.present ?? 0;
-  const absent  = student.attendance?.absent ?? 0;
-  const pct     = total ? Math.round((present / total) * 100) : 0;
+  const isBoy = student.name.includes('ชาย');
+
+  // นับสถิติจาก dailyRecords (ที่ครูบันทึก) — ตรงกับข้อมูลจริงใน AttendanceTab
+  const { total, present, absent } = useMemo(() => {
+    let p = 0, ab = 0;
+    Object.values(dailyRecords ?? {}).forEach(day => {
+      const rec = day[String(student.id)];
+      if (!rec?.attendance) return;
+      if (rec.attendance === 'มา') p++;
+      else ab++;
+    });
+    return { total: p + ab, present: p, absent: ab };
+  }, [dailyRecords, student.id]);
+
+  const pct = total ? Math.round((present / total) * 100) : 0;
 
   return (
     <div className="animate-fade">

@@ -315,6 +315,18 @@ export function AppProvider({ children }) {
     return { ok: true, updatedAt: result.updatedAt };
   }, [restoreSnapshotData]);
 
+  // ─── Auto-pull จาก Firebase เมื่อ role เปลี่ยนเป็น parent ──
+  useEffect(() => {
+    if (role !== 'parent') return;
+    if (!isFirebaseConfigured) return;
+    // ดึงข้อมูลล่าสุดจาก Firebase ในเบื้องหลัง (fire-and-forget)
+    pullSnapshotFromFirebase().then(result => {
+      if (!result.ok) return;
+      const check = validateSnapshot(result.payload);
+      if (check.ok) restoreSnapshotData(check.snapshot);
+    }).catch(() => {});
+  }, [role]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ─── Auto-sync to Firebase (debounced 4s) ──────────────
   const [autoSyncStatus, setAutoSyncStatus] = useState('idle'); // 'idle' | 'pending' | 'syncing' | 'done' | 'error'
   const autoSyncTimer  = useRef(null);

@@ -1,0 +1,15 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // รูปภาพสื่อ — เขียนได้เฉพาะผู้ที่ login Firebase Auth (ครู/ผู้บริหาร)
+    // อ่านได้ทุกคน (เพื่อแสดงรูปในหน้าจอ)
+    match /media-images/{imageId} {
+      allow read:  if true;
+      allow write: if request.auth != null;
+    }
+    // ไฟล์อื่น ๆ ในอนาคต — ต้อง login ทั้ง read และ write
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

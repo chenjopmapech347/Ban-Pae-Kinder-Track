@@ -199,7 +199,7 @@ export default function MeasurementDatesTab() {
                   </td>
                   <td style={{ padding: '7px 10px', border: '1px solid #e5e7eb' }}>
                     {form[slot.key]
-                      ? <span style={{ fontWeight: 600, color: '#059669' }}>{thaiDate(form[slot.key])}</span>
+                      ? <span style={{ fontWeight: 600, color: '#059669' }}>{thaiMonth(form[slot.key])}</span>
                       : <span style={{ color: '#d1d5db', fontStyle: 'italic' }}>ยังไม่กำหนด (ช่องว่าง)</span>
                     }
                   </td>

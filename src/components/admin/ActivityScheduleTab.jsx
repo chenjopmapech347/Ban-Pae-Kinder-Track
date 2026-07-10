@@ -103,6 +103,38 @@ const RATIO_ROWS = [
   { room:'อ.3/3', inC:4, outC:3 },
 ];
 
+/* ── Daily summary helpers ───────────────────────────────── */
+
+const ACT_LABEL = {
+  eng:'Eng', ef:'ห้องสื่อ EF', com:'คอมพิวเตอร์',
+  res:'ห้องแหล่งเรียนรู้', gar:'แปลงผัก', wst:'คัดแยกขยะ', pe:'พลศึกษา',
+};
+const IN_SET  = new Set(['eng','ef','com','res']);
+const OUT_SET = new Set(['gar','wst','pe']);
+
+// returns { day: { type: roomCount } }
+function computeDailySummary() {
+  const res = {};
+  DAYS.forEach(d => { res[d] = {}; });
+  SCHEDULE.forEach(lv => lv.rooms.forEach(room => {
+    DAYS.forEach(day => {
+      (room.days[day] ?? []).forEach(([type]) => {
+        res[day][type] = (res[day][type] ?? 0) + 1;
+      });
+    });
+  }));
+  return res;
+}
+
+const DAILY_SUMMARY = computeDailySummary();
+
+// day-header colours
+const DAY_CLR = {
+  จันทร์:    '#1565C0', อังคาร:'#6A1B9A',
+  พุธ:       '#2E7D32', พฤหัสบดี:'#B71C1C',
+  ศุกร์:     '#E65100',
+};
+
 /* ── Sub-components ──────────────────────────────────────── */
 
 function Pill({ type, time, label }) {
@@ -258,6 +290,89 @@ export default function ActivityScheduleTab() {
         </div>
       ))}
 
+      {/* ── Daily summary ── */}
+      <div className="glass-card mb-4">
+        <div style={{ fontWeight:700, fontSize:'1em', marginBottom:'14px',
+                      paddingBottom:'9px', borderBottom:'2px solid #eceff1' }}>
+          📅 สรุปการใช้แหล่งเรียนรู้รายวัน (ทุก 7 ห้องรวมกัน)
+        </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
+          {DAYS.map(day => {
+            const acts   = DAILY_SUMMARY[day];
+            const types  = Object.keys(acts);
+            const inCnt  = types.filter(t => IN_SET.has(t)).reduce((s,t) => s + acts[t], 0);
+            const outCnt = types.filter(t => OUT_SET.has(t)).reduce((s,t) => s + acts[t], 0);
+            const total  = inCnt + outCnt;
+            const pct    = total > 0 ? Math.round((inCnt / total) * 100) : 0;
+
+            return (
+              <div key={day} style={{
+                border:'1px solid #e4e8ec', borderRadius:'12px',
+                overflow:'hidden',
+              }}>
+                {/* day header */}
+                <div style={{
+                  padding:'7px 14px', fontWeight:700, fontSize:'.88em',
+                  color:'white', background: DAY_CLR[day] ?? '#546e7a',
+                  display:'flex', alignItems:'center', justifyContent:'space-between',
+                }}>
+                  <span>วัน{day}</span>
+                  <span style={{ fontSize:'.8em', fontWeight:500, opacity:.9 }}>
+                    🏫 ในอาคาร {inCnt} ครั้ง · 🌿 นอกอาคาร {outCnt} ครั้ง
+                  </span>
+                </div>
+
+                {/* content */}
+                <div style={{ padding:'10px 14px', background:'white',
+                              display:'flex', flexWrap:'wrap', alignItems:'center', gap:'8px' }}>
+                  {types.length === 0 ? (
+                    <span style={{ fontSize:'.8em', color:'#ccc', fontStyle:'italic' }}>
+                      ไม่มีกิจกรรมพิเศษในวันนี้
+                    </span>
+                  ) : (
+                    <>
+                      {types.map(type => {
+                        const s = PS[type] ?? PS.eng;
+                        return (
+                          <span key={type} style={{
+                            display:'inline-flex', alignItems:'center', gap:'5px',
+                            padding:'4px 10px 4px 8px', borderRadius:'20px',
+                            fontSize:'.82em', fontWeight:600,
+                            background:s.bg, color:s.color, border:`1.5px solid ${s.border}`,
+                          }}>
+                            {ACT_LABEL[type]}
+                            <span style={{
+                              minWidth:'20px', textAlign:'center',
+                              background: OUT_SET.has(type) ? '#A5D6A7' : '#B3C4E8',
+                              color: OUT_SET.has(type) ? '#1B5E20' : '#0D47A1',
+                              borderRadius:'12px', fontSize:'.82em', fontWeight:700,
+                              padding:'1px 6px',
+                            }}>
+                              {acts[type]} ห้อง
+                            </span>
+                          </span>
+                        );
+                      })}
+                      {/* ratio bar */}
+                      <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:'6px' }}>
+                        <div style={{ width:'80px', height:'7px', borderRadius:'7px',
+                                      background:'#E8F5E9', overflow:'hidden' }}>
+                          <div style={{ width:`${pct}%`, height:'100%', borderRadius:'7px',
+                                        background: DAY_CLR[day] ?? '#1565C0' }} />
+                        </div>
+                        <span style={{ fontSize:'.76em', color:'#90a4ae', whiteSpace:'nowrap' }}>
+                          {pct}% ใน
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* ── Match table ── */}
       <div className="glass-card mb-4">
         <div style={{ fontWeight:700, fontSize:'1em', marginBottom:'12px',
@@ -351,34 +466,6 @@ export default function ActivityScheduleTab() {
         </div>
       </div>
 
-      {/* ── Observations ── */}
-      <div className="glass-card">
-        <div style={{ fontWeight:700, fontSize:'1em', marginBottom:'12px',
-                      paddingBottom:'9px', borderBottom:'2px solid #eceff1' }}>
-          💡 สรุปข้อสังเกต
-        </div>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px' }}>
-          {[
-            { style:'good', title:'✔ กิจกรรมสอดคล้องกับแหล่งเรียนรู้ทุกรายการ',
-              body:'กิจกรรมทั้ง 7 ประเภทถูกจัดในแหล่งเรียนรู้ที่ถูกต้อง เช่น แปลงผัก/พละ/คัดแยกขยะ = นอกอาคาร · ห้อง EF/คอม/แหล่งเรียนรู้ = ในอาคาร · Eng = ในห้องเรียน' },
-            { style:'good', title:'✔ ทุกห้องได้ใช้แหล่งเรียนรู้เหมือนกันครบถ้วน',
-              body:'แต่ละห้องได้ใช้แหล่งเรียนรู้ครบทั้ง 6 ประเภท (EF · คอม · แหล่งเรียนรู้ · แปลงผัก · คัดแยกขยะ · พละ) โดยหมุนเวียนวันที่ใช้ต่างกัน' },
-            { style:'note', title:'📈 กิจกรรมนอกอาคารสม่ำเสมอทุกระดับชั้น',
-              body:'ทุกห้องมีกิจกรรมนอกอาคาร 3 ครั้ง/สัปดาห์ เท่ากันทุกระดับ แสดงถึงการให้ความสำคัญกับการเรียนรู้ภาคสนามสม่ำเสมอ' },
-            { style:'note', title:'📉 สัดส่วน Eng ลดลงตามระดับชั้น',
-              body:'อ.1 = 5 ครั้ง/สัปดาห์ → อ.2 = 3 ครั้ง → อ.3 = 1–2 ครั้ง ทำให้สัดส่วนกิจกรรมนอกห้องเรียนเพิ่มขึ้นตามวัย (73% → 67% → 57–63%)' },
-          ].map((c,i) => (
-            <div key={i} style={{
-              borderRadius:'10px', padding:'12px 14px', fontSize:'.87em', lineHeight:1.65,
-              background: c.style === 'good' ? '#E8F5E9' : '#E3F2FD',
-              borderLeft: `4px solid ${c.style === 'good' ? '#2E7D32' : '#1565C0'}`,
-            }}>
-              <div style={{ fontWeight:700, marginBottom:'4px' }}>{c.title}</div>
-              {c.body}
-            </div>
-          ))}
-        </div>
-      </div>
 
     </div>
   );

@@ -7,27 +7,35 @@ const ROUNDS = [1, 2, 3, 4];
 export default function OverviewTab() {
   const {
     students, teachers, assessmentTopics, announcements, setAnnouncements, allClassNames,
+    activities,
   } = useApp();
   const ALL_CLASSES = allClassNames;
 
   // ── สถานะการประเมินแยกตามห้อง × ครั้ง ──────────────────────────────────────
+  // นับจำนวน "กิจกรรม" ที่ประเมินแล้ว (distinct activityId ที่มี score ≠ null)
+  // เทียบกับจำนวนกิจกรรมทั้งหมดในระบบ
   const pendingMatrix = useMemo(() => {
+    const totalActs = activities.length;
     return ALL_CLASSES.map(cls => {
       const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'));
       if (!sts.length) return null;
       const rounds = ROUNDS.map(r => {
         const rKey = `r${r}`;
-        const assessed = sts.filter(s => {
+        // รวบรวม activityId ที่มีนักเรียนอย่างน้อย 1 คนได้รับคะแนนในรอบนี้
+        const doneActs = new Set();
+        sts.forEach(s => {
           const inds = s.assessments?.indicators ?? {};
-          return Object.values(inds).some(actMap =>
-            Object.values(actMap).some(scores => scores?.[rKey] != null)
-          );
-        }).length;
-        return assessed; // number of students with ≥1 score in this round
+          Object.values(inds).forEach(actMap => {
+            Object.entries(actMap).forEach(([actId, scores]) => {
+              if (scores?.[rKey] != null) doneActs.add(actId);
+            });
+          });
+        });
+        return doneActs.size;
       });
-      return { cls, total: sts.length, rounds };
+      return { cls, studentCount: sts.length, total: totalActs, rounds };
     }).filter(Boolean);
-  }, [students]);
+  }, [students, activities, ALL_CLASSES]);
 
   const totalPending = pendingMatrix.reduce((sum, row) =>
     sum + row.rounds.filter(r => r === 0).length, 0
@@ -184,15 +192,15 @@ export default function OverviewTab() {
                 <th>ห้องเรียน</th>
                 <th style={{ textAlign: 'center', width: '60px' }}>นักเรียน</th>
                 {ROUNDS.map(r => (
-                  <th key={r} style={{ textAlign: 'center', width: '90px' }}>ครั้งที่ {r}</th>
+                  <th key={r} style={{ textAlign: 'center', width: '110px' }}>ครั้งที่ {r}<br/><span style={{ fontSize: '.68rem', fontWeight: 400, opacity: .7 }}>(กิจกรรม)</span></th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {pendingMatrix.map(({ cls, total, rounds }) => (
+              {pendingMatrix.map(({ cls, studentCount, total, rounds }) => (
                 <tr key={cls} className="hover-row">
                   <td style={{ fontWeight: 700 }}>{cls}</td>
-                  <td style={{ textAlign: 'center', color: 'var(--text-muted)' }}>{total}</td>
+                  <td style={{ textAlign: 'center', color: 'var(--text-muted)' }}>{studentCount}</td>
                   {rounds.map((assessed, i) => {
                     const isPending  = assessed === 0;
                     const isPartial  = assessed > 0 && assessed < total;

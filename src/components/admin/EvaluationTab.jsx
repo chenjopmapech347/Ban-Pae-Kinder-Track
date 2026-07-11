@@ -312,7 +312,7 @@ function DailyContextPanel({ classStudents, toothBrushRecords, lunchRecords, mil
 export default function EvaluationTab() {
   const {
     students, setStudents, assessmentTopics, indicators, activities,
-    role, user, addActivityLog, aiApiKey, classMap: CLASS_MAP,
+    role, user, addActivityLog, aiApiKey, classMap: CLASS_MAP, allClassNames,
     toothBrushRecords, lunchRecords, milkRecords,
   } = useApp();
 
@@ -600,21 +600,37 @@ export default function EvaluationTab() {
           ขั้นที่ 2 — เลือกระดับชั้น & ห้องเรียน
         </div>
 
-        {/* ─ Teacher: แสดงห้องที่ถูกกำหนด (ล็อค) ─ */}
+        {/* ─ Teacher: เลือกจากห้องทั้งหมด (ไม่ล็อค) ─ */}
         {isTeacher ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem' }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: '.4rem',
-              background: lvMeta?.bg ?? '#f5f3ff', border: `2px solid ${lvMeta?.color ?? '#7c3aed'}`,
-              borderRadius: '10px', padding: '.3rem .85rem',
-              fontWeight: 700, fontSize: '.85rem', color: lvMeta?.color ?? '#7c3aed',
-            }}>
-              {lvMeta?.emoji} {lvMeta?.label} — {selClass}
-              <span style={{ background: lvMeta?.color ?? '#7c3aed', color: 'white', borderRadius: '999px', padding: '0 .4rem', fontSize: '.72rem' }}>
-                {classStudents.length} คน
-              </span>
+          <div>
+            <label style={{ fontSize: '.77rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '.35rem' }}>
+              ห้องเรียน <span style={{ fontWeight: 400, color: '#9ca3af' }}>(เลือกห้องที่ต้องการประเมิน)</span>
+            </label>
+            <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
+              {(allClassNames ?? []).map(cls => {
+                const active = selClass === cls;
+                const cnt = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)')).length;
+                return (
+                  <div key={cls} onClick={() => setClass(cls)} style={{
+                    cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: '.3rem',
+                    background: active ? '#f5f3ff' : '#f9fafb',
+                    border: `2px solid ${active ? '#7c3aed' : '#e5e7eb'}`,
+                    borderRadius: '8px', padding: '.25rem .65rem',
+                    fontWeight: 700, fontSize: '.82rem',
+                    color: active ? '#7c3aed' : '#6b7280',
+                    transition: 'all .15s',
+                  }}>
+                    {cls}
+                    <span style={{
+                      background: active ? '#7c3aed' : '#e5e7eb',
+                      color: active ? 'white' : '#6b7280',
+                      borderRadius: '999px', padding: '0 .4rem', fontSize: '.7rem',
+                    }}>{cnt}</span>
+                  </div>
+                );
+              })}
             </div>
-            <span style={{ fontSize: '.74rem', color: '#9ca3af' }}>🔒 ห้องของคุณ</span>
           </div>
         ) : (
           <>

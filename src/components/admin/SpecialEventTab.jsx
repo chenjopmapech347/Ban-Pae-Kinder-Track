@@ -46,6 +46,93 @@ const EVENT_TYPE_DEFAULT_ACTIVITIES = {
   ],
 };
 
+// ── Preset events สำหรับปีการศึกษา 2568 ──────────────────────────────────────
+const PRESET_EVENTS = [
+  // ── กิจกรรมโรงเรียน ──────────────────────────────────────────────────────
+  {
+    id: 'preset_waikhru_2568', name: 'วันไหว้ครู 2568', date: '2025-07-03',
+    type: 'school', scope: 'all',
+    description: 'กิจกรรมไหว้ครูประจำปี นักเรียนนำพานดอกไม้มาไหว้ครู',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.school, participants: {},
+  },
+  {
+    id: 'preset_sports_2568', name: 'วันกีฬาสี 2568', date: '2025-11-28',
+    type: 'school', scope: 'all',
+    description: 'กิจกรรมกีฬาสีประจำปี ส่งเสริมความสามัคคีและสุขภาพที่ดี',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.school, participants: {},
+  },
+  {
+    id: 'preset_openhouse_2568', name: 'วันเปิดบ้าน (Open House) 2568', date: '2026-02-27',
+    type: 'school', scope: 'all',
+    description: 'เปิดโอกาสให้ผู้ปกครองเข้าเยี่ยมชมการเรียนการสอนและผลงานนักเรียน',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.school, participants: {},
+  },
+
+  // ── วันสำคัญของชาติ/ศาสนา ────────────────────────────────────────────────
+  {
+    id: 'preset_makha_2568', name: 'วันมาฆบูชา 2568', date: '2025-02-12',
+    type: 'national', scope: 'all',
+    description: 'กิจกรรมเวียนเทียน เรียนรู้หลักธรรมและคุณธรรมพื้นฐาน',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+  },
+  {
+    id: 'preset_songkran_2568', name: 'วันสงกรานต์ 2568', date: '2025-04-11',
+    type: 'national', scope: 'all',
+    description: 'กิจกรรมสืบสานวัฒนธรรมไทย รดน้ำดำหัว และแต่งกายชุดไทย',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+  },
+  {
+    id: 'preset_visakha_2568', name: 'วันวิสาขบูชา 2568', date: '2025-05-12',
+    type: 'national', scope: 'all',
+    description: 'กิจกรรมเรียนรู้ประวัติวันวิสาขบูชา และปฏิบัติตนเป็นพุทธศาสนิกชนที่ดี',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+  },
+  {
+    id: 'preset_khao_phansa_2568', name: 'วันเข้าพรรษา 2568', date: '2025-07-10',
+    type: 'national', scope: 'all',
+    description: 'กิจกรรมถวายเทียนพรรษาและปลูกฝังค่านิยมทางพุทธศาสนา',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+  },
+  {
+    id: 'preset_mothersday_2568', name: 'วันแม่แห่งชาติ 2568', date: '2025-08-12',
+    type: 'national', scope: 'all',
+    description: 'กิจกรรมวันแม่ ทำการ์ดอวยพร แสดงความกตัญญูต่อแม่',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+  },
+  {
+    id: 'preset_loykrathong_2568', name: 'วันลอยกระทง 2568', date: '2025-11-05',
+    type: 'national', scope: 'all',
+    description: 'กิจกรรมลอยกระทง ประดิษฐ์กระทงจากวัสดุธรรมชาติ เรียนรู้ประเพณีไทย',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+  },
+  {
+    id: 'preset_fathersday_2568', name: 'วันพ่อแห่งชาติ 2568', date: '2025-12-05',
+    type: 'national', scope: 'all',
+    description: 'กิจกรรมวันพ่อ ทำของขวัญและแสดงความกตัญญูต่อพ่อ',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+  },
+
+  // ── โครงการ/กิจกรรมพิเศษ ─────────────────────────────────────────────────
+  {
+    id: 'preset_garden_2568', name: 'โครงการปลูกผักสวนครัว', date: '2025-08-15',
+    type: 'project', scope: 'all',
+    description: 'โครงการเกษตรพอเพียง เรียนรู้การปลูกและดูแลต้นไม้ ฝึกความรับผิดชอบ',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.project, participants: {},
+  },
+  {
+    id: 'preset_science_2568', name: 'กิจกรรมวิทยาศาสตร์สนุก', date: '2025-09-05',
+    type: 'project', scope: 'all',
+    description: 'การทดลองวิทยาศาสตร์ง่ายๆ ส่งเสริมความคิดสร้างสรรค์และการตั้งคำถาม',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.project, participants: {},
+  },
+  {
+    id: 'preset_reading_2568', name: 'โครงการรักการอ่าน', date: '2025-08-02',
+    type: 'project', scope: 'all',
+    description: 'กิจกรรมนิทานและห้องสมุด ส่งเสริมนิสัยรักการอ่านตั้งแต่ปฐมวัย',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.project, participants: {},
+  },
+];
+
 function todayISO() { return new Date().toISOString().split('T')[0]; }
 function thaiDate(iso) {
   if (!iso) return '—';
@@ -398,6 +485,19 @@ export default function SpecialEventTab({ teacherClassFilter }) {
 
   const editEvent = editId ? specialEvents[editId] : null;
 
+  // Import preset events (skip any that already exist by id)
+  const handleImportPresets = useCallback(() => {
+    const existing = Object.keys(specialEvents);
+    const toAdd = PRESET_EVENTS.filter(ev => !existing.includes(ev.id));
+    if (toAdd.length === 0) {
+      alert('นำเข้าแล้วทั้งหมด ไม่มีกิจกรรมตัวอย่างใหม่ที่ต้องเพิ่ม');
+      return;
+    }
+    const batch = {};
+    toAdd.forEach(ev => { batch[ev.id] = ev; });
+    setSpecialEvents(prev => ({ ...prev, ...batch }));
+  }, [specialEvents, setSpecialEvents]);
+
   // Stat helpers
   function participantCount(ev) {
     return Object.values(ev.participants ?? {}).filter(v => v === true).length;
@@ -414,16 +514,17 @@ export default function SpecialEventTab({ teacherClassFilter }) {
       {/* Page header */}
       <div className="page-header">
         <h2>🎉 กิจกรรมวันสำคัญ</h2>
-        {!isTeacher && (
+        <div style={{ display: 'flex', gap: '.5rem' }}>
+          {!isTeacher && (
+            <button type="button" className="btn btn-secondary" onClick={handleImportPresets}
+              title="นำเข้ากิจกรรมตัวอย่างปีการศึกษา 2568 (13 กิจกรรม)">
+              📋 นำเข้าตัวอย่าง 2568
+            </button>
+          )}
           <button type="button" className="btn btn-primary" onClick={() => setAddModal(true)}>
             ➕ เพิ่มกิจกรรม
           </button>
-        )}
-        {isTeacher && (
-          <button type="button" className="btn btn-primary" onClick={() => setAddModal(true)}>
-            ➕ เพิ่มกิจกรรม
-          </button>
-        )}
+        </div>
       </div>
 
       {/* Filter bar */}
@@ -469,8 +570,17 @@ export default function SpecialEventTab({ teacherClassFilter }) {
       {eventList.length === 0 ? (
         <div className="glass-card" style={{ textAlign: 'center', padding: '3rem', color: '#9ca3af' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '.75rem' }}>🎉</div>
-          <div style={{ fontWeight: 700, marginBottom: '.4rem' }}>ยังไม่มีกิจกรรมวันสำคัญ</div>
-          <div style={{ fontSize: '.85rem' }}>กด "เพิ่มกิจกรรม" เพื่อเริ่มต้นบันทึก</div>
+          <div style={{ fontWeight: 700, marginBottom: '.4rem', color: '#374151' }}>ยังไม่มีกิจกรรมวันสำคัญ</div>
+          <div style={{ fontSize: '.85rem', marginBottom: '1.2rem' }}>กด "เพิ่มกิจกรรม" เพื่อเริ่มต้นบันทึก</div>
+          {!isTeacher && (
+            <button type="button" onClick={handleImportPresets} style={{
+              padding: '.45rem 1.2rem', borderRadius: '10px', border: '1.5px solid #7c3aed',
+              background: '#ede9fe', color: '#6d28d9', fontFamily: 'inherit',
+              fontWeight: 700, fontSize: '.85rem', cursor: 'pointer',
+            }}>
+              📋 นำเข้ากิจกรรมตัวอย่างปีการศึกษา 2568 (13 กิจกรรม)
+            </button>
+          )}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '.6rem' }}>

@@ -35,21 +35,22 @@ const POSITION_OPTIONS = [
 ];
 
 export default function TeachersTab() {
-  const { teachers, setTeachers, handleImport, classMap, addSystemLog, user } = useApp();
-  const CLASS_OPTIONS = classMap; // dynamic จาก AppContext
+  const { teachers, setTeachers, handleImport, classMap, allClassNames, addSystemLog, user } = useApp();
+  const CLASS_OPTIONS = classMap; // dynamic จาก AppContext (ใช้สำหรับ auto-default เมื่อเปลี่ยน level)
   const [isModal, setIsModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm]       = useState({});
 
   const openNew  = () => {
     setEditing(null);
-    setForm({ firstName:'', lastName:'', position:'', level:'K1', className: CLASS_OPTIONS?.K1?.[0] ?? '', email:'', phone:'', line:'', facebook:'', instagram:'', tiktok:'', youtube:'' });
+    setForm({ firstName:'', lastName:'', position:'', level:'K1', className: allClassNames?.[0] ?? CLASS_OPTIONS?.K1?.[0] ?? '', email:'', phone:'', line:'', facebook:'', instagram:'', tiktok:'', youtube:'' });
     setIsModal(true);
   };
   const openEdit = t => { setEditing(t); setForm(t); setIsModal(true); };
 
   const handleLevelChange = lv => {
-    setForm(f => ({ ...f, level: lv, className: CLASS_OPTIONS[lv]?.[0] ?? '' }));
+    // เปลี่ยนแค่ level — ไม่ reset className เพราะห้องเรียนแสดงทั้งหมดไม่ได้กรองตาม level
+    setForm(f => ({ ...f, level: lv }));
   };
 
   const handleSave = e => {
@@ -180,7 +181,7 @@ export default function TeachersTab() {
                 <div>
                   <label style={{ display:'block',marginBottom:'.3rem',fontWeight:600,fontSize:'.85rem' }}>ห้องเรียน</label>
                   <select className="input" value={form.className||''} onChange={e=>setForm({...form,className:e.target.value})}>
-                    {(CLASS_OPTIONS[form.level||'K1']??[]).map(c => (
+                    {(allClassNames ?? []).map(c => (
                       <option key={c} value={c}>{c}</option>
                     ))}
                   </select>

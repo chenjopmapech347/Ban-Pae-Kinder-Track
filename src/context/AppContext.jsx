@@ -570,8 +570,8 @@ export function AppProvider({ children }) {
         if (type === 'students') {
           // Header columns (full template):
           // 0:ชื่อ-นามสกุล 1:ชื่อเล่น 2:เพศ 3:เลขประจำตัว 4:เลขบัตรประชาชน
-          // 5:ระดับ 6:ห้องเรียน 7:อายุ 8:น้ำหนัก 9:ส่วนสูง 10:parentPin
-          // 11:ชื่อบิดา 12:อาชีพบิดา 13:ชื่อมารดา 14:อาชีพมารดา 15:เบอร์ผู้ปกครอง 16:ที่อยู่
+          // 5:ระดับ 6:ห้องเรียน 7:วันเกิด(YYYY-MM-DD) 8:อายุ 9:น้ำหนัก 10:ส่วนสูง 11:parentPin
+          // 12:ชื่อบิดา 13:อาชีพบิดา 14:ชื่อมารดา 15:อาชีพมารดา 16:เบอร์ผู้ปกครอง 17:ที่อยู่
           const header = rows[0];
           const idx = (col) => header.findIndex(h => h === col);
           const iName   = idx('ชื่อ-นามสกุล');
@@ -581,6 +581,7 @@ export function AppProvider({ children }) {
           const iNid    = idx('เลขบัตรประชาชน');
           const iLevel  = idx('ระดับ');
           const iClass  = idx('ห้องเรียน');
+          const iBirth  = idx('วันเกิด');
           const iAge    = idx('อายุ');
           const iWeight = idx('น้ำหนัก');
           const iHeight = idx('ส่วนสูง');
@@ -589,17 +590,29 @@ export function AppProvider({ children }) {
           const iMother = idx('ชื่อมารดา');
           const iPhone  = idx('เบอร์ผู้ปกครอง');
           const iAddr   = idx('ที่อยู่');
+          // คำนวณอายุจากวันเกิด ISO (YYYY-MM-DD)
+          const calcAgeFromISO = (iso) => {
+            if (!iso) return null;
+            const birth = new Date(iso);
+            if (isNaN(birth)) return null;
+            const today = new Date();
+            let a = today.getFullYear() - birth.getFullYear();
+            if (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate())) a--;
+            return a < 0 ? 0 : a;
+          };
           // Fallback for minimal CSV (name,level,age,weight,height)
           const isMinimal = iName === -1;
           const newStudents = dataRows
             .filter(row => row.some(c => c))
             .map((row) => {
-              const name      = isMinimal ? row[0] : (row[iName]   || '');
-              const level     = isMinimal ? (row[1] || 'K1')        : (row[iLevel]  || 'K1');
-              const className = isMinimal ? ''                       : (row[iClass]  || '');
-              const age       = isMinimal ? parseInt(row[2]) || 5   : (parseInt(row[iAge]) || 5);
-              const weight    = isMinimal ? parseFloat(row[3]) || 0 : (parseFloat(row[iWeight]) || 0);
-              const height    = isMinimal ? parseFloat(row[4]) || 0 : (parseFloat(row[iHeight]) || 0);
+              const name         = isMinimal ? row[0] : (row[iName]   || '');
+              const level        = isMinimal ? (row[1] || 'K1')        : (row[iLevel]  || 'K1');
+              const className    = isMinimal ? ''                       : (row[iClass]  || '');
+              const birthDate    = isMinimal ? '' : (row[iBirth] || '');
+              const ageFromBirth = calcAgeFromISO(birthDate);
+              const age          = ageFromBirth ?? (isMinimal ? parseInt(row[2]) || 5 : (parseInt(row[iAge]) || 5));
+              const weight       = isMinimal ? parseFloat(row[3]) || 0 : (parseFloat(row[iWeight]) || 0);
+              const height       = isMinimal ? parseFloat(row[4]) || 0 : (parseFloat(row[iHeight]) || 0);
               return {
                 id:           Date.now() + Math.random(),
                 name,
@@ -609,6 +622,7 @@ export function AppProvider({ children }) {
                 nationalId:   isMinimal ? '' : (row[iNid]    || ''),
                 level,
                 className,
+                birthDate,
                 age,
                 weight,
                 height,
@@ -622,6 +636,7 @@ export function AppProvider({ children }) {
               };
             });
           setStudents((prev) => [...prev, ...newStudents]);
+          return { ok: true, count: newStudents.length };
         } else if (type === 'teachers') {
           const newTeachers = dataRows.map((row) => ({
             id: Date.now() + Math.random(),

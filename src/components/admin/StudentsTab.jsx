@@ -117,12 +117,14 @@ export default function StudentsTab() {
   };
 
   /* ── helpers ── */
+  const fileInputRef = useRef(null);
+
   const downloadTemplate = () => {
     const BOM = '﻿';
-    const header = 'ชื่อ-นามสกุล,ชื่อเล่น,เพศ,เลขประจำตัว,เลขบัตรประชาชน,ระดับ,ห้องเรียน,อายุ,น้ำหนัก,ส่วนสูง,parentPin,ชื่อบิดา,อาชีพบิดา,ชื่อมารดา,อาชีพมารดา,เบอร์ผู้ปกครอง,ที่อยู่';
+    const header = 'ชื่อ-นามสกุล,ชื่อเล่น,เพศ,เลขประจำตัว,เลขบัตรประชาชน,ระดับ,ห้องเรียน,วันเกิด,อายุ,น้ำหนัก,ส่วนสูง,parentPin,ชื่อบิดา,อาชีพบิดา,ชื่อมารดา,อาชีพมารดา,เบอร์ผู้ปกครอง,ที่อยู่';
     const rows = [
-      'เด็กชายตัวอย่าง ใจดี,ตัวอย่าง,ชาย,69001,1-2199-00000-00-0,K1,อ.1/1,4,18.5,105,1001,นายบิดา ใจดี,เกษตรกร,นางมารดา ใจดี,แม่บ้าน,0812345678,123 ถ.ตัวอย่าง',
-      'เด็กหญิงตัวอย่าง สวยงาม,สวย,หญิง,69002,1-2199-00000-00-1,K2,อ.2/1,5,20,110,1002,นายบิดา สวยงาม,ค้าขาย,นางมารดา สวยงาม,พยาบาล,0898765432,456 ถ.ตัวอย่าง',
+      'เด็กชายตัวอย่าง ใจดี,ตัวอย่าง,ชาย,69001,1-2199-00000-00-0,K1,อ.1/1,2022-06-15,,18.5,105,1001,นายบิดา ใจดี,เกษตรกร,นางมารดา ใจดี,แม่บ้าน,0812345678,123 ถ.ตัวอย่าง',
+      'เด็กหญิงตัวอย่าง สวยงาม,สวย,หญิง,69002,1-2199-00000-00-1,K2,อ.2/1,2021-03-20,,20,110,1002,นายบิดา สวยงาม,ค้าขาย,นางมารดา สวยงาม,พยาบาล,0898765432,456 ถ.ตัวอย่าง',
     ];
     const csv = BOM + header + '\n' + rows.join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -133,11 +135,21 @@ export default function StudentsTab() {
   };
 
   const importCSV = () => {
-    const text = prompt('วาง CSV (ชื่อ, ชั้น, อายุ, น้ำหนัก, ส่วนสูง)');
-    if (text) {
-      const r = handleImport('students', 'name,level,age,weight,height\n' + text);
-      alert(r.ok ? 'นำเข้าสำเร็จ! ✅' : r.message);
-    }
+    fileInputRef.current?.click();
+  };
+
+  const handleFileImport = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      // ลบ BOM ถ้ามี
+      const raw = ev.target.result.replace(/^﻿/, '');
+      const r = handleImport('students', raw);
+      alert(r.ok ? `✅ นำเข้าสำเร็จ! เพิ่มนักเรียน ${r.count ?? ''} คน` : r.message);
+    };
+    reader.readAsText(file, 'utf-8');
+    e.target.value = '';
   };
 
   const autoSetPin = () => {
@@ -227,6 +239,15 @@ export default function StudentsTab() {
           </div>
 
           {/* ── นำเข้า dropdown ── */}
+          {/* hidden file input สำหรับ import CSV */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv"
+            style={{ display: 'none' }}
+            onChange={handleFileImport}
+          />
+
           <div style={{ position: 'relative' }}>
             <button type="button" className="btn" style={{ background: '#f0f9ff', color: '#0369a1', fontWeight: 700 }}
               onClick={() => { setImportOpen(o => !o); setExportOpen(false); }}>

@@ -38,6 +38,71 @@ const SOURCE_ACTIVITY_MAP = {
     'physical__qa-3__3.1__3.1.2__4',   // วัดส่วนสูงและบันทึกผลเปรียบเทียบกับเกณฑ์กรมอนามัย (ดย.3.1)
     'physical__std-1__1.1__1.1.1__1',  // ชั่งน้ำหนัก วัดส่วนสูง บันทึกและติดตามพัฒนาการ (หลักสูตร 1.1)
   ],
+
+  // ── ข้อมูลการมาเรียน ─────────────────────────────────────────────────────────
+  attend: [
+    'social__qa-5__5.2__5.2.1__4',      // ปฏิบัติตามกฎกติกาของห้องเรียนได้ (ดย.5.2)
+    'social__std-6__6.2__6.2.1__5',     // ปฏิบัติตามกฎกติกาของห้องเรียนและโรงเรียน (หลักสูตร 6.2)
+    'mental__std-12__12.1__12.1.1__20', // กระตือรือร้นและมีความสุขในการเข้าร่วมกิจกรรม (หลักสูตร 12.1)
+  ],
+
+  // ── ข้อมูลรับกลับบ้าน ────────────────────────────────────────────────────────
+  pickup: [
+    'physical__qa-3__3.2__3.2.2__11',   // เล่นและทำกิจกรรมต่างๆ อย่างปลอดภัย (ดย.3.2)
+    'physical__qa-3__3.2__3.2.2__12',   // ระมัดระวังอันตรายขณะเล่นเครื่องเล่นสนาม (ดย.3.2)
+    'physical__std-1__1.3__1.3.1__7',   // เล่นและทำกิจกรรมต่างๆ อย่างปลอดภัย (หลักสูตร 1.3)
+    'physical__std-1__1.3__1.3.1__9',   // บอกได้ว่าสิ่งใดปลอดภัยหรืออันตราย (หลักสูตร 1.3)
+    'social__qa-5__5.2__5.2.1__5',      // เข้าแถวรอคิวตามลำดับก่อนหลัง (ดย.5.2)
+    'social__std-6__6.2__6.2.1__4',     // เข้าแถวตามลำดับก่อนหลังได้ด้วยตนเอง (หลักสูตร 6.2)
+  ],
+
+  // ── ข้อมูลตรวจสุขภาพ ─────────────────────────────────────────────────────────
+  health_check: [
+    'physical__qa-3__3.1__3.1.1__1',   // ชั่งน้ำหนักและบันทึกผลเปรียบเทียบกับเกณฑ์กรมอนามัย (ดย.3.1)
+    'physical__qa-3__3.1__3.1.2__4',   // วัดส่วนสูงและบันทึกผลเปรียบเทียบกับเกณฑ์กรมอนามัย (ดย.3.1)
+    'physical__std-1__1.1__1.1.1__1',  // ชั่งน้ำหนัก วัดส่วนสูง บันทึกและติดตามพัฒนาการ (หลักสูตร 1.1)
+    'physical__qa-3__3.2__3.2.1__6',   // มือสะอาดปราศจากโรค — ล้างมือ 7 ขั้นตอน (ดย.3.2)
+    'physical__std-1__1.2__1.2.1__4',  // ล้างมือก่อนรับประทานอาหารและหลังใช้ห้องน้ำ (หลักสูตร 1.2)
+  ],
+
+  // ── ข้อมูลคัดกรองอาการป่วย ───────────────────────────────────────────────────
+  illness: [
+    'physical__qa-3__3.2__3.2.1__6',   // มือสะอาดปราศจากโรค (ดย.3.2)
+    'physical__qa-3__3.2__3.2.1__9',   // นอนหลับพักผ่อนเป็นเวลา (ดย.3.2)
+    'physical__std-1__1.2__1.2.1__4',  // ล้างมือก่อนรับประทานอาหารและหลังใช้ห้องน้ำ (หลักสูตร 1.2)
+    'physical__std-1__1.2__1.2.1__6',  // นอนพักผ่อนเป็นเวลาและเก็บที่นอนด้วยตนเอง (หลักสูตร 1.2)
+    'physical__qa-3__3.2__3.2.2__11',  // รู้จักอันตรายและหลีกเลี่ยงสิ่งที่เป็นอันตราย (ดย.3.2)
+  ],
+
+  // ── แหล่งเรียนรู้นอกห้อง (cornerRecords) ──────────────────────────────────────
+  outdoor: [
+    'mental__qa-6__6.2__6.2.2__16',       // ทักษะกระบวนการวิทยาศาสตร์ — สังเกต ทดลอง สรุปผล (ดย.6.2)
+    'mental__std-12__12.1__12.1.1__20',   // กระตือรือร้นและมีความสุขในการเข้าร่วมกิจกรรม (หลักสูตร 12.1)
+    'mental__std-12__12.2__12.2.1__21',   // ค้นหาคำตอบของข้อสงสัยต่างๆ ตามวิธีของตนเอง (หลักสูตร 12.2)
+    'mental__std-12__12.2__12.2.1__22',   // ใช้คำถาม "ทำไม" "อย่างไร" "เมื่อไหร่" (หลักสูตร 12.2)
+    'social__std-7__7.1__7.1.1__8',       // ทิ้งขยะได้ถูกที่และแยกขยะเบื้องต้น (หลักสูตร 7.1)
+    'social__std-7__7.1__7.1.1__9',       // ดูแลรดน้ำต้นไม้และรักษาสภาพแวดล้อม (หลักสูตร 7.1)
+    'social__std-7__7.1__7.1.1__10',      // ไม่ทำลายทรัพยากรธรรมชาติและสิ่งแวดล้อม (หลักสูตร 7.1)
+    'physical__qa-3__3.2__3.2.1__10',     // กิจกรรมออกกำลังกายเป็นเวลา (ดย.3.2)
+    'physical__qa-3__3.2__3.2.2__12',     // ระมัดระวังอันตรายขณะเล่นเครื่องเล่นสนาม (ดย.3.2)
+    'physical__std-1__1.3__1.3.1__7',     // เล่นและทำกิจกรรมต่างๆ อย่างปลอดภัย (หลักสูตร 1.3)
+  ],
+
+  // ── มุมประสบการณ์ในห้อง (innerCornerRecords) ──────────────────────────────────
+  corner: [
+    'mental__qa-6__6.3__6.3.1__17',       // สร้างผลงานตามความคิดและจินตนาการของตนเอง (ดย.6.3)
+    'mental__qa-6__6.3__6.3.1__18',       // นำสื่อและวัสดุต่างๆ มาสร้างสรรค์เป็นชิ้นงานใหม่ (ดย.6.3)
+    'mental__std-11__11.1__11.1.1__15',   // สร้างผลงานศิลปะเพื่อสื่อสารความคิดและความรู้สึก (หลักสูตร 11.1)
+    'mental__std-11__11.1__11.1.1__16',   // ต่อก้อนไม้หรือบล็อกสร้างสิ่งต่างๆ ตามจินตนาการ (หลักสูตร 11.1)
+    'mental__std-11__11.2__11.2.1__17',   // เคลื่อนไหวท่าทางเพื่อสื่อความคิดและความรู้สึก (หลักสูตร 11.2)
+    'mental__std-11__11.2__11.2.1__18',   // แสดงบทบาทสมมติตามจินตนาการและประสบการณ์ (หลักสูตร 11.2)
+    'emotional__qa-4__4.3__4.3.1__13',    // วาดภาพระบายสีตามจินตนาการอย่างอิสระ (ดย.4.3)
+    'emotional__qa-4__4.3__4.3.1__16',    // งานประดิษฐ์สร้างสรรค์จากวัสดุธรรมชาติ (ดย.4.3)
+    'emotional__std-4__4.1__4.1.1__7',    // ร้องเพลงและเคลื่อนไหวประกอบเพลงได้ตามจังหวะ (หลักสูตร 4.1)
+    'mental__qa-6__6.1__6.1.1__1',        // ส่งเสริมให้เด็กฟัง พูด และสื่อสารได้เหมาะสม (ดย.6.1)
+    'social__qa-5__5.4__5.4.1__11',       // เล่นร่วมกับเพื่อนเป็นกลุ่มและรู้จักผลัดกัน (ดย.5.4)
+    'social__std-8__8.2__8.2.1__16',      // เล่นและทำงานร่วมกับเพื่อนได้อย่างมีความสุข (หลักสูตร 8.2)
+  ],
 };
 
 function todayISO() { return new Date().toISOString().split('T')[0]; }
@@ -75,6 +140,68 @@ function computeNutritionStats(records, studentId, className) {
     total++;
     const sData = rec.students?.[String(studentId)];
     if (sData?.weight != null && sData.weight !== '') done++;
+  });
+  return total > 0 ? { done, total, pct: Math.round(done / total * 100) } : null;
+}
+
+// ── pickupRecords: { [YYYY-MM-DD]: { [studentId]: { note: '✓'|'C'|'X' } } }
+// done = วันที่มีการบันทึกรับกลับ (note '✓' หรือ 'C'), total = วันที่บันทึกทั้งหมดของห้อง
+function computePickupStats(records, studentId, classStudentIds) {
+  let done = 0, total = 0;
+  const sidSet = new Set(classStudentIds.map(id => String(id)));
+  Object.values(records ?? {}).forEach(dayRec => {
+    const hasClassData = Object.keys(dayRec).some(id => sidSet.has(id));
+    if (!hasClassData) return;
+    total++;
+    const rec = dayRec[String(studentId)];
+    if (rec?.note && rec.note !== 'X') done++;
+  });
+  return total > 0 ? { done, total, pct: Math.round(done / total * 100) } : null;
+}
+
+// ── healthCheckRecords: { [key]: { className, students: { [sid]: { body, hair, cloth, ear, mouth, nail } } } }
+// done = จำนวนครั้งที่ตรวจสุขภาพนักเรียน (มีค่าอย่างน้อย 1 รายการ), total = จำนวนครั้งของห้องนี้
+const HEALTH_ITEMS = ['body', 'hair', 'cloth', 'ear', 'mouth', 'nail'];
+function computeHealthCheckStats(records, studentId, className) {
+  let done = 0, total = 0;
+  Object.values(records ?? {}).forEach(rec => {
+    if (rec.className !== className) return;
+    total++;
+    const sData = rec.students?.[String(studentId)];
+    if (sData && HEALTH_ITEMS.some(k => sData[k] != null)) done++;
+  });
+  return total > 0 ? { done, total, pct: Math.round(done / total * 100) } : null;
+}
+
+// ── illnessCheckRecords: { [key]: { className, students: { [sid]: { [day]: { v } } } } }
+// √=มาปกติ, C/H/D=มาแต่ป่วย, X=ขาด (ไม่นับ), ''=ว่าง (ไม่นับ)
+// done = จำนวนวันที่มาและ "ไม่ป่วย" (v==='√'), total = จำนวนวันที่มา (√+C+H+D)
+function computeIllnessStats(records, studentId, className) {
+  let done = 0, total = 0;
+  Object.values(records ?? {}).forEach(rec => {
+    if (rec.className !== className) return;
+    const sData = rec.students?.[String(studentId)];
+    if (!sData) return;
+    Object.values(sData).forEach(dayEntry => {
+      const v = typeof dayEntry === 'object' ? (dayEntry?.v ?? '') : (dayEntry ?? '');
+      if (!v || v === 'X') return; // ว่าง / ขาด — ไม่นับ
+      total++;                      // มาเรียน (√, C, H, D)
+      if (v === '√') done++;        // ไม่ป่วย
+    });
+  });
+  return total > 0 ? { done, total, pct: Math.round(done / total * 100) } : null;
+}
+
+// ── cornerRecords / innerCornerRecords: { [`${className}||${monday}`]: { [sid]: { [cornerKey]: bool } } }
+// done = จำนวนสัปดาห์ที่นักเรียนใช้มุมอย่างน้อย 1 มุม, total = จำนวนสัปดาห์ทั้งหมดของห้อง
+function computeCornerStats(records, studentId, className) {
+  let done = 0, total = 0;
+  Object.entries(records ?? {}).forEach(([key, weekData]) => {
+    const [cls] = key.split('||');
+    if (cls !== className) return;
+    total++;
+    const sData = weekData[String(studentId)];
+    if (sData && Object.values(sData).some(v => v === true)) done++;
   });
   return total > 0 ? { done, total, pct: Math.round(done / total * 100) } : null;
 }
@@ -222,11 +349,18 @@ function AISuggestionPanel({ students, assessmentTopics, indicators, activities,
 }
 
 // ── Daily context panel (Options 1+2: แสดงสถิติ + เสนอคะแนนอัตโนมัติ) ────────
-function DailyContextPanel({ classStudents, toothBrushRecords, lunchRecords, milkRecords, nutritionRecords, selClass, onSuggest, onSuggestAll }) {
+function DailyContextPanel({
+  classStudents,
+  toothBrushRecords, lunchRecords, milkRecords, nutritionRecords,
+  pickupRecords, healthCheckRecords, illnessCheckRecords,
+  cornerRecords, innerCornerRecords,
+  selClass, onSuggest, onSuggestAll,
+}) {
   const [open, setOpen] = useState(false);
   const [from, setFrom] = useState('tooth');
 
   const stats = useMemo(() => {
+    const classStudentIds = classStudents.map(s => s.id);
     const result = {};
     classStudents.forEach(s => {
       result[s.id] = {
@@ -234,21 +368,32 @@ function DailyContextPanel({ classStudents, toothBrushRecords, lunchRecords, mil
           ? { done: s.attendance.present, total: s.attendance.total,
               pct: Math.round(s.attendance.present / s.attendance.total * 100) }
           : null,
-        tooth:     computeMonthlyStats(toothBrushRecords, s.id, selClass),
-        lunch:     computeMonthlyStats(lunchRecords,      s.id, selClass),
-        milk:      computeMonthlyStats(milkRecords,       s.id, selClass),
-        nutrition: computeNutritionStats(nutritionRecords, s.id, selClass),
+        tooth:        computeMonthlyStats(toothBrushRecords,  s.id, selClass),
+        lunch:        computeMonthlyStats(lunchRecords,        s.id, selClass),
+        milk:         computeMonthlyStats(milkRecords,         s.id, selClass),
+        nutrition:    computeNutritionStats(nutritionRecords,  s.id, selClass),
+        pickup:       computePickupStats(pickupRecords,        s.id, classStudentIds),
+        health_check: computeHealthCheckStats(healthCheckRecords, s.id, selClass),
+        illness:      computeIllnessStats(illnessCheckRecords, s.id, selClass),
+        outdoor:      computeCornerStats(cornerRecords,        s.id, selClass),
+        corner:       computeCornerStats(innerCornerRecords,   s.id, selClass),
       };
     });
     return result;
-  }, [classStudents, toothBrushRecords, lunchRecords, milkRecords, nutritionRecords, selClass]);
+  }, [classStudents, toothBrushRecords, lunchRecords, milkRecords, nutritionRecords,
+      pickupRecords, healthCheckRecords, illnessCheckRecords, cornerRecords, innerCornerRecords, selClass]);
 
   const SOURCES = [
-    { key: 'attend',    label: '✅ มาเรียน' },
-    { key: 'tooth',     label: '🪥 แปรงฟัน' },
-    { key: 'lunch',     label: '🍱 อาหาร' },
-    { key: 'milk',      label: '🥛 นม' },
-    { key: 'nutrition', label: '🥗 โภชนาการ' },
+    { key: 'attend',       label: '✅ มาเรียน' },
+    { key: 'tooth',        label: '🪥 แปรงฟัน' },
+    { key: 'lunch',        label: '🍱 อาหาร' },
+    { key: 'milk',         label: '🥛 นม' },
+    { key: 'nutrition',    label: '🥗 โภชนาการ' },
+    { key: 'pickup',       label: '🚌 รับกลับบ้าน' },
+    { key: 'health_check', label: '🩺 ตรวจสุขภาพ' },
+    { key: 'illness',      label: '🤒 ไม่ป่วย' },
+    { key: 'outdoor',      label: '🌳 นอกห้อง' },
+    { key: 'corner',       label: '🧩 มุมในห้อง' },
   ];
 
   function handleSuggest() {
@@ -377,6 +522,11 @@ export default function EvaluationTab() {
     toothBrushRecords, lunchRecords, milkRecords,
     dailyRecords,
     nutritionRecords,
+    pickupRecords,
+    healthCheckRecords,
+    illnessCheckRecords,
+    cornerRecords,
+    innerCornerRecords,
   } = useApp();
 
   // teacher lock — auto-set class from user profile
@@ -973,6 +1123,11 @@ export default function EvaluationTab() {
             lunchRecords={lunchRecords}
             milkRecords={milkRecords}
             nutritionRecords={nutritionRecords}
+            pickupRecords={pickupRecords}
+            healthCheckRecords={healthCheckRecords}
+            illnessCheckRecords={illnessCheckRecords}
+            cornerRecords={cornerRecords}
+            innerCornerRecords={innerCornerRecords}
             selClass={selClass}
             onSuggest={suggested => { setResults(prev => ({ ...prev, ...suggested })); setSaved(false); }}
             onSuggestAll={handleSuggestAll}

@@ -1,6 +1,28 @@
 // MediaBorrowTab.jsx — รายการยืม-คืนสื่อการสอน
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+
+/* ── Thai date helpers ────────────────────────────────────────────────────── */
+const THAI_MONTHS_BORROW = [
+  'มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+  'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม',
+];
+// ปี พ.ศ. ใกล้ปัจจุบัน (2565–2575)
+const BE_YEARS_BORROW = Array.from({ length: 11 }, (_, i) => 2565 + i);
+
+function parseISO(iso) {
+  if (!iso) return { d: '', m: '', y: '' };
+  const [ce, m, d] = iso.split('-');
+  return { d: d ? Number(d) : '', m: m ? Number(m) : '', y: ce ? Number(ce) + 543 : '' };
+}
+function buildISO(d, m, y) {
+  if (!d || !m || !y) return '';
+  return `${Number(y) - 543}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+function todayParts() {
+  const t = new Date();
+  return { d: t.getDate(), m: t.getMonth() + 1, y: t.getFullYear() + 543 };
+}
 
 const STATUS_META = {
   'กำลังยืม': { badge: '#b45309', bg: '#fef3c7' },
@@ -112,6 +134,41 @@ export default function MediaBorrowTab({ teacherClassFilter = null }) {
   const [viewFilter, setViewFilter] = useState('กำลังยืม'); // 'ทั้งหมด' | 'กำลังยืม' | 'คืนแล้ว'
   const [search,    setSearch]    = useState('');
 
+  /* ── Thai date state for form ── */
+  const [bdDay,  setBdDay]  = useState('');
+  const [bdMon,  setBdMon]  = useState('');
+  const [bdYear, setBdYear] = useState('');
+  const [rdDay,  setRdDay]  = useState('');
+  const [rdMon,  setRdMon]  = useState('');
+  const [rdYear, setRdYear] = useState('');
+
+  // sync date parts เมื่อ form เปลี่ยน (openNew / openEdit)
+  useEffect(() => {
+    const b = parseISO(form.borrowDate);
+    setBdDay(b.d); setBdMon(b.m); setBdYear(b.y);
+    const r = parseISO(form.expectedReturnDate);
+    setRdDay(r.d); setRdMon(r.m); setRdYear(r.y);
+  }, [showForm]); // reset ทุกครั้งที่ form เปิด/ปิด
+
+  function handleBorrowDate(part, val) {
+    const v = val !== '' ? Number(val) : '';
+    let d = bdDay, m = bdMon, y = bdYear;
+    if (part === 'd') { d = v; setBdDay(v); }
+    if (part === 'm') { m = v; setBdMon(v); }
+    if (part === 'y') { y = v; setBdYear(v); }
+    const iso = buildISO(d, m, y);
+    if (iso) setForm(f => ({ ...f, borrowDate: iso }));
+  }
+  function handleReturnDate(part, val) {
+    const v = val !== '' ? Number(val) : '';
+    let d = rdDay, m = rdMon, y = rdYear;
+    if (part === 'd') { d = v; setRdDay(v); }
+    if (part === 'm') { m = v; setRdMon(v); }
+    if (part === 'y') { y = v; setRdYear(v); }
+    const iso = buildISO(d, m, y);
+    if (iso) setForm(f => ({ ...f, expectedReturnDate: iso }));
+  }
+
   /* ── Class list ── */
   const classList = useMemo(() => {
     if (teacherClassFilter) return [teacherClassFilter];
@@ -120,12 +177,11 @@ export default function MediaBorrowTab({ teacherClassFilter = null }) {
 
   const cn = selClass || classList[0] || '';
 
-  /* ── Media pick list (from existing mediaRecords filtered by class) ── */
+  /* ── Media pick list — แสดงทุกรายการจากทะเบียนสื่อ (ไม่กรองตามห้อง) ── */
   const mediaOptions = useMemo(() =>
     (mediaRecords ?? [])
-      .filter(r => !cn || r.className === cn)
       .sort((a, b) => (a.item ?? '').localeCompare(b.item ?? '', 'th')),
-    [mediaRecords, cn]
+    [mediaRecords]
   );
 
   /* ── Filtered borrow records ── */
@@ -157,7 +213,11 @@ export default function MediaBorrowTab({ teacherClassFilter = null }) {
   /* ── Form helpers ── */
   function openNew() {
     setEditId(null);
-    setForm({ ...EMPTY_FORM, className: cn, borrowDate: todayISO() });
+    const { d, m, y } = todayParts();
+    const iso = buildISO(d, m, y);
+    setBdDay(d); setBdMon(m); setBdYear(y);
+    setRdDay(''); setRdMon(''); setRdYear('');
+    setForm({ ...EMPTY_FORM, className: cn, borrowDate: iso });
     setShowForm(true);
   }
 
@@ -354,18 +414,40 @@ export default function MediaBorrowTab({ teacherClassFilter = null }) {
 
               {/* วันที่ยืม */}
               <div>
-                <label style={lbl}>วันที่ยืม</label>
-                <input type="date" style={inp}
-                  value={form.borrowDate}
-                  onChange={e => setForm(f => ({ ...f, borrowDate: e.target.value }))} />
+                <label style={lbl}>วันที่ยืม (พ.ศ.)</label>
+                <div style={{ display: 'flex', gap: '.35rem' }}>
+                  <select style={{ ...inp, flex: '0 0 64px' }} value={bdDay} onChange={e => handleBorrowDate('d', e.target.value)}>
+                    <option value="">วัน</option>
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                  <select style={{ ...inp, flex: 1 }} value={bdMon} onChange={e => handleBorrowDate('m', e.target.value)}>
+                    <option value="">เดือน</option>
+                    {THAI_MONTHS_BORROW.map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
+                  </select>
+                  <select style={{ ...inp, flex: '0 0 80px' }} value={bdYear} onChange={e => handleBorrowDate('y', e.target.value)}>
+                    <option value="">ปี</option>
+                    {BE_YEARS_BORROW.map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                </div>
               </div>
 
               {/* กำหนดคืน */}
               <div>
-                <label style={lbl}>กำหนดวันคืน</label>
-                <input type="date" style={inp}
-                  value={form.expectedReturnDate}
-                  onChange={e => setForm(f => ({ ...f, expectedReturnDate: e.target.value }))} />
+                <label style={lbl}>กำหนดวันคืน (พ.ศ.)</label>
+                <div style={{ display: 'flex', gap: '.35rem' }}>
+                  <select style={{ ...inp, flex: '0 0 64px' }} value={rdDay} onChange={e => handleReturnDate('d', e.target.value)}>
+                    <option value="">วัน</option>
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                  <select style={{ ...inp, flex: 1 }} value={rdMon} onChange={e => handleReturnDate('m', e.target.value)}>
+                    <option value="">เดือน</option>
+                    {THAI_MONTHS_BORROW.map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
+                  </select>
+                  <select style={{ ...inp, flex: '0 0 80px' }} value={rdYear} onChange={e => handleReturnDate('y', e.target.value)}>
+                    <option value="">ปี</option>
+                    {BE_YEARS_BORROW.map(y => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                </div>
               </div>
 
               {/* หมายเหตุ */}

@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 
 // ── สัญลักษณ์ ────────────────────────────────────────────────────────────────
@@ -91,6 +91,34 @@ export default function ToothBrushTab({ teacherClassFilter = null }) {
     const initStuds = students.filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)')).sort((a,b)=>Number(a.id)-Number(b.id));
     return makeDefaultRecord(key, selClass, academicYear, selYear, selMonth, 20, initStuds);
   });
+
+  // Re-sync draft เมื่อ toothBrushRecords อัปเดตจากภายนอก (เช่น auto-fill จากบันทึกการมาเรียน)
+  const prevKeyRef = useRef(key);
+  useEffect(() => {
+    const keyChanged = prevKeyRef.current !== key;
+    prevKeyRef.current = key;
+    const ex = toothBrushRecords[key];
+    if (!ex) return;
+    // อัปเดต draft โดยรวม auto-fill เข้ากับข้อมูลที่มีอยู่ใน draft (ไม่ทับข้อมูลที่ครูบันทึกไว้)
+    if (keyChanged) {
+      setDraft(patchCurrentMonth(ex, selYear, selMonth));
+      setSchoolDays(ex.schoolDays ?? 20);
+    } else {
+      setDraft(prev => {
+        const merged = { ...prev, students: { ...prev.students } };
+        Object.entries(ex.students ?? {}).forEach(([sid, sData]) => {
+          const prevDays = merged.students[sid]?.days ?? {};
+          const newDays  = sData.days ?? {};
+          const days = { ...prevDays };
+          Object.entries(newDays).forEach(([d, v]) => {
+            if (!days[d] || days[d] === '') days[d] = v; // auto-fill เฉพาะช่องว่าง
+          });
+          merged.students[sid] = { ...(merged.students[sid] ?? {}), days };
+        });
+        return merged;
+      });
+    }
+  }, [toothBrushRecords, key]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const switchRecord = useCallback((cls, yr, mo) => {
     const k = recKey(cls, academicYear, yr, mo);

@@ -42,7 +42,7 @@ export default function ParentView() {
   // ประกาศที่ผู้ปกครองเห็น: ทุกคน + ห้องบุตรหลาน
   const parentAnnouncements = (announcements ?? [])
     .filter(a => !a.target || a.target === 'all' || a.target === student?.className)
-    .slice(0, 3);
+    .slice(0, 1);
 
   if (!student) {
     return (

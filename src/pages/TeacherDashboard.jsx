@@ -435,7 +435,7 @@ export default function TeacherDashboard() {
   const myAnnouncements = useMemo(
     () => (announcements ?? [])
       .filter(a => !a.target || a.target === 'all' || a.target === myClass)
-      .slice(0, 3),
+      .slice(0, 1),
     [announcements, myClass],
   );
 

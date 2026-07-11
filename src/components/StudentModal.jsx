@@ -2,6 +2,44 @@ import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from './Modal';
 
+// ── Thai date helpers ──────────────────────────────────────────────────────
+const THAI_MONTHS = [
+  'มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+  'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม',
+];
+
+/** คำนวณอายุ (ปี) จาก YYYY-MM-DD (CE) */
+function calcAge(iso) {
+  if (!iso) return '';
+  const birth = new Date(iso);
+  if (isNaN(birth)) return '';
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  if (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate())) age--;
+  return age < 0 ? 0 : age;
+}
+
+/** แปลง YYYY-MM-DD → { day, month, yearBE } */
+function parseBirthISO(iso) {
+  if (!iso) return { day: '', month: '', yearBE: '' };
+  const [y, m, d] = iso.split('-');
+  return {
+    day:    d ? Number(d)   : '',
+    month:  m ? Number(m)   : '',
+    yearBE: y ? Number(y) + 543 : '',
+  };
+}
+
+/** แปลง { day, month, yearBE } → YYYY-MM-DD (CE) */
+function buildBirthISO(day, month, yearBE) {
+  if (!day || !month || !yearBE) return '';
+  const yearCE = Number(yearBE) - 543;
+  return `${yearCE}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+}
+
+// ช่วงปี พ.ศ. ที่แสดงใน dropdown (2555–2570)
+const BE_YEARS = Array.from({ length: 16 }, (_, i) => 2555 + i).reverse();
+
 const emptyStudent = {
   // ── ข้อมูลพื้นฐาน ──────────────────────────────────────
   name:        '',
@@ -54,6 +92,18 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
     value: formData[key] ?? '',
     onChange: (e) => setFormData(set(formData, key, e.target.value)),
   });
+
+  // ── Thai birth date ──
+  const birthParts = parseBirthISO(formData.birthDate);
+  const handleBirthChange = (part, val) => {
+    const parts = { ...birthParts, [part]: val !== '' ? Number(val) : '' };
+    const newISO = buildBirthISO(parts.day, parts.month, parts.yearBE);
+    setFormData(fd => ({
+      ...fd,
+      birthDate: newISO,
+      age: newISO ? calcAge(newISO) : fd.age,
+    }));
+  };
 
   const TABS = [
     { id: 'personal', label: '1. ประวัติส่วนตัว' },
@@ -110,15 +160,51 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
               </div>
             </div>
 
-            {/* วันเกิด + อายุ */}
-            <div className="grid grid-2 gap-2">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold">วัน เดือน ปีเกิด</label>
-                <input className="input" type="date" {...f('birthDate')} />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold">อายุ (ปี)</label>
-                <input className="input" type="number" min="0" max="10" {...f('age')} />
+            {/* วันเกิด + อายุอัตโนมัติ */}
+            <div className="flex flex-col gap-1" style={{ gridColumn: '1 / -1' }}>
+              <label className="text-xs font-bold">วัน เดือน ปีเกิด (พ.ศ.)</label>
+              <div style={{ display: 'flex', gap: '.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
+
+                {/* วัน */}
+                <select className="input" style={{ width: '75px' }}
+                  value={birthParts.day}
+                  onChange={e => handleBirthChange('day', e.target.value)}>
+                  <option value="">วัน</option>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+
+                {/* เดือน */}
+                <select className="input" style={{ width: '148px' }}
+                  value={birthParts.month}
+                  onChange={e => handleBirthChange('month', e.target.value)}>
+                  <option value="">เดือน</option>
+                  {THAI_MONTHS.map((m, i) => (
+                    <option key={i + 1} value={i + 1}>{m}</option>
+                  ))}
+                </select>
+
+                {/* ปี พ.ศ. */}
+                <select className="input" style={{ width: '108px' }}
+                  value={birthParts.yearBE}
+                  onChange={e => handleBirthChange('yearBE', e.target.value)}>
+                  <option value="">ปี พ.ศ.</option>
+                  {BE_YEARS.map(y => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+
+                {/* อายุ — คำนวณอัตโนมัติ */}
+                {formData.age !== '' && formData.age !== null && (
+                  <span style={{
+                    fontSize: '.83rem', fontWeight: 700, color: '#7c3aed',
+                    background: '#f5f3ff', border: '1.5px solid #ddd6fe',
+                    borderRadius: '8px', padding: '.22rem .7rem', whiteSpace: 'nowrap',
+                  }}>
+                    🎂 อายุ {formData.age} ปี
+                  </span>
+                )}
               </div>
             </div>
 

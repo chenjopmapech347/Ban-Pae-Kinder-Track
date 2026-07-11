@@ -99,8 +99,10 @@ export default function StudentsTab() {
 
   /* ── ช่วงอายุ ── */
   const getAgeRange = (s) => {
-    if (s.birthdate) {
-      const birth = new Date(s.birthdate);
+    // รองรับทั้ง birthDate (camelCase จาก StudentModal) และ birthdate (legacy)
+    const dateStr = s.birthDate || s.birthdate;
+    if (dateStr) {
+      const birth = new Date(dateStr);
       const today = new Date();
       const age = today.getFullYear() - birth.getFullYear() -
         (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate()) ? 1 : 0);

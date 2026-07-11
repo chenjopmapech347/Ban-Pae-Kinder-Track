@@ -19,6 +19,18 @@ const THAI_MONTHS = [
 
 const THAI_DAYS_SHORT = ['อา','จ','อ','พ','พฤ','ศ','ส'];
 
+// แปลง YYYY-MM-DD (CE) → "dd เดือนไทย พ.ศ." เช่น "15 มกราคม 2563"
+const BIRTH_MONTHS_TH = [
+  '','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+  'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม',
+];
+function formatThaiDate(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  if (!y || !m || !d) return iso;
+  return `${Number(d)} ${BIRTH_MONTHS_TH[Number(m)] ?? ''} ${Number(y) + 543}`;
+}
+
 const INDOOR_CORNERS = [
   'มุมบล็อก','มุมนิทาน','มุมแต่งตัว','มุมสร้างสรรค์','มุมบทบาทสมมติ',
   'มุมสื่อ','มุมทราย/น้ำ','มุมธรรมชาติ','มุมออกกำลังกาย',
@@ -351,7 +363,7 @@ function printWH(students, teachers, schoolName, cn) {
   const rows = sts.map((s,idx) => `
     <tr>
       <td>${idx+1}</td><td class="tl">${s.name}</td><td>${cn}</td><td>${gender(s.name)}</td>
-      <td style="font-size:8px">${s.birthdate??''}</td><td>${s.age??''}</td>
+      <td style="font-size:8px">${formatThaiDate(s.birthDate||s.birthdate)}</td><td>${s.age??''}</td>
       <td>${s.height??''}</td><td>${s.weight??''}</td><td></td>
       <td>${s.height??''}</td><td>${s.weight??''}</td><td></td>
       <td></td>

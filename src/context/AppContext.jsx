@@ -714,49 +714,46 @@ export function AppProvider({ children }) {
       const monthStr = String(month).padStart(2, '0');
       const makeKey  = (cls) => `${cls}__${academicYear}__${thaiYear}-${monthStr}`;
 
-      // ── Milk, Lunch, ToothBrush → 'H' สำหรับนักเรียนที่มา ──
-      const patchH = (prev, setter) => {
-        const next = { ...prev };
-        Object.entries(byClass).forEach(([cls, ids]) => {
-          const k   = makeKey(cls);
-          const rec = next[k]
-            ? { ...next[k], students: { ...next[k].students } }
-            : { id: k, className: cls, academicYear, year: thaiYear, month, students: {} };
-          ids.forEach(id => {
-            const sData = rec.students[id] ?? { days: {} };
-            if (!(day in (sData.days ?? {}))) {
-              rec.students[id] = { ...sData, days: { ...(sData.days ?? {}), [day]: 'H' } };
-            }
+      // ── Milk, Lunch, ToothBrush → H (มา) และ X (ขาด/ลา/ป่วย) ──
+      // ใช้ functional updater setter(prev => ...) เพื่อให้ H และ X ถูก apply ใน
+      // setState เดียวกัน ป้องกัน React batch ทำให้ patchX ทับ patchH
+      const applyHX = (setter) => {
+        setter(prev => {
+          const next = { ...prev };
+          // H สำหรับนักเรียนที่มา
+          Object.entries(byClass).forEach(([cls, ids]) => {
+            const k   = makeKey(cls);
+            const rec = next[k]
+              ? { ...next[k], students: { ...next[k].students } }
+              : { id: k, className: cls, academicYear, year: thaiYear, month, students: {} };
+            ids.forEach(id => {
+              const sData = rec.students[id] ?? { days: {} };
+              if (!(day in (sData.days ?? {}))) {
+                rec.students[id] = { ...sData, days: { ...(sData.days ?? {}), [day]: 'H' } };
+              }
+            });
+            next[k] = rec;
           });
-          next[k] = rec;
-        });
-        setter(next);
-      };
-      patchH(milkRecords,       setMilkRecords);
-      patchH(lunchRecords,      setLunchRecords);
-      patchH(toothBrushRecords, setToothBrushRecords);
-
-      // ── Milk, Lunch, ToothBrush → 'X' สำหรับนักเรียนที่ขาด/ลา/ป่วย ──
-      const patchX = (prev, setter, absentMap) => {
-        const next = { ...prev };
-        Object.entries(absentMap).forEach(([cls, ids]) => {
-          const k   = makeKey(cls);
-          const rec = next[k]
-            ? { ...next[k], students: { ...next[k].students } }
-            : { id: k, className: cls, academicYear, year: thaiYear, month, students: {} };
-          ids.forEach(id => {
-            const sData = rec.students[id] ?? { days: {} };
-            if (!(day in (sData.days ?? {}))) {
-              rec.students[id] = { ...sData, days: { ...(sData.days ?? {}), [day]: 'X' } };
-            }
+          // X สำหรับนักเรียนที่ขาด/ลา/ป่วย
+          Object.entries(byClassAllAbsent).forEach(([cls, ids]) => {
+            const k   = makeKey(cls);
+            const rec = next[k]
+              ? { ...next[k], students: { ...next[k].students } }
+              : { id: k, className: cls, academicYear, year: thaiYear, month, students: {} };
+            ids.forEach(id => {
+              const sData = rec.students[id] ?? { days: {} };
+              if (!(day in (sData.days ?? {}))) {
+                rec.students[id] = { ...sData, days: { ...(sData.days ?? {}), [day]: 'X' } };
+              }
+            });
+            next[k] = rec;
           });
-          next[k] = rec;
+          return next;
         });
-        setter(next);
       };
-      patchX(milkRecords,       setMilkRecords,       byClassAllAbsent);
-      patchX(lunchRecords,      setLunchRecords,      byClassAllAbsent);
-      patchX(toothBrushRecords, setToothBrushRecords, byClassAllAbsent);
+      applyHX(setMilkRecords);
+      applyHX(setLunchRecords);
+      applyHX(setToothBrushRecords);
 
       // ── IllnessCheck → มา:'√' | ขาด/ลา:'X' | ป่วย:'C' ──
       setIllnessCheckRecords(prev => {

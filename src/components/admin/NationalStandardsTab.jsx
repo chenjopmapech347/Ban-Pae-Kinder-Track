@@ -268,7 +268,8 @@ export default function NationalStandardsTab() {
 
   const std2ByTeacher = useMemo(() => {
     return (teachers ?? []).map(t => {
-      const ratings = std2FirestoreData[t.id] ?? {};
+      // t.id อาจเป็น number → String() เพื่อให้ตรงกับ key ที่ Firestore ส่งกลับ (d.id เป็น string เสมอ)
+      const ratings = std2FirestoreData[String(t.id)] ?? {};
       const score = calcChecklistScore(STD2_ITEMS, ratings);
       const name = [t.firstName, t.lastName].filter(Boolean).join(' ') || t.name || `ครู ${t.id}`;
       return { teacher: t, name, ratings, score };

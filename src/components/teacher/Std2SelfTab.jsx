@@ -43,7 +43,8 @@ function ScoreLabel({ score }) {
 export default function Std2SelfTab() {
   const { user } = useApp();
   // ใช้ teacherId (key ที่ login เซ็ตไว้) ไม่ใช่ user.id ที่อาจไม่มี
-  const teacherId = user?.teacherId ?? user?.id ?? 'unknown';
+  // แปลงเป็น string เสมอ เพราะ teacher.id อาจเป็น number → Firestore ต้องการ string
+  const teacherId = String(user?.teacherId ?? user?.id ?? 'unknown');
   const [ratings, setRatings] = useState({});
   const [fsError, setFsError] = useState(null);
 

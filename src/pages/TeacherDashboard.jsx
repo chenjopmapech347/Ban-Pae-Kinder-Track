@@ -411,7 +411,7 @@ export default function TeacherDashboard() {
   const [editingStudentLocal, setEditingStudentLocal] = useState(null);
 
   /* ── Profile edit ── */
-  const myTeacher  = teachers?.find(t => t.id === user?.id);
+  const myTeacher  = teachers?.find(t => t.id === (user?.teacherId ?? user?.id));
   const [profileForm,  setProfileForm]  = useState(null);
   const [profileSaved, setProfileSaved] = useState(false);
 

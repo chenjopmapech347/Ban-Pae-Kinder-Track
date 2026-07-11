@@ -16,6 +16,30 @@ const SCORES = [
   { value: 1, label: 'ต้องพัฒนา',    short: '1', color: '#dc2626', bg: '#fee2e2', icon: '🔴' },
 ];
 
+// Mapping: ข้อมูลกิจกรรมรายวัน → activityId ที่เชื่อมโยงในหลักสูตร
+// actId format: ${domainId}__${stdId}__${indId}__${itemId}__${actNo}
+const SOURCE_ACTIVITY_MAP = {
+  tooth: [
+    'physical__qa-3__3.2__3.2.1__7',   // "ฟ ฟันสะอาดจัง" — แปรงฟันอย่างถูกวิธีหลังอาหาร (ดย.3.2)
+    'physical__std-1__1.2__1.2.1__5',  // แปรงฟันอย่างถูกวิธีได้ด้วยตนเอง (หลักสูตร 1.2)
+  ],
+  milk: [
+    'physical__qa-3__3.1__3.1.1__3',   // กิจกรรมนมโรงเรียน — ส่งเสริมการดื่มนม (ดย.3.1)
+  ],
+  lunch: [
+    'physical__qa-3__3.2__3.2.1__8',   // "อาหารดีมีประโยชน์" — เลือกรับประทานอาหาร 5 หมู่ (ดย.3.2)
+    'physical__std-1__1.2__1.2.1__3',  // รับประทานอาหารที่มีประโยชน์และดื่มน้ำสะอาด (หลักสูตร 1.2)
+    'physical__std-1__1.2__1.2.1__4',  // ล้างมือก่อนรับประทานอาหารและหลังใช้ห้องน้ำ (หลักสูตร 1.2)
+    'social__qa-5__5.1__5.1.1__2',     // รับประทานอาหารด้วยตนเองและมีมารยาทที่ดี (ดย.5.1)
+    'social__std-6__6.1__6.1.1__2',    // รับประทานอาหารด้วยตนเองและมีมารยาท (หลักสูตร 6.1)
+  ],
+  nutrition: [
+    'physical__qa-3__3.1__3.1.1__1',   // ชั่งน้ำหนักและบันทึกผลเปรียบเทียบกับเกณฑ์กรมอนามัย (ดย.3.1)
+    'physical__qa-3__3.1__3.1.2__4',   // วัดส่วนสูงและบันทึกผลเปรียบเทียบกับเกณฑ์กรมอนามัย (ดย.3.1)
+    'physical__std-1__1.1__1.1.1__1',  // ชั่งน้ำหนัก วัดส่วนสูง บันทึกและติดตามพัฒนาการ (หลักสูตร 1.1)
+  ],
+};
+
 function todayISO() { return new Date().toISOString().split('T')[0]; }
 function thaiDate(iso) {
   if (!iso) return '—';
@@ -198,7 +222,7 @@ function AISuggestionPanel({ students, assessmentTopics, indicators, activities,
 }
 
 // ── Daily context panel (Options 1+2: แสดงสถิติ + เสนอคะแนนอัตโนมัติ) ────────
-function DailyContextPanel({ classStudents, toothBrushRecords, lunchRecords, milkRecords, nutritionRecords, selClass, onSuggest }) {
+function DailyContextPanel({ classStudents, toothBrushRecords, lunchRecords, milkRecords, nutritionRecords, selClass, onSuggest, onSuggestAll }) {
   const [open, setOpen] = useState(false);
   const [from, setFrom] = useState('tooth');
 
@@ -277,6 +301,22 @@ function DailyContextPanel({ classStudents, toothBrushRecords, lunchRecords, mil
               background: '#7c3aed', color: 'white', fontFamily: 'inherit',
               fontWeight: 700, fontSize: '.8rem', cursor: 'pointer',
             }}>✨ เสนอคะแนนทั้งห้อง</button>
+            {SOURCE_ACTIVITY_MAP[from] && (
+              <button type="button" onClick={() => {
+                const suggested = {};
+                classStudents.forEach(s => {
+                  const st = stats[s.id]?.[from];
+                  suggested[s.id] = pctToScore(st?.pct ?? null);
+                });
+                onSuggestAll(from, suggested);
+              }} style={{
+                padding: '.28rem .9rem', borderRadius: '8px', border: 'none',
+                background: '#059669', color: 'white', fontFamily: 'inherit',
+                fontWeight: 700, fontSize: '.8rem', cursor: 'pointer',
+              }}>
+                💾 บันทึก {SOURCE_ACTIVITY_MAP[from].length} กิจกรรมที่เชื่อมโยง
+              </button>
+            )}
             <span style={{ fontSize: '.72rem', color: '#9ca3af' }}>≥80%→3 · 60-79%→2 · &lt;60%→1</span>
           </div>
 
@@ -497,6 +537,56 @@ export default function EvaluationTab() {
       assessed:      scored.length,
       scores:        { s1, s2, s3 },
     });
+  };
+
+  // บันทึกคะแนนไปยัง activityId ทั้งหมดที่เชื่อมโยงกับ source (tooth/milk/lunch/nutrition)
+  const handleSuggestAll = (source, suggestedScores) => {
+    const targetActIds = SOURCE_ACTIVITY_MAP[source];
+    if (!targetActIds?.length) return;
+
+    const now = new Date().toISOString();
+    const updated = students.map(s => {
+      if (!classStudents.find(cs => cs.id === s.id)) return s;
+      const score = suggestedScores[s.id] ?? 0;
+
+      // ใช้ immutable pattern — สำเนา indicators แล้ว apply ทุก actId
+      let prevIndicators = { ...(s.assessments?.indicators ?? {}) };
+
+      targetActIds.forEach(actId => {
+        // indicatorId = 3 segments แรกของ actId (domainId__stdId__indId)
+        const indId = actId.split('__').slice(0, 3).join('__');
+        const prevIndGroup = prevIndicators[indId] ?? {};
+        const prevActData  = prevIndGroup[actId]   ?? {};
+
+        const newActData = {
+          ...prevActData,
+          [`r${round}`]:       score || null,
+          [`r${round}_date`]:  score ? assessDate : null,
+        };
+        // หาคะแนนล่าสุดที่ไม่ null (r4 → r3 → r2 → r1)
+        const latestScore = [4,3,2,1].map(r => newActData[`r${r}`]).find(v => v) ?? null;
+        if (latestScore) {
+          newActData.score   = latestScore;
+          newActData.round   = round;
+          newActData.date    = assessDate;
+          newActData.savedAt = now;
+        }
+
+        prevIndicators = {
+          ...prevIndicators,
+          [indId]: {
+            ...prevIndGroup,
+            [actId]: latestScore ? newActData : undefined,
+          },
+        };
+      });
+
+      return {
+        ...s,
+        assessments: { ...(s.assessments ?? {}), indicators: prevIndicators },
+      };
+    });
+    setStudents(updated);
   };
 
   // summary
@@ -885,6 +975,7 @@ export default function EvaluationTab() {
             nutritionRecords={nutritionRecords}
             selClass={selClass}
             onSuggest={suggested => { setResults(prev => ({ ...prev, ...suggested })); setSaved(false); }}
+            onSuggestAll={handleSuggestAll}
           />
 
           {/* Save bar */}

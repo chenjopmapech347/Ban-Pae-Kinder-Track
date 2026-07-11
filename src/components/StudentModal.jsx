@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from './Modal';
 
@@ -37,8 +37,8 @@ function buildBirthISO(day, month, yearBE) {
   return `${yearCE}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
 }
 
-// ช่วงปี พ.ศ. ที่แสดงใน dropdown (2555–2570)
-const BE_YEARS = Array.from({ length: 16 }, (_, i) => 2555 + i).reverse();
+// ช่วงปี พ.ศ. ที่แสดงใน dropdown (2550–2578 ครอบคลุมเด็กอนุบาลและกรณีข้อมูลพิเศษ)
+const BE_YEARS = Array.from({ length: 29 }, (_, i) => 2550 + i).reverse();
 
 const emptyStudent = {
   // ── ข้อมูลพื้นฐาน ──────────────────────────────────────
@@ -93,15 +93,28 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
     onChange: (e) => setFormData(set(formData, key, e.target.value)),
   });
 
-  // ── Thai birth date ──
-  const birthParts = parseBirthISO(formData.birthDate);
+  // ── Thai birth date — แยก state 3 ส่วน เพื่อป้องกัน intermediate value หาย ──
+  const initParts = parseBirthISO(editingStudent?.birthDate);
+  const [bDay,   setBDay]   = useState(() => initParts.day);
+  const [bMonth, setBMonth] = useState(() => initParts.month);
+  const [bYear,  setBYear]  = useState(() => initParts.yearBE);
+
+  // sync เมื่อ editingStudent เปลี่ยน (เปิด modal คนละคน)
+  useEffect(() => {
+    const p = parseBirthISO(editingStudent?.birthDate);
+    setBDay(p.day); setBMonth(p.month); setBYear(p.yearBE);
+  }, [editingStudent]);
+
   const handleBirthChange = (part, val) => {
-    const parts = { ...birthParts, [part]: val !== '' ? Number(val) : '' };
-    const newISO = buildBirthISO(parts.day, parts.month, parts.yearBE);
+    const v = val !== '' ? Number(val) : '';
+    let d = bDay, m = bMonth, y = bYear;
+    if (part === 'day')    { d = v; setBDay(v); }
+    if (part === 'month')  { m = v; setBMonth(v); }
+    if (part === 'yearBE') { y = v; setBYear(v); }
+    const newISO = buildBirthISO(d, m, y);
     setFormData(fd => ({
       ...fd,
-      birthDate: newISO,
-      age: newISO ? calcAge(newISO) : fd.age,
+      ...(newISO ? { birthDate: newISO, age: calcAge(newISO) } : {}),
     }));
   };
 
@@ -167,7 +180,7 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
 
                 {/* วัน */}
                 <select className="input" style={{ width: '75px' }}
-                  value={birthParts.day}
+                  value={bDay}
                   onChange={e => handleBirthChange('day', e.target.value)}>
                   <option value="">วัน</option>
                   {Array.from({ length: 31 }, (_, i) => i + 1).map(d => (
@@ -177,7 +190,7 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
 
                 {/* เดือน */}
                 <select className="input" style={{ width: '148px' }}
-                  value={birthParts.month}
+                  value={bMonth}
                   onChange={e => handleBirthChange('month', e.target.value)}>
                   <option value="">เดือน</option>
                   {THAI_MONTHS.map((m, i) => (
@@ -187,7 +200,7 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
 
                 {/* ปี พ.ศ. */}
                 <select className="input" style={{ width: '108px' }}
-                  value={birthParts.yearBE}
+                  value={bYear}
                   onChange={e => handleBirthChange('yearBE', e.target.value)}>
                   <option value="">ปี พ.ศ.</option>
                   {BE_YEARS.map(y => (

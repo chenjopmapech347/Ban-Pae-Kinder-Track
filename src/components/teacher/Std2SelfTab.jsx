@@ -1,6 +1,8 @@
 // Std2SelfTab.jsx
-// มาตรฐานที่ 2 — แบบประเมินตนเองสำหรับครู (per-teacher, stored by teacherId)
-import { useLocalStorage } from '../../hooks/useLocalStorage';
+// มาตรฐานที่ 2 — แบบประเมินตนเองสำหรับครู (per-teacher, stored in Firestore: std2_ratings/<teacherId>)
+import { useState, useEffect } from 'react';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { isFirebaseConfigured, db } from '../../lib/firebase';
 import { useApp } from '../../context/AppContext';
 
 const STD2_ITEMS = [
@@ -40,17 +42,31 @@ function ScoreLabel({ score }) {
 
 export default function Std2SelfTab() {
   const { user } = useApp();
-  const teacherId = user?.id ?? 'unknown';
-  const [ratings, setRatings] = useLocalStorage(`kt_std2_ratings_${teacherId}`, {});
+  // ใช้ teacherId (key ที่ login เซ็ตไว้) ไม่ใช่ user.id ที่อาจไม่มี
+  const teacherId = user?.teacherId ?? user?.id ?? 'unknown';
+  const [ratings, setRatings] = useState({});
+
+  // Real-time listener: Firestore std2_ratings/<teacherId>
+  useEffect(() => {
+    if (!isFirebaseConfigured || !db || teacherId === 'unknown') return;
+    const ref = doc(db, 'std2_ratings', teacherId);
+    const unsub = onSnapshot(ref, snap => {
+      setRatings(snap.exists() ? snap.data() : {});
+    });
+    return () => unsub();
+  }, [teacherId]);
+
+  // Save to Firestore (merge เพื่อไม่ทับ field อื่น)
+  const update = async (id, val) => {
+    if (!isFirebaseConfigured || !db || teacherId === 'unknown') return;
+    const ref = doc(db, 'std2_ratings', teacherId);
+    await setDoc(ref, { [id]: val }, { merge: true });
+  };
 
   const score      = calcScore(STD2_ITEMS, ratings);
   const ratedCount = STD2_ITEMS.filter(it => (ratings[it.id] ?? 0) > 0).length;
-
-  const update = (id, val) =>
-    setRatings(prev => ({ ...prev, [id]: val }));
-
-  const barPct = score ?? 0;
-  const barColor = score === null ? '#9ca3af' : score >= 80 ? '#16a34a' : score >= 60 ? '#d97706' : '#dc2626';
+  const barPct     = score ?? 0;
+  const barColor   = score === null ? '#9ca3af' : score >= 80 ? '#16a34a' : score >= 60 ? '#d97706' : '#dc2626';
 
   return (
     <div className="glass p-6 animate-fade">

@@ -3,8 +3,9 @@
 // มาตรฐานที่ 3 → aggregate จาก activityLogs
 // มาตรฐานที่ 1   → checklist บันทึกโดยผู้อำนวยการ (kt_std1_ratings)
 // มาตรฐานที่ 2   → per-teacher self-assessment (kt_std2_ratings_<id>) — รวมภาพรวมที่นี่
-import { useState, useMemo } from 'react';
-import { useLocalStorage } from '../../hooks/useLocalStorage';
+import { useState, useMemo, useEffect } from 'react';
+import { doc, collection, onSnapshot, setDoc } from 'firebase/firestore';
+import { isFirebaseConfigured, db } from '../../lib/firebase';
 import { useApp } from '../../context/AppContext';
 
 // ─── แมปรหัสตัวบ่งชี้ → ด้านพัฒนาการ ──────────────────────────────────────
@@ -242,22 +243,37 @@ function SummaryBadge({ label, score, color, bg, border }) {
 export default function NationalStandardsTab() {
   const { activityLogs, teachers } = useApp();
 
-  // มาตรฐานที่ 1 — ผู้อำนวยการประเมิน (shared key)
-  const [std1Ratings, setStd1Ratings] = useLocalStorage('kt_std1_ratings', {});
+  // มาตรฐานที่ 1 — ผู้อำนวยการประเมิน (Firestore: settings/std1_ratings)
+  const [std1Ratings, setStd1Ratings] = useState({});
+  useEffect(() => {
+    if (!isFirebaseConfigured || !db) return;
+    const ref = doc(db, 'settings', 'std1_ratings');
+    const unsub = onSnapshot(ref, snap => {
+      setStd1Ratings(snap.exists() ? snap.data() : {});
+    });
+    return () => unsub();
+  }, []);
 
-  // มาตรฐานที่ 2 — รวมผลจาก per-teacher self-assessment (kt_std2_ratings_<teacherId>)
+  // มาตรฐานที่ 2 — รวมผลจาก per-teacher self-assessment (Firestore: std2_ratings/<teacherId>)
+  const [std2FirestoreData, setStd2FirestoreData] = useState({});
+  useEffect(() => {
+    if (!isFirebaseConfigured || !db) return;
+    const unsub = onSnapshot(collection(db, 'std2_ratings'), snap => {
+      const data = {};
+      snap.forEach(d => { data[d.id] = d.data(); });
+      setStd2FirestoreData(data);
+    });
+    return () => unsub();
+  }, []);
+
   const std2ByTeacher = useMemo(() => {
     return (teachers ?? []).map(t => {
-      let ratings = {};
-      try {
-        const raw = localStorage.getItem(`kt_std2_ratings_${t.id}`);
-        if (raw) ratings = JSON.parse(raw);
-      } catch { /* invalid JSON — skip */ }
+      const ratings = std2FirestoreData[t.id] ?? {};
       const score = calcChecklistScore(STD2_ITEMS, ratings);
       const name = [t.firstName, t.lastName].filter(Boolean).join(' ') || t.name || `ครู ${t.id}`;
       return { teacher: t, name, ratings, score };
     });
-  }, [teachers]);
+  }, [teachers, std2FirestoreData]);
 
   const [activeSection, setActiveSection] = useState('all');
   const [filterRound, setFilterRound] = useState('');
@@ -303,7 +319,11 @@ export default function NationalStandardsTab() {
   }, [std2ByTeacher]);
 
   // ── handlers ──────────────────────────────────────────────────────────────
-  const updateStd1 = (id, val) => setStd1Ratings(prev => ({ ...prev, [id]: val }));
+  const updateStd1 = async (id, val) => {
+    if (!isFirebaseConfigured || !db) return;
+    const ref = doc(db, 'settings', 'std1_ratings');
+    await setDoc(ref, { [id]: val }, { merge: true });
+  };
 
   const SECTIONS = [
     { id: 'all',  label: '📊 ภาพรวม' },

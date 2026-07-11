@@ -45,14 +45,17 @@ export default function Std2SelfTab() {
   // ใช้ teacherId (key ที่ login เซ็ตไว้) ไม่ใช่ user.id ที่อาจไม่มี
   const teacherId = user?.teacherId ?? user?.id ?? 'unknown';
   const [ratings, setRatings] = useState({});
+  const [fsError, setFsError] = useState(null);
 
   // Real-time listener: Firestore std2_ratings/<teacherId>
   useEffect(() => {
     if (!isFirebaseConfigured || !db || teacherId === 'unknown') return;
     const ref = doc(db, 'std2_ratings', teacherId);
-    const unsub = onSnapshot(ref, snap => {
-      setRatings(snap.exists() ? snap.data() : {});
-    });
+    const unsub = onSnapshot(
+      ref,
+      snap => { setFsError(null); setRatings(snap.exists() ? snap.data() : {}); },
+      err  => { console.warn('[Std2SelfTab] Firestore error:', err.message); setFsError(err.message); },
+    );
     return () => unsub();
   }, [teacherId]);
 
@@ -74,6 +77,29 @@ export default function Std2SelfTab() {
       <div className="page-header mb-2">
         <h3>👩‍🏫 มาตรฐานที่ 2 — ประเมินตนเอง</h3>
       </div>
+
+      {/* Firestore error banner */}
+      {fsError && (
+        <div style={{
+          background: '#fff1f2', border: '1px solid #fda4af',
+          borderRadius: '10px', padding: '.7rem 1rem',
+          fontSize: '.78rem', color: '#be123c', marginBottom: '1rem',
+        }}>
+          ⚠️ ไม่สามารถโหลดข้อมูลจากฐานข้อมูลได้ — ตรวจสอบ Firestore Rules หรือการเชื่อมต่ออินเทอร์เน็ต
+          <br /><span style={{ fontSize: '.7rem', opacity: .7 }}>{fsError}</span>
+        </div>
+      )}
+
+      {/* Offline / Firebase not configured banner */}
+      {(!isFirebaseConfigured || !db) && (
+        <div style={{
+          background: '#fefce8', border: '1px solid #fde047',
+          borderRadius: '10px', padding: '.7rem 1rem',
+          fontSize: '.78rem', color: '#854d0e', marginBottom: '1rem',
+        }}>
+          ⚠️ Firebase ยังไม่ถูกตั้งค่า — ข้อมูลจะไม่ถูกบันทึก
+        </div>
+      )}
       <p style={{ fontSize: '.8rem', color: '#6b7280', marginBottom: '1.25rem' }}>
         ครู/ผู้ดูแลเด็กให้การดูแลและจัดประสบการณ์เรียนรู้ · 8 ตัวบ่งชี้
       </p>

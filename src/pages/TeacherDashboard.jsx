@@ -4,6 +4,7 @@ import { todayISO, formatDateThai } from '../utils/helpers';
 import { getDayRecord, hasHygieneToday } from '../utils/attendance';
 import StudentModal from '../components/StudentModal';
 import DashboardSidebar from '../components/ui/DashboardSidebar';
+import ErrorBoundary from '../components/ui/ErrorBoundary';
 
 const EvaluationTab          = lazy(() => import('../components/admin/EvaluationTab'));
 const ReportsTab             = lazy(() => import('../components/admin/ReportsTab'));
@@ -538,6 +539,7 @@ export default function TeacherDashboard() {
 
       {/* ── Main content ── */}
       <div style={{ flex: 1, minWidth: 0 }}>
+        <ErrorBoundary>
         <Suspense fallback={
           <div style={{ textAlign: 'center', padding: '3rem', color: '#9ca3af', fontSize: '.9rem' }}>
             กำลังโหลด…
@@ -905,6 +907,7 @@ export default function TeacherDashboard() {
           )}
 
         </Suspense>
+        </ErrorBoundary>
       </div>
 
       {/* ── Student modals ── */}

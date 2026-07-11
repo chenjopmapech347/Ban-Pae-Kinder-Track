@@ -1,5 +1,6 @@
 import { useState, lazy, Suspense } from 'react';
 import DashboardSidebar from '../components/ui/DashboardSidebar';
+import ErrorBoundary from '../components/ui/ErrorBoundary';
 
 const OverviewTab            = lazy(() => import('../components/admin/OverviewTab'));
 const StudentsTab            = lazy(() => import('../components/admin/StudentsTab'));
@@ -128,6 +129,7 @@ export default function AdminDashboard() {
 
       {/* ── Main content ── */}
       <div style={{ flex: 1, minWidth: 0 }}>
+        <ErrorBoundary>
         <Suspense fallback={
           <div style={{ textAlign: 'center', padding: '3rem', color: '#9ca3af', fontSize: '.9rem' }}>
             กำลังโหลด…
@@ -170,6 +172,7 @@ export default function AdminDashboard() {
           {activeTab === 'systemlog'        && <SystemLogTab />}
           {activeTab === 'help'             && <HelpTab />}
         </Suspense>
+        </ErrorBoundary>
       </div>
     </div>
   );

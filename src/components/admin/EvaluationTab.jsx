@@ -314,6 +314,7 @@ export default function EvaluationTab() {
     students, setStudents, assessmentTopics, indicators, activities,
     role, user, addActivityLog, aiApiKey, classMap: CLASS_MAP, allClassNames,
     toothBrushRecords, lunchRecords, milkRecords,
+    dailyRecords,
   } = useApp();
 
   // teacher lock — auto-set class from user profile
@@ -368,19 +369,33 @@ export default function EvaluationTab() {
     [students, selClass]
   );
 
+  // นักเรียนที่ขาด/ลา/ป่วย ณ วันที่ประเมิน
+  const absentStudentIds = useMemo(() => {
+    const dayData = dailyRecords[assessDate] ?? {};
+    return new Set(
+      Object.entries(dayData)
+        .filter(([, v]) => ['ขาด', 'ลา', 'ป่วย'].includes(v?.attendance))
+        .map(([id]) => id)
+    );
+  }, [dailyRecords, assessDate]);
+
   // load existing scores — แยกตามครั้งที่ประเมิน
   useEffect(() => {
     const init = {};
     if (selActivity && selIndicator && selClass) {
+      const dayData = dailyRecords[assessDate] ?? {};
       classStudents.forEach(s => {
-        const actData = s.assessments?.indicators?.[selIndicator]?.[selActivity];
-        init[s.id] = actData?.[`r${round}`] ?? 3;   // โหลดคะแนนครั้งที่เลือก — default 3 (ดีมาก)
+        const attendance = dayData[String(s.id)]?.attendance;
+        const isAbsent   = ['ขาด', 'ลา', 'ป่วย'].includes(attendance);
+        const actData    = s.assessments?.indicators?.[selIndicator]?.[selActivity];
+        // ขาด/ลา/ป่วย → default 0 (ไม่ประเมิน), มา → default 3 (ดีมาก)
+        init[s.id] = actData?.[`r${round}`] ?? (isAbsent ? 0 : 3);
       });
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSaved(false);
     }
     setResults(init);
-  }, [selActivity, selIndicator, selClass, round, classStudents]);
+  }, [selActivity, selIndicator, selClass, round, classStudents, assessDate, dailyRecords]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // reset chain when parent changes
   const handleTopicChange = id => { setTopic(id); setIndicator(null); setActivity(null); };
@@ -767,17 +782,26 @@ export default function EvaluationTab() {
               </thead>
               <tbody>
                 {classStudents.map((s, idx) => {
-                  const score    = results[s.id] ?? 0;
+                  const score     = results[s.id] ?? 0;
+                  const isAbsent  = absentStudentIds.has(String(s.id));
+                  const showAbsent = isAbsent && score === 0;
                   return (
-                    <tr key={s.id} className="hover-row" style={{ background: score > 0 ? SCORES.find(sc => sc.value === score)?.bg + '55' : undefined }}>
+                    <tr key={s.id} className="hover-row" style={{ background: showAbsent ? '#fff5f5' : score > 0 ? SCORES.find(sc => sc.value === score)?.bg + '55' : undefined }}>
                       <td style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '.8rem' }}>{idx + 1}</td>
                       <td>
                         <code style={{ fontSize: '.72rem', background: '#f1f5f9', padding: '.1rem .4rem', borderRadius: '4px', color: '#475569', fontWeight: 700 }}>
                           {s.id}
                         </code>
                       </td>
-                      <td style={{ fontWeight: 600 }}>{s.name}</td>
+                      <td style={{ fontWeight: 600 }}>{s.name}{showAbsent && <span style={{ marginLeft:'.4rem', fontSize:'.72rem', background:'#fee2e2', color:'#dc2626', borderRadius:'4px', padding:'0 .35rem', fontWeight:700 }}>{(dailyRecords[assessDate]?.[String(s.id)]?.attendance === 'ป่วย') ? 'ป่วย' : 'ขาด/ลา'}</span>}</td>
                       <td>
+                        {showAbsent ? (
+                          <div style={{ textAlign:'center' }}>
+                            <span style={{ background:'#fee2e2', color:'#dc2626', borderRadius:'8px', padding:'.28rem .9rem', fontWeight:800, fontSize:'.85rem', display:'inline-block', border:'2px solid #fca5a5' }}>
+                              ✗ ไม่ได้รับการประเมิน
+                            </span>
+                          </div>
+                        ) : (
                         <div style={{ display: 'flex', gap: '.4rem', justifyContent: 'center' }}>
                           {SCORES.map(sc => {
                             const active = score === sc.value;
@@ -796,6 +820,7 @@ export default function EvaluationTab() {
                             );
                           })}
                         </div>
+                        )}
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <div style={{ display:'flex', gap:'.2rem', justifyContent:'center', flexWrap:'wrap' }}>

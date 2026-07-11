@@ -878,6 +878,20 @@ export function AppProvider({ children }) {
           });
           next[weekKey] = weekData;
         });
+        // ขาด/ลา/ป่วย → เซ็ต __absent (เฉพาะวันที่มีกิจกรรมในตาราง)
+        Object.entries(byClassAllAbsent).forEach(([cls, ids]) => {
+          const room    = activitySchedule.find(r => r.name === `ห้อง ${cls}`);
+          const dayActs = room?.days?.[thaiDayName] ?? [];
+          const hasActs = dayActs.some(([type]) => (ACT_TO_CORNER[type]?.length ?? 0) > 0);
+          if (!hasActs) return;
+          const weekKey  = `${cls}||${monday}`;
+          const weekData = { ...(next[weekKey] ?? {}) };
+          const emptyRec = Object.fromEntries((cornerDefs ?? []).map(c => [c.key, false]));
+          ids.forEach(id => {
+            weekData[id] = { ...(weekData[id] ?? { ...emptyRec }), __absent: true };
+          });
+          next[weekKey] = weekData;
+        });
         return next;
       });
 
@@ -891,6 +905,15 @@ export function AppProvider({ children }) {
           const weekData = { ...(next[weekKey] ?? {}) };
           ids.forEach(id => {
             weekData[id] = { ...emptyRec, ...(weekData[id] ?? {}), ...allTrueRec };
+          });
+          next[weekKey] = weekData;
+        });
+        // ขาด/ลา/ป่วย → เซ็ต __absent (ทุกวัน เพราะมุมในห้องใช้ทุกวัน)
+        Object.entries(byClassAllAbsent).forEach(([cls, ids]) => {
+          const weekKey  = `${cls}||${monday}`;
+          const weekData = { ...(next[weekKey] ?? {}) };
+          ids.forEach(id => {
+            weekData[id] = { ...(weekData[id] ?? { ...emptyRec }), __absent: true };
           });
           next[weekKey] = weekData;
         });

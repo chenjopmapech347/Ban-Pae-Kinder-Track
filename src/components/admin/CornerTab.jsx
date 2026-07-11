@@ -274,20 +274,23 @@ export default function CornerTab({ teacherClassFilter = null }) {
               {classStudents.map((s, i) => {
                 const sid = String(s.id);
                 const rec = weekData[sid] ?? {};
+                const isAbsent = !!rec.__absent;
                 const count = CORNERS.filter(c => rec[c.key]).length;
                 return (
-                  <tr key={s.id} style={{ background: i % 2 === 0 ? 'white' : '#f0f9ff', verticalAlign:'middle' }}>
+                  <tr key={s.id} style={{ background: isAbsent ? '#fff5f5' : i % 2 === 0 ? 'white' : '#f0f9ff', verticalAlign:'middle' }}>
                     <td style={{ ...cell, color:'#6b7280' }}>{i+1}</td>
                     <td style={{ ...cell, textAlign:'left', fontWeight:600 }}>{s.name}</td>
                     {CORNERS.map(c => (
                       <td key={c.key} style={{ ...cell, cursor:'pointer' }} onClick={() => toggleCorner(s.id, c.key)}>
-                        {rec[c.key]
-                          ? <span style={{ color:'#0891b2', fontWeight:800, fontSize:'1.1rem' }}>✓</span>
-                          : <span style={{ color:'#e2e8f0', fontSize:'1rem' }}>○</span>}
+                        {isAbsent
+                          ? <span style={{ color:'#ef4444', fontWeight:800, fontSize:'.95rem' }}>✗</span>
+                          : rec[c.key]
+                            ? <span style={{ color:'#0891b2', fontWeight:800, fontSize:'1.1rem' }}>✓</span>
+                            : <span style={{ color:'#e2e8f0', fontSize:'1rem' }}>○</span>}
                       </td>
                     ))}
-                    <td style={{ ...cell, fontWeight:700, color: count > 0 ? '#0369a1' : '#9ca3af' }}>
-                      {count > 0 ? count : '—'}
+                    <td style={{ ...cell, fontWeight:700, color: isAbsent ? '#ef4444' : count > 0 ? '#0369a1' : '#9ca3af' }}>
+                      {isAbsent ? '✗' : count > 0 ? count : '—'}
                     </td>
                   </tr>
                 );

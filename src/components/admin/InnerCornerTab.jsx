@@ -277,22 +277,25 @@ export default function InnerCornerTab({ teacherClassFilter = null }) {
             </thead>
             <tbody>
               {classStudents.map((s, i) => {
-                const sid   = String(s.id);
-                const rec   = weekData[sid] ?? {};
-                const count = CORNERS.filter(c => rec[c.key]).length;
+                const sid      = String(s.id);
+                const rec      = weekData[sid] ?? {};
+                const isAbsent = !!rec.__absent;
+                const count    = CORNERS.filter(c => rec[c.key]).length;
                 return (
-                  <tr key={s.id} style={{ background: i % 2 === 0 ? 'white' : '#f0fdf4', verticalAlign:'middle' }}>
+                  <tr key={s.id} style={{ background: isAbsent ? '#fff5f5' : i % 2 === 0 ? 'white' : '#f0fdf4', verticalAlign:'middle' }}>
                     <td style={{ ...cell, color:'#6b7280' }}>{i+1}</td>
                     <td style={{ ...cell, textAlign:'left', fontWeight:600 }}>{s.name}</td>
                     {CORNERS.map(c => (
                       <td key={c.key} style={{ ...cell, cursor:'pointer' }} onClick={() => toggleCorner(s.id, c.key)}>
-                        {rec[c.key]
-                          ? <span style={{ color:'#059669', fontWeight:800, fontSize:'1.1rem' }}>✓</span>
-                          : <span style={{ color:'#d1fae5', fontSize:'1rem' }}>○</span>}
+                        {isAbsent
+                          ? <span style={{ color:'#ef4444', fontWeight:800, fontSize:'.95rem' }}>✗</span>
+                          : rec[c.key]
+                            ? <span style={{ color:'#059669', fontWeight:800, fontSize:'1.1rem' }}>✓</span>
+                            : <span style={{ color:'#d1fae5', fontSize:'1rem' }}>○</span>}
                       </td>
                     ))}
-                    <td style={{ ...cell, fontWeight:700, color: count > 0 ? '#065f46' : '#9ca3af' }}>
-                      {count > 0 ? count : '—'}
+                    <td style={{ ...cell, fontWeight:700, color: isAbsent ? '#ef4444' : count > 0 ? '#065f46' : '#9ca3af' }}>
+                      {isAbsent ? '✗' : count > 0 ? count : '—'}
                     </td>
                   </tr>
                 );

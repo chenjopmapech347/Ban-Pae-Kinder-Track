@@ -103,6 +103,39 @@ const SOURCE_ACTIVITY_MAP = {
     'social__qa-5__5.4__5.4.1__11',       // เล่นร่วมกับเพื่อนเป็นกลุ่มและรู้จักผลัดกัน (ดย.5.4)
     'social__std-8__8.2__8.2.1__16',      // เล่นและทำงานร่วมกับเพื่อนได้อย่างมีความสุข (หลักสูตร 8.2)
   ],
+
+  // ── กิจกรรมประจำวัน (dailyRoutineRecords — ระดับชั้น) ────────────────────────
+  morning: [
+    'social__std-7__7.2__7.2.1__12',      // ยืนตรงเพลงชาติ/สวดมนต์ (หลักสูตร 7.2)
+    'social__std-7__7.2__7.2.1__11',      // ไหว้ทักทาย (หลักสูตร 7.2)
+    'social__qa-5__5.2__5.2.2__7',        // มารยาทไทย (ดย.5.2)
+    'social__std-7__7.2__7.2.1__13',      // เข้าร่วมกิจกรรมวัฒนธรรม (หลักสูตร 7.2)
+    'emotional__qa-4__4.3__4.3.1__14',    // ดนตรี/เคลื่อนไหวกิจกรรมเช้า (ดย.4.3)
+    'emotional__qa-4__4.3__4.3.1__15',    // เคลื่อนไหวร่างกายตามจังหวะ (ดย.4.3)
+  ],
+  exercise: [
+    'physical__qa-3__3.1__3.1.2__5',      // กิจกรรมส่งเสริมออกกำลังกาย (ดย.3.1)
+  ],
+  circle: [
+    'mental__std-9__9.1__9.1.1__1',       // สนทนาโต้ตอบในวงกลม (หลักสูตร 9.1)
+    'mental__std-9__9.2__9.2.1__6',       // เล่าเรื่องราวในวงกลม (หลักสูตร 9.2)
+    'mental__qa-6__6.1__6.1.1__3',        // เล่าเรื่องราวด้วยประโยคสั้นๆ (ดย.6.1)
+    'mental__qa-6__6.1__6.1.1__4',        // สนทนาโต้ตอบตามสถานการณ์ (ดย.6.1)
+  ],
+  story: [
+    'mental__qa-6__6.1__6.1.1__2',        // ตอบคำถามจากนิทาน (ดย.6.1)
+    'mental__qa-6__6.1__6.1.2__5',        // รักการอ่าน (ดย.6.1)
+    'mental__std-9__9.1__9.1.1__2',       // ฟังนิทานตอบคำถาม (หลักสูตร 9.1)
+  ],
+  cleanup: [
+    'social__qa-5__5.1__5.1.1__3',        // เก็บของเล่นหลังเลิกเล่น (ดย.5.1)
+    'social__std-6__6.2__6.2.1__3',       // เก็บของเล่นตนเอง (หลักสูตร 6.2)
+    'social__qa-5__5.2__5.2.1__6',        // ดูแลสิ่งแวดล้อมห้องเรียน (ดย.5.2)
+  ],
+  dressing: [
+    'social__qa-5__5.1__5.1.1__1',        // แต่งตัวด้วยตนเอง (ดย.5.1)
+    'social__std-6__6.1__6.1.1__1',       // แต่งตัวด้วยตนเอง (หลักสูตร 6.1)
+  ],
 };
 
 function todayISO() { return new Date().toISOString().split('T')[0]; }
@@ -202,6 +235,20 @@ function computeCornerStats(records, studentId, className) {
     total++;
     const sData = weekData[String(studentId)];
     if (sData && Object.values(sData).some(v => v === true)) done++;
+  });
+  return total > 0 ? { done, total, pct: Math.round(done / total * 100) } : null;
+}
+
+// ── dailyRoutineRecords: { [key]: { className, days: { [dayNum]: { morning, exercise, ... } } } }
+// class-level (ไม่แยกรายนักเรียน) — done = จำนวนวันที่ทำกิจกรรมนั้น, total = จำนวนวันทั้งหมดที่บันทึก
+function computeRoutineStats(records, className, activityKey) {
+  let done = 0, total = 0;
+  Object.values(records ?? {}).forEach(rec => {
+    if (rec.className !== className) return;
+    Object.values(rec.days ?? {}).forEach(dayData => {
+      total++;
+      if (dayData?.[activityKey] === true) done++;
+    });
   });
   return total > 0 ? { done, total, pct: Math.round(done / total * 100) } : null;
 }
@@ -353,7 +400,7 @@ function DailyContextPanel({
   classStudents,
   toothBrushRecords, lunchRecords, milkRecords, nutritionRecords,
   pickupRecords, healthCheckRecords, illnessCheckRecords,
-  cornerRecords, innerCornerRecords,
+  cornerRecords, innerCornerRecords, dailyRoutineRecords,
   selClass, onSuggest, onSuggestAll,
 }) {
   const [open, setOpen] = useState(false);
@@ -361,6 +408,15 @@ function DailyContextPanel({
 
   const stats = useMemo(() => {
     const classStudentIds = classStudents.map(s => s.id);
+    // กิจกรรมประจำวัน — class-level (เหมือนกันทุกนักเรียนในห้อง)
+    const routineStats = {
+      morning:  computeRoutineStats(dailyRoutineRecords, selClass, 'morning'),
+      exercise: computeRoutineStats(dailyRoutineRecords, selClass, 'exercise'),
+      circle:   computeRoutineStats(dailyRoutineRecords, selClass, 'circle'),
+      story:    computeRoutineStats(dailyRoutineRecords, selClass, 'story'),
+      cleanup:  computeRoutineStats(dailyRoutineRecords, selClass, 'cleanup'),
+      dressing: computeRoutineStats(dailyRoutineRecords, selClass, 'dressing'),
+    };
     const result = {};
     classStudents.forEach(s => {
       result[s.id] = {
@@ -377,11 +433,14 @@ function DailyContextPanel({
         illness:      computeIllnessStats(illnessCheckRecords, s.id, selClass),
         outdoor:      computeCornerStats(cornerRecords,        s.id, selClass),
         corner:       computeCornerStats(innerCornerRecords,   s.id, selClass),
+        // กิจกรรมประจำวัน — ทุกนักเรียนในห้องได้ค่าเดียวกัน
+        ...routineStats,
       };
     });
     return result;
   }, [classStudents, toothBrushRecords, lunchRecords, milkRecords, nutritionRecords,
-      pickupRecords, healthCheckRecords, illnessCheckRecords, cornerRecords, innerCornerRecords, selClass]);
+      pickupRecords, healthCheckRecords, illnessCheckRecords, cornerRecords, innerCornerRecords,
+      dailyRoutineRecords, selClass]);
 
   const SOURCES = [
     { key: 'attend',       label: '✅ มาเรียน' },
@@ -394,6 +453,12 @@ function DailyContextPanel({
     { key: 'illness',      label: '🤒 ไม่ป่วย' },
     { key: 'outdoor',      label: '🌳 นอกห้อง' },
     { key: 'corner',       label: '🧩 มุมในห้อง' },
+    { key: 'morning',      label: '🌅 กิจกรรมเช้า' },
+    { key: 'exercise',     label: '🏃 ออกกำลังกาย' },
+    { key: 'circle',       label: '💬 วงกลม' },
+    { key: 'story',        label: '📖 เล่านิทาน' },
+    { key: 'cleanup',      label: '🧹 เก็บของ' },
+    { key: 'dressing',     label: '👗 แต่งตัว' },
   ];
 
   function handleSuggest() {
@@ -527,6 +592,7 @@ export default function EvaluationTab() {
     illnessCheckRecords,
     cornerRecords,
     innerCornerRecords,
+    dailyRoutineRecords,
   } = useApp();
 
   // teacher lock — auto-set class from user profile
@@ -1128,6 +1194,7 @@ export default function EvaluationTab() {
             illnessCheckRecords={illnessCheckRecords}
             cornerRecords={cornerRecords}
             innerCornerRecords={innerCornerRecords}
+            dailyRoutineRecords={dailyRoutineRecords}
             selClass={selClass}
             onSuggest={suggested => { setResults(prev => ({ ...prev, ...suggested })); setSaved(false); }}
             onSuggestAll={handleSuggestAll}

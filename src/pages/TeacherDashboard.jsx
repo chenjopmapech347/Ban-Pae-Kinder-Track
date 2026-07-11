@@ -19,6 +19,7 @@ const ToothBrushTab          = lazy(() => import('../components/admin/ToothBrush
 const LunchTab               = lazy(() => import('../components/admin/LunchTab'));
 const MilkTab                = lazy(() => import('../components/admin/MilkTab'));
 const NutritionTab           = lazy(() => import('../components/admin/NutritionTab'));
+const DailyRoutineTab        = lazy(() => import('../components/admin/DailyRoutineTab'));
 const StudentReportTab       = lazy(() => import('../components/admin/StudentReportTab'));
 const OverviewTab            = lazy(() => import('../components/admin/OverviewTab'));
 const AdminAttTab            = lazy(() => import('../components/admin/AttendanceTab'));
@@ -54,8 +55,9 @@ const TEACHER_TAB_GROUPS = [
       { id: 'illnesscheck', label: '🤒 คัดกรองอาการป่วย'    },
       { id: 'toothbrush',   label: '🪥 แปรงฟัน'             },
       { id: 'lunch',        label: '🍱 อาหารกลางวัน'        },
-      { id: 'milk',         label: '🥛 ดื่มนม'              },
-      { id: 'nutrition',    label: '⚖️ ภาวะโภชนาการ'        },
+      { id: 'milk',          label: '🥛 ดื่มนม'              },
+      { id: 'nutrition',     label: '⚖️ ภาวะโภชนาการ'        },
+      { id: 'dailyroutine',  label: '🗓️ กิจกรรมประจำวัน'     },
     ],
   },
   {
@@ -555,7 +557,8 @@ export default function TeacherDashboard() {
           {activeTab === 'toothbrush'   && <ToothBrushTab teacherClassFilter={myClass} />}
           {activeTab === 'lunch'        && <LunchTab teacherClassFilter={myClass} />}
           {activeTab === 'milk'         && <MilkTab teacherClassFilter={myClass} />}
-          {activeTab === 'nutrition'    && <NutritionTab teacherClassFilter={myClass} />}
+          {activeTab === 'nutrition'     && <NutritionTab teacherClassFilter={myClass} />}
+          {activeTab === 'dailyroutine'  && <DailyRoutineTab teacherClassFilter={myClass} />}
 
           {/* ── Learning results ── */}
           {activeTab === 'studentreport' && <StudentReportTab teacherClassFilter={myClass} />}

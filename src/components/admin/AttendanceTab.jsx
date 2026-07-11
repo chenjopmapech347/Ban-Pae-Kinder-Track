@@ -206,7 +206,7 @@ function printRollCall(classSections, selMonth, schoolName, schoolLogo) {
 }
 
 export default function AttendanceTab({ defaultClass }) {
-  const { students, dailyRecords, teachers, saveDailyAttendance, schoolName, schoolLogo, allClassNames } = useApp();
+  const { students, dailyRecords, teachers, saveDailyAttendance, schoolName, schoolLogo, allClassNames, schoolTerms, academicYear } = useApp();
   const ALL_CLASSES = allClassNames;
 
   const [mainView,     setMainView]     = useState('daily');   // 'daily' | 'monthly'
@@ -279,11 +279,48 @@ export default function AttendanceTab({ defaultClass }) {
   const availableMonths = useMemo(() => {
     const monthSet = new Set(Object.keys(dailyRecords).map(d => d.slice(0, 7)));
     const curMonth = todayISO().slice(0, 7);
-    monthSet.add(curMonth); // เพิ่มเดือนปัจจุบันเสมอ
+    monthSet.add(curMonth);
     return [...monthSet].sort();
   }, [dailyRecords]);
 
   const THAI_MONTH_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+  // จัดกลุ่มเดือนตามภาคเรียน
+  const termGroups = useMemo(() => {
+    // ดึง terms ของปีการศึกษาปัจจุบัน
+    const terms = schoolTerms?.[academicYear] ?? [];
+    // fallback: ภาคเรียน 1 = พ.ค.–ต.ค., ภาคเรียน 2 = พ.ย.–เม.ย.
+    const ceYear = Number(academicYear) - 543;
+    const defaultTerms = [
+      { label: 'ภาคเรียนที่ 1', open: `${ceYear}-05-01`,   close: `${ceYear}-10-31` },
+      { label: 'ภาคเรียนที่ 2', open: `${ceYear}-11-01`,   close: `${ceYear + 1}-04-30` },
+    ];
+    const effectiveTerms = terms.length > 0 ? terms : defaultTerms;
+
+    // จัดแต่ละเดือนลงภาคเรียน
+    const groups = effectiveTerms.map(t => ({ label: t.label, open: t.open, close: t.close, months: [] }));
+    const ungrouped = [];
+
+    availableMonths.forEach(ym => {
+      const monthStart = ym + '-01';
+      const monthEnd   = ym + '-31';
+      let placed = false;
+      for (const g of groups) {
+        if (!g.open || !g.close) continue;
+        // เดือนนี้ซ้อนทับกับช่วง open–close ของภาคเรียน
+        if (monthStart <= g.close && monthEnd >= g.open) {
+          g.months.push(ym);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) ungrouped.push(ym);
+    });
+
+    const result = groups.filter(g => g.months.length > 0);
+    if (ungrouped.length > 0) result.push({ label: 'อื่นๆ', months: ungrouped });
+    return result;
+  }, [availableMonths, schoolTerms, academicYear]);
 
   const monthlyData = useMemo(() => {
     const targetDates = Object.keys(dailyRecords).filter(d => d.startsWith(selMonth));
@@ -432,44 +469,57 @@ export default function AttendanceTab({ defaultClass }) {
             )}
           </div>
         </>) : (<>
-          {/* Month chip selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '.8rem', fontWeight: 700, color: '#6b7280', whiteSpace: 'nowrap' }}>📆 เดือน</span>
-            <div style={{ display: 'flex', gap: '.35rem', flexWrap: 'wrap' }}>
-              {availableMonths.map(ym => {
-                const [y, m] = ym.split('-');
-                const isSelected = ym === selMonth;
-                const hasData = Object.keys(dailyRecords).some(d => d.startsWith(ym));
-                const beYear = Number(y) + 543;
-                const label  = `${THAI_MONTH_SHORT[Number(m) - 1]} ${String(beYear).slice(2)}`;
-                return (
-                  <button key={ym} type="button"
-                    onClick={() => setSelMonth(ym)}
-                    style={{
-                      padding: '.28rem .65rem',
-                      borderRadius: '20px',
-                      border: isSelected ? '2px solid #7c3aed' : '1.5px solid #e5e7eb',
-                      background: isSelected ? '#7c3aed' : hasData ? '#f5f3ff' : 'white',
-                      color: isSelected ? 'white' : hasData ? '#7c3aed' : '#9ca3af',
-                      fontFamily: 'inherit',
-                      fontWeight: isSelected ? 800 : 600,
-                      fontSize: '.78rem',
-                      cursor: 'pointer',
-                      transition: 'all .15s',
-                      position: 'relative',
-                    }}>
-                    {label}
-                    {hasData && !isSelected && (
-                      <span style={{
-                        position: 'absolute', top: 2, right: 3,
-                        width: 5, height: 5, borderRadius: '50%',
-                        background: '#7c3aed', display: 'block',
-                      }} />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+          {/* Month chip selector — จัดกลุ่มตามภาคเรียน */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '.45rem' }}>
+            {termGroups.map(group => (
+              <div key={group.label} style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
+                {/* Term label */}
+                <span style={{
+                  fontSize: '.72rem', fontWeight: 800, color: '#7c3aed',
+                  whiteSpace: 'nowrap', minWidth: '80px',
+                  background: '#f5f3ff', borderRadius: '6px',
+                  padding: '.15rem .5rem',
+                }}>
+                  {group.label}
+                </span>
+                {/* Month chips */}
+                <div style={{ display: 'flex', gap: '.35rem', flexWrap: 'wrap' }}>
+                  {group.months.map(ym => {
+                    const [y, m] = ym.split('-');
+                    const isSelected = ym === selMonth;
+                    const hasData = Object.keys(dailyRecords).some(d => d.startsWith(ym));
+                    const beYear = Number(y) + 543;
+                    const label  = `${THAI_MONTH_SHORT[Number(m) - 1]} ${String(beYear).slice(2)}`;
+                    return (
+                      <button key={ym} type="button"
+                        onClick={() => setSelMonth(ym)}
+                        style={{
+                          padding: '.28rem .65rem',
+                          borderRadius: '20px',
+                          border: isSelected ? '2px solid #7c3aed' : '1.5px solid #e5e7eb',
+                          background: isSelected ? '#7c3aed' : hasData ? '#f5f3ff' : 'white',
+                          color: isSelected ? 'white' : hasData ? '#7c3aed' : '#9ca3af',
+                          fontFamily: 'inherit',
+                          fontWeight: isSelected ? 800 : 600,
+                          fontSize: '.78rem',
+                          cursor: 'pointer',
+                          transition: 'all .15s',
+                          position: 'relative',
+                        }}>
+                        {label}
+                        {hasData && !isSelected && (
+                          <span style={{
+                            position: 'absolute', top: 2, right: 3,
+                            width: 5, height: 5, borderRadius: '50%',
+                            background: '#7c3aed', display: 'block',
+                          }} />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         </>)}
 

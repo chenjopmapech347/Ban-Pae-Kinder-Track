@@ -275,6 +275,16 @@ export default function AttendanceTab({ defaultClass }) {
   // ── สรุปรายเดือน ──────────────────────────────────────────────────────
   const [selMonth, setSelMonth] = useState(() => todayISO().slice(0, 7)); // YYYY-MM
 
+  // เดือนที่มีข้อมูล (สำหรับ chip selector)
+  const availableMonths = useMemo(() => {
+    const monthSet = new Set(Object.keys(dailyRecords).map(d => d.slice(0, 7)));
+    const curMonth = todayISO().slice(0, 7);
+    monthSet.add(curMonth); // เพิ่มเดือนปัจจุบันเสมอ
+    return [...monthSet].sort();
+  }, [dailyRecords]);
+
+  const THAI_MONTH_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
   const monthlyData = useMemo(() => {
     const targetDates = Object.keys(dailyRecords).filter(d => d.startsWith(selMonth));
     const schoolDays  = targetDates.length;
@@ -422,11 +432,44 @@ export default function AttendanceTab({ defaultClass }) {
             )}
           </div>
         </>) : (<>
-          {/* Month picker */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
-            <span style={{ fontSize: '.8rem', fontWeight: 700, color: '#6b7280' }}>📆 เดือน</span>
-            <input type="month" className="input" style={{ width: '170px', fontSize: '.85rem' }}
-              value={selMonth} onChange={e => setSelMonth(e.target.value)} />
+          {/* Month chip selector */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '.8rem', fontWeight: 700, color: '#6b7280', whiteSpace: 'nowrap' }}>📆 เดือน</span>
+            <div style={{ display: 'flex', gap: '.35rem', flexWrap: 'wrap' }}>
+              {availableMonths.map(ym => {
+                const [y, m] = ym.split('-');
+                const isSelected = ym === selMonth;
+                const hasData = Object.keys(dailyRecords).some(d => d.startsWith(ym));
+                const beYear = Number(y) + 543;
+                const label  = `${THAI_MONTH_SHORT[Number(m) - 1]} ${String(beYear).slice(2)}`;
+                return (
+                  <button key={ym} type="button"
+                    onClick={() => setSelMonth(ym)}
+                    style={{
+                      padding: '.28rem .65rem',
+                      borderRadius: '20px',
+                      border: isSelected ? '2px solid #7c3aed' : '1.5px solid #e5e7eb',
+                      background: isSelected ? '#7c3aed' : hasData ? '#f5f3ff' : 'white',
+                      color: isSelected ? 'white' : hasData ? '#7c3aed' : '#9ca3af',
+                      fontFamily: 'inherit',
+                      fontWeight: isSelected ? 800 : 600,
+                      fontSize: '.78rem',
+                      cursor: 'pointer',
+                      transition: 'all .15s',
+                      position: 'relative',
+                    }}>
+                    {label}
+                    {hasData && !isSelected && (
+                      <span style={{
+                        position: 'absolute', top: 2, right: 3,
+                        width: 5, height: 5, borderRadius: '50%',
+                        background: '#7c3aed', display: 'block',
+                      }} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </>)}
 

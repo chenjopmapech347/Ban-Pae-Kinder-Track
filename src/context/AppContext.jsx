@@ -448,14 +448,18 @@ export function AppProvider({ children }) {
       }
       if (nextRole === 'teacher') {
         // test account — ทำงานได้เสมอ ไม่ขึ้นกับ localStorage
+        // แต่ดึง className/level จาก teachers array ก่อน เพื่อให้การแก้ไขข้อมูลครูจาก admin มีผล
         if (credentials.username === TEST_ACCOUNTS.teacher.username &&
             credentials.pin     === TEST_ACCOUNTS.teacher.pin) {
+          const testTeacherRecord = teachers.find(
+            t => String(t.id) === String(TEST_ACCOUNTS.teacher.id)
+          );
           setRole('teacher');
           setUser({
-            name: TEST_ACCOUNTS.teacher.name,
+            name:      testTeacherRecord?.name      ?? TEST_ACCOUNTS.teacher.name,
             teacherId: TEST_ACCOUNTS.teacher.id,
-            level: TEST_ACCOUNTS.teacher.level,
-            className: TEST_ACCOUNTS.teacher.className,
+            level:     testTeacherRecord?.level     ?? TEST_ACCOUNTS.teacher.level,
+            className: testTeacherRecord?.className ?? TEST_ACCOUNTS.teacher.className,
           });
           return { ok: true };
         }

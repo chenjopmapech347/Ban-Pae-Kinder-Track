@@ -142,10 +142,18 @@ export function ClassOverviewChart({ students = [], topics = [] }) {
   const data = topics.map(t => {
     const row = { topic: (t.emoji ?? '') + ' ' + t.label };
     levels.forEach(lv => {
-      const group = students.filter(s => s.level === lv && s.assessments?.summary?.[t.id] != null);
-      row[lv] = group.length
-        ? parseFloat((group.reduce((a,s) => a + (s.assessments.summary[t.id] ?? 0), 0) / group.length).toFixed(2))
-        : 0;
+      const group = students.filter(s => s.level === lv);
+      let total = 0, count = 0;
+      group.forEach(s => {
+        Object.entries(s.assessments?.indicators ?? {}).forEach(([indId, actMap]) => {
+          if (indId.split('__')[0] !== t.id) return;
+          Object.values(actMap).forEach(scores => {
+            const val = scores?.r4 ?? scores?.r3 ?? scores?.r2 ?? scores?.r1 ?? null;
+            if (val != null) { total += val; count++; }
+          });
+        });
+      });
+      row[lv] = count > 0 ? parseFloat((total / count).toFixed(2)) : 0;
     });
     return row;
   });
@@ -229,11 +237,21 @@ export function ClassRadarChart({ students = [], topics = [] }) {
     s => s.className === displayClass && !s.name.startsWith('(ว่าง)')
   );
 
+  // คำนวณค่าเฉลี่ยต่อ domain จาก assessments.indicators
+  // indicatorId format: "${domainId}__${stdId}__${indId}" → ตัดเอา domainId จาก segment แรก
   const data = topics.map(t => {
-    const scored = classStudents.filter(s => s.assessments?.summary?.[t.id] != null);
-    const avg = scored.length
-      ? parseFloat((scored.reduce((a, s) => a + (s.assessments.summary[t.id] ?? 0), 0) / scored.length).toFixed(2))
-      : 0;
+    let total = 0, count = 0;
+    classStudents.forEach(s => {
+      Object.entries(s.assessments?.indicators ?? {}).forEach(([indId, actMap]) => {
+        if (indId.split('__')[0] !== t.id) return;   // กรองเฉพาะ domain นี้
+        Object.values(actMap).forEach(scores => {
+          // ใช้คะแนนรอบล่าสุดที่บันทึกไว้ (r4 → r3 → r2 → r1)
+          const val = scores?.r4 ?? scores?.r3 ?? scores?.r2 ?? scores?.r1 ?? null;
+          if (val != null) { total += val; count++; }
+        });
+      });
+    });
+    const avg = count > 0 ? parseFloat((total / count).toFixed(2)) : 0;
     return {
       subject: (t.emoji ?? '') + ' ' + t.label,
       value: avg,

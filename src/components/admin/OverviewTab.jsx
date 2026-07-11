@@ -7,39 +7,47 @@ const ROUNDS = [1, 2, 3, 4];
 export default function OverviewTab() {
   const {
     students, teachers, assessmentTopics, announcements, setAnnouncements, allClassNames,
-    activities,
+    activities, indicators,
   } = useApp();
   const ALL_CLASSES = allClassNames;
 
   // ── สถานะการประเมินแยกตามห้อง × ครั้ง ──────────────────────────────────────
-  // นับจำนวน "กิจกรรม" ที่ประเมินแล้ว (distinct activityId ที่มี score ≠ null)
-  // เทียบกับจำนวนกิจกรรมทั้งหมดในระบบ
+  // นับจำนวน "ตัวบ่งชี้" ที่ประเมินแล้ว (distinct indicatorId ที่มี activity ≥ 1 ตัวได้รับคะแนน)
+  // เทียบกับจำนวนตัวบ่งชี้ทั้งหมดในระบบ (50)
   const pendingMatrix = useMemo(() => {
-    const totalActs = activities.length;
+    const totalInds = indicators.length;
     return ALL_CLASSES.map(cls => {
       const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'));
       if (!sts.length) return null;
       const rounds = ROUNDS.map(r => {
         const rKey = `r${r}`;
-        // รวบรวม activityId ที่มีนักเรียนอย่างน้อย 1 คนได้รับคะแนนในรอบนี้
-        const doneActs = new Set();
+        // รวบรวม indicatorId ที่มีนักเรียนอย่างน้อย 1 คนได้รับคะแนนใน indicator นั้น ในรอบนี้
+        const doneInds = new Set();
         sts.forEach(s => {
-          const inds = s.assessments?.indicators ?? {};
-          Object.values(inds).forEach(actMap => {
-            Object.entries(actMap).forEach(([actId, scores]) => {
-              if (scores?.[rKey] != null) doneActs.add(actId);
-            });
+          Object.entries(s.assessments?.indicators ?? {}).forEach(([indId, actMap]) => {
+            const hasScore = Object.values(actMap).some(scores => scores?.[rKey] != null);
+            if (hasScore) doneInds.add(indId);
           });
         });
-        return doneActs.size;
+        return doneInds.size;
       });
-      return { cls, studentCount: sts.length, total: totalActs, rounds };
+      return { cls, studentCount: sts.length, total: totalInds, rounds };
     }).filter(Boolean);
-  }, [students, activities, ALL_CLASSES]);
+  }, [students, indicators, ALL_CLASSES]);
 
-  const totalPending = pendingMatrix.reduce((sum, row) =>
-    sum + row.rounds.filter(r => r === 0).length, 0
-  );
+  // นับตัวบ่งชี้ที่ยังไม่เคยถูกประเมินเลย (ไม่มี score ใน round ใดเลย ในห้องใดเลย)
+  const pendingActCount = useMemo(() => {
+    const evaluated = new Set();
+    students.forEach(s => {
+      Object.entries(s.assessments?.indicators ?? {}).forEach(([indId, actMap]) => {
+        const hasAnyScore = Object.values(actMap).some(scores =>
+          scores && ROUNDS.some(r => scores[`r${r}`] != null)
+        );
+        if (hasAnyScore) evaluated.add(indId);
+      });
+    });
+    return indicators.length - evaluated.size;
+  }, [students, indicators]);
 
   // ── Attendance chart — class selector + auto-cycle ───────────────────────
   const classNames = useMemo(() =>
@@ -167,20 +175,20 @@ export default function OverviewTab() {
       <div className="glass-card" style={{ marginBottom: '1.25rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
           <h4 style={{ margin: 0 }}>📋 สถานะการประเมินรายห้อง</h4>
-          {totalPending > 0 && (
+          {pendingActCount > 0 && (
             <span style={{
               background: '#fef3c7', border: '1.5px solid #fbbf24', borderRadius: '8px',
               padding: '.15rem .6rem', fontSize: '.73rem', fontWeight: 800, color: '#92400e',
             }}>
-              ⚠️ ยังไม่ได้ประเมิน {totalPending} รายการ
+              ⚠️ ยังไม่ได้ประเมิน {pendingActCount}/{indicators.length} ตัวบ่งชี้
             </span>
           )}
-          {totalPending === 0 && pendingMatrix.length > 0 && (
+          {pendingActCount === 0 && pendingMatrix.length > 0 && (
             <span style={{
               background: '#d1fae5', border: '1.5px solid #6ee7b7', borderRadius: '8px',
               padding: '.15rem .6rem', fontSize: '.73rem', fontWeight: 800, color: '#065f46',
             }}>
-              ✅ ครบทุกห้องทุกครั้ง
+              ✅ ประเมินครบทุกกิจกรรมแล้ว
             </span>
           )}
         </div>
@@ -192,7 +200,7 @@ export default function OverviewTab() {
                 <th>ห้องเรียน</th>
                 <th style={{ textAlign: 'center', width: '60px' }}>นักเรียน</th>
                 {ROUNDS.map(r => (
-                  <th key={r} style={{ textAlign: 'center', width: '110px' }}>ครั้งที่ {r}<br/><span style={{ fontSize: '.68rem', fontWeight: 400, opacity: .7 }}>(กิจกรรม)</span></th>
+                  <th key={r} style={{ textAlign: 'center', width: '110px' }}>ครั้งที่ {r}<br/><span style={{ fontSize: '.68rem', fontWeight: 400, opacity: .7 }}>(ตัวบ่งชี้)</span></th>
                 ))}
               </tr>
             </thead>

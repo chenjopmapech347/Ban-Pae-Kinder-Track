@@ -31,13 +31,6 @@ function calcHeightAge(height, ageYear, ageMonth, gender) {
 function calcWeightHeight(weight, height, gender) {
   return calcWHResult(weight, height, gender);
 }
-function autoCalcNutrition(row, gender) {
-  return {
-    weightForAge:    calcWeightAge(row.weight, row.ageYear, row.ageMonth, gender),
-    heightForAge:    calcHeightAge(row.height, row.ageYear, row.ageMonth, gender),
-    weightForHeight: calcWeightHeight(row.weight, row.height, gender),
-  };
-}
 function genderOf(student) {
   if (student.gender) return student.gender;
   if (student.name?.includes('ชาย')) return 'ชาย';
@@ -227,7 +220,7 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
     students, classes, teachers, role, user,
     academicYear, schoolName, schoolLogo,
     illnessCheckRecords, setIllnessCheckRecords,
-    nutritionRecords, setNutritionRecords,
+    nutritionRecords,
   } = useApp();
 
   const isTeacher = role === 'teacher';
@@ -241,7 +234,6 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
   const [selYear,  setSelYear]  = useState(currentThaiYear);
   const [selMonth, setSelMonth] = useState(currentMonth);
   const [saved,    setSaved]    = useState(false);
-  const [autoFillNutrition, setAutoFillNutrition] = useState(null); // { count, date }
 
   // Modal state
   const [modal, setModal] = useState(null); // { studentId, studentName, day }
@@ -262,6 +254,32 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
       .sort((a, b) => Number(a.id) - Number(b.id)),
     [students, selClass]
   );
+
+  // ── ดึงน้ำหนัก/ส่วนสูงล่าสุดของแต่ละคนจาก nutritionRecords ──
+  // NutritionTab เป็น source of truth; IllnessCheck แสดง read-only
+  const latestMeasures = useMemo(() => {
+    const prefix = `${selClass}__${academicYear}__`;
+    // เรียงตาม key ลดลง (key มี ISO date → ล่าสุดมาก่อน)
+    const sorted = Object.entries(nutritionRecords)
+      .filter(([k]) => k.startsWith(prefix))
+      .sort(([a], [b]) => b.localeCompare(a));
+
+    const measures = {};
+    classStudents.forEach(s => {
+      for (const [, rec] of sorted) {
+        const sData = rec.students?.[String(s.id)];
+        if (sData && (Number(sData.weight) > 0 || Number(sData.height) > 0)) {
+          measures[String(s.id)] = {
+            weight: sData.weight ?? 0,
+            height: sData.height ?? 0,
+            date:   rec.assessmentDate ?? '',
+          };
+          break;
+        }
+      }
+    });
+    return measures;
+  }, [nutritionRecords, selClass, academicYear, classStudents]);
 
   // โหลด/สร้าง draft
   const [draft, setDraft] = useState(() => {
@@ -332,63 +350,14 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
     });
   }
 
-  // บันทึก weight/height
-  function saveMeasure(studentId, field, val) {
-    setSaved(false);
-    setDraft(prev => {
-      const sData = prev.students[studentId] ?? { days: {}, weight: 0, height: 0 };
-      return {
-        ...prev,
-        students: { ...prev.students, [studentId]: { ...sData, [field]: Number(val) || 0 } },
-      };
-    });
-  }
 
   function handleSave() {
     // 1. บันทึกคัดกรองอาการป่วย (เดิม)
     setIllnessCheckRecords(prev => ({ ...prev, [key]: draft }));
     setSaved(true);
 
-    // 2. Auto-fill โภชนาการ — เฉพาะนักเรียนที่มีน้ำหนักหรือส่วนสูงบันทึกไว้
-    const studentsWithMeasure = classStudents.filter(s => {
-      const sData = draft.students[s.id];
-      return sData && ((sData.weight ?? 0) > 0 || (sData.height ?? 0) > 0);
-    });
-    if (studentsWithMeasure.length === 0) return;
-
-    const today = new Date().toISOString().slice(0, 10);
-    const nutritionKey = `${selClass}__${academicYear}__${today}`;
-
-    setNutritionRecords(prev => {
-      const next         = { ...prev };
-      const existing     = next[nutritionKey];
-      const existingStu  = existing?.students ?? {};
-      const newStudents  = { ...existingStu };
-
-      studentsWithMeasure.forEach(s => {
-        const sData  = draft.students[s.id];
-        const exStu  = existingStu[s.id];
-        const row = {
-          ageYear:  exStu?.ageYear  ?? (typeof s.age === 'number' ? s.age : 5),
-          ageMonth: exStu?.ageMonth ?? 0,
-          weight: sData.weight ?? 0,
-          height: sData.height ?? 0,
-        };
-        newStudents[s.id] = { ...row, ...autoCalcNutrition(row, genderOf(s)) };
-      });
-
-      next[nutritionKey] = {
-        id: nutritionKey,
-        className: selClass,
-        academicYear,
-        assessmentDate: today,
-        students: newStudents,
-      };
-      return next;
-    });
-
-    setAutoFillNutrition({ count: studentsWithMeasure.length, date: today });
-    setTimeout(() => setAutoFillNutrition(null), 6000);
+    // หมายเหตุ: น้ำหนัก/ส่วนสูงอ่านมาจาก NutritionTab (ทิศทาง: Nutrition → IllnessCheck)
+    // ไม่มีการเขียนกลับไปที่ nutritionRecords จากที่นี่
   }
 
   function handleClear() {
@@ -411,7 +380,8 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
     const thDays = days.map(d => `<th class="${isWeekend(d)?'wknd':'hdc'}">${d}</th>`).join('');
 
     const rows = classStudents.map((s, idx) => {
-      const sData = draft.students[s.id] ?? { days:{}, weight:0, height:0 };
+      const sData     = draft.students[s.id] ?? { days:{} };
+      const measure   = latestMeasures[String(s.id)];
       const dayCells = days.map(d => {
         const e = sData.days?.[d];
         const sym = e?.v ?? '';
@@ -424,8 +394,8 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
       return `<tr>
         <td class="no">${idx+1}</td>
         <td class="nm">${s.name}</td>
-        <td class="wt">${sData.weight||''}</td>
-        <td class="ht">${sData.height||''}</td>
+        <td class="wt">${measure?.weight||''}</td>
+        <td class="ht">${measure?.height||''}</td>
         ${dayCells}
         <td class="tot">${total||''}</td>
       </tr>`;
@@ -629,19 +599,19 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                   <tr key={s.id} style={{ background: idx%2===0 ? 'white' : '#fafafa' }}>
                     <td style={{ textAlign:'center', border:'1px solid #e5e7eb', padding:'2px', color:'#6b7280' }}>{idx+1}</td>
                     <td style={{ border:'1px solid #e5e7eb', padding:'2px 6px', whiteSpace:'nowrap' }}>{s.name}</td>
-                    {/* นน. */}
-                    <td style={{ border:'1px solid #e5e7eb', padding:'1px 2px' }}>
-                      <input type="number" value={sData.weight||''}
-                        onChange={e => saveMeasure(s.id,'weight',e.target.value)}
-                        style={{ width:'36px', border:'none', outline:'none', textAlign:'center', fontSize:'.7rem', background:'transparent' }}
-                        placeholder="—" />
+                    {/* นน. — อ่านจาก NutritionTab (read-only) */}
+                    <td style={{ border:'1px solid #e5e7eb', padding:'1px 2px', textAlign:'center' }}
+                        title={latestMeasures[String(s.id)]?.date ? `วัดเมื่อ ${latestMeasures[String(s.id)].date}` : 'ยังไม่มีข้อมูลน้ำหนัก'}>
+                      <span style={{ fontSize:'.7rem', color: latestMeasures[String(s.id)]?.weight ? '#1e40af' : '#d1d5db' }}>
+                        {latestMeasures[String(s.id)]?.weight || '—'}
+                      </span>
                     </td>
-                    {/* ส่วนสูง */}
-                    <td style={{ border:'1px solid #e5e7eb', padding:'1px 2px' }}>
-                      <input type="number" value={sData.height||''}
-                        onChange={e => saveMeasure(s.id,'height',e.target.value)}
-                        style={{ width:'42px', border:'none', outline:'none', textAlign:'center', fontSize:'.7rem', background:'transparent' }}
-                        placeholder="—" />
+                    {/* ส่วนสูง — อ่านจาก NutritionTab (read-only) */}
+                    <td style={{ border:'1px solid #e5e7eb', padding:'1px 2px', textAlign:'center' }}
+                        title={latestMeasures[String(s.id)]?.date ? `วัดเมื่อ ${latestMeasures[String(s.id)].date}` : 'ยังไม่มีข้อมูลส่วนสูง'}>
+                      <span style={{ fontSize:'.7rem', color: latestMeasures[String(s.id)]?.height ? '#1e40af' : '#d1d5db' }}>
+                        {latestMeasures[String(s.id)]?.height || '—'}
+                      </span>
                     </td>
                     {/* วันที่ 1-31 */}
                     {dayArr.map(d => (
@@ -717,30 +687,6 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
         </div>
       </div>
 
-      {/* ── Auto-fill Nutrition Toast ── */}
-      {autoFillNutrition && (
-        <div style={{
-          position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 9999,
-          background: 'linear-gradient(135deg,#0891b2,#06b6d4)',
-          color: 'white', borderRadius: '14px',
-          padding: '1rem 1.4rem', boxShadow: '0 8px 24px rgba(8,145,178,.35)',
-          maxWidth: '360px',
-        }}>
-          <div style={{ fontWeight: 800, fontSize: '.95rem', marginBottom: '.4rem' }}>
-            ⚖️ เติมข้อมูลโภชนาการอัตโนมัติ
-          </div>
-          <div style={{ fontSize: '.82rem', opacity: .92, marginBottom: '.4rem' }}>
-            ห้อง <strong>{selClass}</strong> · นักเรียน <strong>{autoFillNutrition.count}</strong> คน
-          </div>
-          <div style={{ fontSize: '.75rem', opacity: .85 }}>
-            🏷️ วันที่บันทึก: {autoFillNutrition.date}<br/>
-            📐 คำนวณ น้ำหนักเทียบอายุ / ส่วนสูงเทียบอายุ / ส่วนสูงเทียบน้ำหนัก อัตโนมัติ (WHO 2006)
-          </div>
-          <div style={{ fontSize: '.72rem', opacity: .75, marginTop: '.3rem', fontStyle: 'italic' }}>
-            (ตรวจสอบผลได้ที่แท็บ ⚖️ โภชนาการ)
-          </div>
-        </div>
-      )}
 
       {/* ── Month History ── */}
       <MonthHistory

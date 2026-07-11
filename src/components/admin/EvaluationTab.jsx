@@ -36,6 +36,19 @@ function computeMonthlyStats(records, studentId, className) {
   });
   return total > 0 ? { done, total, pct: Math.round(done / total * 100) } : null;
 }
+// คำนวณจำนวนเดือนที่มีข้อมูลน้ำหนัก/ส่วนสูงของนักเรียนใน nutritionRecords
+// done = จำนวนครั้งที่บันทึกของนักเรียนคนนี้, total = จำนวนครั้งที่บันทึกทั้งหมดของห้อง
+function computeNutritionStats(records, studentId, className) {
+  let done = 0, total = 0;
+  Object.values(records ?? {}).forEach(rec => {
+    if (rec.className !== className) return;
+    total++;
+    const sData = rec.students?.[String(studentId)];
+    if (sData?.weight != null && sData.weight !== '') done++;
+  });
+  return total > 0 ? { done, total, pct: Math.round(done / total * 100) } : null;
+}
+
 function pctColor(pct) {
   return pct == null ? '#9ca3af' : pct >= 80 ? '#059669' : pct >= 60 ? '#b45309' : '#dc2626';
 }
@@ -179,7 +192,7 @@ function AISuggestionPanel({ students, assessmentTopics, indicators, activities,
 }
 
 // ── Daily context panel (Options 1+2: แสดงสถิติ + เสนอคะแนนอัตโนมัติ) ────────
-function DailyContextPanel({ classStudents, toothBrushRecords, lunchRecords, milkRecords, selClass, onSuggest }) {
+function DailyContextPanel({ classStudents, toothBrushRecords, lunchRecords, milkRecords, nutritionRecords, selClass, onSuggest }) {
   const [open, setOpen] = useState(false);
   const [from, setFrom] = useState('tooth');
 
@@ -191,19 +204,21 @@ function DailyContextPanel({ classStudents, toothBrushRecords, lunchRecords, mil
           ? { done: s.attendance.present, total: s.attendance.total,
               pct: Math.round(s.attendance.present / s.attendance.total * 100) }
           : null,
-        tooth: computeMonthlyStats(toothBrushRecords, s.id, selClass),
-        lunch: computeMonthlyStats(lunchRecords,       s.id, selClass),
-        milk:  computeMonthlyStats(milkRecords,        s.id, selClass),
+        tooth:     computeMonthlyStats(toothBrushRecords, s.id, selClass),
+        lunch:     computeMonthlyStats(lunchRecords,      s.id, selClass),
+        milk:      computeMonthlyStats(milkRecords,       s.id, selClass),
+        nutrition: computeNutritionStats(nutritionRecords, s.id, selClass),
       };
     });
     return result;
-  }, [classStudents, toothBrushRecords, lunchRecords, milkRecords, selClass]);
+  }, [classStudents, toothBrushRecords, lunchRecords, milkRecords, nutritionRecords, selClass]);
 
   const SOURCES = [
-    { key: 'attend', label: '✅ มาเรียน' },
-    { key: 'tooth',  label: '🪥 แปรงฟัน' },
-    { key: 'lunch',  label: '🍱 อาหาร' },
-    { key: 'milk',   label: '🥛 นม' },
+    { key: 'attend',    label: '✅ มาเรียน' },
+    { key: 'tooth',     label: '🪥 แปรงฟัน' },
+    { key: 'lunch',     label: '🍱 อาหาร' },
+    { key: 'milk',      label: '🥛 นม' },
+    { key: 'nutrition', label: '🥗 โภชนาการ' },
   ];
 
   function handleSuggest() {
@@ -300,7 +315,7 @@ function DailyContextPanel({ classStudents, toothBrushRecords, lunchRecords, mil
             </table>
           </div>
           <div style={{ fontSize: '.71rem', color: '#9ca3af', marginTop: '.45rem' }}>
-            * รวมทุกเดือนที่บันทึกในปีการศึกษานี้ · คลิก "เสนอคะแนนทั้งห้อง" เพื่อเติมคะแนนอัตโนมัติ (ครูยังแก้ไขได้)
+            * รวมทุกเดือนที่บันทึกในปีการศึกษานี้ · 🥗 โภชนาการ = จำนวนครั้งที่วัดน้ำหนัก/ส่วนสูง ÷ ครั้งที่บันทึกทั้งหมดในห้อง · คลิก "เสนอคะแนนทั้งห้อง" เพื่อเติมคะแนนอัตโนมัติ (ครูยังแก้ไขได้)
           </div>
         </div>
       )}
@@ -315,6 +330,7 @@ export default function EvaluationTab() {
     role, user, addActivityLog, aiApiKey, classMap: CLASS_MAP, allClassNames,
     toothBrushRecords, lunchRecords, milkRecords,
     dailyRecords,
+    nutritionRecords,
   } = useApp();
 
   // teacher lock — auto-set class from user profile
@@ -860,6 +876,7 @@ export default function EvaluationTab() {
             toothBrushRecords={toothBrushRecords}
             lunchRecords={lunchRecords}
             milkRecords={milkRecords}
+            nutritionRecords={nutritionRecords}
             selClass={selClass}
             onSuggest={suggested => { setResults(prev => ({ ...prev, ...suggested })); setSaved(false); }}
           />

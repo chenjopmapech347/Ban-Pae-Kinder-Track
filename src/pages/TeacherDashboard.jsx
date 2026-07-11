@@ -740,11 +740,10 @@ export default function TeacherDashboard() {
                     </span>
                   </div>
                   {[
-                    { label: 'ชื่อ',      value: myTeacher?.firstName ?? myTeacher?.name ?? '—' },
-                    { label: 'นามสกุล',   value: myTeacher?.lastName ?? '—' },
-                    { label: 'E-mail',    value: myTeacher?.email ?? '—' },
-                    { label: 'เบอร์โทร',  value: myTeacher?.phone ?? '—' },
-                    { label: 'ห้องเรียน', value: myTeacher?.className ?? '—' },
+                    { label: 'ชื่อ-นามสกุล', value: myTeacher?.name ?? '—' },
+                    { label: 'E-mail',        value: myTeacher?.email ?? '—' },
+                    { label: 'เบอร์โทร',      value: myTeacher?.phone ?? '—' },
+                    { label: 'ห้องเรียน',     value: myTeacher?.className ?? '—' },
                   ].map(r => (
                     <div key={r.label} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
                       <span style={{ minWidth: '100px', fontWeight: 700, color: '#6b7280', fontSize: '.85rem' }}>{r.label}</span>
@@ -767,17 +766,10 @@ export default function TeacherDashboard() {
                   setProfileForm(null);
                   setProfileSaved(true);
                 }} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '520px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.75rem' }}>
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600, fontSize: '.85rem' }}>ชื่อ *</label>
-                      <input className="input" required value={profileForm.firstName ?? ''}
-                        onChange={e => setProfileForm(f => ({ ...f, firstName: e.target.value }))} />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600, fontSize: '.85rem' }}>นามสกุล *</label>
-                      <input className="input" required value={profileForm.lastName ?? ''}
-                        onChange={e => setProfileForm(f => ({ ...f, lastName: e.target.value }))} />
-                    </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600, fontSize: '.85rem' }}>ชื่อ-นามสกุล *</label>
+                    <input className="input" required value={profileForm.name ?? ''}
+                      onChange={e => setProfileForm(f => ({ ...f, name: e.target.value }))} />
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600, fontSize: '.85rem' }}>E-mail *</label>
@@ -785,8 +777,8 @@ export default function TeacherDashboard() {
                       onChange={e => setProfileForm(f => ({ ...f, email: e.target.value }))} />
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600, fontSize: '.85rem' }}>เบอร์โทรศัพท์ *</label>
-                    <input className="input" required placeholder="0xx-xxx-xxxx" value={profileForm.phone ?? ''}
+                    <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600, fontSize: '.85rem' }}>เบอร์โทรศัพท์</label>
+                    <input className="input" placeholder="0xx-xxx-xxxx" value={profileForm.phone ?? ''}
                       onChange={e => setProfileForm(f => ({ ...f, phone: e.target.value }))} />
                   </div>
                   <div style={{ borderTop: '1.5px solid #e5e7eb', paddingTop: '.75rem', marginTop: '.25rem' }}>

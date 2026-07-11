@@ -143,6 +143,7 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
     setImgPreview('');
     setForm(f => ({ ...f, imageUrl: '', imagePath: '' }));
   }
+  // '' = แสดงทุกห้อง; ถ้าเป็นครูประจำห้องให้ lock ที่ห้องตัวเอง
   const [selClass, setSelClass] = useState(teacherClassFilter ?? '');
 
   // สิทธิ์ต่อรายการ: แก้ไขได้ถ้าเป็น admin หรือเป็นเจ้าของ record
@@ -162,11 +163,20 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
     [teachers, cn]
   );
 
+  // helper: ชื่อครูผู้ผลิตจาก id
+  const teacherName = (tid) => {
+    if (!tid) return '—';
+    const t = (teachers ?? []).find(t => String(t.id) === String(tid));
+    return t?.name ?? `ครู #${tid}`;
+  };
+
+  // แสดงทุกสื่อ (ไม่กรองตามห้อง) เพื่อให้เห็นภาพรวม
+  // ถ้ามีการเลือกห้องจาก dropdown → กรองตามห้องนั้น
   const records = useMemo(() =>
     (mediaRecords ?? [])
-      .filter(r => !cn || r.className === cn)
+      .filter(r => !selClass || r.className === selClass)
       .sort((a, b) => a.id - b.id),
-    [mediaRecords, cn]
+    [mediaRecords, selClass]
   );
 
   async function save() {
@@ -276,9 +286,10 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
           </div>
         </div>
         <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          {!teacherClassFilter && classList.length > 1 && (
-            <select value={cn} onChange={e => setSelClass(e.target.value)}
+          {!teacherClassFilter && (
+            <select value={selClass} onChange={e => setSelClass(e.target.value)}
               style={{ padding: '.35rem .6rem', borderRadius: '8px', border: 'none', fontSize: '.82rem', fontFamily: 'inherit', background: 'rgba(255,255,255,.2)', color: 'white' }}>
+              <option value="" style={{ color: '#000' }}>📋 ทุกห้อง</option>
               {classList.map(c => <option key={c} value={c} style={{ color: '#000' }}>{c}</option>)}
             </select>
           )}
@@ -420,6 +431,7 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
                 <th style={{ ...cell, width: '36px' }}>ที่</th>
                 <th style={{ ...cell, width: '70px' }}>รูปภาพ</th>
                 <th style={{ ...cell, textAlign: 'center', minWidth: '180px' }}>รายการสื่อ / นวัตกรรม</th>
+                <th style={{ ...cell, textAlign: 'center', minWidth: '120px' }}>ห้อง / ผู้ผลิต</th>
                 <th style={{ ...cell, textAlign: 'center', minWidth: '180px' }}>ประกอบการสอนหน่วย</th>
                 <th style={{ ...cell, width: '60px' }}>ทำมือ</th>
                 <th style={{ ...cell, width: '50px' }}>AI</th>
@@ -449,6 +461,14 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
                       )}
                     </td>
                     <td style={{ ...cell, fontWeight: 600 }}>{r.item}</td>
+                    <td style={{ ...cell, fontSize: '.8rem', lineHeight: 1.6 }}>
+                      {r.className && (
+                        <div style={{ fontWeight: 700, color: '#0891b2', background: '#e0f2fe', borderRadius: '5px', padding: '.1rem .45rem', display: 'inline-block', marginBottom: '.2rem', fontSize: '.75rem' }}>
+                          {r.className}
+                        </div>
+                      )}
+                      <div style={{ color: '#374151' }}>{teacherName(r.createdByTeacherId)}</div>
+                    </td>
                     <td style={{ ...cell, fontSize: '.8rem', lineHeight: 1.7 }}>
                       {ctxLines.map(l => <div key={l} style={{ color: '#374151' }}>{l}</div>)}
                       {unitDisplay && (

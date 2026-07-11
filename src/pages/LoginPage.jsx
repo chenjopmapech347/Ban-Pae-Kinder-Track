@@ -827,36 +827,6 @@ export default function LoginPage() {
           {publicTab === 'overview' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
-              {/* CTA Banner */}
-              <div style={{
-                background: 'linear-gradient(135deg,#7c3aed,#6d28d9)',
-                borderRadius: '18px', padding: '1.25rem 1.5rem',
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                flexWrap: 'wrap', gap: '1rem',
-              }}>
-                <div>
-                  <div style={{ fontWeight: 900, fontSize: '1rem', color: 'white', marginBottom: '.25rem' }}>
-                    ระบบบันทึกพัฒนาการเด็กปฐมวัย
-                  </div>
-                  <div style={{ fontSize: '.8rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.6 }}>
-                    ปีการศึกษา {academicYear} · {realClasses.length} ห้องเรียน · {realStudents.length} คน · {realTeachers.length} ครู
-                  </div>
-                </div>
-                <button type="button" onClick={() => setShowLogin(true)}
-                  style={{
-                    background: 'white', color: '#7c3aed',
-                    border: 'none', borderRadius: '12px',
-                    padding: '.6rem 1.4rem', fontFamily: 'inherit',
-                    fontWeight: 800, fontSize: '.88rem', cursor: 'pointer',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)', flexShrink: 0,
-                    transition: 'all .15s',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}>
-                  🚀 เข้าสู่ระบบ
-                </button>
-              </div>
-
               {/* Feature cards */}
               <div>
                 <h3 style={{ fontSize: '.85rem', fontWeight: 800, color: '#374151', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '.07em' }}>

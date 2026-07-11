@@ -123,6 +123,7 @@ export function AppProvider({ children }) {
   const [milkRecords,         setMilkRecords]         = useLocalStorage(STORAGE_KEYS.milkRecords,         {});
   const [nutritionRecords,    setNutritionRecords]    = useLocalStorage(STORAGE_KEYS.nutritionRecords,    {});
   const [dailyRoutineRecords, setDailyRoutineRecords] = useLocalStorage(STORAGE_KEYS.dailyRoutineRecords, {});
+  const [specialEvents,       setSpecialEvents]       = useLocalStorage(STORAGE_KEYS.specialEvents,       {});
   const [studentReportRecords, setStudentReportRecords] = useLocalStorage(STORAGE_KEYS.studentReportRecords, {});
   const [measurementDates, setMeasurementDates] = useLocalStorage(STORAGE_KEYS.measurementDates, {
     t1m1: '', // ภาคเรียน 1 ครั้งที่ 1 (อ้างอิง มิ.ย.)
@@ -379,6 +380,7 @@ export function AppProvider({ children }) {
     pickupRecords, mediaRecords, cornerRecords, innerCornerRecords,
     healthCheckRecords, illnessCheckRecords, toothBrushRecords,
     lunchRecords, milkRecords, nutritionRecords, dailyRoutineRecords, studentReportRecords,
+    specialEvents,
     cornerDefs, innerCornerDefs,
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1107,6 +1109,9 @@ export function AppProvider({ children }) {
     // Daily Routine (กิจกรรมประจำวันระดับชั้น)
     dailyRoutineRecords,
     setDailyRoutineRecords,
+    // Special Events (กิจกรรมวันสำคัญ)
+    specialEvents,
+    setSpecialEvents,
     // Student Report Book (อ.01)
     studentReportRecords,
     setStudentReportRecords,

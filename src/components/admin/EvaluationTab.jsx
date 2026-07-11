@@ -239,6 +239,18 @@ function computeCornerStats(records, studentId, className) {
   return total > 0 ? { done, total, pct: Math.round(done / total * 100) } : null;
 }
 
+// ── specialEvents: { [id]: { scope, participants: { [sid]: bool }, ... } }
+// done = จำนวนกิจกรรมที่นักเรียนเข้าร่วม, total = จำนวนกิจกรรมทั้งหมดที่เกี่ยวกับห้องนี้
+function computeEventStats(events, studentId, className) {
+  let done = 0, total = 0;
+  Object.values(events ?? {}).forEach(ev => {
+    if (ev.scope !== 'all' && ev.scope !== className) return;
+    total++;
+    if (ev.participants?.[String(studentId)] === true) done++;
+  });
+  return total > 0 ? { done, total, pct: Math.round(done / total * 100) } : null;
+}
+
 // ── dailyRoutineRecords: { [key]: { className, days: { [dayNum]: { morning, exercise, ... } } } }
 // class-level (ไม่แยกรายนักเรียน) — done = จำนวนวันที่ทำกิจกรรมนั้น, total = จำนวนวันทั้งหมดที่บันทึก
 function computeRoutineStats(records, className, activityKey) {
@@ -400,7 +412,7 @@ function DailyContextPanel({
   classStudents,
   toothBrushRecords, lunchRecords, milkRecords, nutritionRecords,
   pickupRecords, healthCheckRecords, illnessCheckRecords,
-  cornerRecords, innerCornerRecords, dailyRoutineRecords,
+  cornerRecords, innerCornerRecords, dailyRoutineRecords, specialEvents,
   selClass, onSuggest, onSuggestAll,
 }) {
   const [open, setOpen] = useState(false);
@@ -433,6 +445,7 @@ function DailyContextPanel({
         illness:      computeIllnessStats(illnessCheckRecords, s.id, selClass),
         outdoor:      computeCornerStats(cornerRecords,        s.id, selClass),
         corner:       computeCornerStats(innerCornerRecords,   s.id, selClass),
+        events:       computeEventStats(specialEvents,         s.id, selClass),
         // กิจกรรมประจำวัน — ทุกนักเรียนในห้องได้ค่าเดียวกัน
         ...routineStats,
       };
@@ -440,7 +453,7 @@ function DailyContextPanel({
     return result;
   }, [classStudents, toothBrushRecords, lunchRecords, milkRecords, nutritionRecords,
       pickupRecords, healthCheckRecords, illnessCheckRecords, cornerRecords, innerCornerRecords,
-      dailyRoutineRecords, selClass]);
+      dailyRoutineRecords, specialEvents, selClass]);
 
   const SOURCES = [
     { key: 'attend',       label: '✅ มาเรียน' },
@@ -453,6 +466,7 @@ function DailyContextPanel({
     { key: 'illness',      label: '🤒 ไม่ป่วย' },
     { key: 'outdoor',      label: '🌳 นอกห้อง' },
     { key: 'corner',       label: '🧩 มุมในห้อง' },
+    { key: 'events',       label: '🎉 วันสำคัญ' },
     { key: 'morning',      label: '🌅 กิจกรรมเช้า' },
     { key: 'exercise',     label: '🏃 ออกกำลังกาย' },
     { key: 'circle',       label: '💬 วงกลม' },
@@ -593,6 +607,7 @@ export default function EvaluationTab() {
     cornerRecords,
     innerCornerRecords,
     dailyRoutineRecords,
+    specialEvents,
   } = useApp();
 
   // teacher lock — auto-set class from user profile
@@ -1195,6 +1210,7 @@ export default function EvaluationTab() {
             cornerRecords={cornerRecords}
             innerCornerRecords={innerCornerRecords}
             dailyRoutineRecords={dailyRoutineRecords}
+            specialEvents={specialEvents}
             selClass={selClass}
             onSuggest={suggested => { setResults(prev => ({ ...prev, ...suggested })); setSaved(false); }}
             onSuggestAll={handleSuggestAll}

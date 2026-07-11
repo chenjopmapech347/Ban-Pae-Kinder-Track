@@ -32,6 +32,7 @@ const LunchTab               = lazy(() => import('../components/admin/LunchTab')
 const MilkTab                = lazy(() => import('../components/admin/MilkTab'));
 const NutritionTab           = lazy(() => import('../components/admin/NutritionTab'));
 const DailyRoutineTab        = lazy(() => import('../components/admin/DailyRoutineTab'));
+const SpecialEventTab        = lazy(() => import('../components/admin/SpecialEventTab'));
 const StudentReportTab       = lazy(() => import('../components/admin/StudentReportTab'));
 const AIChatTab              = lazy(() => import('../components/AIChatTab'));
 const ClassAssignTab         = lazy(() => import('../components/admin/ClassAssignTab'));
@@ -63,6 +64,7 @@ const TAB_GROUPS = [
       { id: 'milk',          label: '🥛 ดื่มนม'             },
       { id: 'nutrition',     label: '⚖️ ภาวะโภชนาการ'      },
       { id: 'dailyroutine',  label: '🗓️ กิจกรรมประจำวัน'   },
+      { id: 'specialevent',  label: '🎉 กิจกรรมวันสำคัญ'   },
     ],
   },
   {
@@ -149,6 +151,7 @@ export default function AdminDashboard() {
           {activeTab === 'milk'           && <MilkTab />}
           {activeTab === 'nutrition'      && <NutritionTab />}
           {activeTab === 'dailyroutine'   && <DailyRoutineTab />}
+          {activeTab === 'specialevent'   && <SpecialEventTab />}
           {activeTab === 'studentreport'  && <StudentReportTab />}
           {activeTab === 'evaluation'     && <EvaluationTab />}
           {activeTab === 'reports'        && <ReportsTab />}

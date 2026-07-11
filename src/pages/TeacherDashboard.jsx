@@ -20,6 +20,7 @@ const LunchTab               = lazy(() => import('../components/admin/LunchTab')
 const MilkTab                = lazy(() => import('../components/admin/MilkTab'));
 const NutritionTab           = lazy(() => import('../components/admin/NutritionTab'));
 const DailyRoutineTab        = lazy(() => import('../components/admin/DailyRoutineTab'));
+const SpecialEventTab        = lazy(() => import('../components/admin/SpecialEventTab'));
 const StudentReportTab       = lazy(() => import('../components/admin/StudentReportTab'));
 const OverviewTab            = lazy(() => import('../components/admin/OverviewTab'));
 const AdminAttTab            = lazy(() => import('../components/admin/AttendanceTab'));
@@ -58,6 +59,7 @@ const TEACHER_TAB_GROUPS = [
       { id: 'milk',          label: '🥛 ดื่มนม'              },
       { id: 'nutrition',     label: '⚖️ ภาวะโภชนาการ'        },
       { id: 'dailyroutine',  label: '🗓️ กิจกรรมประจำวัน'     },
+      { id: 'specialevent',  label: '🎉 กิจกรรมวันสำคัญ'     },
     ],
   },
   {
@@ -559,6 +561,7 @@ export default function TeacherDashboard() {
           {activeTab === 'milk'         && <MilkTab teacherClassFilter={myClass} />}
           {activeTab === 'nutrition'     && <NutritionTab teacherClassFilter={myClass} />}
           {activeTab === 'dailyroutine'  && <DailyRoutineTab teacherClassFilter={myClass} />}
+          {activeTab === 'specialevent'  && <SpecialEventTab teacherClassFilter={myClass} />}
 
           {/* ── Learning results ── */}
           {activeTab === 'studentreport' && <StudentReportTab teacherClassFilter={myClass} />}

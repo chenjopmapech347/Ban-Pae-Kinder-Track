@@ -40,6 +40,7 @@ export const STORAGE_KEYS = {
   currentTerm:          'kt_currentTerm',             // ภาคเรียนปัจจุบัน ('1' หรือ '2')
   measurementDates:     'kt_measurementDates',        // วันกำหนดวัดน้ำหนัก/ส่วนสูง 4 ครั้ง (อ.01)
   dailyRoutineRecords:  'kt_dailyRoutineRecords',     // บันทึกกิจกรรมประจำวันระดับชั้นเรียน (เช้า/ออกกำลังกาย/วงกลม/นิทาน/เก็บของ/แต่งตัว)
+  specialEvents:        'kt_specialEvents',           // กิจกรรมวันสำคัญ พร้อมรายชื่อผู้เข้าร่วมและตัวบ่งชี้ที่เชื่อมโยง
 };
 
 export function clearAllStorage() {

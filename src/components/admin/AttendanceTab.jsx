@@ -206,7 +206,11 @@ function printRollCall(classSections, selMonth, schoolName, schoolLogo) {
 }
 
 export default function AttendanceTab({ defaultClass }) {
-  const { students, dailyRecords, teachers, saveDailyAttendance, schoolName, schoolLogo, allClassNames, schoolTerms, academicYear } = useApp();
+  const {
+    students, dailyRecords, teachers, saveDailyAttendance,
+    schoolName, schoolLogo, allClassNames, schoolTerms, academicYear,
+    dailyRoutineRecords, setDailyRoutineRecords,
+  } = useApp();
   const ALL_CLASSES = allClassNames;
 
   const [mainView,     setMainView]     = useState('daily');   // 'daily' | 'monthly'
@@ -256,6 +260,41 @@ export default function AttendanceTab({ defaultClass }) {
     setDirtyClasses(prev => new Set([...prev, cls]));
   }
 
+  // ── Auto-fill dailyRoutineRecords เมื่อบันทึกเช็คชื่อ ─────────────────────
+  // กิจกรรมที่เกิดขึ้นทุกวันเรียน — ติ๊ก true อัตโนมัติ ถ้ายังไม่เคยบันทึก
+  const ROUTINE_AUTO_KEYS = ['morning', 'exercise', 'circle', 'story', 'cleanup', 'dressing'];
+
+  function autoFillDailyRoutine(cls, dateISO, hasPresent) {
+    if (!hasPresent) return; // ไม่มีนักเรียนมาเรียน — ไม่ต้อง auto-fill
+    const [ceYr, mo, dd] = dateISO.split('-').map(Number);
+    const thaiYear = ceYr + 543;
+    const month    = mo;
+    const dayNum   = dd;
+    const rKey     = `${cls}__${academicYear}__${thaiYear}-${String(month).padStart(2, '0')}`;
+
+    setDailyRoutineRecords(prev => {
+      const existing = prev[rKey] ?? {
+        id: rKey, className: cls, academicYear,
+        year: thaiYear, month, days: {},
+      };
+      const curDayData = existing.days?.[dayNum] ?? {};
+      // เฉพาะ key ที่ยังไม่เคยบันทึก (null/undefined) → ตั้งเป็น true
+      const merged = { ...curDayData };
+      let changed = false;
+      ROUTINE_AUTO_KEYS.forEach(k => {
+        if (merged[k] === undefined || merged[k] === null) {
+          merged[k] = true;
+          changed = true;
+        }
+      });
+      if (!changed) return prev; // ไม่มีการเปลี่ยนแปลง
+      return {
+        ...prev,
+        [rKey]: { ...existing, days: { ...existing.days, [dayNum]: merged } },
+      };
+    });
+  }
+
   // บันทึกห้องนี้ + auto-fill modules อัตโนมัติ
   function handleSaveClass(cls) {
     const patch = {};
@@ -267,6 +306,8 @@ export default function AttendanceTab({ defaultClass }) {
     });
     saveDailyAttendance(selectedDate, patch);
     setDirtyClasses(prev => { const n = new Set(prev); n.delete(cls); return n; });
+    // auto-fill กิจกรรมประจำวัน
+    autoFillDailyRoutine(cls, selectedDate, present > 0);
     // แสดง auto-fill toast
     setAutoFillMsg({ cls, present, absent });
     setTimeout(() => setAutoFillMsg(null), 5000);
@@ -909,7 +950,8 @@ export default function AttendanceTab({ defaultClass }) {
           <div style={{ fontSize: '.75rem', opacity: .85 }}>
             🏥 ตรวจสุขภาพ &nbsp;·&nbsp; 🥛 ดื่มนม &nbsp;·&nbsp; 🍱 อาหารกลางวัน<br/>
             🪥 แปรงฟัน &nbsp;·&nbsp; 🤒 คัดกรองอาการป่วย<br/>
-            🌿 แหล่งเรียนรู้นอก &nbsp;·&nbsp; 🏠 มุมประสบการณ์ในห้อง
+            🌿 แหล่งเรียนรู้นอก &nbsp;·&nbsp; 🏠 มุมประสบการณ์ในห้อง<br/>
+            📋 กิจกรรมประจำวัน (เช้า · ออกกำลัง · วงกลม · นิทาน · เก็บของ · แต่งตัว)
           </div>
           <div style={{ fontSize: '.72rem', opacity: .75, marginTop: '.35rem', fontStyle: 'italic' }}>
             (ไม่ overwrite ข้อมูลที่ครูบันทึกไว้แล้ว)

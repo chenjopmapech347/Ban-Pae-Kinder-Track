@@ -631,7 +631,8 @@ export default function SpecialEventTab({ teacherClassFilter }) {
 
   // Sorted + filtered events
   const eventList = useMemo(() => {
-    return Object.values(specialEvents)
+    return Object.entries(specialEvents)
+      .map(([key, ev]) => ev.id ? ev : { ...ev, id: key }) // รองรับข้อมูลเก่าที่ไม่มี id ใน object
       .filter(ev => {
         if (search && !ev.name.toLowerCase().includes(search.toLowerCase())) return false;
         if (filterType && ev.type !== filterType) return false;

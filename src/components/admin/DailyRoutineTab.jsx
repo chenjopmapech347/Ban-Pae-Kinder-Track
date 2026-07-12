@@ -53,6 +53,14 @@ const ROUTINE_DEFS = [
     color: '#ec4899',
     bg: '#fdf2f8',
   },
+  {
+    key: 'dance',
+    emoji: '💃',
+    label: 'เต้น / โยคะเด็ก',
+    desc: 'เต้นประกอบเพลง · โยคะ · เกมเคลื่อนไหวในร่ม',
+    color: '#a855f7',
+    bg: '#faf5ff',
+  },
 ];
 
 const ROUTINE_KEYS = ROUTINE_DEFS.map(d => d.key);

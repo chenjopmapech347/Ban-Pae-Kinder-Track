@@ -32,8 +32,8 @@ import {
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
-  const [role, setRole] = useState(null);
-  const [user, setUser] = useState(null);
+  const [role, setRole] = useLocalStorage(STORAGE_KEYS.role, null);
+  const [user, setUser] = useLocalStorage(STORAGE_KEYS.sessionUser, null);
   const [firebaseUser, setFirebaseUser] = useState(null);
 
   // ฟัง Firebase Auth state

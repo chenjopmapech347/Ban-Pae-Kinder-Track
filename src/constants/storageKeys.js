@@ -41,6 +41,8 @@ export const STORAGE_KEYS = {
   measurementDates:     'kt_measurementDates',        // วันกำหนดวัดน้ำหนัก/ส่วนสูง 4 ครั้ง (อ.01)
   dailyRoutineRecords:  'kt_dailyRoutineRecords',     // บันทึกกิจกรรมประจำวันระดับชั้นเรียน (เช้า/ออกกำลังกาย/วงกลม/นิทาน/เก็บของ/แต่งตัว)
   specialEvents:        'kt_specialEvents',           // กิจกรรมวันสำคัญ พร้อมรายชื่อผู้เข้าร่วมและตัวบ่งชี้ที่เชื่อมโยง
+  role:                 'kt_role',                    // บทบาทผู้ใช้ (admin/teacher/parent)
+  sessionUser:          'kt_sessionUser',             // ข้อมูลผู้ใช้ที่ login อยู่ (name, email, className ฯลฯ)
 };
 
 export function clearAllStorage() {

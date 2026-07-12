@@ -438,6 +438,121 @@ function EventModal({ event, allClassNames, students, assessmentTopics, indicato
   );
 }
 
+// ── ParticipantModal ──────────────────────────────────────────────────────────
+function ParticipantModal({ event, students, onSave, onClose }) {
+  const scopeStudents = students.filter(s =>
+    !s.name.startsWith('(ว่าง)') &&
+    (event.scope === 'all' || s.className === event.scope)
+  ).sort((a, b) => {
+    if (a.className !== b.className) return a.className.localeCompare(b.className);
+    return a.name.localeCompare(b.name, 'th');
+  });
+
+  const [selected, setSelected] = useState(() => {
+    const init = {};
+    scopeStudents.forEach(s => { init[s.id] = event.participants?.[s.id] === true; });
+    return init;
+  });
+
+  const count = Object.values(selected).filter(Boolean).length;
+
+  const toggle    = (id) => setSelected(prev => ({ ...prev, [id]: !prev[id] }));
+  const selectAll = () => { const n = {}; scopeStudents.forEach(s => { n[s.id] = true;  }); setSelected(n); };
+  const clearAll  = () => { const n = {}; scopeStudents.forEach(s => { n[s.id] = false; }); setSelected(n); };
+
+  const handleSave = () => {
+    const participants = {};
+    scopeStudents.forEach(s => { participants[s.id] = selected[s.id] === true; });
+    onSave(participants);
+  };
+
+  // Group by className for display
+  const grouped = {};
+  scopeStudents.forEach(s => {
+    const cls = s.className || 'ไม่ระบุห้อง';
+    if (!grouped[cls]) grouped[cls] = [];
+    grouped[cls].push(s);
+  });
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', backdropFilter: 'blur(3px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 450,
+    }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div style={{
+        background: 'white', borderRadius: '18px', padding: '1.5rem',
+        width: '460px', maxWidth: '96vw', maxHeight: '88vh',
+        display: 'flex', flexDirection: 'column', boxShadow: '0 24px 60px rgba(0,0,0,.2)',
+      }}>
+        {/* Header */}
+        <div style={{ marginBottom: '1rem' }}>
+          <div style={{ fontWeight: 800, fontSize: '1rem', color: '#1e293b' }}>👥 บันทึกผู้เข้าร่วม</div>
+          <div style={{ fontSize: '.82rem', color: '#6b7280', marginTop: '.2rem' }}>{event.name}</div>
+        </div>
+
+        {/* Bulk actions */}
+        <div style={{ display: 'flex', gap: '.5rem', marginBottom: '.6rem' }}>
+          <button type="button" onClick={selectAll} style={{
+            flex: 1, padding: '.32rem', borderRadius: '8px', border: '1.5px solid #bbf7d0',
+            background: '#f0fdf4', color: '#059669', fontFamily: 'inherit', fontWeight: 700, fontSize: '.78rem', cursor: 'pointer',
+          }}>✅ เลือกทั้งหมด</button>
+          <button type="button" onClick={clearAll} style={{
+            flex: 1, padding: '.32rem', borderRadius: '8px', border: '1.5px solid #e5e7eb',
+            background: '#f9fafb', color: '#6b7280', fontFamily: 'inherit', fontWeight: 700, fontSize: '.78rem', cursor: 'pointer',
+          }}>⬜ ล้างทั้งหมด</button>
+        </div>
+
+        {/* Count badge */}
+        <div style={{ fontSize: '.78rem', color: '#7c3aed', fontWeight: 700, marginBottom: '.5rem' }}>
+          เลือกแล้ว {count}/{scopeStudents.length} คน
+        </div>
+
+        {/* Student list */}
+        <div style={{ flex: 1, overflowY: 'auto', border: '1.5px solid #f3f4f6', borderRadius: '10px', padding: '.25rem' }}>
+          {Object.entries(grouped).map(([cls, list]) => (
+            <div key={cls}>
+              {event.scope === 'all' && (
+                <div style={{ fontSize: '.7rem', fontWeight: 800, color: '#9ca3af', padding: '.35rem .6rem .15rem', letterSpacing: '.04em', textTransform: 'uppercase' }}>{cls}</div>
+              )}
+              {list.map(s => (
+                <label key={s.id} style={{
+                  display: 'flex', alignItems: 'center', gap: '.65rem',
+                  padding: '.42rem .6rem', borderRadius: '8px', cursor: 'pointer', userSelect: 'none',
+                  background: selected[s.id] ? '#f0fdf4' : 'transparent',
+                  transition: 'background .12s',
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={!!selected[s.id]}
+                    onChange={() => toggle(s.id)}
+                    style={{ accentColor: '#059669', width: '16px', height: '16px', cursor: 'pointer', flexShrink: 0 }}
+                  />
+                  <span style={{ fontSize: '.85rem', color: '#1e293b', flex: 1 }}>{s.name}</span>
+                </label>
+              ))}
+            </div>
+          ))}
+          {scopeStudents.length === 0 && (
+            <div style={{ padding: '1.5rem', textAlign: 'center', color: '#9ca3af', fontSize: '.85rem' }}>ไม่พบนักเรียน</div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div style={{ display: 'flex', gap: '.5rem', marginTop: '1rem' }}>
+          <button type="button" onClick={onClose} style={{
+            flex: 1, padding: '.55rem', borderRadius: '9px', border: '1.5px solid #e5e7eb',
+            background: 'white', color: '#6b7280', fontFamily: 'inherit', fontWeight: 700, fontSize: '.85rem', cursor: 'pointer',
+          }}>ยกเลิก</button>
+          <button type="button" onClick={handleSave} style={{
+            flex: 2, padding: '.55rem', borderRadius: '9px', border: 'none',
+            background: '#059669', color: 'white', fontFamily: 'inherit', fontWeight: 800, fontSize: '.85rem', cursor: 'pointer',
+          }}>💾 บันทึก ({count} คน)</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function SpecialEventTab({ teacherClassFilter }) {
   const {
@@ -455,9 +570,10 @@ export default function SpecialEventTab({ teacherClassFilter }) {
   const [filterClass, setFilterClass] = useState(teacherClassFilter ?? '');
 
   // Modals
-  const [addModal,  setAddModal]  = useState(false);
-  const [editId,    setEditId]    = useState(null);
-  const [deleteId,  setDeleteId]  = useState(null);
+  const [addModal,          setAddModal]          = useState(false);
+  const [editId,            setEditId]            = useState(null);
+  const [deleteId,          setDeleteId]          = useState(null);
+  const [participantModalId, setParticipantModalId] = useState(null);
 
   // Sorted + filtered events
   const eventList = useMemo(() => {
@@ -653,7 +769,11 @@ export default function SpecialEventTab({ teacherClassFilter }) {
                 </div>
 
                 {/* Actions */}
-                <div style={{ display: 'flex', gap: '.4rem', flexShrink: 0 }}>
+                <div style={{ display: 'flex', gap: '.4rem', flexShrink: 0, flexWrap: 'wrap' }}>
+                  <button type="button" onClick={() => setParticipantModalId(ev.id)} style={{
+                    padding: '.3rem .75rem', borderRadius: '8px', border: '1.5px solid #bbf7d0',
+                    background: '#f0fdf4', color: '#059669', fontFamily: 'inherit', fontWeight: 700, fontSize: '.78rem', cursor: 'pointer',
+                  }}>👥 บันทึกผู้เข้าร่วม</button>
                   <button type="button" onClick={() => setEditId(ev.id)} style={{
                     padding: '.3rem .75rem', borderRadius: '8px', border: '1.5px solid #d1d5db',
                     background: 'white', color: '#374151', fontFamily: 'inherit', fontWeight: 700, fontSize: '.78rem', cursor: 'pointer',
@@ -699,6 +819,22 @@ export default function SpecialEventTab({ teacherClassFilter }) {
           activities={activities}
           onSave={(formData) => handleSave(formData, editId ?? null)}
           onClose={() => { setAddModal(false); setEditId(null); }}
+        />
+      )}
+
+      {/* Participant modal */}
+      {participantModalId && specialEvents[participantModalId] && (
+        <ParticipantModal
+          event={specialEvents[participantModalId]}
+          students={students}
+          onSave={(participants) => {
+            setSpecialEvents(prev => ({
+              ...prev,
+              [participantModalId]: { ...prev[participantModalId], participants },
+            }));
+            setParticipantModalId(null);
+          }}
+          onClose={() => setParticipantModalId(null)}
         />
       )}
 

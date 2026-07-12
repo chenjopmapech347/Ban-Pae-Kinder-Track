@@ -32,9 +32,35 @@ import {
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
-  const [role, setRole] = useLocalStorage(STORAGE_KEYS.role, null);
-  const [user, setUser] = useLocalStorage(STORAGE_KEYS.sessionUser, null);
+  // อ่านจาก localStorage ใน lazy initializer (synchronous → ไม่มี flash of login page)
+  const [role, setRole] = useState(() => {
+    try {
+      const raw = localStorage.getItem('kt_role');
+      return (raw && raw !== 'null') ? JSON.parse(raw) : null;
+    } catch { return null; }
+  });
+  const [user, setUser] = useState(() => {
+    try {
+      const raw = localStorage.getItem('kt_sessionUser');
+      return (raw && raw !== 'null') ? JSON.parse(raw) : null;
+    } catch { return null; }
+  });
   const [firebaseUser, setFirebaseUser] = useState(null);
+
+  // เขียน role/user ลง localStorage ทันที (synchronous) — ไม่พึ่ง useEffect timing
+  const persistSession = useCallback((nextRole, nextUser) => {
+    setRole(nextRole);
+    setUser(nextUser);
+    try {
+      if (nextRole) {
+        localStorage.setItem('kt_role',        JSON.stringify(nextRole));
+        localStorage.setItem('kt_sessionUser', JSON.stringify(nextUser));
+      } else {
+        localStorage.removeItem('kt_role');
+        localStorage.removeItem('kt_sessionUser');
+      }
+    } catch { /* ignore quota errors */ }
+  }, []);
 
   // ฟัง Firebase Auth state
   useEffect(() => {
@@ -389,15 +415,10 @@ export function AppProvider({ children }) {
     const result = await firebaseLogin(email, password);
     if (!result.ok) return result;
 
-    if (nextRole === 'admin') {
-      setRole('admin');
-      setUser({ name: result.user.displayName || email.split('@')[0], email });
-    } else {
-      setRole('teacher');
-      setUser({ name: result.user.displayName || email.split('@')[0], email });
-    }
+    const r = nextRole === 'admin' ? 'admin' : 'teacher';
+    persistSession(r, { name: result.user.displayName || email.split('@')[0], email });
     return { ok: true };
-  }, []);
+  }, [persistSession]);
 
   const updateAuthConfig = useCallback(
     (patch) => {
@@ -444,8 +465,7 @@ export function AppProvider({ children }) {
         if (!validPin) {
           return { ok: false, message: 'รหัสผ่านผู้ดูแลระบบไม่ถูกต้อง' };
         }
-        setRole('admin');
-        setUser({ name: authConfig.admin.name });
+        persistSession('admin', { name: authConfig.admin.name });
         setSystemLogs(prev => [{ id: Date.now() + Math.random(), ts: new Date().toISOString(), action: 'login', detail: 'เข้าสู่ระบบสำเร็จ', userName: 'admin (ผู้ดูแลระบบ)' }, ...prev].slice(0, 2000));
         return { ok: true };
       }
@@ -457,8 +477,7 @@ export function AppProvider({ children }) {
           const testTeacherRecord = teachers.find(
             t => String(t.id) === String(TEST_ACCOUNTS.teacher.id)
           );
-          setRole('teacher');
-          setUser({
+          persistSession('teacher', {
             name:      testTeacherRecord?.name      ?? TEST_ACCOUNTS.teacher.name,
             teacherId: TEST_ACCOUNTS.teacher.id,
             level:     testTeacherRecord?.level     ?? TEST_ACCOUNTS.teacher.level,
@@ -478,8 +497,7 @@ export function AppProvider({ children }) {
         if (!matchedTeacher) {
           return { ok: false, message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' };
         }
-        setRole('teacher');
-        setUser({
+        persistSession('teacher', {
           name: matchedTeacher.name,
           teacherId: matchedTeacher.id,
           level: matchedTeacher.level,
@@ -499,8 +517,7 @@ export function AppProvider({ children }) {
           return { ok: false, message: 'รหัส PIN ผู้ปกครองไม่ถูกต้อง' };
         }
         const guardianName = student.guardianName?.trim() || `ผู้ปกครอง ${student.name.split(' ').slice(-1)[0]}`;
-        setRole('parent');
-        setUser({
+        persistSession('parent', {
           name: guardianName,
           guardianName: student.guardianName?.trim() || '',
           studentId: student.id,
@@ -510,7 +527,7 @@ export function AppProvider({ children }) {
       }
       return { ok: false, message: 'บทบาทไม่ถูกต้อง' };
     },
-    [students, teachers, authConfig, setSystemLogs],
+    [students, teachers, authConfig, setSystemLogs, persistSession],
   );
 
   // ─── เปลี่ยนรหัสผ่าน ──────────────────────────────────────
@@ -552,12 +569,11 @@ export function AppProvider({ children }) {
       detail: 'ออกจากระบบ',
       userName: user?.name ?? 'ผู้ใช้',
     }, ...prev].slice(0, 2000));
-    setRole(null);
-    setUser(null);
+    persistSession(null, null);
     setSelectedStudent(null);
     setEvaluatingStudent(null);
     if (isFirebaseConfigured) firebaseLogout();
-  }, [user, setSystemLogs]);
+  }, [user, setSystemLogs, persistSession]);
 
   const resetAllData = useCallback(() => {
     clearAllStorage();

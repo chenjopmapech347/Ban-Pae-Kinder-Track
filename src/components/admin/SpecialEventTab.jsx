@@ -57,23 +57,23 @@ const EVENT_TYPE_DEFAULT_ACTIVITIES = {
   ],
 };
 
-// ── Preset events สำหรับปีการศึกษา 2568 ──────────────────────────────────────
+// ── Preset events สำหรับปีการศึกษา 2569 ──────────────────────────────────────
 const PRESET_EVENTS = [
   // ── กิจกรรมโรงเรียน ──────────────────────────────────────────────────────
   {
-    id: 'preset_waikhru_2568', name: 'วันไหว้ครู 2568', date: '2025-07-03',
+    id: 'preset_waikhru_2569', name: 'วันไหว้ครู 2569', date: '2026-07-02',
     type: 'school', scope: 'all',
     description: 'กิจกรรมไหว้ครูประจำปี นักเรียนนำพานดอกไม้มาไหว้ครู',
     activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.school, participants: {},
   },
   {
-    id: 'preset_sports_2568', name: 'วันกีฬาสี 2568', date: '2025-11-28',
+    id: 'preset_sports_2569', name: 'วันกีฬาสี 2569', date: '2026-11-27',
     type: 'school', scope: 'all',
     description: 'กิจกรรมกีฬาสีประจำปี ส่งเสริมความสามัคคีและสุขภาพที่ดี',
     activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.school, participants: {},
   },
   {
-    id: 'preset_openhouse_2568', name: 'วันเปิดบ้าน (Open House) 2568', date: '2026-02-27',
+    id: 'preset_openhouse_2569', name: 'วันเปิดบ้าน (Open House) 2569', date: '2027-02-26',
     type: 'school', scope: 'all',
     description: 'เปิดโอกาสให้ผู้ปกครองเข้าเยี่ยมชมการเรียนการสอนและผลงานนักเรียน',
     activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.school, participants: {},
@@ -81,43 +81,43 @@ const PRESET_EVENTS = [
 
   // ── วันสำคัญของชาติ/ศาสนา ────────────────────────────────────────────────
   {
-    id: 'preset_makha_2568', name: 'วันมาฆบูชา 2568', date: '2025-02-12',
+    id: 'preset_makha_2569', name: 'วันมาฆบูชา 2569', date: '2026-03-03',
     type: 'national', scope: 'all',
     description: 'กิจกรรมเวียนเทียน เรียนรู้หลักธรรมและคุณธรรมพื้นฐาน',
     activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
   },
   {
-    id: 'preset_songkran_2568', name: 'วันสงกรานต์ 2568', date: '2025-04-11',
+    id: 'preset_songkran_2569', name: 'วันสงกรานต์ 2569', date: '2026-04-13',
     type: 'national', scope: 'all',
     description: 'กิจกรรมสืบสานวัฒนธรรมไทย รดน้ำดำหัว และแต่งกายชุดไทย',
     activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
   },
   {
-    id: 'preset_visakha_2568', name: 'วันวิสาขบูชา 2568', date: '2025-05-12',
+    id: 'preset_visakha_2569', name: 'วันวิสาขบูชา 2569', date: '2026-06-01',
     type: 'national', scope: 'all',
     description: 'กิจกรรมเรียนรู้ประวัติวันวิสาขบูชา และปฏิบัติตนเป็นพุทธศาสนิกชนที่ดี',
     activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
   },
   {
-    id: 'preset_khao_phansa_2568', name: 'วันเข้าพรรษา 2568', date: '2025-07-10',
+    id: 'preset_khao_phansa_2569', name: 'วันเข้าพรรษา 2569', date: '2026-07-29',
     type: 'national', scope: 'all',
     description: 'กิจกรรมถวายเทียนพรรษาและปลูกฝังค่านิยมทางพุทธศาสนา',
     activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
   },
   {
-    id: 'preset_mothersday_2568', name: 'วันแม่แห่งชาติ 2568', date: '2025-08-12',
+    id: 'preset_mothersday_2569', name: 'วันแม่แห่งชาติ 2569', date: '2026-08-12',
     type: 'national', scope: 'all',
     description: 'กิจกรรมวันแม่ ทำการ์ดอวยพร แสดงความกตัญญูต่อแม่',
     activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
   },
   {
-    id: 'preset_loykrathong_2568', name: 'วันลอยกระทง 2568', date: '2025-11-05',
+    id: 'preset_loykrathong_2569', name: 'วันลอยกระทง 2569', date: '2026-11-24',
     type: 'national', scope: 'all',
     description: 'กิจกรรมลอยกระทง ประดิษฐ์กระทงจากวัสดุธรรมชาติ เรียนรู้ประเพณีไทย',
     activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
   },
   {
-    id: 'preset_fathersday_2568', name: 'วันพ่อแห่งชาติ 2568', date: '2025-12-05',
+    id: 'preset_fathersday_2569', name: 'วันพ่อแห่งชาติ 2569', date: '2026-12-05',
     type: 'national', scope: 'all',
     description: 'กิจกรรมวันพ่อ ทำของขวัญและแสดงความกตัญญูต่อพ่อ',
     activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
@@ -125,19 +125,19 @@ const PRESET_EVENTS = [
 
   // ── โครงการ/กิจกรรมพิเศษ ─────────────────────────────────────────────────
   {
-    id: 'preset_garden_2568', name: 'โครงการปลูกผักสวนครัว', date: '2025-08-15',
+    id: 'preset_garden_2569', name: 'โครงการปลูกผักสวนครัว', date: '2026-08-14',
     type: 'project', scope: 'all',
     description: 'โครงการเกษตรพอเพียง เรียนรู้การปลูกและดูแลต้นไม้ ฝึกความรับผิดชอบ',
     activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.project, participants: {},
   },
   {
-    id: 'preset_science_2568', name: 'กิจกรรมวิทยาศาสตร์สนุก', date: '2025-09-05',
+    id: 'preset_science_2569', name: 'กิจกรรมวิทยาศาสตร์สนุก', date: '2026-09-04',
     type: 'project', scope: 'all',
     description: 'การทดลองวิทยาศาสตร์ง่ายๆ ส่งเสริมความคิดสร้างสรรค์และการตั้งคำถาม',
     activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.project, participants: {},
   },
   {
-    id: 'preset_reading_2568', name: 'โครงการรักการอ่าน', date: '2025-08-02',
+    id: 'preset_reading_2569', name: 'โครงการรักการอ่าน', date: '2026-08-01',
     type: 'project', scope: 'all',
     description: 'กิจกรรมนิทานและห้องสมุด ส่งเสริมนิสัยรักการอ่านตั้งแต่ปฐมวัย',
     activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.project, participants: {},
@@ -333,7 +333,7 @@ function EventModal({ event, allClassNames, students, assessmentTopics, indicato
             <div style={{ flex: '2 1 220px' }}>
               <label style={{ fontSize: '.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '.3rem' }}>ชื่อกิจกรรม *</label>
               <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                placeholder="เช่น วันไหว้ครู 2568"
+                placeholder="เช่น วันไหว้ครู 2569"
                 style={{ width: '100%', padding: '.42rem .65rem', borderRadius: '8px', border: '1.5px solid #d1d5db', fontFamily: 'inherit', fontSize: '.88rem', boxSizing: 'border-box' }} />
             </div>
             <div style={{ flex: '1 1 150px' }}>
@@ -528,8 +528,8 @@ export default function SpecialEventTab({ teacherClassFilter }) {
         <div style={{ display: 'flex', gap: '.5rem' }}>
           {!isTeacher && (
             <button type="button" className="btn btn-secondary" onClick={handleImportPresets}
-              title="นำเข้ากิจกรรมตัวอย่างปีการศึกษา 2568 (13 กิจกรรม)">
-              📋 นำเข้าตัวอย่าง 2568
+              title="นำเข้ากิจกรรมตัวอย่างปีการศึกษา 2569 (13 กิจกรรม)">
+              📋 นำเข้าตัวอย่าง 2569
             </button>
           )}
           <button type="button" className="btn btn-primary" onClick={() => setAddModal(true)}>
@@ -589,7 +589,7 @@ export default function SpecialEventTab({ teacherClassFilter }) {
               background: '#ede9fe', color: '#6d28d9', fontFamily: 'inherit',
               fontWeight: 700, fontSize: '.85rem', cursor: 'pointer',
             }}>
-              📋 นำเข้ากิจกรรมตัวอย่างปีการศึกษา 2568 (13 กิจกรรม)
+              📋 นำเข้ากิจกรรมตัวอย่างปีการศึกษา 2569 (13 กิจกรรม)
             </button>
           )}
         </div>

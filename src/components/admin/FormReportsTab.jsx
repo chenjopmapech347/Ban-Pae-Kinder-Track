@@ -3,19 +3,28 @@ import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 
 // ── constants ────────────────────────────────────────────────────────────────
-const THAI_MONTHS = [
-  { num:5,  short:'พ.ค.',  full:'พฤษภาคม',   days:31, be:2568, ce:2025 },
-  { num:6,  short:'มิ.ย.', full:'มิถุนายน',   days:30, be:2568, ce:2025 },
-  { num:7,  short:'ก.ค.',  full:'กรกฎาคม',    days:31, be:2568, ce:2025 },
-  { num:8,  short:'ส.ค.',  full:'สิงหาคม',    days:31, be:2568, ce:2025 },
-  { num:9,  short:'ก.ย.',  full:'กันยายน',    days:30, be:2568, ce:2025 },
-  { num:10, short:'ต.ค.',  full:'ตุลาคม',     days:31, be:2568, ce:2025 },
-  { num:11, short:'พ.ย.',  full:'พฤศจิกายน',  days:30, be:2568, ce:2025 },
-  { num:12, short:'ธ.ค.',  full:'ธันวาคม',    days:31, be:2568, ce:2025 },
-  { num:1,  short:'ม.ค.',  full:'มกราคม',     days:31, be:2569, ce:2026 },
-  { num:2,  short:'ก.พ.',  full:'กุมภาพันธ์', days:28, be:2569, ce:2026 },
-  { num:3,  short:'มี.ค.', full:'มีนาคม',     days:31, be:2569, ce:2026 },
-];
+// คำนวณรายชื่อเดือนในปีการศึกษาจากปี พ.ศ. ที่เลือก
+// ปีการศึกษา ay (เช่น 2568) เริ่มพ.ค. CE (ay-543) สิ้นสุดมี.ค. CE (ay-542)
+function getThaiMonths(ay) {
+  const ayNum = parseInt(String(ay || '2568'));
+  const ce1 = ayNum - 543;   // พ.ค.–ธ.ค.
+  const ce2 = ayNum - 542;   // ม.ค.–มี.ค.
+  const be1 = ayNum;
+  const be2 = ayNum + 1;
+  return [
+    { num:5,  short:'พ.ค.',  full:'พฤษภาคม',   days:31, be:be1, ce:ce1 },
+    { num:6,  short:'มิ.ย.', full:'มิถุนายน',   days:30, be:be1, ce:ce1 },
+    { num:7,  short:'ก.ค.',  full:'กรกฎาคม',    days:31, be:be1, ce:ce1 },
+    { num:8,  short:'ส.ค.',  full:'สิงหาคม',    days:31, be:be1, ce:ce1 },
+    { num:9,  short:'ก.ย.',  full:'กันยายน',    days:30, be:be1, ce:ce1 },
+    { num:10, short:'ต.ค.',  full:'ตุลาคม',     days:31, be:be1, ce:ce1 },
+    { num:11, short:'พ.ย.',  full:'พฤศจิกายน',  days:30, be:be1, ce:ce1 },
+    { num:12, short:'ธ.ค.',  full:'ธันวาคม',    days:31, be:be1, ce:ce1 },
+    { num:1,  short:'ม.ค.',  full:'มกราคม',     days:31, be:be2, ce:ce2 },
+    { num:2,  short:'ก.พ.',  full:'กุมภาพันธ์', days:28, be:be2, ce:ce2 },
+    { num:3,  short:'มี.ค.', full:'มีนาคม',     days:31, be:be2, ce:ce2 },
+  ];
+}
 
 const THAI_DAYS_SHORT = ['อา','จ','อ','พ','พฤ','ศ','ส'];
 
@@ -186,9 +195,17 @@ function getWeekdays(ce, mo, totalDays) {
   return days;
 }
 
-function weekRange(weekNum) {
-  // Academic year week 1 starts Mon May 5, 2025
-  const base = new Date(2025, 4, 5);
+// หาวันจันทร์แรกของเดือนพฤษภาคมในปี CE ที่กำหนด (จุดเริ่มต้นสัปดาห์ที่ 1 ของปีการศึกษา)
+function getFirstMondayOfMay(ceYear) {
+  const may1 = new Date(ceYear, 4, 1);
+  const dow = may1.getDay(); // 0=อาทิตย์, 1=จันทร์, ...
+  const daysToMon = dow === 1 ? 0 : dow === 0 ? 1 : 8 - dow;
+  return new Date(ceYear, 4, 1 + daysToMon);
+}
+
+function weekRange(weekNum, ay) {
+  const ceYear = parseInt(String(ay || '2568')) - 543;
+  const base = getFirstMondayOfMay(ceYear);
   const ws = new Date(base.getTime() + (weekNum - 1) * 7 * 86400000);
   const we = new Date(ws.getTime() + 4 * 86400000);
   const fmt = d => `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()+543}`;
@@ -210,9 +227,9 @@ function dayDateKey(m, d) {
 // ── print functions ───────────────────────────────────────────────────────────
 
 // 1. แบบคัดกรองอาการป่วย
-function printHealth(students, teachers, dailyRecords, schoolName, cn, mi) {
+function printHealth(students, teachers, dailyRecords, schoolName, cn, mi, thaiMonths) {
   const sts = realSts(students, cn);
-  const m = THAI_MONTHS[mi];
+  const m = thaiMonths[mi];
   const tName = teacherName(teachers, cn);
   const dHdr = Array.from({length:m.days},(_,i)=>`<th class="wd">${i+1}</th>`).join('');
   const rows = sts.map((s,idx) => {
@@ -237,9 +254,9 @@ function printHealth(students, teachers, dailyRecords, schoolName, cn, mi) {
 }
 
 // 2. อาหารกลางวัน
-function printLunch(students, teachers, dailyRecords, schoolName, cn, mi) {
+function printLunch(students, teachers, dailyRecords, schoolName, cn, mi, thaiMonths) {
   const sts = realSts(students, cn);
-  const m = THAI_MONTHS[mi];
+  const m = thaiMonths[mi];
   const tName = teacherName(teachers, cn);
   const dHdr = Array.from({length:m.days},(_,i)=>`<th class="wd">${i+1}</th>`).join('');
   const rows = sts.map((s,idx) => {
@@ -266,9 +283,9 @@ function printLunch(students, teachers, dailyRecords, schoolName, cn, mi) {
 }
 
 // 3. ดื่มนม
-function printMilk(students, teachers, dailyRecords, schoolName, cn, mi) {
+function printMilk(students, teachers, dailyRecords, schoolName, cn, mi, thaiMonths) {
   const sts = realSts(students, cn);
-  const m = THAI_MONTHS[mi];
+  const m = thaiMonths[mi];
   const tName = teacherName(teachers, cn);
   const dHdr = Array.from({length:m.days},(_,i)=>`<th class="wd">${i+1}</th>`).join('');
   const rows = sts.map((s,idx) => {
@@ -296,9 +313,9 @@ function printMilk(students, teachers, dailyRecords, schoolName, cn, mi) {
 }
 
 // 4. รับ-ส่ง
-function printPickup(students, teachers, schoolName, cn, mi) {
+function printPickup(students, teachers, schoolName, cn, mi, thaiMonths) {
   const sts = realSts(students, cn);
-  const m = THAI_MONTHS[mi];
+  const m = thaiMonths[mi];
   const tName = teacherName(teachers, cn);
   const wds = getWeekdays(m.ce, m.num, m.days);
   const dateHdr = wds.map(w=>`<th colspan="2" style="font-size:8px">${w.day}</th>`).join('');
@@ -319,7 +336,7 @@ function printPickup(students, teachers, schoolName, cn, mi) {
 }
 
 // 5. มุมประสบการณ์ภายใน
-function printCornersIn(students, teachers, schoolName, cn, wk) {
+function printCornersIn(students, teachers, schoolName, cn, wk, ay) {
   const sts = realSts(students, cn);
   const tName = teacherName(teachers, cn);
   const sHdr = sts.map(s=>`<th style="writing-mode:vertical-rl;min-width:20px;font-size:7.5px">${s.name.replace(/เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\./g,'').trim()}</th>`).join('');
@@ -328,7 +345,7 @@ function printCornersIn(students, teachers, schoolName, cn, wk) {
   ).join('');
   printHtml(`มุมภายใน ${cn} สัปดาห์${wk}`, `
     <h2>แบบบันทึกการเล่นตามมุมประสบการณ์ภายในห้องเรียน รายสัปดาห์</h2>
-    <div class="sub">ห้อง ${cn} &nbsp;|&nbsp; สัปดาห์ที่ ${wk} (${weekRange(wk)}) &nbsp;|&nbsp; ${schoolName}</div>
+    <div class="sub">ห้อง ${cn} &nbsp;|&nbsp; สัปดาห์ที่ ${wk} (${weekRange(wk, ay)}) &nbsp;|&nbsp; ${schoolName}</div>
     <table><thead><tr><th class="tl" style="min-width:110px">มุมประสบการณ์</th>${sHdr}</tr></thead>
     <tbody>${rows}
       <tr style="background:#eee"><td class="tl"><strong>รวมทั้งหมด</strong></td>${sts.map(()=>'<td></td>').join('')}</tr>
@@ -338,7 +355,7 @@ function printCornersIn(students, teachers, schoolName, cn, wk) {
 }
 
 // 6. มุมประสบการณ์ภายนอก
-function printCornersOut(students, teachers, schoolName, cn, wk) {
+function printCornersOut(students, teachers, schoolName, cn, wk, ay) {
   const sts = realSts(students, cn);
   const tName = teacherName(teachers, cn);
   const sHdr = sts.map(s=>`<th style="writing-mode:vertical-rl;min-width:20px;font-size:7.5px">${s.name.replace(/เด็กชาย|เด็กหญิง|ด\.ช\.|ด\.ญ\./g,'').trim()}</th>`).join('');
@@ -347,7 +364,7 @@ function printCornersOut(students, teachers, schoolName, cn, wk) {
   ).join('');
   printHtml(`มุมภายนอก ${cn} สัปดาห์${wk}`, `
     <h2>แบบบันทึกการเล่นตามมุมประสบการณ์ภายนอกห้องเรียน รายสัปดาห์</h2>
-    <div class="sub">ห้อง ${cn} &nbsp;|&nbsp; สัปดาห์ที่ ${wk} (${weekRange(wk)}) &nbsp;|&nbsp; ${schoolName}</div>
+    <div class="sub">ห้อง ${cn} &nbsp;|&nbsp; สัปดาห์ที่ ${wk} (${weekRange(wk, ay)}) &nbsp;|&nbsp; ${schoolName}</div>
     <table><thead><tr><th class="tl" style="min-width:120px">มุมประสบการณ์</th>${sHdr}</tr></thead>
     <tbody>${rows}
       <tr style="background:#eee"><td class="tl"><strong>รวมทั้งหมด</strong></td>${sts.map(()=>'<td></td>').join('')}</tr>
@@ -357,7 +374,7 @@ function printCornersOut(students, teachers, schoolName, cn, wk) {
 }
 
 // 7. น้ำหนัก-ส่วนสูง
-function printWH(students, teachers, schoolName, cn) {
+function printWH(students, teachers, schoolName, cn, ay) {
   const sts = realSts(students, cn);
   const tName = teacherName(teachers, cn);
   const rows = sts.map((s,idx) => `
@@ -370,7 +387,7 @@ function printWH(students, teachers, schoolName, cn) {
     </tr>`).join('');
   printHtml(`น้ำหนัก-ส่วนสูง ${cn}`, `
     <h2>แบบบันทึกน้ำหนัก-ส่วนสูง นักเรียน</h2>
-    <div class="sub">ห้อง ${cn} &nbsp;|&nbsp; ปีการศึกษา 2568 &nbsp;|&nbsp; ${schoolName}</div>
+    <div class="sub">ห้อง ${cn} &nbsp;|&nbsp; ปีการศึกษา ${ay} &nbsp;|&nbsp; ${schoolName}</div>
     <table><thead>
       <tr>
         <th rowspan="2" style="width:26px">ลำดับ</th>
@@ -392,9 +409,9 @@ function printWH(students, teachers, schoolName, cn) {
 }
 
 // 8. แปรงฟัน
-function printTeeth(students, teachers, dailyRecords, schoolName, cn, mi) {
+function printTeeth(students, teachers, dailyRecords, schoolName, cn, mi, thaiMonths) {
   const sts = realSts(students, cn);
-  const m = THAI_MONTHS[mi];
+  const m = thaiMonths[mi];
   const tName = teacherName(teachers, cn);
   const dHdr1 = Array.from({length:m.days},(_,i)=>`<th class="wd">${i+1}</th>`).join('');
   const dHdr2 = Array.from({length:m.days},(_,i)=>
@@ -425,14 +442,14 @@ function printTeeth(students, teachers, dailyRecords, schoolName, cn, mi) {
 }
 
 // 9. ทะเบียนผลิตสื่อ
-function printMedia(teachers, schoolName, cn) {
+function printMedia(teachers, schoolName, cn, ay) {
   const tName = teacherName(teachers, cn);
   const rows = Array.from({length:30},(_,i)=>`
     <tr><td>${i+1}</td><td class="tl"></td><td class="tl"></td><td></td><td></td><td></td><td class="tl"></td></tr>`
   ).join('');
   printHtml(`ทะเบียนผลิตสื่อ ${cn}`, `
     <h2>ทะเบียนผลิตสื่อ / นวัตกรรมการเรียนการสอน</h2>
-    <div class="sub">ห้อง ${cn} &nbsp;|&nbsp; ปีการศึกษา 2568 &nbsp;|&nbsp; ${schoolName}</div>
+    <div class="sub">ห้อง ${cn} &nbsp;|&nbsp; ปีการศึกษา ${ay} &nbsp;|&nbsp; ${schoolName}</div>
     <table><thead><tr>
       <th style="width:26px">ที่</th>
       <th class="tl" style="min-width:160px">รายการสื่อ / นวัตกรรม</th>
@@ -446,9 +463,9 @@ function printMedia(teachers, schoolName, cn) {
 }
 
 // 10. บันทึกเวลาเรียน
-function printAttend(students, teachers, dailyRecords, schoolName, cn, mi) {
+function printAttend(students, teachers, dailyRecords, schoolName, cn, mi, thaiMonths) {
   const sts = realSts(students, cn);
-  const m = THAI_MONTHS[mi];
+  const m = thaiMonths[mi];
   const tName = teacherName(teachers, cn);
   const dHdr1 = Array.from({length:m.days},(_,i)=>`<th class="wd">${i+1}</th>`).join('');
   const dHdr2 = Array.from({length:m.days},(_,i)=>
@@ -488,7 +505,7 @@ function printAttend(students, teachers, dailyRecords, schoolName, cn, mi) {
 }
 
 // 11. แบบบันทึกผลการประเมินพัฒนาการ
-function printDev(students, teachers, schoolName, cn, topics, indicators, activities) {
+function printDev(students, teachers, schoolName, cn, topics, indicators, activities, ay) {
   const sts = realSts(students, cn);
   const tName = teacherName(teachers, cn);
   const tpList = (topics ?? []);
@@ -510,7 +527,7 @@ function printDev(students, teachers, schoolName, cn, topics, indicators, activi
   }).join('');
   printHtml(`แบบบันทึกพัฒนาการ ${cn}`, `
     <h2>แบบบันทึกผลการประเมินพัฒนาการ การศึกษาปฐมวัย</h2>
-    <div class="sub">ห้อง ${cn} &nbsp;|&nbsp; ปีการศึกษา 2568 &nbsp;|&nbsp; ${schoolName}</div>
+    <div class="sub">ห้อง ${cn} &nbsp;|&nbsp; ปีการศึกษา ${ay} &nbsp;|&nbsp; ${schoolName}</div>
     <table><thead>
       <tr>
         <th rowspan="2" style="width:26px">เลขที่</th>
@@ -614,7 +631,11 @@ export default function FormReportsTab({ teacherClassFilter = null, defaultRepor
     students, teachers, classes, schools,
     dailyRecords, assessmentTopics, indicators, activities,
     schoolLogo, toothBrushRecords, lunchRecords, milkRecords,
+    academicYear,
   } = useApp();
+
+  // คำนวณรายชื่อเดือนจากปีการศึกษาที่เลือกใน AppHeader (ไม่ hardcode)
+  const thaiMonths = useMemo(() => getThaiMonths(academicYear), [academicYear]);
 
   const [selReport,  setSelReport]  = useState(defaultReport);
   const [selClass,   setSelClass]   = useState('');
@@ -646,18 +667,19 @@ export default function FormReportsTab({ teacherClassFilter = null, defaultRepor
 
   const runReport = () => {
     if (!cn && rpt?.hasCls) return;
+    const ay = academicYear;
     switch (selReport) {
-      case 'health':      printHealth(students, teachers, dailyRecords, schoolName, cn, selMonth); break;
-      case 'lunch':       printLunch(students, teachers, dailyRecords, schoolName, cn, selMonth); break;
-      case 'milk':        printMilk(students, teachers, dailyRecords, schoolName, cn, selMonth); break;
-      case 'pickup':      printPickup(students, teachers, schoolName, cn, selMonth); break;
-      case 'corners_in':  printCornersIn(students, teachers, schoolName, cn, selWeek); break;
-      case 'corners_out': printCornersOut(students, teachers, schoolName, cn, selWeek); break;
-      case 'wh':          printWH(students, teachers, schoolName, cn); break;
-      case 'teeth':       printTeeth(students, teachers, dailyRecords, schoolName, cn, selMonth); break;
-      case 'media':       printMedia(teachers, schoolName, cn); break;
-      case 'attend':      printAttend(students, teachers, dailyRecords, schoolName, cn, selMonth); break;
-      case 'dev':         printDev(students, teachers, schoolName, cn, assessmentTopics, indicators, activities); break;
+      case 'health':      printHealth(students, teachers, dailyRecords, schoolName, cn, selMonth, thaiMonths); break;
+      case 'lunch':       printLunch(students, teachers, dailyRecords, schoolName, cn, selMonth, thaiMonths); break;
+      case 'milk':        printMilk(students, teachers, dailyRecords, schoolName, cn, selMonth, thaiMonths); break;
+      case 'pickup':      printPickup(students, teachers, schoolName, cn, selMonth, thaiMonths); break;
+      case 'corners_in':  printCornersIn(students, teachers, schoolName, cn, selWeek, ay); break;
+      case 'corners_out': printCornersOut(students, teachers, schoolName, cn, selWeek, ay); break;
+      case 'wh':          printWH(students, teachers, schoolName, cn, ay); break;
+      case 'teeth':       printTeeth(students, teachers, dailyRecords, schoolName, cn, selMonth, thaiMonths); break;
+      case 'media':       printMedia(teachers, schoolName, cn, ay); break;
+      case 'attend':      printAttend(students, teachers, dailyRecords, schoolName, cn, selMonth, thaiMonths); break;
+      case 'dev':         printDev(students, teachers, schoolName, cn, assessmentTopics, indicators, activities, ay); break;
       case 'cross':       printCross(students, teachers, schoolName, cn, toothBrushRecords, lunchRecords, milkRecords, assessmentTopics, indicators, activities); break;
     }
   };
@@ -721,7 +743,7 @@ export default function FormReportsTab({ teacherClassFilter = null, defaultRepor
           <div>
             <div style={{ fontSize: '.72rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', marginBottom: '.35rem' }}>เดือน</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.28rem' }}>
-              {THAI_MONTHS.map((m, i) => {
+              {thaiMonths.map((m, i) => {
                 const active = selMonth === i;
                 return (
                   <button key={i} type="button" onClick={() => setSelMonth(i)} style={{
@@ -824,8 +846,8 @@ export default function FormReportsTab({ teacherClassFilter = null, defaultRepor
           </div>
           <div style={{ fontSize: '.75rem', color: '#7c3aed', display: 'flex', gap: '.6rem', flexWrap: 'wrap' }}>
             {rpt?.hasCls && <span>🏫 ห้อง {cn || '—'} · {cnt} คน</span>}
-            {rpt?.hasMo  && <span>📅 {THAI_MONTHS[selMonth].full} {THAI_MONTHS[selMonth].be}</span>}
-            {rpt?.hasWk  && <span>📆 สัปดาห์ {selWeek} ({weekRange(selWeek)})</span>}
+            {rpt?.hasMo  && <span>📅 {thaiMonths[selMonth].full} {thaiMonths[selMonth].be}</span>}
+            {rpt?.hasWk  && <span>📆 สัปดาห์ {selWeek} ({weekRange(selWeek, academicYear)})</span>}
             {rpt?.hasStu && (
               <span>👤 {selStudent
                 ? (classStudents.find(s => String(s.id) === selStudent)?.name ?? '—')

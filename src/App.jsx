@@ -37,7 +37,10 @@ function AppShell() {
     isAdding, setIsAdding,
     handleSaveEvaluation, assessmentTopics, addStudent,
     autoSyncStatus, isFirebaseConfigured,
+    schools,
   } = useApp();
+
+  const schoolName = schools?.[0]?.name ?? 'KinderTrack';
 
   const [changePwOpen, setChangePwOpen] = useState(false);
 
@@ -50,7 +53,7 @@ function AppShell() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '.85rem' }}>
           <img
             src="/logo.png"
-            alt="โลโก้โรงเรียนเทศบาลบ้านเพ ๑"
+            alt={`โลโก้ ${schoolName}`}
             style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover',
                      border: '2px solid rgba(255,255,255,0.4)', flexShrink: 0 }}
             onError={e => { e.target.style.display = 'none'; }}
@@ -60,7 +63,7 @@ function AppShell() {
               ระบบบันทึกพัฒนาการเด็กปฐมวัย
             </div>
             <div style={{ fontSize: '.75rem', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>
-              โรงเรียนเทศบาลบ้านเพ ๑ · Ban Phe 1 KinderTrack
+              {schoolName} · KinderTrack
             </div>
             <div className="subtitle" style={{ fontSize: '.7rem', opacity: .75 }}>
               {ROLE_LABEL[role] ?? role}
@@ -173,7 +176,7 @@ function AppShell() {
       }}>
         <span>💻 KinderTrack v{APP_VERSION}</span>
         <span style={{ opacity: .35 }}>|</span>
-        <span>โรงเรียนเทศบาลบ้านเพ ๑</span>
+        <span>{schoolName}</span>
         <span style={{ opacity: .35 }}>|</span>
         <span>พัฒนาโดย {APP_DEVELOPER}</span>
       </footer>

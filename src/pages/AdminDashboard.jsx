@@ -119,7 +119,7 @@ const TAB_GROUPS = [
 ];
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('kt_adminTab') || 'overview');
 
   return (
     <div className="animate-fade" style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
@@ -128,7 +128,7 @@ export default function AdminDashboard() {
       <DashboardSidebar
         groups={TAB_GROUPS}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={(tab) => { setActiveTab(tab); localStorage.setItem('kt_adminTab', tab); }}
       />
 
       {/* ── Main content ── */}

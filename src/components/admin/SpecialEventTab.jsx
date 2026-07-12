@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../../context/AppContext';
 
 // ── Event type definitions ────────────────────────────────────────────────────
@@ -487,7 +488,7 @@ function ParticipantModal({ event, students, isTeacher, teacherClassFilter, allC
     onSave(participants);
   };
 
-  return (
+  return createPortal(
     <div style={{
       position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', backdropFilter: 'blur(3px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 450,
@@ -603,7 +604,8 @@ function ParticipantModal({ event, students, isTeacher, teacherClassFilter, allC
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

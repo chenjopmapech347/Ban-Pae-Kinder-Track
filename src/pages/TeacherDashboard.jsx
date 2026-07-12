@@ -407,7 +407,7 @@ export default function TeacherDashboard() {
     user, teachers, setTeachers,
   } = useApp();
 
-  const [activeTab,  setActiveTab]  = useState('main');
+  const [activeTab,  setActiveTab]  = useState(() => localStorage.getItem('kt_teacherTab') || 'main');
   const [activeView, setActiveView] = useState('main');
   const [recordDate, setRecordDate] = useState(todayISO());
 
@@ -537,7 +537,7 @@ export default function TeacherDashboard() {
       <DashboardSidebar
         groups={TEACHER_TAB_GROUPS}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={(tab) => { setActiveTab(tab); localStorage.setItem('kt_teacherTab', tab); }}
         badge={myClass ? `🏫 ห้อง ${myClass}` : undefined}
       />
 

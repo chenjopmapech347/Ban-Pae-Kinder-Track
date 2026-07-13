@@ -357,16 +357,34 @@ export function AppProvider({ children }) {
     return { ok: true, updatedAt: result.updatedAt };
   }, [restoreSnapshotData]);
 
-  // ─── Auto-pull จาก Firebase เมื่อ role เปลี่ยนเป็น parent ──
+  // ─── Auto-pull จาก Firebase เมื่อ login (parent + teacher + admin) ──
+  // ป้องกันครูที่เปิด browser ใหม่/อุปกรณ์ใหม่ push localStorage ว่างเปล่าทับข้อมูลจริงใน Firebase
+  const [pullSyncStatus, setPullSyncStatus] = useState('idle'); // 'idle' | 'pulling' | 'done' | 'error'
+  // flag: auto-sync push ต้องรอจนกว่า pull เสร็จก่อน
+  const initialPullDone = useRef(!isFirebaseConfigured); // ถ้าไม่มี Firebase ข้ามได้เลย
+
   useEffect(() => {
-    if (role !== 'parent') return;
-    if (!isFirebaseConfigured) return;
-    // ดึงข้อมูลล่าสุดจาก Firebase ในเบื้องหลัง (fire-and-forget)
-    pullSnapshotFromFirebase().then(result => {
-      if (!result.ok) return;
-      const check = validateSnapshot(result.payload);
-      if (check.ok) restoreSnapshotData(check.snapshot);
-    }).catch(() => {});
+    if (role !== 'parent' && role !== 'teacher' && role !== 'admin') return;
+    if (!isFirebaseConfigured) { initialPullDone.current = true; return; }
+
+    setPullSyncStatus('pulling');
+    pullSnapshotFromFirebase()
+      .then(result => {
+        if (!result.ok) { setPullSyncStatus('error'); return; }
+        const check = validateSnapshot(result.payload);
+        if (check.ok) {
+          restoreSnapshotData(check.snapshot);
+          setPullSyncStatus('done');
+        } else {
+          setPullSyncStatus('error');
+        }
+      })
+      .catch(() => { setPullSyncStatus('error'); })
+      .finally(() => {
+        // อนุญาตให้ auto-sync push ได้หลังจาก pull เสร็จ (หรือ fail)
+        initialPullDone.current = true;
+        setTimeout(() => setPullSyncStatus('idle'), 3000);
+      });
   }, [role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Auto-sync to Firebase (debounced 4s) ──────────────
@@ -378,6 +396,8 @@ export function AppProvider({ children }) {
     // ครั้งแรกที่ mount ข้าม — ไม่ต้องการ overwrite Firebase ด้วยข้อมูลเริ่มต้น
     if (!isMounted.current) { isMounted.current = true; return; }
     if (!isFirebaseConfigured) return;
+    // รอจนกว่า initial pull จาก Firebase จะเสร็จก่อน — ป้องกันดัน localStorage ว่างทับข้อมูลจริง
+    if (!initialPullDone.current) return;
 
     // บอก UI ว่ามีการเปลี่ยนแปลงรอ sync
     setAutoSyncStatus('pending');
@@ -1076,6 +1096,7 @@ export function AppProvider({ children }) {
     syncPushToFirebase,
     syncPullFromFirebase,
     autoSyncStatus,
+    pullSyncStatus,
     // Activity Log (evaluation-specific)
     activityLogs,
     addActivityLog,

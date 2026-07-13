@@ -1,5 +1,5 @@
 import './index.css';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import LoginPage from './pages/LoginPage';
 import SettingsPage from './pages/SettingsPage';
@@ -36,13 +36,24 @@ function AppShell() {
     isSettingsOpen, setIsSettingsOpen,
     isAdding, setIsAdding,
     handleSaveEvaluation, assessmentTopics, addStudent,
-    autoSyncStatus, isFirebaseConfigured,
+    autoSyncStatus, pullSyncStatus, isFirebaseConfigured,
     schools,
   } = useApp();
 
   const schoolName = schools?.[0]?.name ?? 'KinderTrack';
 
   const [changePwOpen, setChangePwOpen] = useState(false);
+
+  // แจ้งเตือนเมื่อ localStorage เต็ม (quota exceeded)
+  const [lsQuotaWarning, setLsQuotaWarning] = useState(false);
+  useEffect(() => {
+    const handler = () => {
+      setLsQuotaWarning(true);
+      setTimeout(() => setLsQuotaWarning(false), 8000);
+    };
+    window.addEventListener('ls-quota-error', handler);
+    return () => window.removeEventListener('ls-quota-error', handler);
+  }, []);
 
   if (!role) return <LoginPage />;
 
@@ -83,8 +94,28 @@ function AppShell() {
             <option value="2">ภาคเรียนที่ 2</option>
           </select>
 
-          {/* ── Firebase auto-sync status indicator ── */}
-          {isFirebaseConfigured && autoSyncStatus !== 'idle' && (
+          {/* ── Firebase sync status indicators ── */}
+          {isFirebaseConfigured && pullSyncStatus === 'pulling' && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '.35rem',
+              background: 'rgba(255,255,255,0.15)', borderRadius: '999px',
+              padding: '.2rem .7rem', fontSize: '.72rem', fontWeight: 700,
+              color: 'white', border: '1.5px solid rgba(255,255,255,0.3)',
+            }}>
+              <span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>🔄</span> กำลังโหลดข้อมูล…
+            </div>
+          )}
+          {isFirebaseConfigured && pullSyncStatus === 'error' && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '.35rem',
+              background: 'rgba(255,80,80,0.25)', borderRadius: '999px',
+              padding: '.2rem .7rem', fontSize: '.72rem', fontWeight: 700,
+              color: 'white', border: '1.5px solid rgba(255,80,80,0.4)',
+            }}>
+              ⚠️ โหลดข้อมูลไม่สำเร็จ
+            </div>
+          )}
+          {isFirebaseConfigured && autoSyncStatus !== 'idle' && pullSyncStatus !== 'pulling' && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: '.35rem',
               background: 'rgba(255,255,255,0.15)', borderRadius: '999px',
@@ -164,6 +195,19 @@ function AppShell() {
 
       <StudentModal key="add-student" isOpen={isAdding} onClose={() => setIsAdding(false)} onSave={addStudent} />
       <ChangePasswordModal isOpen={changePwOpen} onClose={() => setChangePwOpen(false)} />
+
+      {/* ── localStorage quota warning toast ── */}
+      {lsQuotaWarning && (
+        <div style={{
+          position: 'fixed', bottom: '1.2rem', left: '50%', transform: 'translateX(-50%)',
+          background: '#dc2626', color: 'white', borderRadius: '12px',
+          padding: '.65rem 1.2rem', fontWeight: 700, fontSize: '.82rem',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.25)', zIndex: 9999,
+          display: 'flex', alignItems: 'center', gap: '.5rem',
+        }}>
+          ⚠️ พื้นที่เก็บข้อมูลในเครื่องเต็ม — ข้อมูลบางส่วนอาจไม่ได้บันทึก กรุณาแจ้งผู้ดูแลระบบ
+        </div>
+      )}
 
       {/* ── Footer ── */}
       <footer className="no-print" style={{

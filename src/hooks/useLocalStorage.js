@@ -13,8 +13,10 @@ export function useLocalStorage(key, initialValue) {
   useEffect(() => {
     try {
       localStorage.setItem(key, JSON.stringify(value));
-    } catch {
-      // ignore quota errors
+    } catch (e) {
+      // แจ้งเตือน app เมื่อ localStorage เต็ม (quota exceeded) แทนที่จะเงียบ
+      console.error('[useLocalStorage] บันทึกไม่ได้ — พื้นที่เต็ม:', key, e);
+      window.dispatchEvent(new CustomEvent('ls-quota-error', { detail: { key } }));
     }
   }, [key, value]);
 

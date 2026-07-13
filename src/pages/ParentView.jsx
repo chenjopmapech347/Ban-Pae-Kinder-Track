@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import { getQualityText } from '../utils/helpers';
 import { callClaude, buildParentSummaryPrompt } from '../utils/aiHelper';
@@ -15,11 +15,25 @@ export default function ParentView() {
   const { user, students, setSelectedStudent, assessmentTopics,
     indicators: allIndicators, activities: allActivities,
     aiApiKey, teachers, announcements,
-    dailyRecords } = useApp();
+    dailyRecords, syncPullFromFirebase, isFirebaseConfigured } = useApp();
 
   const [aiText, setAiText]       = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError]     = useState('');
+
+  const [refreshing, setRefreshing] = useState(false);
+  const handleRefresh = useCallback(async () => {
+    if (!isFirebaseConfigured) return;
+    setRefreshing(true);
+    try { await syncPullFromFirebase(); } finally { setRefreshing(false); }
+  }, [syncPullFromFirebase, isFirebaseConfigured]);
+
+  // โหลดข้อมูลใหม่อัตโนมัติทุก 60 วินาที (ครูอาจบันทึกข้อมูลหลังผู้ปกครอง login)
+  useEffect(() => {
+    if (!isFirebaseConfigured) return;
+    const timer = setInterval(handleRefresh, 60_000);
+    return () => clearInterval(timer);
+  }, [handleRefresh, isFirebaseConfigured]);
 
   // คำนวณคะแนนเฉลี่ยรายด้านจากโครงสร้างใหม่ (assessments.indicators)
   // ถ้ายังไม่มีข้อมูลใหม่ ให้ fallback ไปที่ assessments.summary (โครงสร้างเก่า)
@@ -80,7 +94,7 @@ export default function ParentView() {
           padding: '2rem',
         }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4" style={{ flexWrap: 'wrap' }}>
           <div style={{
             width: 64, height: 64, borderRadius: '50%',
             background: 'rgba(255,255,255,0.25)',
@@ -111,6 +125,29 @@ export default function ParentView() {
             )}
           </div>
         </div>
+
+        {/* ปุ่ม Refresh — โหลดข้อมูลล่าสุดจากครู */}
+        {isFirebaseConfigured && (
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            title="โหลดข้อมูลล่าสุดจากครู"
+            style={{
+              marginLeft: 'auto', marginTop: '.25rem', alignSelf: 'flex-start',
+              background: 'rgba(255,255,255,0.2)', color: 'white',
+              border: '1.5px solid rgba(255,255,255,0.4)',
+              borderRadius: '999px', padding: '.3rem .8rem',
+              fontWeight: 700, fontSize: '.75rem', cursor: refreshing ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', gap: '.35rem',
+              opacity: refreshing ? 0.65 : 1, fontFamily: 'inherit',
+            }}
+          >
+            <span style={refreshing ? { animation: 'spin 1s linear infinite', display: 'inline-block' } : {}}>
+              🔄
+            </span>
+            {refreshing ? 'กำลังโหลด…' : 'รีเฟรช'}
+          </button>
+        )}
       </div>
 
       {/* Parent Info Card */}

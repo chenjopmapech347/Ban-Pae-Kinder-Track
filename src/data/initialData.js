@@ -182,13 +182,13 @@ export const INITIAL_STUDENTS = [
 // ── ข้อมูลครู 7 คน (1 ครูต่อ 1 ห้อง) ────────────────────────
 export const INITIAL_TEACHERS = [
   { id: 9999, name: 'ครูทดสอบระบบ', level:'K1', className:'อ.1/1', status:'Active', email:'test@test.com', pin:'test1234', username:'test_teacher' },
-  { id: 1, name: 'คุณครูปภัสสร เกิดเต็ม',       level:'K1', className:'อ.1/1', status:'Active', email:'Papassorn411@gmail.com',      pin:'kru01', username:'papassorn411'      },
-  { id: 2, name: 'คุณครูลักษณา ฤกษ์มี',          level:'K1', className:'อ.1/2', status:'Active', email:'laksanalerkme@gmail.com',      pin:'kru02', username:'laksanalerkme'     },
-  { id: 3, name: 'คุณครูชลดา ภู่เฟี้ยม',         level:'K2', className:'อ.2/1', status:'Active', email:'faichonlada181243@gmail.com',  pin:'kru03', username:'faichonlada181243' },
-  { id: 4, name: 'คุณครูวรพรรณ เจนการกิจ',        level:'K2', className:'อ.2/2', status:'Active', email:'angrypaan@gmail.com',          pin:'kru04', username:'angrypaan'         },
-  { id: 5, name: 'คุณครูปนัดดา สาลา',            level:'K3', className:'อ.3/1', status:'Active', email:'Panaddasala@gmail.com',        pin:'kru05', username:'panaddasala'       },
-  { id: 6, name: 'คุณครูไอรินลดา วราหิรัญกุล',   level:'K3', className:'อ.3/2', status:'Active', email:'loeywiie@gmail.com',           pin:'kru06', username:'loeywiie'          },
-  { id: 7, name: 'คุณครูศิวาพร แก้วหนูนวล',      level:'K3', className:'อ.3/3', status:'Active', email:'Siwapon231022@gmail.com',      pin:'kru07', username:'siwapon231022'     },
+  { id: 1, name: 'คุณครูรำภา สุขอยู่',           level:'K1', className:'อ.1/1', status:'Active', email:'rumpa.sukyu@gmail.com',        pin:'kru01', username:'rumpa.sukyu'        },
+  { id: 2, name: 'คุณครูลักษณา ฤกษ์มี',          level:'K1', className:'อ.1/2', status:'Active', email:'laksanalerkme@gmail.com',      pin:'kru02', username:'laksanalerkme'      },
+  { id: 3, name: 'คุณครูชลดา ภู่เฟี้ยม',         level:'K2', className:'อ.2/1', status:'Active', email:'faichonlada181243@gmail.com',  pin:'kru03', username:'faichonlada181243'  },
+  { id: 4, name: 'คุณครูวรพรรณ เจนการกิจ',        level:'K2', className:'อ.2/2', status:'Active', email:'angrypaan@gmail.com',          pin:'kru04', username:'angrypaan'          },
+  { id: 5, name: 'คุณครูปนัดดา สาลา',            level:'K3', className:'อ.3/1', status:'Active', email:'Panaddasala@gmail.com',        pin:'kru05', username:'panaddasala'        },
+  { id: 6, name: 'คุณครูไอรินลดา วราหิรัญกุล',   level:'K3', className:'อ.3/2', status:'Active', email:'loeywiie@gmail.com',           pin:'kru06', username:'loeywiie'           },
+  { id: 7, name: 'คุณครูศิวาพร แก้วหนูนวล',      level:'K3', className:'อ.3/3', status:'Active', email:'Siwapon231022@gmail.com',      pin:'kru07', username:'siwapon231022'      },
 ];
 
 // ── โรงเรียน ──────────────────────────────────────────────
@@ -205,7 +205,7 @@ export const INITIAL_SCHOOLS = [
 
 // ── ห้องเรียน 7 ห้อง (พร้อม teacherId) ──────────────────────
 export const INITIAL_CLASSES = [
-  { id: 1, name: 'อ.1/1', level: 'K1', count: 25, teacherId: 1, teacherName: 'คุณครูปภัสสร เกิดเต็ม'     },
+  { id: 1, name: 'อ.1/1', level: 'K1', count: 25, teacherId: 1, teacherName: 'คุณครูรำภา สุขอยู่'       },
   { id: 2, name: 'อ.1/2', level: 'K1', count: 24, teacherId: 2, teacherName: 'คุณครูลักษณา ฤกษ์มี'      },
   { id: 3, name: 'อ.2/1', level: 'K2', count: 21, teacherId: 3, teacherName: 'คุณครูชลดา ภู่เฟี้ยม'     },
   { id: 4, name: 'อ.2/2', level: 'K2', count: 21, teacherId: 4, teacherName: 'คุณครูวรพรรณ เจนการกิจ'   },
@@ -255,5 +255,5 @@ export const DEFAULT_ACADEMIC_YEARS = ['2569', '2568', '2567'];
 // ── Auth Config (PIN fallback) ────────────────────────────
 export const DEFAULT_AUTH_CONFIG_OVERRIDE = {
   admin:   { pin: 'admin2569', name: 'ผู้ดูแลระบบ' },
-  teacher: { pin: 'kru01',    name: 'คุณครูปภัสสร เกิดเต็ม', teacherId: 1 },
+  teacher: { pin: 'kru01',    name: 'คุณครูรำภา สุขอยู่',     teacherId: 1 },
 };

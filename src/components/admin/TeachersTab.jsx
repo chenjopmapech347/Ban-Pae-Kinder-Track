@@ -81,8 +81,8 @@ export default function TeachersTab() {
         </div>
       </div>
 
-      <div className="table-wrap">
-        <table className="table">
+      <div className="table-wrap" style={{ overflowX: 'auto' }}>
+        <table className="table" style={{ minWidth: '860px' }}>
           <thead>
             <tr>
               <th>ชื่อ-นามสกุล</th>
@@ -92,7 +92,7 @@ export default function TeachersTab() {
               <th>รหัสผ่าน</th>
               <th>เบอร์โทร</th>
               <th>สถานะ</th>
-              <th>จัดการ</th>
+              <th style={{ position:'sticky', right:0, background:'#f5f3ff', zIndex:2, boxShadow:'-2px 0 6px rgba(0,0,0,0.06)' }}>จัดการ</th>
             </tr>
           </thead>
           <tbody>
@@ -117,7 +117,7 @@ export default function TeachersTab() {
                 <td>{t.pin ? <PinCell pin={t.pin} /> : <span style={{ color:'var(--text-muted)' }}>—</span>}</td>
                 <td style={{ fontSize:'.85rem' }}>{t.phone ?? '—'}</td>
                 <td><span className="text-success">● {t.status}</span></td>
-                <td>
+                <td style={{ position:'sticky', right:0, background:'white', zIndex:1, boxShadow:'-2px 0 6px rgba(0,0,0,0.06)' }}>
                   <div className="row-actions">
                     <button className="btn btn-sm" onClick={() => openEdit(t)}>แก้ไข</button>
                     <button className="btn btn-sm" style={{ color:'var(--danger)' }}

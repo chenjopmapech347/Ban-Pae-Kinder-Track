@@ -70,6 +70,25 @@ export function AppProvider({ children }) {
   const [students, setStudents] = useLocalStorage(STORAGE_KEYS.students, INITIAL_STUDENTS);
   const [teachers, setTeachers] = useLocalStorage(STORAGE_KEYS.teachers, INITIAL_TEACHERS);
   const [classes, setClasses] = useLocalStorage(STORAGE_KEYS.classes, INITIAL_CLASSES);
+
+  // ── Migration: อัปเดตครูรำภา สุขอยู่ แทนที่ปภัสสร เกิดเต็ม (อ.1/1) ──
+  useEffect(() => {
+    const OLD_EMAIL = 'Papassorn411@gmail.com';
+    const OLD_EMAIL_LC = OLD_EMAIL.toLowerCase();
+    const needsMigration = teachers.some(
+      t => t.id === 1 && (t.email?.toLowerCase() === OLD_EMAIL_LC)
+    );
+    if (!needsMigration) return;
+    setTeachers(prev => prev.map(t =>
+      t.id === 1
+        ? { ...t,
+            name:     'คุณครูรำภา สุขอยู่',
+            email:    'rumpa.sukyu@gmail.com',
+            username: 'rumpa.sukyu',
+          }
+        : t
+    ));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [schools, setSchools] = useLocalStorage(STORAGE_KEYS.schools, INITIAL_SCHOOLS);
   const [holidays, setHolidays] = useLocalStorage(STORAGE_KEYS.holidays, INITIAL_HOLIDAYS);
 

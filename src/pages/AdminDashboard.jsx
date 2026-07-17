@@ -55,58 +55,58 @@ const TAB_GROUPS = [
     label: 'กิจกรรมประจำวัน',
     color: '#0891b2',
     tabs: [
-      { id: 'attendance',   label: '✅ การมาเรียน'        },
-      { id: 'pickup',       label: '🚗 รับกลับบ้าน'       },
-      { id: 'healthcheck',  label: '🏥 ตรวจสุขภาพ'        },
-      { id: 'illnesscheck', label: '🤒 คัดกรองอาการป่วย'  },
-      { id: 'toothbrush',    label: '🪥 แปรงฟัน'           },
-      { id: 'lunch',         label: '🍱 อาหารกลางวัน'      },
-      { id: 'milk',          label: '🥛 ดื่มนม'             },
-      { id: 'nutrition',     label: '⚖️ ภาวะโภชนาการ'      },
-      { id: 'dailyroutine',  label: '🗓️ กิจกรรมประจำวัน'   },
-      { id: 'specialevent',  label: '🎉 กิจกรรมวันสำคัญ'   },
+      { id: 'attendance',   label: '✅ การมาเรียน'        },  // เช้า — เช็คชื่อ
+      { id: 'healthcheck',  label: '🏥 ตรวจสุขภาพ'        },  // เช้า — ตรวจสุขภาพ
+      { id: 'illnesscheck', label: '🤒 คัดกรองอาการป่วย'  },  // เช้า — คัดกรอง
+      { id: 'milk',          label: '🥛 ดื่มนม'            },  // เช้า — นมเช้า
+      { id: 'dailyroutine',  label: '🗓️ กิจกรรมประจำวัน'  },  // ระหว่างวัน
+      { id: 'lunch',         label: '🍱 อาหารกลางวัน'     },  // กลางวัน
+      { id: 'toothbrush',    label: '🪥 แปรงฟัน'           },  // หลังอาหาร
+      { id: 'nutrition',     label: '⚖️ ภาวะโภชนาการ'     },  // ตามโอกาส
+      { id: 'specialevent',  label: '🎉 กิจกรรมวันสำคัญ'  },  // ตามโอกาส
+      { id: 'pickup',        label: '🚗 รับกลับบ้าน'      },  // บ่าย — รับกลับ
     ],
   },
   {
     label: 'รายงานและประเมินผล',
     color: '#4f46e5',
     tabs: [
-      { id: 'studentreport', label: '📒 สมุดรายงาน อ.01'       },
-      { id: 'evaluation',    label: '📊 ประเมินพัฒนาการ'        },
-      { id: 'reports',       label: '📈 รายงานสรุปการประเมิน'  },
-      { id: 'activitylog',   label: '📜 ประวัติการประเมิน'      },
-      { id: 'nationalstd',   label: '🏛 มาตรฐานแห่งชาติ'       },
+      { id: 'evaluation',    label: '📊 ประเมินพัฒนาการ'        },  // 1. ลงมือประเมิน
+      { id: 'activitylog',   label: '📜 ประวัติการประเมิน'      },  // 2. ดูประวัติ
+      { id: 'reports',       label: '📈 รายงานสรุปการประเมิน'  },  // 3. รายงานสรุป
+      { id: 'studentreport', label: '📒 สมุดรายงาน อ.01'       },  // 4. ผลลัพธ์สุดท้าย
+      { id: 'nationalstd',   label: '🏛 มาตรฐานแห่งชาติ'       },  // 5. อ้างอิง
     ],
   },
   {
     label: 'บุคลากรและสื่อ',
     color: '#059669',
     tabs: [
-      { id: 'students',    label: '👶 นักเรียน'               },
-      { id: 'classassign', label: '🚪 จัดนักเรียนเข้าห้อง'   },
-      { id: 'teachers',    label: '👩‍🏫 ครู'                   },
-      { id: 'classes',     label: '🏫 ห้องเรียน'              },
-      { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ'        },
-      { id: 'mediaborrow', label: '🔄 ยืม-คืนสื่อ'             },
-      { id: 'corner',      label: '🌿 แหล่งเรียนรู้นอกห้อง'  },
-      { id: 'innercorner', label: '🏡 มุมประสบการณ์ในห้อง'   },
-      { id: 'devreport',   label: '📑 รายงานพัฒนาการ'         },
+      { id: 'students',    label: '👶 นักเรียน'               },  // ข้อมูลนักเรียน
+      { id: 'classassign', label: '🚪 จัดนักเรียนเข้าห้อง'   },  // จัดห้อง
+      { id: 'classes',     label: '🏫 ห้องเรียน'              },  // ห้องเรียน
+      { id: 'teachers',    label: '👩‍🏫 ครู'                   },  // บุคลากร
+      { id: 'innercorner', label: '🏡 มุมประสบการณ์ในห้อง'   },  // พื้นที่เรียนรู้
+      { id: 'corner',      label: '🌿 แหล่งเรียนรู้นอกห้อง'  },  // พื้นที่เรียนรู้
+      { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ'        },  // สื่อ
+      { id: 'mediaborrow', label: '🔄 ยืม-คืนสื่อ'            },  // ยืม-คืน
+      { id: 'devreport',   label: '📑 รายงานพัฒนาการ'         },  // รายงาน
     ],
   },
   {
     label: 'ตั้งค่าระบบ',
     color: '#6b7280',
     tabs: [
-      { id: 'schools',    label: '🏛️ โรงเรียน'           },
-      { id: 'topics',     label: '📝 หัวข้อประเมิน'      },
-      { id: 'indicators', label: '🔬 ตัวบ่งชี้'           },
-      { id: 'activities', label: '🎯 กิจกรรม'             },
-      { id: 'terms',      label: '📅 ภาคเรียน'            },
-      { id: 'holidays',   label: '🏖️ วันหยุด'             },
-      { id: 'standards',        label: '🗺️ มาตรฐานปฐมวัย'           },
-      { id: 'measurementdates',  label: '📏 เดือนวัดน้ำหนัก/ส่วนสูง'         },
-      { id: 'activityschedule', label: '🗓️ กิจกรรมภายใน-นอกห้องเรียน'       },
-      { id: 'systemlog',        label: '📋 บันทึกการใช้งานระบบ'              },
+      { id: 'schools',           label: '🏛️ โรงเรียน'                  },  // ตั้งค่าพื้นฐาน
+      { id: 'terms',             label: '📅 ภาคเรียน'                   },  // กรอบเวลา
+      { id: 'holidays',          label: '🏖️ วันหยุด'                    },  // ปฏิทิน
+      { id: 'activities',        label: '🎯 กิจกรรม'                    },  // กิจกรรม
+      { id: 'activityschedule',  label: '🗓️ กิจกรรมภายใน-นอกห้องเรียน' },  // ตารางกิจกรรม
+      { id: 'topics',            label: '📝 หัวข้อประเมิน'             },  // กรอบการประเมิน
+      { id: 'indicators',        label: '🔬 ตัวบ่งชี้'                  },  // ตัวบ่งชี้
+      { id: 'standards',         label: '🗺️ มาตรฐานปฐมวัย'            },  // มาตรฐาน
+      { id: 'measurementdates',  label: '📏 เดือนวัดน้ำหนัก/ส่วนสูง'  },  // วัดผล
+      { id: 'systemlog',         label: '📋 บันทึกการใช้งานระบบ'        },  // ติดตาม
     ],
   },
   {

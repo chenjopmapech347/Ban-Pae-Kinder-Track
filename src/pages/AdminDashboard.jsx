@@ -52,45 +52,57 @@ const TAB_GROUPS = [
     ],
   },
   {
-    label: 'กิจกรรมประจำวัน',
+    label: 'บันทึกประจำวัน',
     color: '#0891b2',
     tabs: [
-      { id: 'attendance',   label: '✅ การมาเรียน'        },  // เช้า — เช็คชื่อ
-      { id: 'healthcheck',  label: '🏥 ตรวจสุขภาพ'        },  // เช้า — ตรวจสุขภาพ
-      { id: 'illnesscheck', label: '🤒 คัดกรองอาการป่วย'  },  // เช้า — คัดกรอง
-      { id: 'milk',          label: '🥛 ดื่มนม'            },  // เช้า — นมเช้า
-      { id: 'dailyroutine',  label: '🗓️ กิจกรรมประจำวัน'  },  // ระหว่างวัน
-      { id: 'lunch',         label: '🍱 อาหารกลางวัน'     },  // กลางวัน
-      { id: 'toothbrush',    label: '🪥 แปรงฟัน'           },  // หลังอาหาร
-      { id: 'nutrition',     label: '⚖️ ภาวะโภชนาการ'     },  // ตามโอกาส
-      { id: 'specialevent',  label: '🎉 กิจกรรมวันสำคัญ'  },  // ตามโอกาส
-      { id: 'pickup',        label: '🚗 รับกลับบ้าน'      },  // บ่าย — รับกลับ
+      { id: 'attendance',   label: '✅ การมาเรียน'        },
+      { id: 'healthcheck',  label: '🏥 ตรวจสุขภาพ'        },
+      { id: 'illnesscheck', label: '🤒 คัดกรองอาการป่วย'  },
+      { id: 'milk',         label: '🥛 ดื่มนม'            },
+      { id: 'dailyroutine', label: '🗓️ กิจกรรมประจำวัน'  },
+      { id: 'lunch',        label: '🍱 อาหารกลางวัน'     },
+      { id: 'toothbrush',   label: '🪥 แปรงฟัน'           },
+      { id: 'pickup',       label: '🚗 รับกลับบ้าน'      },
+    ],
+  },
+  {
+    label: 'บันทึกประจำสัปดาห์',
+    color: '#059669',
+    tabs: [
+      { id: 'innercorner', label: '🏡 มุมประสบการณ์ในห้อง'  },
+      { id: 'corner',      label: '🌿 แหล่งเรียนรู้นอกห้อง' },
+    ],
+  },
+  {
+    label: 'บันทึกตามโอกาส',
+    color: '#7c3aed',
+    tabs: [
+      { id: 'nutrition',    label: '⚖️ ภาวะโภชนาการ'   },
+      { id: 'specialevent', label: '🎉 กิจกรรมวันสำคัญ' },
     ],
   },
   {
     label: 'รายงานและประเมินผล',
     color: '#4f46e5',
     tabs: [
-      { id: 'evaluation',    label: '📊 ประเมินพัฒนาการ'        },  // 1. ลงมือประเมิน
-      { id: 'activitylog',   label: '📜 ประวัติการประเมิน'      },  // 2. ดูประวัติ
-      { id: 'reports',       label: '📈 รายงานสรุปการประเมิน'  },  // 3. รายงานสรุป
-      { id: 'studentreport', label: '📒 สมุดรายงาน อ.01'       },  // 4. ผลลัพธ์สุดท้าย
-      { id: 'nationalstd',   label: '🏛 มาตรฐานแห่งชาติ'       },  // 5. อ้างอิง
+      { id: 'evaluation',    label: '📊 ประเมินพัฒนาการ'        },
+      { id: 'activitylog',   label: '📜 ประวัติการประเมิน'      },
+      { id: 'devreport',     label: '📑 รายงานพัฒนาการ'         },
+      { id: 'reports',       label: '📈 รายงานสรุปการประเมิน'  },
+      { id: 'studentreport', label: '📒 สมุดรายงาน อ.01'       },
+      { id: 'nationalstd',   label: '🏛 มาตรฐานแห่งชาติ'       },
     ],
   },
   {
     label: 'บุคลากรและสื่อ',
     color: '#059669',
     tabs: [
-      { id: 'students',    label: '👶 นักเรียน'               },  // ข้อมูลนักเรียน
-      { id: 'classassign', label: '🚪 จัดนักเรียนเข้าห้อง'   },  // จัดห้อง
-      { id: 'classes',     label: '🏫 ห้องเรียน'              },  // ห้องเรียน
-      { id: 'teachers',    label: '👩‍🏫 ครู'                   },  // บุคลากร
-      { id: 'innercorner', label: '🏡 มุมประสบการณ์ในห้อง'   },  // พื้นที่เรียนรู้
-      { id: 'corner',      label: '🌿 แหล่งเรียนรู้นอกห้อง'  },  // พื้นที่เรียนรู้
-      { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ'        },  // สื่อ
-      { id: 'mediaborrow', label: '🔄 ยืม-คืนสื่อ'            },  // ยืม-คืน
-      { id: 'devreport',   label: '📑 รายงานพัฒนาการ'         },  // รายงาน
+      { id: 'students',    label: '👶 นักเรียน'              },
+      { id: 'classassign', label: '🚪 จัดนักเรียนเข้าห้อง'  },
+      { id: 'classes',     label: '🏫 ห้องเรียน'             },
+      { id: 'teachers',    label: '👩‍🏫 ครู'                  },
+      { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ'       },
+      { id: 'mediaborrow', label: '🔄 ยืม-คืนสื่อ'           },
     ],
   },
   {

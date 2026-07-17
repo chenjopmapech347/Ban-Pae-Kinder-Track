@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from './Modal';
 
@@ -70,6 +70,9 @@ const emptyStudent = {
   guardianRelation: 'มารดา', // ความเกี่ยวข้อง (มารดา/บิดา/อื่น)
   parentPhone:      '',     // เบอร์โทรผู้ปกครอง
 
+  // ── รูปภาพ ──────────────────────────────────────────────────
+  photo:       '',          // base64 data URL
+
   // ── ที่อยู่ (แยกฟิลด์) ──────────────────────────────────
   houseNo:     '',          // บ้านเลขที่
   moo:         '',          // หมู่ที่/ตรอก/ซอย
@@ -104,6 +107,16 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
     const p = parseBirthISO(editingStudent?.birthDate);
     setBDay(p.day); setBMonth(p.month); setBYear(p.yearBE);
   }, [editingStudent]);
+
+  const photoInputRef = useRef(null);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setFormData(fd => ({ ...fd, photo: ev.target.result }));
+    reader.readAsDataURL(file);
+  };
 
   const handleBirthChange = (part, val) => {
     const v = val !== '' ? Number(val) : '';
@@ -152,6 +165,71 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
         {/* ════ Tab 1: ประวัติส่วนตัว ════ */}
         {activeSubTab === 'personal' && (
           <div className="grid grid-2 gap-4 animate-fade">
+
+            {/* ── รูปภาพนักเรียน ── */}
+            <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '.25rem' }}>
+              {/* Avatar circle — คลิกเพื่อเลือกรูป */}
+              <div
+                onClick={() => photoInputRef.current?.click()}
+                title="คลิกเพื่อเลือกรูป"
+                style={{
+                  width: 90, height: 90, borderRadius: '50%', flexShrink: 0,
+                  border: '2.5px dashed #a78bfa', cursor: 'pointer',
+                  background: formData.photo ? 'transparent' : '#f5f3ff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  overflow: 'hidden', transition: 'border-color .15s',
+                  position: 'relative',
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = '#7c3aed'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = '#a78bfa'}
+              >
+                {formData.photo ? (
+                  <img
+                    src={formData.photo}
+                    alt="รูปนักเรียน"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                  />
+                ) : (
+                  <div style={{ textAlign: 'center', pointerEvents: 'none' }}>
+                    <div style={{ fontSize: '1.6rem', lineHeight: 1 }}>📷</div>
+                    <div style={{ fontSize: '.6rem', color: '#9ca3af', marginTop: '.2rem', fontWeight: 600 }}>อัปโหลดรูป</div>
+                  </div>
+                )}
+              </div>
+
+              {/* ข้อความอธิบาย + ปุ่มลบรูป */}
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '.82rem', color: '#374151', marginBottom: '.35rem' }}>
+                  รูปภาพนักเรียน
+                </div>
+                <div style={{ fontSize: '.75rem', color: '#6b7280', marginBottom: '.5rem', lineHeight: 1.5 }}>
+                  คลิกที่รูปเพื่อเลือกภาพ<br />รองรับ JPG, PNG · ขนาดแนะนำ 300×300 px
+                </div>
+                {formData.photo && (
+                  <button
+                    type="button"
+                    onClick={() => setFormData(fd => ({ ...fd, photo: '' }))}
+                    style={{
+                      fontSize: '.72rem', padding: '.18rem .55rem', borderRadius: '6px',
+                      border: '1px solid #fca5a5', background: '#fee2e2',
+                      color: '#991b1b', cursor: 'pointer', fontWeight: 700, fontFamily: 'inherit',
+                    }}
+                  >
+                    ✕ ลบรูป
+                  </button>
+                )}
+              </div>
+
+              {/* hidden file input */}
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={handlePhotoChange}
+              />
+            </div>
+
             {/* ชื่อ-นามสกุล */}
             <div className="flex flex-col gap-1" style={{ gridColumn: '1 / -1' }}>
               <label className="text-xs font-bold">ชื่อ-นามสกุล *</label>

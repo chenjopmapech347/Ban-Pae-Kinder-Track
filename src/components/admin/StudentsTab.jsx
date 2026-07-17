@@ -387,9 +387,26 @@ export default function StudentsTab() {
               return (
                 <tr key={s.id} className="hover-row">
                   <td>
-                    <code style={{ fontSize: '.75rem', background: '#f1f5f9', padding: '.1rem .4rem', borderRadius: '5px', color: '#475569', fontWeight: 700 }}>
-                      {s.code ?? s.id}
-                    </code>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+                      {/* รูปภาพเด็ก */}
+                      <div style={{
+                        width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                        overflow: 'hidden', border: '2px solid #e5e7eb',
+                        background: s.name.includes('ชาย') ? '#dbeafe' : '#fce7f3',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {s.photo
+                          ? <img src={s.photo} alt={s.name}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : <span style={{ fontSize: '1.1rem', lineHeight: 1 }}>
+                              {s.name.includes('ชาย') ? '👦' : '👧'}
+                            </span>
+                        }
+                      </div>
+                      <code style={{ fontSize: '.75rem', background: '#f1f5f9', padding: '.1rem .4rem', borderRadius: '5px', color: '#475569', fontWeight: 700 }}>
+                        {s.code ?? s.id}
+                      </code>
+                    </div>
                   </td>
                   <td>
                     <button

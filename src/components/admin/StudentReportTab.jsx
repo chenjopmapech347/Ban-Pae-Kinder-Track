@@ -1393,27 +1393,35 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
                 })}
               </div>
 
-              {/* Parent Comments */}
+              {/* Parent Comments — read-only for teachers; editable via ParentView */}
               <div style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0', borderRadius: '12px', padding: '1rem 1.25rem' }}>
-                <div style={{ fontWeight: 800, fontSize: '.88rem', color: '#15803d', marginBottom: '1rem' }}>
-                  👨‍👩‍👧 ความคิดเห็นของผู้ปกครอง
+                <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '1rem' }}>
+                  <div style={{ fontWeight: 800, fontSize: '.88rem', color: '#15803d' }}>
+                    👨‍👩‍👧 ความคิดเห็นของผู้ปกครอง
+                  </div>
+                  <span style={{
+                    fontSize: '.7rem', fontWeight: 700, padding: '.1rem .55rem',
+                    borderRadius: '99px', background: '#dcfce7', color: '#15803d',
+                    border: '1px solid #86efac',
+                  }}>
+                    ผู้ปกครองกรอกเอง
+                  </span>
                 </div>
                 {[1, 2].map(t => (
                   <div key={t} style={{ marginBottom: '1rem' }}>
                     <div style={{ fontWeight: 700, fontSize: '.8rem', color: '#374151', marginBottom: '.35rem' }}>
                       ภาคเรียนที่ {t}
                     </div>
-                    <textarea
-                      value={parentComments[`term${t}`]}
-                      onChange={e => saveRec({ parentComments: { ...parentComments, [`term${t}`]: e.target.value } })}
-                      rows={3}
-                      placeholder={`บันทึกความคิดเห็นของผู้ปกครอง ภาคเรียนที่ ${t}...`}
-                      style={{
-                        width: '100%', padding: '8px 10px', border: '1px solid #86efac',
-                        borderRadius: '8px', fontFamily: 'inherit', fontSize: '.82rem',
-                        resize: 'vertical', boxSizing: 'border-box', background: 'white',
-                      }}
-                    />
+                    <div style={{
+                      minHeight: '68px', padding: '8px 10px',
+                      border: '1px solid #86efac', borderRadius: '8px',
+                      fontSize: '.82rem', lineHeight: '1.6', background: '#f7fdf9',
+                      color: parentComments[`term${t}`] ? '#111827' : '#9ca3af',
+                      fontStyle: parentComments[`term${t}`] ? 'normal' : 'italic',
+                      whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                    }}>
+                      {parentComments[`term${t}`] || `(ยังไม่มีความคิดเห็น — ผู้ปกครองจะกรอกผ่านหน้า Parent View)`}
+                    </div>
                     <div style={{ marginTop: '.5rem', fontSize: '.75rem', color: '#6b7280' }}>
                       ลงชื่อ _________________________ (ผู้ปกครอง)
                     </div>
@@ -1421,22 +1429,30 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
                 ))}
               </div>
 
-              {/* Director's Comment */}
+              {/* Director's Comment — read-only for teachers; editable by Admin */}
               <div style={{ background: '#fdf4ff', border: '1.5px solid #e9d5ff', borderRadius: '12px', padding: '1rem 1.25rem' }}>
-                <div style={{ fontWeight: 800, fontSize: '.88rem', color: '#7e22ce', marginBottom: '.75rem' }}>
-                  🏛️ ความคิดเห็นของผู้อำนวยการสถานศึกษา (ตลอดปีการศึกษา)
+                <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.75rem' }}>
+                  <div style={{ fontWeight: 800, fontSize: '.88rem', color: '#7e22ce' }}>
+                    🏛️ ความคิดเห็นของผู้อำนวยการสถานศึกษา (ตลอดปีการศึกษา)
+                  </div>
+                  <span style={{
+                    fontSize: '.7rem', fontWeight: 700, padding: '.1rem .55rem',
+                    borderRadius: '99px', background: '#f3e8ff', color: '#7e22ce',
+                    border: '1px solid #d8b4fe',
+                  }}>
+                    ผู้อำนวยการกรอกเอง
+                  </span>
                 </div>
-                <textarea
-                  value={directorsComment}
-                  onChange={e => saveRec({ directorsComment: e.target.value })}
-                  rows={3}
-                  placeholder="บันทึกความคิดเห็นของผู้อำนวยการสถานศึกษา..."
-                  style={{
-                    width: '100%', padding: '8px 10px', border: '1px solid #d8b4fe',
-                    borderRadius: '8px', fontFamily: 'inherit', fontSize: '.82rem',
-                    resize: 'vertical', boxSizing: 'border-box', background: 'white',
-                  }}
-                />
+                <div style={{
+                  minHeight: '68px', padding: '8px 10px',
+                  border: '1px solid #d8b4fe', borderRadius: '8px',
+                  fontSize: '.82rem', lineHeight: '1.6', background: '#fdf8ff',
+                  color: directorsComment ? '#111827' : '#9ca3af',
+                  fontStyle: directorsComment ? 'normal' : 'italic',
+                  whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                }}>
+                  {directorsComment || '(ยังไม่มีความคิดเห็น — ผู้อำนวยการจะกรอกในส่วนของ Admin)'}
+                </div>
                 <div style={{ marginTop: '.5rem', fontSize: '.75rem', color: '#6b7280' }}>
                   ลงชื่อ _________________________ (ผู้อำนวยการสถานศึกษา)
                 </div>

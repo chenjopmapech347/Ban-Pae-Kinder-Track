@@ -228,10 +228,22 @@ function printReport({ student, physData, attendanceSummary, healthServices,
       </tr>${stdRows}`;
   }).join('');
 
+  const photoHtml = student?.photo
+    ? `<img src="${student.photo}" alt="รูปนักเรียน"
+         style="width:160px;height:160px;border-radius:50%;object-fit:cover;
+                border:4px solid #4f46e5;box-shadow:0 4px 16px rgba(79,70,229,.25)">`
+    : `<div style="width:160px;height:160px;border-radius:50%;
+                   background:linear-gradient(135deg,#e0e7ff,#c7d2fe);
+                   border:4px solid #4f46e5;display:flex;align-items:center;
+                   justify-content:center;font-size:5rem;line-height:1">
+         ${(student?.name ?? '').includes('ชาย') ? '👦' : '👧'}
+       </div>`;
+
   const html = `<!DOCTYPE html><html><head>
     <meta charset="utf-8">
     <title>สมุดรายงานประจำตัว — ${student?.name ?? ''}</title>
     <style>
+      @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap');
       body { font-family:'Sarabun',sans-serif; font-size:13px; margin:20px; color:#111; }
       h1 { text-align:center; font-size:1.1rem; margin-bottom:4px; }
       h2 { font-size:.95rem; margin:14px 0 4px; background:#f3f4f6; padding:4px 8px; border-radius:4px; }
@@ -241,6 +253,101 @@ function printReport({ student, physData, attendanceSummary, healthServices,
       @media print { body { margin:8mm; } .page-break { page-break-after:always; break-after:page; } }
     </style>
   </head><body>
+
+    <!-- ══ หน้าปก ══ -->
+    <div class="page-break" style="
+      min-height:calc(100vh - 40px);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      text-align:center; padding:40px 20px; box-sizing:border-box;
+      background:linear-gradient(160deg,#f5f3ff 0%,#ede9fe 40%,#e0e7ff 100%);
+      border:3px solid #4f46e5; border-radius:8px;
+    ">
+      <!-- ดวงตราสถานศึกษา / header bar -->
+      <div style="
+        background:linear-gradient(135deg,#4f46e5,#7c3aed);
+        color:white; width:100%; padding:14px 20px; margin-bottom:36px;
+        border-radius:6px; box-shadow:0 4px 16px rgba(79,70,229,.3);
+      ">
+        <div style="font-size:1.1rem;font-weight:800;letter-spacing:.5px">
+          โรงเรียน${schoolName}
+        </div>
+        <div style="font-size:.85rem;opacity:.85;margin-top:3px">
+          สังกัดสำนักการศึกษา กรุงเทพมหานคร
+        </div>
+      </div>
+
+      <!-- ชื่อสมุด -->
+      <div style="margin-bottom:8px">
+        <div style="font-size:1.5rem;font-weight:800;color:#1e1b4b;letter-spacing:.5px;line-height:1.4">
+          สมุดรายงานประจำตัว
+        </div>
+        <div style="font-size:1.3rem;font-weight:800;color:#1e1b4b">
+          เด็กปฐมวัย
+        </div>
+        <div style="font-size:.82rem;color:#6b7280;margin-top:6px">
+          (ตามหลักสูตรการศึกษาปฐมวัย พุทธศักราช 2560)
+        </div>
+      </div>
+
+      <!-- เส้นคั่น -->
+      <div style="width:80px;height:3px;background:linear-gradient(90deg,#4f46e5,#7c3aed);
+                  border-radius:2px;margin:18px auto"></div>
+
+      <!-- รูปเด็ก -->
+      <div style="margin:18px 0">
+        ${photoHtml}
+      </div>
+
+      <!-- ชื่อนักเรียน -->
+      <div style="
+        background:white; border:2px solid #c7d2fe; border-radius:12px;
+        padding:16px 40px; margin:16px 0; box-shadow:0 2px 8px rgba(79,70,229,.1);
+        min-width:280px;
+      ">
+        <div style="font-size:.72rem;font-weight:700;color:#6b7280;letter-spacing:.5px;margin-bottom:6px">
+          ชื่อ–สกุล
+        </div>
+        <div style="font-size:1.2rem;font-weight:800;color:#1e1b4b">
+          ${student?.name ?? '—'}
+        </div>
+        <div style="height:1px;background:#e0e7ff;margin:10px 0"></div>
+        <div style="display:flex;justify-content:center;gap:32px;font-size:.85rem">
+          <div>
+            <div style="font-size:.7rem;color:#9ca3af;font-weight:600">ชั้น/ห้อง</div>
+            <div style="font-weight:700;color:#4f46e5">${student?.className ?? student?.level ?? '—'}</div>
+          </div>
+          <div>
+            <div style="font-size:.7rem;color:#9ca3af;font-weight:600">ปีการศึกษา</div>
+            <div style="font-weight:700;color:#4f46e5">${academicYear}</div>
+          </div>
+          ${student?.birthDate ? `<div>
+            <div style="font-size:.7rem;color:#9ca3af;font-weight:600">วันเกิด</div>
+            <div style="font-weight:700;color:#4f46e5">${isoToThai(student.birthDate)}</div>
+          </div>` : ''}
+        </div>
+      </div>
+
+      <!-- ลายเซ็น -->
+      <div style="margin-top:36px;display:flex;gap:64px;justify-content:center">
+        <div style="text-align:center">
+          <div style="height:48px"></div>
+          <div style="border-top:1px solid #6b7280;width:160px;padding-top:5px;font-size:.78rem;color:#4b5563">
+            ลงชื่อครูประจำชั้น
+          </div>
+        </div>
+        <div style="text-align:center">
+          <div style="height:48px"></div>
+          <div style="border-top:1px solid #6b7280;width:160px;padding-top:5px;font-size:.78rem;color:#4b5563">
+            ลงชื่อผู้อำนวยการ
+          </div>
+        </div>
+      </div>
+
+      <!-- footer -->
+      <div style="margin-top:auto;padding-top:32px;font-size:.72rem;color:#9ca3af">
+        KinderTrack · ระบบบันทึกพัฒนาการเด็กปฐมวัย
+      </div>
+    </div>
 
     <!-- ══ หน้า 1: คำชี้แจงถึงผู้ปกครอง ══ -->
     <div class="page-break">

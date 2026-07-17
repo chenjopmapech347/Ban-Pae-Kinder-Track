@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { getQualityText } from '../utils/helpers';
 import { callClaude, buildParentSummaryPrompt } from '../utils/aiHelper';
@@ -15,11 +15,16 @@ export default function ParentView() {
   const { user, students, setSelectedStudent, assessmentTopics,
     indicators: allIndicators, activities: allActivities,
     aiApiKey, teachers, announcements,
-    dailyRecords, syncPullFromFirebase, isFirebaseConfigured } = useApp();
+    dailyRecords, syncPullFromFirebase, isFirebaseConfigured,
+    studentReportRecords, setStudentReportRecords, academicYear } = useApp();
 
   const [aiText, setAiText]       = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError]     = useState('');
+
+  // ── Parent comment state ──────────────────────────────────────────────────
+  const [commentSaved, setCommentSaved] = useState(false);
+  const saveTimerRef = useRef(null);
 
   const [refreshing, setRefreshing] = useState(false);
   const handleRefresh = useCallback(async () => {
@@ -82,6 +87,37 @@ export default function ParentView() {
   }, [dailyRecords, student.id]);
 
   const pct = total ? Math.round((present / total) * 100) : 0;
+
+  // ── Parent comment helpers ────────────────────────────────────────────────
+  const recKey = student ? `${student.id}__${academicYear}` : null;
+  const parentComments = useMemo(() => {
+    if (!recKey) return { term1: '', term2: '' };
+    return studentReportRecords[recKey]?.parentComments ?? { term1: '', term2: '' };
+  }, [recKey, studentReportRecords]);
+
+  const updateParentComment = useCallback((term, value) => {
+    if (!recKey) return;
+    setStudentReportRecords(prev => ({
+      ...prev,
+      [recKey]: {
+        studentId: student.id,
+        academicYear,
+        physicalRecords: {},
+        healthServices: [],
+        teacherComments:  { term1: '', term2: '' },
+        directorsComment: '',
+        ...(prev[recKey] ?? {}),
+        parentComments: {
+          ...(prev[recKey]?.parentComments ?? { term1: '', term2: '' }),
+          [term]: value,
+        },
+      },
+    }));
+    // แสดง feedback "บันทึกแล้ว" ชั่วคราว
+    setCommentSaved(false);
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => setCommentSaved(true), 600);
+  }, [recKey, student, academicYear, setStudentReportRecords]);
 
   return (
     <div className="animate-fade">
@@ -377,6 +413,59 @@ export default function ParentView() {
             <div style={{ fontSize: '0.78rem', color: '#9d174d', fontWeight: 600 }}>📐 ส่วนสูง (ซม.)</div>
           </div>
         </div>
+      </div>
+
+      {/* ── Parent Comments ── */}
+      <div className="glass-card mb-6" style={{ border: '1.5px solid #bbf7d0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+          <h3 style={{ margin: 0, color: '#166534' }}>✍️ ความคิดเห็นของผู้ปกครอง</h3>
+          {commentSaved && (
+            <span style={{
+              fontSize: '.75rem', fontWeight: 700, color: '#059669',
+              background: '#d1fae5', padding: '.2rem .65rem', borderRadius: '999px',
+            }}>
+              ✓ บันทึกแล้ว
+            </span>
+          )}
+        </div>
+        <p style={{ fontSize: '.8rem', color: '#6b7280', marginBottom: '1rem', lineHeight: 1.6 }}>
+          ความคิดเห็นของท่านจะถูกบันทึกลงในสมุดรายงานประจำตัว (อ.01) ของบุตรหลาน
+          ครูจะได้รับทราบและนำไปใช้ในการดูแลพัฒนาการต่อไป
+        </p>
+
+        {[1, 2].map(term => (
+          <div key={term} style={{ marginBottom: term === 1 ? '1rem' : 0 }}>
+            <div style={{
+              fontSize: '.8rem', fontWeight: 700, color: '#166534',
+              marginBottom: '.4rem',
+            }}>
+              ภาคเรียนที่ {term}
+            </div>
+            <textarea
+              value={parentComments[`term${term}`]}
+              onChange={e => updateParentComment(`term${term}`, e.target.value)}
+              placeholder={`บันทึกความคิดเห็นของผู้ปกครอง ภาคเรียนที่ ${term}...`}
+              rows={3}
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                padding: '.65rem .85rem', borderRadius: '10px',
+                border: '1.5px solid #bbf7d0',
+                fontFamily: 'inherit', fontSize: '.85rem', lineHeight: 1.7,
+                background: '#f0fdf4', color: '#14532d', resize: 'vertical',
+                outline: 'none', transition: 'border-color .15s',
+              }}
+              onFocus={e => { e.target.style.borderColor = '#059669'; }}
+              onBlur={e => { e.target.style.borderColor = '#bbf7d0'; }}
+            />
+            {parentComments[`term${term}`] && (
+              <div style={{ textAlign: 'right', marginTop: '.2rem' }}>
+                <span style={{ fontSize: '.7rem', color: '#9ca3af' }}>
+                  {parentComments[`term${term}`].length} ตัวอักษร
+                </span>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
       {/* CTA */}

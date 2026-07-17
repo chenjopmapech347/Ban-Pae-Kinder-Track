@@ -50,60 +50,60 @@ const TEACHER_TAB_GROUPS = [
     label: 'บันทึกประจำวัน',
     color: '#0891b2',
     tabs: [
-      { id: 'overview',     label: '📊 ภาพรวมวันนี้'    },
-      { id: 'attendance',   label: '✅ การมาเรียน'       },
-      { id: 'pickup',       label: '🚗 รับกลับบ้าน'     },
-      { id: 'healthcheck',  label: '🏥 ตรวจสุขภาพ'       },
-      { id: 'illnesscheck', label: '🤒 คัดกรองอาการป่วย' },
-      { id: 'toothbrush',   label: '🪥 แปรงฟัน'          },
-      { id: 'lunch',        label: '🍱 อาหารกลางวัน'     },
-      { id: 'milk',         label: '🥛 ดื่มนม'           },
-      { id: 'dailyroutine', label: '🗓️ กิจกรรมประจำวัน'  },
+      { id: 'overview',     label: '📊 ภาพรวมวันนี้'    },  // ดูสถานะก่อนเริ่มวัน
+      { id: 'attendance',   label: '✅ การมาเรียน'       },  // เช้า — เช็คชื่อ
+      { id: 'healthcheck',  label: '🏥 ตรวจสุขภาพ'       },  // เช้า — ตรวจสุขภาพ
+      { id: 'illnesscheck', label: '🤒 คัดกรองอาการป่วย' },  // เช้า — คัดกรอง
+      { id: 'milk',         label: '🥛 ดื่มนม'           },  // เช้า — นมเช้า
+      { id: 'dailyroutine', label: '🗓️ กิจกรรมประจำวัน'  },  // ระหว่างวัน
+      { id: 'lunch',        label: '🍱 อาหารกลางวัน'     },  // กลางวัน
+      { id: 'toothbrush',   label: '🪥 แปรงฟัน'          },  // หลังอาหาร
+      { id: 'pickup',       label: '🚗 รับกลับบ้าน'     },  // บ่าย — รับกลับ
     ],
   },
   {
     label: 'บันทึกประจำสัปดาห์',
     color: '#059669',
     tabs: [
-      { id: 'corner',      label: '🌿 แหล่งเรียนรู้นอกห้อง' },
-      { id: 'innercorner', label: '🏡 มุมประสบการณ์ในห้อง'  },
+      { id: 'innercorner', label: '🏡 มุมประสบการณ์ในห้อง'  },  // ในห้องก่อน
+      { id: 'corner',      label: '🌿 แหล่งเรียนรู้นอกห้อง' },  // แล้วนอกห้อง
     ],
   },
   {
     label: 'บันทึกตามโอกาส',
     color: '#7c3aed',
     tabs: [
-      { id: 'nutrition',   label: '⚖️ ภาวะโภชนาการ'   },
-      { id: 'specialevent', label: '🎉 กิจกรรมวันสำคัญ' },
+      { id: 'nutrition',    label: '⚖️ ภาวะโภชนาการ'   },  // ประเมินสุขภาพ
+      { id: 'specialevent', label: '🎉 กิจกรรมวันสำคัญ' },  // กิจกรรมพิเศษ
     ],
   },
   {
     label: 'รายงานและประเมินผล',
     color: '#4f46e5',
     tabs: [
-      { id: 'studentreport', label: '📒 สมุดรายงาน อ.01' },
-      { id: 'evaluation',    label: '✏️ ประเมินพัฒนาการ'  },
-      { id: 'formreports',   label: '📄 รายงานสรุป'       },
-      { id: 'activitylog',   label: '📜 ประวัติการประเมิน' },
-      { id: 'devreport',     label: '📑 รายงานพัฒนาการ'   },
+      { id: 'evaluation',    label: '✏️ ประเมินพัฒนาการ'  },  // 1. ลงมือประเมิน
+      { id: 'activitylog',   label: '📜 ประวัติการประเมิน' },  // 2. ดูประวัติ
+      { id: 'devreport',     label: '📑 รายงานพัฒนาการ'   },  // 3. รายงานพัฒนาการ
+      { id: 'formreports',   label: '📄 รายงานสรุป'       },  // 4. รายงานสรุป
+      { id: 'studentreport', label: '📒 สมุดรายงาน อ.01' },  // 5. ผลลัพธ์สุดท้าย
     ],
   },
   {
     label: 'สื่อและสภาพแวดล้อม',
     color: '#d97706',
     tabs: [
-      { id: 'mediaborrow', label: '🔄 รายการยืม-คืนสื่อ' },
-      { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ'  },
+      { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ'  },  // ขึ้นทะเบียนก่อน
+      { id: 'mediaborrow', label: '🔄 รายการยืม-คืนสื่อ' },  // แล้วจึงยืม-คืน
     ],
   },
   {
     label: 'มาตรฐานและโปรไฟล์',
     color: '#6b7280',
     tabs: [
-      { id: 'std2self',    label: '👩‍🏫 มาตรฐานที่ 2'          },
-      { id: 'nationalstd', label: '🏛 มาตรฐานแห่งชาติ'        },
-      { id: 'standards',   label: '🗺️ มาตรฐานปฐมวัย'          },
-      { id: 'profile',     label: '👤 โปรไฟล์ของฉัน'          },
+      { id: 'profile',     label: '👤 โปรไฟล์ของฉัน'     },  // ข้อมูลส่วนตัว
+      { id: 'std2self',    label: '👩‍🏫 มาตรฐานที่ 2'      },  // มาตรฐานครู
+      { id: 'standards',   label: '🗺️ มาตรฐานปฐมวัย'     },  // มาตรฐานเด็ก
+      { id: 'nationalstd', label: '🏛 มาตรฐานแห่งชาติ'   },  // ระดับชาติ
     ],
   },
   {

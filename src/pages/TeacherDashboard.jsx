@@ -23,6 +23,7 @@ const DailyRoutineTab        = lazy(() => import('../components/admin/DailyRouti
 const SpecialEventTab        = lazy(() => import('../components/admin/SpecialEventTab'));
 const StudentReportTab       = lazy(() => import('../components/admin/StudentReportTab'));
 const OverviewTab            = lazy(() => import('../components/admin/OverviewTab'));
+const TeacherOverviewTab     = lazy(() => import('../components/teacher/TeacherOverviewTab'));
 const AdminAttTab            = lazy(() => import('../components/admin/AttendanceTab'));
 const PickupTab              = lazy(() => import('../components/admin/PickupTab'));
 const ActivityLogTab         = lazy(() => import('../components/admin/ActivityLogTab'));
@@ -49,38 +50,50 @@ const TEACHER_TAB_GROUPS = [
     label: 'บันทึกประจำวัน',
     color: '#0891b2',
     tabs: [
-      { id: 'overview',     label: '📊 ภาพรวมวันนี้'       },
-      { id: 'attendance',   label: '✅ การมาเรียน'          },
-      { id: 'pickup',       label: '🚗 รับกลับบ้าน'        },  /* 🚗 not 🏠 */
-      { id: 'healthcheck',  label: '🏥 ตรวจสุขภาพ'          },
-      { id: 'illnesscheck', label: '🤒 คัดกรองอาการป่วย'    },
-      { id: 'toothbrush',   label: '🪥 แปรงฟัน'             },
-      { id: 'lunch',        label: '🍱 อาหารกลางวัน'        },
-      { id: 'milk',          label: '🥛 ดื่มนม'              },
-      { id: 'nutrition',     label: '⚖️ ภาวะโภชนาการ'        },
-      { id: 'dailyroutine',  label: '🗓️ กิจกรรมประจำวัน'     },
-      { id: 'specialevent',  label: '🎉 กิจกรรมวันสำคัญ'     },
+      { id: 'overview',     label: '📊 ภาพรวมวันนี้'    },
+      { id: 'attendance',   label: '✅ การมาเรียน'       },
+      { id: 'pickup',       label: '🚗 รับกลับบ้าน'     },
+      { id: 'healthcheck',  label: '🏥 ตรวจสุขภาพ'       },
+      { id: 'illnesscheck', label: '🤒 คัดกรองอาการป่วย' },
+      { id: 'toothbrush',   label: '🪥 แปรงฟัน'          },
+      { id: 'lunch',        label: '🍱 อาหารกลางวัน'     },
+      { id: 'milk',         label: '🥛 ดื่มนม'           },
+      { id: 'dailyroutine', label: '🗓️ กิจกรรมประจำวัน'  },
     ],
   },
   {
-    label: 'ผลการเรียน',
+    label: 'บันทึกประจำสัปดาห์',
+    color: '#059669',
+    tabs: [
+      { id: 'corner',      label: '🌿 แหล่งเรียนรู้นอกห้อง' },
+      { id: 'innercorner', label: '🏡 มุมประสบการณ์ในห้อง'  },
+    ],
+  },
+  {
+    label: 'บันทึกตามโอกาส',
+    color: '#7c3aed',
+    tabs: [
+      { id: 'nutrition',   label: '⚖️ ภาวะโภชนาการ'   },
+      { id: 'specialevent', label: '🎉 กิจกรรมวันสำคัญ' },
+    ],
+  },
+  {
+    label: 'รายงานและประเมินผล',
     color: '#4f46e5',
     tabs: [
       { id: 'studentreport', label: '📒 สมุดรายงาน อ.01' },
       { id: 'evaluation',    label: '✏️ ประเมินพัฒนาการ'  },
       { id: 'formreports',   label: '📄 รายงานสรุป'       },
       { id: 'activitylog',   label: '📜 ประวัติการประเมิน' },
+      { id: 'devreport',     label: '📑 รายงานพัฒนาการ'   },
     ],
   },
   {
     label: 'สื่อและสภาพแวดล้อม',
     color: '#d97706',
     tabs: [
-      { id: 'mediaborrow', label: '🔄 รายการยืม-คืนสื่อ'     },
-      { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ'      },
-      { id: 'corner',      label: '🌿 แหล่งเรียนรู้นอกห้อง' },
-      { id: 'innercorner', label: '🏡 มุมประสบการณ์ในห้อง'  },
-      { id: 'devreport',   label: '📑 รายงานพัฒนาการ'        },
+      { id: 'mediaborrow', label: '🔄 รายการยืม-คืนสื่อ' },
+      { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ'  },
     ],
   },
   {
@@ -550,8 +563,15 @@ export default function TeacherDashboard() {
           </div>
         }>
 
-          {/* ── Overview (daily) ── */}
-          {activeTab === 'overview'    && <OverviewTab />}
+          {/* ── Overview (daily checklist) ── */}
+          {activeTab === 'overview'    && (
+            <TeacherOverviewTab
+              onTabChange={tab => {
+                setActiveTab(tab);
+                localStorage.setItem('kt_teacherTab', tab);
+              }}
+            />
+          )}
           {activeTab === 'attendance'  && <AdminAttTab defaultClass={myClass} />}
           {activeTab === 'pickup'      && <PickupTab defaultClass={myClass} />}
           {activeTab === 'healthcheck'  && <HealthCheckTab teacherClassFilter={myClass} />}

@@ -266,10 +266,10 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
   };
   const thDA = 'padding:5px 8px;border:1px solid #d1d5db;font-weight:700;font-size:.78rem;background:#f3f4f6;text-align:center';
   const tdDA = 'padding:5px 8px;border:1px solid #d1d5db;font-size:.78rem;vertical-align:top';
-  const devAssessHtml = DEV_ASSESS_DOMAINS.map(domain => {
-    const compRows = domain.components.map((comp, ci) => {
+  const renderDevCompRows = (components, domain, startIdx = 0) =>
+    components.map((comp, ci) => {
       const row = da[comp.key] ?? {};
-      const rowBg = ci % 2 === 0 ? 'white' : '#fafafa';
+      const rowBg = (startIdx + ci) % 2 === 0 ? 'white' : '#fafafa';
       return `<tr style="background:${rowBg}">
         <td style="${tdDA};white-space:nowrap;color:${domain.color};font-weight:800">${comp.code}</td>
         <td style="${tdDA};font-weight:700">${comp.label}</td>
@@ -281,12 +281,29 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
         <td style="${tdDA};text-align:center;font-weight:800">${lvBadge(row.summary ?? 0)}</td>
       </tr>`;
     }).join('');
-    return `<tr style="background:${domain.color}20">
+
+  const devAssessHtml = DEV_ASSESS_DOMAINS.map(domain => {
+    const domainHeader = `<tr style="background:${domain.color}20">
         <td colspan="8" style="padding:6px 10px;border:1px solid #d1d5db;font-weight:900;font-size:.85rem;color:${domain.color}">
           ${domain.emoji} พัฒนาการ${domain.label}
         </td>
-      </tr>
-      ${compRows}`;
+      </tr>`;
+    if (domain.subDomains) {
+      // D4: render each sub-domain with its own header row
+      let idxOffset = 0;
+      const subRows = domain.subDomains.map(sub => {
+        const subHeader = `<tr style="background:${domain.color}10">
+          <td colspan="8" style="padding:4px 12px;border:1px solid #d1d5db;font-weight:700;font-size:.8rem;color:${domain.color}">
+            ${sub.label}
+          </td>
+        </tr>`;
+        const rows = renderDevCompRows(sub.components, domain, idxOffset);
+        idxOffset += sub.components.length;
+        return subHeader + rows;
+      }).join('');
+      return domainHeader + subRows;
+    }
+    return domainHeader + renderDevCompRows(domain.components, domain);
   }).join('');
 
   const attRows = [1, 2].map(t => {
@@ -711,75 +728,141 @@ const GROWTH_ROWS = Object.entries(GROWTH_TABLE)
   .sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
 
 // ── ความสามารถผู้เรียน 4 ด้าน (อ.01) ────────────────────────────────────────
-// โครงสร้างตามแบบฟอร์มจริง: หลักสูตรการศึกษาปฐมวัย พ.ศ. 2560
+// โครงสร้างตรงตามสมุดรายงานประจำตัวเด็กนักเรียน (อนุบาลปีที่ 2 อายุ 4-5 ปี)
+// หลักสูตรการศึกษาปฐมวัย พ.ศ. 2560
+// D1-D3: flat components | D4: subDomains (ก-จ) แต่ละด้านย่อยมี components ของตน
 const DEV_ASSESS_DOMAINS = [
   {
-    id: 'd1', label: 'ด้านร่างกาย', emoji: '⚡',
+    id: 'd1', label: 'ด้านสุขภาวะทางกาย', emoji: '⚡',
     color: '#2563eb', bg: '#eff6ff',
     components: [
       { code: '๑.๑', key: 'd1_c1', label: 'มีสุขอนามัยและสุขนิสัยที่ดี',
         descriptor: '๑.๑.๑ รับประทานอาหารที่มีประโยชน์ ดื่มน้ำสะอาด แปรงฟัน ล้างมือก่อนรับประทานอาหารและหลังจากใช้ห้องน้ำห้องส้วม นอนพักผ่อนและออกกำลังกายเป็นเวลา' },
       { code: '๑.๒', key: 'd1_c2', label: 'รักษาความปลอดภัยของตนเองและผู้อื่น',
         descriptor: '๑.๒.๑ เล่น ทำกิจกรรมและใช้สิ่งของเครื่องใช้อย่างปลอดภัย และไม่ไปกับคนแปลกหน้า' },
-      { code: '๑.๓', key: 'd1_c3', label: 'เคลื่อนไหวร่างกายคล่องแคล่วและประสานสัมพันธ์กัน',
-        descriptor: '๑.๓.๑ กระโดดขาเดียว กระโดดสลับเท้า (สกิป) และรับ-โยนลูกบอลได้\n๑.๓.๒ ใช้มือ ตา และแขนประสานสัมพันธ์กันในการทำกิจกรรม และเขียนสิ่งที่สนใจ' },
+      { code: '๑.๓', key: 'd1_c3', label: 'เคลื่อนไหวร่างกายอย่างคล่องแคล่ว ประสานสัมพันธ์กัน',
+        descriptor: '๑.๓.๑ กระโดดขาเดียวไปข้างหน้าอย่างต่อเนื่อง วิ่งหลบหลีกสิ่งกีดขวาง และรับลูกบอลโดยใช้มือทั้งสองข้าง' },
+      { code: '๑.๔', key: 'd1_c4', label: 'ใช้มือ-ตา ประสานสัมพันธ์กัน',
+        descriptor: '๑.๔.๑ ใช้กรรไกรตัดกระดาษตามแนวเส้นตรงได้ และเขียนรูปสี่เหลี่ยมตามแบบมีมุมชัดเจน' },
     ],
   },
   {
-    id: 'd2', label: 'ด้านอารมณ์-จิตใจ', emoji: '💛',
+    id: 'd2', label: 'ด้านอารมณ์ จิตใจ และสังคม', emoji: '💛',
     color: '#d97706', bg: '#fffbeb',
     components: [
-      { code: '๒.๑', key: 'd2_c1', label: 'มีความรู้สึกที่ดีต่อตนเองและผู้อื่น',
-        descriptor: '๒.๑.๑ แสดงออกถึงความรู้สึกต่างๆ ผ่านสีหน้า แววตา น้ำเสียง และท่าทางได้เหมาะสมกับสถานการณ์' },
-      { code: '๒.๒', key: 'd2_c2', label: 'มีความมั่นใจและกล้าแสดงออก',
-        descriptor: '๒.๒.๑ กล้าพูดกล้าถาม ตอบคำถาม แสดงความคิดเห็น และบอกความต้องการของตนเองได้' },
-      { code: '๒.๓', key: 'd2_c3', label: 'ควบคุมอารมณ์และแสดงออกได้เหมาะสม',
-        descriptor: '๒.๓.๑ รอคอยได้ อดทน ผ่อนปรนได้บ้างเมื่อเกิดความขัดแย้ง และระงับอารมณ์ไม่พึงประสงค์ได้เมื่อมีผู้ชี้แนะ' },
-      { code: '๒.๔', key: 'd2_c4', label: 'มีความสุขและสนุกสนานร่าเริง',
-        descriptor: '๒.๔.๑ ยิ้ม หัวเราะ สนุกสนาน และมีความสุขขณะทำกิจกรรมต่างๆ ด้วยความสมัครใจ' },
+      { code: '๒.๑', key: 'd2_c1', label: 'แสดงออกทางอารมณ์และความรู้สึกในสถานการณ์ต่างๆ',
+        descriptor: '๒.๑.๑ แสดงอารมณ์ ความรู้สึก ท่าทาง และบอกอารมณ์และความรู้สึกของตนเองตามสถานการณ์' },
+      { code: '๒.๒', key: 'd2_c2', label: 'กำกับตนเองในการทำกิจกรรม',
+        descriptor: '๒.๒.๑ วางแผนการปฏิบัติกิจกรรมและทำสิ่งต่างๆ จนสำเร็จ' },
+      { code: '๒.๓', key: 'd2_c3', label: 'มีความสัมพันธ์ที่ดีกับผู้อื่น',
+        descriptor: '๒.๓.๑ เล่นและทำงานร่วมกับเพื่อนเป็นกลุ่ม ยิ้ม ทักทายหรือพูดคุยกับบุคคลที่คุ้นเคย' },
+      { code: '๒.๔', key: 'd2_c4', label: 'มีความเห็นอกเห็นใจผู้อื่น',
+        descriptor: '๒.๔.๑ แสดงสีหน้าและท่าทางแสดงความยินดีเมื่อผู้อื่นมีความสุข และช่วยเหลือปลอบโยนเมื่อผู้อื่นได้รับบาดเจ็บ' },
+      { code: '๒.๕', key: 'd2_c5', label: 'ยอมรับและรับผิดชอบในการตัดสินใจของตนเองและกลุ่ม',
+        descriptor: '๒.๕.๑ ยอมรับการตัดสินใจของตนเอง' },
+      { code: '๒.๖', key: 'd2_c6', label: 'มีสุนทรียภาพทางศิลปะ ดนตรี และการเคลื่อนไหว',
+        descriptor: '๒.๖.๑ สนใจ มีความสุข และแสดงออกผ่านงานศิลปะ เสียงเพลง ดนตรี แสดงท่าทางและการเคลื่อนไหว' },
+      { code: '๒.๗', key: 'd2_c7', label: 'ช่วยเหลือตนเองในการปฏิบัติกิจวัตรประจำวัน',
+        descriptor: '๒.๗.๑ แต่งตัว ใช้ห้องน้ำห้องส้วม และรับประทานอาหารด้วยตนเอง' },
+      { code: '๒.๘', key: 'd2_c8', label: 'ยอมรับความเหมือนและความแตกต่างทางสังคมและวัฒนธรรม',
+        descriptor: '๒.๘.๑ เล่นและทำกิจกรรมร่วมกับเด็กที่แตกต่างไปจากตนเอง และปฏิบัติตนอย่างสุภาพกับผู้อื่นที่แตกต่างไปจากตน' },
     ],
   },
   {
-    id: 'd3', label: 'ด้านสังคม', emoji: '🤝',
+    id: 'd3', label: 'ด้านความเป็นพลเมือง และความเป็นไทย', emoji: '🏳️',
     color: '#059669', bg: '#f0fdf4',
     components: [
-      { code: '๓.๑', key: 'd3_c1', label: 'มีวินัยในตนเอง',
-        descriptor: '๓.๑.๑ ปฏิบัติตามข้อตกลงเมื่อผู้ใหญ่บอก รู้จักรอคอย และทำกิจกรรมในเวลาที่กำหนด' },
-      { code: '๓.๒', key: 'd3_c2', label: 'ซื่อสัตย์สุจริต',
-        descriptor: '๓.๒.๑ ไม่หยิบฉวยสิ่งของผู้อื่นโดยไม่ได้รับอนุญาต และบอกความจริงเมื่อถูกถาม' },
-      { code: '๓.๓', key: 'd3_c3', label: 'มีมารยาทและปฏิบัติตนตามวัฒนธรรมไทย',
-        descriptor: '๓.๓.๑ ไหว้ทักทายผู้ใหญ่ รู้จักขอบคุณและขอโทษเมื่อทำสิ่งที่ไม่ถูกต้อง' },
-      { code: '๓.๔', key: 'd3_c4', label: 'มีความรับผิดชอบ',
-        descriptor: '๓.๔.๑ รับผิดชอบงานที่ได้รับมอบหมายจนสำเร็จ และเก็บสิ่งของเข้าที่ได้เอง' },
-      { code: '๓.๕', key: 'd3_c5', label: 'ช่วยเหลือ แบ่งปัน และร่วมมือ',
-        descriptor: '๓.๕.๑ ช่วยเหลือผู้อื่น แบ่งปันสิ่งของ และเล่นหรือทำงานร่วมกับผู้อื่น 3–4 คนได้' },
+      { code: '๓.๑', key: 'd3_c1', label: 'มีคุณธรรม จริยธรรมและจิตใจที่ดี',
+        descriptor: '๓.๑.๑ ขออนุญาตหรือรอคอยเมื่อต้องการสิ่งของของผู้อื่น แสดงความรักเพื่อน มีเมตตาสัตว์เลี้ยง และแบ่งปันผู้อื่น' },
+      { code: '๓.๒', key: 'd3_c2', label: 'มีมารยาทไทยและปฏิบัติตามวัฒนธรรมไทย',
+        descriptor: '๓.๒.๑ ไหว้ กล่าวคำขอบคุณและขอโทษ ร่วมกิจกรรมตามวัฒนธรรมและประเพณีไทย' },
+      { code: '๓.๓', key: 'd3_c3', label: 'รักและภูมิใจในความเป็นไทย',
+        descriptor: '๓.๓.๑ ยืนตรงและร่วมร้องเพลงชาติไทยและเพลงสรรเสริญพระบารมี สนใจร่วมกิจกรรมที่เกี่ยวกับชาติ ศาสนาและพระมหากษัตริย์' },
+      { code: '๓.๔', key: 'd3_c4', label: 'ประหยัดและพอเพียง',
+        descriptor: '๓.๔.๑ ใช้สิ่งของ เครื่องใช้อย่างประหยัด และดูแลรักษาสิ่งของเครื่องใช้ของตนเอง' },
+      { code: '๓.๕', key: 'd3_c5', label: 'ดูแลรักษาธรรมชาติและสิ่งแวดล้อม',
+        descriptor: '๓.๕.๑ มีส่วนร่วมดูแลรักษาธรรมชาติ ต้นไม้ สัตว์เลี้ยง และสิ่งแวดล้อม คัดแยกขยะและทิ้งขยะถูกที่' },
+      { code: '๓.๖', key: 'd3_c6', label: 'มีวินัยในตนเองและปฏิบัติตนเป็นสมาชิกที่ดีของสังคม',
+        descriptor: '๓.๖.๑ เก็บของเล่นของใช้เข้าที่ เข้าแถวตามลำดับก่อนหลัง ปฏิบัติตนเป็นผู้นำและผู้ตาม มีส่วนร่วมในการแก้ปัญหาความขัดแย้งและประนีประนอม' },
     ],
   },
   {
     id: 'd4', label: 'ด้านสติปัญญา', emoji: '🧠',
     color: '#7c3aed', bg: '#f5f3ff',
-    components: [
-      { code: '๔.๑', key: 'd4_c1', label: 'สนใจเรียนรู้สิ่งรอบตัว ซักถาม และหาคำตอบได้',
-        descriptor: '๔.๑.๑ สังเกต ซักถาม ค้นหาคำตอบ และพูดอธิบายเหตุผลเกี่ยวกับสิ่งแวดล้อมรอบตัวได้' },
-      { code: '๔.๒', key: 'd4_c2', label: 'มีความคิดรวบยอดเกี่ยวกับสิ่งต่างๆ',
-        descriptor: '๔.๒.๑ จำแนก จัดหมวดหมู่ เปรียบเทียบสิ่งของโดยใช้ลักษณะ รูปร่าง สี ขนาด ตามเกณฑ์ที่กำหนด' },
-      { code: '๔.๓', key: 'd4_c3', label: 'มีทักษะทางภาษา',
-        descriptor: '๔.๓.๑ ฟัง พูด สนทนาโต้ตอบ เล่าเรื่องราวที่ต่อเนื่อง และสื่อสารสิ่งที่ต้องการได้' },
-      { code: '๔.๔', key: 'd4_c4', label: 'มีทักษะทางคณิตศาสตร์',
-        descriptor: '๔.๔.๑ นับ 1–20 และบอกจำนวนสิ่งของได้ถูกต้อง รู้จักรูปทรงเรขาคณิตพื้นฐาน และเข้าใจความสัมพันธ์เชิงพื้นที่เบื้องต้น' },
-      { code: '๔.๕', key: 'd4_c5', label: 'มีจินตนาการและความคิดสร้างสรรค์',
-        descriptor: '๔.๕.๑ สร้างสรรค์งานศิลปะ สร้างสิ่งต่างๆ จากวัสดุหลากหลาย และเล่นบทบาทสมมติด้วยจินตนาการ' },
-      { code: '๔.๖', key: 'd4_c6', label: 'มีเจตคติที่ดีต่อการเรียนรู้',
-        descriptor: '๔.๖.๑ ตั้งใจ พยายาม อดทน และมีความสุขกับการเรียนรู้สิ่งใหม่ๆ รอบตัว' },
+    // D4 ใช้ subDomains แทน flat components
+    subDomains: [
+      {
+        key: 'ga', label: 'ก. ภาษาและการรู้หนังสือ',
+        components: [
+          { code: '๔.๑', key: 'd4_c1', label: 'ฟังและสนทนาโต้ตอบกับผู้อื่น',
+            descriptor: '๔.๑.๑ ฟังผู้อื่นพูดจนจบและสนทนาโต้ตอบสอดคล้องกับเรื่องที่ฟัง' },
+          { code: '๔.๒', key: 'd4_c2', label: 'เล่าเรื่องให้ผู้อื่นเข้าใจ',
+            descriptor: '๔.๒.๑ เล่าเรื่องราวเป็นประโยคอย่างต่อเนื่องจากการฟังนิทานหรือเหตุการณ์ในชีวิตประจำวัน' },
+          { code: '๔.๓', key: 'd4_c3', label: 'อ่านภาพและสัญลักษณ์',
+            descriptor: '๔.๓.๑ ชี้ชื่อเรื่องของหนังสือที่มีภาพประกอบ อ่านภาพ สัญลักษณ์ คำ พร้อมชี้หรือกวาดตามองข้อความตามบรรทัด อ่านภาพและพูดข้อความด้วยภาษาของตน' },
+          { code: '๔.๔', key: 'd4_c4', label: 'มีความรู้เกี่ยวกับตัวอักษร',
+            descriptor: '๔.๔.๑ รู้จักตัวอักษรที่ประกอบเป็นคำที่มีความหมายกับเด็ก และชี้คำหรือข้อความที่มีความหมายในชีวิตประจำวันหรือที่เห็นบ่อยๆ' },
+          { code: '๔.๕', key: 'd4_c5', label: 'เขียนสื่อความหมายอิสระในชีวิตประจำวัน',
+            descriptor: '๔.๕.๑ เขียนตัวอักษรที่รู้จักเพื่อสื่อความหมาย คัดลอกหรือเขียนตัวอักษรด้วยวิธีที่คิดขึ้นเอง มีทิศทางการเขียนจากซ้ายไปขวา' },
+        ],
+      },
+      {
+        key: 'gb', label: 'ข. การคิดรวบยอดและการคิดคำนวณ',
+        components: [
+          { code: '๔.๖', key: 'd4_c6', label: 'จับคู่ เปรียบเทียบ จำแนก และจัดกลุ่มสิ่งต่างๆ ในชีวิตประจำวัน',
+            descriptor: '๔.๖.๑ บอกลักษณะและส่วนประกอบของสิ่งต่างๆ จากการสังเกตโดยใช้ประสาทสัมผัส จับคู่และเปรียบเทียบความแตกต่างหรือความเหมือน จำแนกและจัดกลุ่มสิ่งต่างๆ ตามเกณฑ์ที่กำหนดขึ้นเอง' },
+          { code: '๔.๗', key: 'd4_c7', label: 'เรียงลำดับและแสดงแบบรูปของสิ่งต่างๆ ในชีวิตประจำวัน',
+            descriptor: '๔.๗.๑ เรียงลำดับสิ่งของหรือเหตุการณ์อย่างน้อย ๔ ลำดับ และต่อแบบรูปของสิ่งต่างๆ ในชีวิตประจำวัน' },
+          { code: '๔.๘', key: 'd4_c8', label: 'รู้ค่าของจำนวนและใช้จำนวนและตัวเลขในชีวิตประจำวัน',
+            descriptor: '๔.๘.๑ นับปากเปล่า ๑ ถึง ๒๐ ตามลำดับ บอกและแสดงจำนวนของสิ่งต่างๆ ในชีวิตประจำวันตั้งแต่ ๑–๕' },
+          { code: '๔.๙', key: 'd4_c9', label: 'รับรู้มิติสัมพันธ์ของสิ่งต่างๆ ในชีวิตประจำวัน',
+            descriptor: '๔.๙.๑ บอกและแสดงตำแหน่งของสิ่งต่างๆ ด้วยคำพูด ท่าทาง การวาดภาพและสัญลักษณ์' },
+        ],
+      },
+      {
+        key: 'gc', label: 'ค. การคิดแก้ปัญหาและตัดสินใจ',
+        components: [
+          { code: '๔.๑๐', key: 'd4_c10', label: 'แก้ปัญหาต่างๆ ในชีวิตประจำวัน',
+            descriptor: '๔.๑๐.๑ ระบุปัญหาและแก้ปัญหาโดยลองผิดลองถูก' },
+          { code: '๔.๑๑', key: 'd4_c11', label: 'ใช้เหตุผลในการตัดสินใจ',
+            descriptor: '๔.๑๑.๑ ตัดสินใจในเรื่องง่ายๆ และเริ่มเรียนรู้ผลที่เกิดขึ้น' },
+        ],
+      },
+      {
+        key: 'gd', label: 'ง. การแสวงหาความรู้',
+        components: [
+          { code: '๔.๑๒', key: 'd4_c12', label: 'กระตือรือร้นในการเรียนรู้',
+            descriptor: '๔.๑๒.๑ สนใจ กระตือรือร้นในการเข้าร่วมกิจกรรม และมีส่วนร่วมในการค้นหาคำตอบเกี่ยวกับธรรมชาติ สิ่งแวดล้อมและโลกรอบตัว' },
+          { code: '๔.๑๓', key: 'd4_c13', label: 'ค้นหาคำตอบเกี่ยวกับปัญหาหรือข้อสงสัยโดยใช้การสืบเสาะหาความรู้',
+            descriptor: '๔.๑๓.๑ ค้นหาคำตอบของปัญหาและข้อสงสัยโดยการสังเกต สำรวจ ตั้งคำถามและนำเสนอสิ่งที่ค้นพบ' },
+        ],
+      },
+      {
+        key: 'ge', label: 'จ. จินตนาการและความคิดสร้างสรรค์',
+        components: [
+          { code: '๔.๑๔', key: 'd4_c14', label: 'ทำงานศิลปะตามจินตนาการและความคิดสร้างสรรค์',
+            descriptor: '๔.๑๔.๑ สร้างผลงานศิลปะเพื่อสื่อสารความคิดความรู้สึกของตนเอง โดยมีการดัดแปลงและแปลกใหม่จากเดิมหรือมีรายละเอียดเพิ่มขึ้น' },
+          { code: '๔.๑๕', key: 'd4_c15', label: 'แสดงท่าทาง/เคลื่อนไหวตามจินตนาการอย่างสร้างสรรค์',
+            descriptor: '๔.๑๕.๑ เคลื่อนไหวท่าทางเพื่อสื่อสารความคิดความรู้สึกของตนเองอย่างหลากหลายหรือแปลกใหม่' },
+        ],
+      },
     ],
   },
 ];
 
+// ── helpers: support both flat `components` and `subDomains` (d4) ─────────────
+function domainAllComponents(domain) {
+  if (domain.subDomains) return domain.subDomains.flatMap(s => s.components);
+  return domain.components ?? [];
+}
+
 function emptyDevAssess() {
   const r = {};
-  DEV_ASSESS_DOMAINS.forEach(d => d.components.forEach(c => {
-    r[c.key] = { t1level: 0, t1highlight: '', t2level: 0, t2highlight: '', summary: 0 };
-  }));
+  DEV_ASSESS_DOMAINS.forEach(d =>
+    domainAllComponents(d).forEach(c => {
+      r[c.key] = { t1level: 0, t1highlight: '', t2level: 0, t2highlight: '', summary: 0 };
+    })
+  );
   return r;
 }
 
@@ -787,7 +870,7 @@ function emptyDevAssess() {
 function devAssessDomainAvg(devAssessment, domainId) {
   const domain = DEV_ASSESS_DOMAINS.find(d => d.id === domainId);
   if (!domain) return 0;
-  const levels = domain.components
+  const levels = domainAllComponents(domain)
     .map(c => devAssessment?.[c.key]?.summary ?? 0)
     .filter(v => v > 0);
   if (!levels.length) return 0;
@@ -1445,133 +1528,121 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
               </div>
 
               {/* ── Active domain content ── */}
-              {DEV_ASSESS_DOMAINS.filter(d => d.id === devAssessTab).map(domain => (
-                <div key={domain.id}>
-                  {/* domain header */}
-                  <div style={{
-                    background: domain.bg, border: `2px solid ${domain.color}30`,
-                    borderRadius: '10px', padding: '.55rem 1rem', marginBottom: '1rem',
-                    fontWeight: 900, fontSize: '.88rem', color: domain.color,
-                  }}>
-                    {domain.emoji} พัฒนาการ{domain.label} — อนุบาลปีที่ 2 (อายุ 4–5 ปี)
-                  </div>
-
-                  {/* component rows */}
-                  {domain.components.map((comp, ci) => {
-                    const da = devAssessData[comp.key] ?? {};
-                    const lc1 = levelColor(da.t1level ?? 0);
-                    const lc2 = levelColor(da.t2level ?? 0);
-                    const lcs = levelColor(da.summary ?? 0);
-                    const rowBg = ci % 2 === 0 ? 'white' : '#fafafa';
-                    return (
-                      <div key={comp.key} style={{
-                        background: rowBg,
-                        border: '1px solid #e5e7eb', borderRadius: '10px',
-                        padding: '1rem', marginBottom: '.75rem',
+              {DEV_ASSESS_DOMAINS.filter(d => d.id === devAssessTab).map(domain => {
+                // Shared component card renderer
+                const CompCard = ({ comp, ci }) => {
+                  const da = devAssessData[comp.key] ?? {};
+                  const lc1 = levelColor(da.t1level ?? 0);
+                  const lc2 = levelColor(da.t2level ?? 0);
+                  const lcs = levelColor(da.summary ?? 0);
+                  const rowBg = ci % 2 === 0 ? 'white' : '#fafafa';
+                  return (
+                    <div key={comp.key} style={{
+                      background: rowBg,
+                      border: '1px solid #e5e7eb', borderRadius: '10px',
+                      padding: '1rem', marginBottom: '.75rem',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '.5rem', marginBottom: '.6rem' }}>
+                        <span style={{
+                          background: domain.color, color: 'white',
+                          borderRadius: '6px', padding: '2px 8px', fontSize: '.75rem', fontWeight: 800,
+                          whiteSpace: 'nowrap', flexShrink: 0,
+                        }}>{comp.code}</span>
+                        <span style={{ fontWeight: 700, fontSize: '.84rem', color: '#111' }}>{comp.label}</span>
+                      </div>
+                      <div style={{
+                        background: '#f9fafb', border: '1px solid #f0f0f0',
+                        borderRadius: '6px', padding: '.45rem .75rem',
+                        fontSize: '.75rem', color: '#4b5563', lineHeight: '1.6',
+                        marginBottom: '.75rem', whiteSpace: 'pre-line',
                       }}>
-                        {/* Component label */}
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '.5rem', marginBottom: '.6rem' }}>
-                          <span style={{
-                            background: domain.color, color: 'white',
-                            borderRadius: '6px', padding: '2px 8px', fontSize: '.75rem', fontWeight: 800,
-                            whiteSpace: 'nowrap', flexShrink: 0,
-                          }}>{comp.code}</span>
-                          <span style={{ fontWeight: 700, fontSize: '.84rem', color: '#111' }}>{comp.label}</span>
+                        {comp.descriptor}
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '.75rem', alignItems: 'start' }}>
+                        <div>
+                          <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#1e40af', marginBottom: '.3rem' }}>ภาคเรียนที่ 1</div>
+                          <select value={da.t1level ?? 0}
+                            onChange={e => updateDevAssess(comp.key, 't1level', Number(e.target.value))}
+                            style={{ width: '100%', padding: '5px 8px', marginBottom: '.35rem', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.8rem', background: lc1.bg, color: lc1.color, fontWeight: 700 }}>
+                            <option value={0}>— ระดับ —</option>
+                            <option value={3}>3  ดี</option>
+                            <option value={2}>2  พอใช้</option>
+                            <option value={1}>1  ปรับปรุง</option>
+                          </select>
+                          <textarea value={da.t1highlight ?? ''} onChange={e => updateDevAssess(comp.key, 't1highlight', e.target.value)}
+                            placeholder="จุดเด่นความสามารถ ภาคเรียน 1..." rows={3}
+                            style={{ width: '100%', padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.78rem', resize: 'vertical', boxSizing: 'border-box', lineHeight: '1.5' }} />
                         </div>
-                        {/* Descriptor */}
-                        <div style={{
-                          background: '#f9fafb', border: '1px solid #f0f0f0',
-                          borderRadius: '6px', padding: '.45rem .75rem',
-                          fontSize: '.75rem', color: '#4b5563', lineHeight: '1.6',
-                          marginBottom: '.75rem', whiteSpace: 'pre-line',
-                        }}>
-                          {comp.descriptor}
+                        <div>
+                          <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#065f46', marginBottom: '.3rem' }}>ภาคเรียนที่ 2</div>
+                          <select value={da.t2level ?? 0}
+                            onChange={e => updateDevAssess(comp.key, 't2level', Number(e.target.value))}
+                            style={{ width: '100%', padding: '5px 8px', marginBottom: '.35rem', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.8rem', background: lc2.bg, color: lc2.color, fontWeight: 700 }}>
+                            <option value={0}>— ระดับ —</option>
+                            <option value={3}>3  ดี</option>
+                            <option value={2}>2  พอใช้</option>
+                            <option value={1}>1  ปรับปรุง</option>
+                          </select>
+                          <textarea value={da.t2highlight ?? ''} onChange={e => updateDevAssess(comp.key, 't2highlight', e.target.value)}
+                            placeholder="จุดเด่นความสามารถ ภาคเรียน 2..." rows={3}
+                            style={{ width: '100%', padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.78rem', resize: 'vertical', boxSizing: 'border-box', lineHeight: '1.5' }} />
                         </div>
-                        {/* Fields: 2 terms + summary */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '.75rem', alignItems: 'start' }}>
-                          {/* Term 1 */}
-                          <div>
-                            <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#1e40af', marginBottom: '.3rem' }}>
-                              ภาคเรียนที่ 1
-                            </div>
-                            <select value={da.t1level ?? 0}
-                              onChange={e => updateDevAssess(comp.key, 't1level', Number(e.target.value))}
-                              style={{
-                                width: '100%', padding: '5px 8px', marginBottom: '.35rem',
-                                border: '1px solid #d1d5db', borderRadius: '6px',
-                                fontFamily: 'inherit', fontSize: '.8rem',
-                                background: lc1.bg, color: lc1.color, fontWeight: 700,
-                              }}>
-                              <option value={0}>— ระดับ —</option>
-                              <option value={3}>3  ดี</option>
-                              <option value={2}>2  พอใช้</option>
-                              <option value={1}>1  ปรับปรุง</option>
-                            </select>
-                            <textarea
-                              value={da.t1highlight ?? ''}
-                              onChange={e => updateDevAssess(comp.key, 't1highlight', e.target.value)}
-                              placeholder="จุดเด่นความสามารถ ภาคเรียน 1..."
-                              rows={3}
-                              style={{
-                                width: '100%', padding: '6px 8px', border: '1px solid #d1d5db',
-                                borderRadius: '6px', fontFamily: 'inherit', fontSize: '.78rem',
-                                resize: 'vertical', boxSizing: 'border-box', lineHeight: '1.5',
-                              }} />
-                          </div>
-                          {/* Term 2 */}
-                          <div>
-                            <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#065f46', marginBottom: '.3rem' }}>
-                              ภาคเรียนที่ 2
-                            </div>
-                            <select value={da.t2level ?? 0}
-                              onChange={e => updateDevAssess(comp.key, 't2level', Number(e.target.value))}
-                              style={{
-                                width: '100%', padding: '5px 8px', marginBottom: '.35rem',
-                                border: '1px solid #d1d5db', borderRadius: '6px',
-                                fontFamily: 'inherit', fontSize: '.8rem',
-                                background: lc2.bg, color: lc2.color, fontWeight: 700,
-                              }}>
-                              <option value={0}>— ระดับ —</option>
-                              <option value={3}>3  ดี</option>
-                              <option value={2}>2  พอใช้</option>
-                              <option value={1}>1  ปรับปรุง</option>
-                            </select>
-                            <textarea
-                              value={da.t2highlight ?? ''}
-                              onChange={e => updateDevAssess(comp.key, 't2highlight', e.target.value)}
-                              placeholder="จุดเด่นความสามารถ ภาคเรียน 2..."
-                              rows={3}
-                              style={{
-                                width: '100%', padding: '6px 8px', border: '1px solid #d1d5db',
-                                borderRadius: '6px', fontFamily: 'inherit', fontSize: '.78rem',
-                                resize: 'vertical', boxSizing: 'border-box', lineHeight: '1.5',
-                              }} />
-                          </div>
-                          {/* Summary */}
-                          <div style={{ minWidth: '90px' }}>
-                            <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#374151', marginBottom: '.3rem' }}>
-                              สรุประดับ
-                            </div>
-                            <select value={da.summary ?? 0}
-                              onChange={e => updateDevAssess(comp.key, 'summary', Number(e.target.value))}
-                              style={{
-                                width: '100%', padding: '5px 8px',
-                                border: '1px solid #d1d5db', borderRadius: '6px',
-                                fontFamily: 'inherit', fontSize: '.8rem',
-                                background: lcs.bg, color: lcs.color, fontWeight: 800,
-                              }}>
-                              <option value={0}>—</option>
-                              <option value={3}>3 ดี</option>
-                              <option value={2}>2 พอใช้</option>
-                              <option value={1}>1 ปรับปรุง</option>
-                            </select>
-                          </div>
+                        <div style={{ minWidth: '90px' }}>
+                          <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#374151', marginBottom: '.3rem' }}>สรุประดับ</div>
+                          <select value={da.summary ?? 0}
+                            onChange={e => updateDevAssess(comp.key, 'summary', Number(e.target.value))}
+                            style={{ width: '100%', padding: '5px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.8rem', background: lcs.bg, color: lcs.color, fontWeight: 800 }}>
+                            <option value={0}>—</option>
+                            <option value={3}>3 ดี</option>
+                            <option value={2}>2 พอใช้</option>
+                            <option value={1}>1 ปรับปรุง</option>
+                          </select>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              ))}
+                    </div>
+                  );
+                };
+
+                return (
+                  <div key={domain.id}>
+                    {/* domain header */}
+                    <div style={{
+                      background: domain.bg, border: `2px solid ${domain.color}30`,
+                      borderRadius: '10px', padding: '.55rem 1rem', marginBottom: '1rem',
+                      fontWeight: 900, fontSize: '.88rem', color: domain.color,
+                    }}>
+                      {domain.emoji} พัฒนาการ{domain.label} — อนุบาลปีที่ 2 (อายุ 4–5 ปี)
+                    </div>
+
+                    {domain.subDomains ? (
+                      // D4: render sub-domain sections (ก-จ)
+                      (() => {
+                        let globalIdx = 0;
+                        return domain.subDomains.map(sub => (
+                          <div key={sub.key} style={{ marginBottom: '1.25rem' }}>
+                            <div style={{
+                              background: `${domain.color}15`, borderLeft: `4px solid ${domain.color}`,
+                              borderRadius: '6px', padding: '.4rem .9rem', marginBottom: '.6rem',
+                              fontWeight: 800, fontSize: '.82rem', color: domain.color,
+                            }}>
+                              {sub.label}
+                            </div>
+                            {sub.components.map((comp) => {
+                              const ci = globalIdx++;
+                              return <CompCard key={comp.key} comp={comp} ci={ci} />;
+                            })}
+                          </div>
+                        ));
+                      })()
+                    ) : (
+                      // D1-D3: flat components
+                      domain.components.map((comp, ci) => (
+                        <CompCard key={comp.key} comp={comp} ci={ci} />
+                      ))
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 

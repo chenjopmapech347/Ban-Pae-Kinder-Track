@@ -1001,11 +1001,10 @@ function ViewAISummary({ students, assessmentTopics, indicators, activities, aiA
 // MAIN
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function ReportsTab({ teacherClassFilter = null }) {
-  const { students: allStudents, assessmentTopics, indicators, activities, schools, activityLogs, aiApiKey, allClassNames } = useApp();
+  const { students: allStudents, assessmentTopics, indicators, activities, schools, activityLogs, aiApiKey, allClassNames, schoolLogo } = useApp();
   const ALL_CLASSES = allClassNames;
   const [subTab, setSubTab] = useState('forms');
   const schoolName = schools?.[0]?.name ?? 'โรงเรียน';
-  const schoolLogo = schools?.[0]?.logo ?? null;
 
   // ถ้าเป็นครูที่ล็อกอิน ให้กรองเฉพาะห้องของตัวเอง
   const students = useMemo(

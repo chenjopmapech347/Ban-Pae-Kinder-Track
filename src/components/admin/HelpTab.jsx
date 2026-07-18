@@ -1,5 +1,137 @@
 import { useState } from 'react';
 
+const ROLE_FLOWS = [
+  {
+    icon: '🛡️',
+    title: 'ผู้ดูแลระบบ (Admin)',
+    color: '#7c3aed',
+    bg: '#faf5ff',
+    border: '#ddd6fe',
+    login: 'username + PIN (Admin)',
+    dashboard: 'Admin Dashboard',
+    actions: [
+      { icon: '👶', label: 'จัดการนักเรียน / ครู / ห้องเรียน' },
+      { icon: '📅', label: 'บันทึกกิจกรรมประจำวัน (ทุกประเภท)' },
+      { icon: '📊', label: 'ประเมินพัฒนาการทุกห้อง' },
+      { icon: '📈', label: 'ดูรายงานรวม / Export Excel / PDF' },
+      { icon: '⚙️', label: 'ตั้งค่าระบบ โรงเรียน ปีการศึกษา' },
+      { icon: '💬', label: 'กรอกความเห็นผู้อำนวยการใน อ.01' },
+    ],
+  },
+  {
+    icon: '👩‍🏫',
+    title: 'ครู (Teacher)',
+    color: '#059669',
+    bg: '#ecfdf5',
+    border: '#a7f3d0',
+    login: 'username + PIN (ครู)',
+    dashboard: 'Teacher Dashboard',
+    actions: [
+      { icon: '✅', label: 'เช็คชื่อนักเรียนรายวัน' },
+      { icon: '🏥', label: 'ตรวจสุขภาพ / คัดกรองอาการป่วย' },
+      { icon: '🍱', label: 'บันทึกอาหาร / นม / แปรงฟัน' },
+      { icon: '📊', label: 'ประเมินพัฒนาการ (ห้องตัวเอง)' },
+      { icon: '📑', label: 'ดูรายงานห้อง / พิมพ์รายงาน' },
+      { icon: '💬', label: 'กรอกความเห็นครูใน สมุดรายงาน อ.01' },
+    ],
+  },
+  {
+    icon: '👨‍👩‍👧',
+    title: 'ผู้ปกครอง (Parent)',
+    color: '#0891b2',
+    bg: '#f0f9ff',
+    border: '#bae6fd',
+    login: 'PIN ที่ครูกำหนดให้',
+    dashboard: 'Parent View (ข้อมูลบุตรหลาน)',
+    actions: [
+      { icon: '📋', label: 'ดูประวัติการมาเรียน' },
+      { icon: '🏥', label: 'ดูผลตรวจสุขภาพรายวัน' },
+      { icon: '📊', label: 'ดูผลการประเมินพัฒนาการ' },
+      { icon: '💬', label: 'กรอกความคิดเห็น (ภาคเรียน 1–2) ใน อ.01' },
+      { icon: '📰', label: 'ดูประกาศจากโรงเรียน' },
+    ],
+  },
+];
+
+function FlowArrow({ color }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ width: 2, height: 10, background: color }} />
+      <div style={{ width: 0, height: 0,
+        borderLeft: '5px solid transparent', borderRight: '5px solid transparent',
+        borderTop: `7px solid ${color}` }} />
+    </div>
+  );
+}
+
+function RoleFlowChart() {
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+      gap: '1rem',
+      marginBottom: '.75rem',
+    }}>
+      {ROLE_FLOWS.map(role => (
+        <div key={role.title} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+
+          {/* Role header */}
+          <div style={{
+            width: '100%', background: role.color, color: 'white',
+            borderRadius: '10px 10px 0 0', padding: '.6rem .85rem',
+            textAlign: 'center', fontWeight: 800, fontSize: '.83rem',
+          }}>
+            {role.icon} {role.title}
+          </div>
+
+          <FlowArrow color={role.color} />
+
+          {/* Login */}
+          <div style={{
+            width: '100%', background: role.bg, border: `1.5px solid ${role.border}`,
+            borderRadius: '8px', padding: '.45rem .75rem',
+            textAlign: 'center', fontSize: '.76rem', color: role.color, fontWeight: 600,
+          }}>
+            🔐 {role.login}
+          </div>
+
+          <FlowArrow color={role.color} />
+
+          {/* Dashboard */}
+          <div style={{
+            width: '100%', background: role.color, color: 'white',
+            borderRadius: '8px', padding: '.45rem .75rem',
+            textAlign: 'center', fontSize: '.8rem', fontWeight: 700,
+          }}>
+            🖥️ {role.dashboard}
+          </div>
+
+          <FlowArrow color={role.color} />
+
+          {/* Actions */}
+          <div style={{
+            width: '100%', border: `1.5px solid ${role.border}`,
+            borderRadius: '8px', padding: '.5rem .6rem',
+            background: 'white', display: 'flex', flexDirection: 'column', gap: '.28rem',
+          }}>
+            {role.actions.map((action, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: '.45rem',
+                background: role.bg, borderRadius: '6px',
+                padding: '.22rem .5rem', fontSize: '.76rem', color: '#374151',
+              }}>
+                <span>{action.icon}</span>
+                <span>{action.label}</span>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      ))}
+    </div>
+  );
+}
+
 const SECTIONS = [
   {
     id: 'overview',
@@ -20,6 +152,21 @@ const SECTIONS = [
           { icon: '👩‍🏫', role: 'ครู (Teacher)', desc: 'บันทึกกิจกรรมประจำวัน เช็คชื่อ ประเมินพัฒนาการ ดูรายงานห้องตัวเอง' },
           { icon: '👨‍👩‍👧', role: 'ผู้ปกครอง (Parent)', desc: 'ดูข้อมูลบุตรหลาน: การมาเรียน การประเมิน รายงานพัฒนาการ' },
         ],
+      },
+    ],
+  },
+  {
+    id: 'flowchart',
+    icon: '🗺️',
+    title: 'Flow การทำงานแต่ละ Role',
+    color: '#374151',
+    bg: '#f9fafb',
+    border: '#e5e7eb',
+    content: [
+      { type: 'flowchart' },
+      {
+        type: 'info',
+        text: 'ผู้ปกครองไม่สามารถแก้ไขข้อมูลนักเรียนได้ — ดูได้อย่างเดียว ยกเว้นช่องกรอกความคิดเห็น (ภาคเรียน 1–2)',
       },
     ],
   },
@@ -86,7 +233,7 @@ const SECTIONS = [
         items: [
           'ไปที่เมนู "✏️ ประเมินพัฒนาการ" หรือกดปุ่ม 📊 หน้าชื่อเด็ก',
           'เลือกเด็กที่ต้องการประเมิน',
-          'เลือกหัวข้อ → ตัวบ่งชี้ → บันทึกระดับ (ผ่าน / ไม่ผ่าน / กำลังพัฒนา)',
+          'เลือกหัวข้อ → ตัวบ่งชี้ → บันทึกระดับ (3 = ดีมาก / 2 = พอใช้ / 1 = ต้องพัฒนา)',
           'ระบบ AI ผู้ช่วยจะแนะนำกิจกรรมเสริมอัตโนมัติ',
           'ดูสรุปผลได้ที่ "📈 รายงานสรุปผลการประเมินพัฒนาการ" และ "📒 สมุดรายงาน อ.01"',
         ],
@@ -184,7 +331,7 @@ const SECTIONS = [
       {
         type: 'grid',
         items: [
-          { icon: '🏛️', title: 'โรงเรียน', desc: 'ตั้งค่าชื่อโรงเรียน ที่อยู่ และข้อมูลองค์กร' },
+          { icon: '🏛️', title: 'โรงเรียน', desc: 'ตั้งค่าชื่อโรงเรียน ที่อยู่ ข้อมูลองค์กร และอัปโหลดโลโก้โรงเรียน (ใช้ในรายงานที่พิมพ์ทุกฉบับ)' },
           { icon: '👩‍🏫', title: 'ครู', desc: 'เพิ่ม/ลบ/แก้ไขบัญชีครู กำหนด PIN เข้าระบบ' },
           { icon: '🏫', title: 'ห้องเรียน', desc: 'เพิ่ม/ลบห้องเรียน กำหนดครูประจำชั้น' },
           { icon: '📅', title: 'ภาคเรียน', desc: 'กำหนดวันเปิด-ปิด ภาคเรียน 1 และ 2 รายปีการศึกษา' },
@@ -276,6 +423,10 @@ function SectionBlock({ section, isOpen, onToggle }) {
 }
 
 function ContentBlock({ block, color, bg, border }) {
+  if (block.type === 'flowchart') {
+    return <RoleFlowChart />;
+  }
+
   if (block.type === 'para') {
     return (
       <p style={{ color: '#374151', lineHeight: 1.7, fontSize: '.88rem', margin: '0 0 .75rem' }}>{block.text}</p>

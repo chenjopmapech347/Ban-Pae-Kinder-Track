@@ -88,7 +88,7 @@ const TAB_GROUPS = [
       { id: 'evaluation',    label: '📊 ประเมินพัฒนาการ'        },
       { id: 'activitylog',   label: '📜 ประวัติการประเมิน'      },
       { id: 'devreport',     label: '📑 ผลการประเมินพัฒนาการ'   },
-      { id: 'reports',       label: '📈 รายงานสรุปการประเมิน'  },
+      { id: 'reports',       label: '📈 รายงานสรุปผลการประเมินพัฒนาการ' },
       { id: 'studentreport', label: '📒 สมุดรายงาน อ.01'       },
       { id: 'nationalstd',   label: '🏛 มาตรฐานแห่งชาติ'       },
     ],

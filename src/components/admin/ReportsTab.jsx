@@ -998,7 +998,7 @@ export default function ReportsTab({ teacherClassFilter = null }) {
   return (
     <div className="glass p-6 animate-fade">
       <div className="page-header mb-4">
-        <h3>📋 สรุปการประเมินผล</h3>
+        <h3>📋 รายงานสรุปผลการประเมินพัฒนาการ</h3>
       </div>
 
       {/* ── Export panel ── */}

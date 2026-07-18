@@ -188,7 +188,7 @@ function emptyGrowth() {
 }
 
 // ── print helper ──────────────────────────────────────────────────────────────
-function printReport({ student, physData, growthRecords, attendanceSummary, healthServices,
+function printReport({ student, physData, growthRecords, devAssessment, attendanceSummary, healthServices,
                        devDomains, teacherComments, parentComments, directorsComment,
                        academicYear, schoolName, schoolPhilosophy, schoolVision }) {
   const _philosophy = schoolPhilosophy?.trim() || PHILOSOPHY_TEXT;
@@ -255,6 +255,39 @@ function printReport({ student, physData, growthRecords, attendanceSummary, heal
       ระดับ 2 หมายถึง ค่อนข้างปกติ / ค่อนข้างมาก หรือ ค่อนข้างน้อยกว่าเกณฑ์มาตรฐาน &nbsp;·&nbsp;
       ระดับ 1 หมายถึง ไม่ปกติ ควรส่งเสริม / มาก หรือน้อยกว่าเกณฑ์มาตรฐาน
     </div>`;
+
+  // ── ความสามารถผู้เรียน 4 ด้าน — print HTML ──────────────────────────────────
+  const da = devAssessment ?? {};
+  const lvBadge = (n) => {
+    const c = n === 3 ? '#059669' : n === 2 ? '#b45309' : n === 1 ? '#dc2626' : '#9ca3af';
+    return n > 0
+      ? `<span style="background:${c}20;color:${c};border-radius:4px;padding:1px 6px;font-size:.75rem;font-weight:700">${n}</span>`
+      : '<span style="color:#9ca3af">—</span>';
+  };
+  const thDA = 'padding:5px 8px;border:1px solid #d1d5db;font-weight:700;font-size:.78rem;background:#f3f4f6;text-align:center';
+  const tdDA = 'padding:5px 8px;border:1px solid #d1d5db;font-size:.78rem;vertical-align:top';
+  const devAssessHtml = DEV_ASSESS_DOMAINS.map(domain => {
+    const compRows = domain.components.map((comp, ci) => {
+      const row = da[comp.key] ?? {};
+      const rowBg = ci % 2 === 0 ? 'white' : '#fafafa';
+      return `<tr style="background:${rowBg}">
+        <td style="${tdDA};white-space:nowrap;color:${domain.color};font-weight:800">${comp.code}</td>
+        <td style="${tdDA};font-weight:700">${comp.label}</td>
+        <td style="${tdDA};font-size:.72rem;color:#4b5563;white-space:pre-line">${comp.descriptor}</td>
+        <td style="${tdDA};text-align:center">${lvBadge(row.t1level ?? 0)}</td>
+        <td style="${tdDA}">${row.t1highlight || ''}</td>
+        <td style="${tdDA};text-align:center">${lvBadge(row.t2level ?? 0)}</td>
+        <td style="${tdDA}">${row.t2highlight || ''}</td>
+        <td style="${tdDA};text-align:center;font-weight:800">${lvBadge(row.summary ?? 0)}</td>
+      </tr>`;
+    }).join('');
+    return `<tr style="background:${domain.color}20">
+        <td colspan="8" style="padding:6px 10px;border:1px solid #d1d5db;font-weight:900;font-size:.85rem;color:${domain.color}">
+          ${domain.emoji} พัฒนาการ${domain.label}
+        </td>
+      </tr>
+      ${compRows}`;
+  }).join('');
 
   const attRows = [1, 2].map(t => {
     const a = attendanceSummary[`term${t}`] ?? {};
@@ -549,7 +582,23 @@ function printReport({ student, physData, growthRecords, attendanceSummary, heal
       ${hsRows}
     </table>
 
-    <h2>4. บันทึกผลการประเมินพัฒนาการ</h2>
+    <h2>4. บันทึกผลการประเมินพัฒนาการ — ความสามารถผู้เรียนเมื่อจบชั้นปี</h2>
+    <p style="font-size:.78rem;color:#555;margin-bottom:6px">อนุบาลปีที่ 2 (อายุ 4–5 ปี) · ระดับ 3 = ดี · ระดับ 2 = พอใช้ · ระดับ 1 = ปรับปรุง</p>
+    <table>
+      <tr>
+        <th style="${thDA};width:48px">รหัส</th>
+        <th style="${thDA}">องค์ประกอบ</th>
+        <th style="${thDA}">สภาพที่พึงประสงค์ อนุบาลปีที่ 2</th>
+        <th style="${thDA};width:44px">ภาค 1 ระดับ</th>
+        <th style="${thDA}">จุดเด่น ภาค 1</th>
+        <th style="${thDA};width:44px">ภาค 2 ระดับ</th>
+        <th style="${thDA}">จุดเด่น ภาค 2</th>
+        <th style="${thDA};width:52px">สรุป</th>
+      </tr>
+      ${devAssessHtml}
+    </table>
+
+    <h2>4.1 ผลการประเมินตัวบ่งชี้ (จากระบบประเมิน)</h2>
     <table>
       <tr><th style="width:60%">พฤติกรรม / ตัวบ่งชี้</th><th>ภาคเรียน 1</th><th>ภาคเรียน 2</th></tr>
       ${devHtml}
@@ -661,6 +710,90 @@ const GROWTH_ROWS = Object.entries(GROWTH_TABLE)
   })
   .sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
 
+// ── ความสามารถผู้เรียน 4 ด้าน (อ.01) ────────────────────────────────────────
+// โครงสร้างตามแบบฟอร์มจริง: หลักสูตรการศึกษาปฐมวัย พ.ศ. 2560
+const DEV_ASSESS_DOMAINS = [
+  {
+    id: 'd1', label: 'ด้านร่างกาย', emoji: '⚡',
+    color: '#2563eb', bg: '#eff6ff',
+    components: [
+      { code: '๑.๑', key: 'd1_c1', label: 'มีสุขอนามัยและสุขนิสัยที่ดี',
+        descriptor: '๑.๑.๑ รับประทานอาหารที่มีประโยชน์ ดื่มน้ำสะอาด แปรงฟัน ล้างมือก่อนรับประทานอาหารและหลังจากใช้ห้องน้ำห้องส้วม นอนพักผ่อนและออกกำลังกายเป็นเวลา' },
+      { code: '๑.๒', key: 'd1_c2', label: 'รักษาความปลอดภัยของตนเองและผู้อื่น',
+        descriptor: '๑.๒.๑ เล่น ทำกิจกรรมและใช้สิ่งของเครื่องใช้อย่างปลอดภัย และไม่ไปกับคนแปลกหน้า' },
+      { code: '๑.๓', key: 'd1_c3', label: 'เคลื่อนไหวร่างกายคล่องแคล่วและประสานสัมพันธ์กัน',
+        descriptor: '๑.๓.๑ กระโดดขาเดียว กระโดดสลับเท้า (สกิป) และรับ-โยนลูกบอลได้\n๑.๓.๒ ใช้มือ ตา และแขนประสานสัมพันธ์กันในการทำกิจกรรม และเขียนสิ่งที่สนใจ' },
+    ],
+  },
+  {
+    id: 'd2', label: 'ด้านอารมณ์-จิตใจ', emoji: '💛',
+    color: '#d97706', bg: '#fffbeb',
+    components: [
+      { code: '๒.๑', key: 'd2_c1', label: 'มีความรู้สึกที่ดีต่อตนเองและผู้อื่น',
+        descriptor: '๒.๑.๑ แสดงออกถึงความรู้สึกต่างๆ ผ่านสีหน้า แววตา น้ำเสียง และท่าทางได้เหมาะสมกับสถานการณ์' },
+      { code: '๒.๒', key: 'd2_c2', label: 'มีความมั่นใจและกล้าแสดงออก',
+        descriptor: '๒.๒.๑ กล้าพูดกล้าถาม ตอบคำถาม แสดงความคิดเห็น และบอกความต้องการของตนเองได้' },
+      { code: '๒.๓', key: 'd2_c3', label: 'ควบคุมอารมณ์และแสดงออกได้เหมาะสม',
+        descriptor: '๒.๓.๑ รอคอยได้ อดทน ผ่อนปรนได้บ้างเมื่อเกิดความขัดแย้ง และระงับอารมณ์ไม่พึงประสงค์ได้เมื่อมีผู้ชี้แนะ' },
+      { code: '๒.๔', key: 'd2_c4', label: 'มีความสุขและสนุกสนานร่าเริง',
+        descriptor: '๒.๔.๑ ยิ้ม หัวเราะ สนุกสนาน และมีความสุขขณะทำกิจกรรมต่างๆ ด้วยความสมัครใจ' },
+    ],
+  },
+  {
+    id: 'd3', label: 'ด้านสังคม', emoji: '🤝',
+    color: '#059669', bg: '#f0fdf4',
+    components: [
+      { code: '๓.๑', key: 'd3_c1', label: 'มีวินัยในตนเอง',
+        descriptor: '๓.๑.๑ ปฏิบัติตามข้อตกลงเมื่อผู้ใหญ่บอก รู้จักรอคอย และทำกิจกรรมในเวลาที่กำหนด' },
+      { code: '๓.๒', key: 'd3_c2', label: 'ซื่อสัตย์สุจริต',
+        descriptor: '๓.๒.๑ ไม่หยิบฉวยสิ่งของผู้อื่นโดยไม่ได้รับอนุญาต และบอกความจริงเมื่อถูกถาม' },
+      { code: '๓.๓', key: 'd3_c3', label: 'มีมารยาทและปฏิบัติตนตามวัฒนธรรมไทย',
+        descriptor: '๓.๓.๑ ไหว้ทักทายผู้ใหญ่ รู้จักขอบคุณและขอโทษเมื่อทำสิ่งที่ไม่ถูกต้อง' },
+      { code: '๓.๔', key: 'd3_c4', label: 'มีความรับผิดชอบ',
+        descriptor: '๓.๔.๑ รับผิดชอบงานที่ได้รับมอบหมายจนสำเร็จ และเก็บสิ่งของเข้าที่ได้เอง' },
+      { code: '๓.๕', key: 'd3_c5', label: 'ช่วยเหลือ แบ่งปัน และร่วมมือ',
+        descriptor: '๓.๕.๑ ช่วยเหลือผู้อื่น แบ่งปันสิ่งของ และเล่นหรือทำงานร่วมกับผู้อื่น 3–4 คนได้' },
+    ],
+  },
+  {
+    id: 'd4', label: 'ด้านสติปัญญา', emoji: '🧠',
+    color: '#7c3aed', bg: '#f5f3ff',
+    components: [
+      { code: '๔.๑', key: 'd4_c1', label: 'สนใจเรียนรู้สิ่งรอบตัว ซักถาม และหาคำตอบได้',
+        descriptor: '๔.๑.๑ สังเกต ซักถาม ค้นหาคำตอบ และพูดอธิบายเหตุผลเกี่ยวกับสิ่งแวดล้อมรอบตัวได้' },
+      { code: '๔.๒', key: 'd4_c2', label: 'มีความคิดรวบยอดเกี่ยวกับสิ่งต่างๆ',
+        descriptor: '๔.๒.๑ จำแนก จัดหมวดหมู่ เปรียบเทียบสิ่งของโดยใช้ลักษณะ รูปร่าง สี ขนาด ตามเกณฑ์ที่กำหนด' },
+      { code: '๔.๓', key: 'd4_c3', label: 'มีทักษะทางภาษา',
+        descriptor: '๔.๓.๑ ฟัง พูด สนทนาโต้ตอบ เล่าเรื่องราวที่ต่อเนื่อง และสื่อสารสิ่งที่ต้องการได้' },
+      { code: '๔.๔', key: 'd4_c4', label: 'มีทักษะทางคณิตศาสตร์',
+        descriptor: '๔.๔.๑ นับ 1–20 และบอกจำนวนสิ่งของได้ถูกต้อง รู้จักรูปทรงเรขาคณิตพื้นฐาน และเข้าใจความสัมพันธ์เชิงพื้นที่เบื้องต้น' },
+      { code: '๔.๕', key: 'd4_c5', label: 'มีจินตนาการและความคิดสร้างสรรค์',
+        descriptor: '๔.๕.๑ สร้างสรรค์งานศิลปะ สร้างสิ่งต่างๆ จากวัสดุหลากหลาย และเล่นบทบาทสมมติด้วยจินตนาการ' },
+      { code: '๔.๖', key: 'd4_c6', label: 'มีเจตคติที่ดีต่อการเรียนรู้',
+        descriptor: '๔.๖.๑ ตั้งใจ พยายาม อดทน และมีความสุขกับการเรียนรู้สิ่งใหม่ๆ รอบตัว' },
+    ],
+  },
+];
+
+function emptyDevAssess() {
+  const r = {};
+  DEV_ASSESS_DOMAINS.forEach(d => d.components.forEach(c => {
+    r[c.key] = { t1level: 0, t1highlight: '', t2level: 0, t2highlight: '', summary: 0 };
+  }));
+  return r;
+}
+
+// level badge helper for devAssess domains (tab header)
+function devAssessDomainAvg(devAssessment, domainId) {
+  const domain = DEV_ASSESS_DOMAINS.find(d => d.id === domainId);
+  if (!domain) return 0;
+  const levels = domain.components
+    .map(c => devAssessment?.[c.key]?.summary ?? 0)
+    .filter(v => v > 0);
+  if (!levels.length) return 0;
+  return Math.round(levels.reduce((a, b) => a + b, 0) / levels.length);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 //  Main Component
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -680,6 +813,7 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
 
   const [selStudentId, setSelStudentId] = useState(null);
   const [activeSection, setActiveSection] = useState('physical');
+  const [devAssessTab, setDevAssessTab] = useState('d1');
   const [newHs, setNewHs] = useState({ date: todayISO(), service: '', note: '' });
 
   // ── filtered students ─────────────────────────────────────────────────────
@@ -709,6 +843,7 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
       academicYear,
       physicalRecords: emptyPhys(),
       growthRecords: emptyGrowth(),
+      devAssessment: emptyDevAssess(),
       healthServices: [],
       teacherComments:  { term1: '', term2: '' },
       parentComments:   { term1: '', term2: '' },
@@ -726,7 +861,8 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
     });
     return result;
   })();
-  const growthData = rec?.growthRecords ?? emptyGrowth();
+  const growthData     = rec?.growthRecords  ?? emptyGrowth();
+  const devAssessData  = rec?.devAssessment  ?? emptyDevAssess();
   const healthServices = rec?.healthServices ?? [];
   const teacherComments  = rec?.teacherComments  ?? { term1: '', term2: '' };
   const parentComments   = rec?.parentComments   ?? { term1: '', term2: '' };
@@ -737,7 +873,7 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
     if (!recKey) return;
     setStudentReportRecords(prev => ({
       ...prev,
-      [recKey]: { ...(prev[recKey] ?? { studentId: selStudentId, academicYear, physicalRecords: emptyPhys(), growthRecords: emptyGrowth(), healthServices: [], teacherComments: { term1: '', term2: '' }, parentComments: { term1: '', term2: '' }, directorsComment: '' }), ...patch },
+      [recKey]: { ...(prev[recKey] ?? { studentId: selStudentId, academicYear, physicalRecords: emptyPhys(), growthRecords: emptyGrowth(), devAssessment: emptyDevAssess(), healthServices: [], teacherComments: { term1: '', term2: '' }, parentComments: { term1: '', term2: '' }, directorsComment: '' }), ...patch },
     }));
   }, [recKey, setStudentReportRecords, selStudentId, academicYear]);
 
@@ -763,6 +899,12 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
     const current = growthData[key] ?? { weight: '', height: '' };
     saveRec({ growthRecords: { ...growthData, [key]: { ...current, [field]: value } } });
   }, [growthData, saveRec]);
+
+  // ── dev assess update ─────────────────────────────────────────────────────
+  const updateDevAssess = useCallback((key, field, value) => {
+    const current = devAssessData[key] ?? { t1level: 0, t1highlight: '', t2level: 0, t2highlight: '', summary: 0 };
+    saveRec({ devAssessment: { ...devAssessData, [key]: { ...current, [field]: value } } });
+  }, [devAssessData, saveRec]);
 
   // ── attendance summary (computed from dailyRecords) ───────────────────────
   const attendanceSummary = useMemo(() => {
@@ -923,7 +1065,7 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
               <span style={{ fontSize: '.82rem', color: '#6b7280' }}>ผู้ปกครอง: {student.parentName}</span>
             )}
             <button type="button"
-              onClick={() => printReport({ student, physData, growthRecords: growthData, attendanceSummary, healthServices, devDomains, teacherComments, parentComments, directorsComment, academicYear, schoolName, schoolPhilosophy, schoolVision })}
+              onClick={() => printReport({ student, physData, growthRecords: growthData, devAssessment: devAssessData, attendanceSummary, healthServices, devDomains, teacherComments, parentComments, directorsComment, academicYear, schoolName, schoolPhilosophy, schoolVision })}
               style={{
                 marginLeft: 'auto', padding: '.35rem 1rem', borderRadius: '8px', border: 'none',
                 background: ACCENT, color: 'white', fontFamily: 'inherit', fontWeight: 700, fontSize: '.82rem', cursor: 'pointer',
@@ -1262,106 +1404,172 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
           )}
 
           {/* ══════════════════════════════════════════════════════════
-              SECTION 4: Developmental Report
+              SECTION 4: Dev Assessment — 4 Domains (อ.01 form)
           ══════════════════════════════════════════════════════════ */}
           {activeSection === 'devreport' && (
             <div>
-              <div style={{ fontWeight: 800, fontSize: '.9rem', color: '#111', marginBottom: '.5rem' }}>
-                บันทึกผลการประเมินพัฒนาการ
+              <div style={{ fontWeight: 800, fontSize: '.9rem', color: '#111', marginBottom: '.25rem' }}>
+                บันทึกผลการประเมินพัฒนาการ (ความสามารถผู้เรียน)
               </div>
-              <div style={{ fontSize: '.78rem', color: '#6b7280', marginBottom: '1rem' }}>
-                ดึงข้อมูลจากการประเมินในระบบ · ครั้งที่ 1–2 = ภาคเรียนที่ 1 · ครั้งที่ 3–4 = ภาคเรียนที่ 2
+              <div style={{ fontSize: '.75rem', color: '#6b7280', marginBottom: '1rem' }}>
+                ระดับ 3 = ดี · ระดับ 2 = พอใช้ · ระดับ 1 = ปรับปรุง · สรุประดับคุณภาพคำนวณจากค่าเฉลี่ยภาคเรียนที่ 2
               </div>
 
-              {devDomains.map(domain => (
-                <div key={domain.id} style={{ marginBottom: '1.5rem' }}>
+              {/* ── Domain tabs ── */}
+              <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                {DEV_ASSESS_DOMAINS.map(d => {
+                  const avg = devAssessDomainAvg(devAssessData, d.id);
+                  const isAct = devAssessTab === d.id;
+                  const lc = avg > 0 ? levelColor(avg) : { bg: '#f3f4f6', color: '#6b7280' };
+                  return (
+                    <button key={d.id} type="button" onClick={() => setDevAssessTab(d.id)}
+                      style={{
+                        padding: '.35rem .9rem', borderRadius: '10px', cursor: 'pointer',
+                        border: `2px solid ${isAct ? d.color : '#e5e7eb'}`,
+                        background: isAct ? d.bg : 'white',
+                        color: isAct ? d.color : '#4b5563',
+                        fontFamily: 'inherit', fontWeight: isAct ? 800 : 500, fontSize: '.82rem',
+                        display: 'flex', alignItems: 'center', gap: '.45rem',
+                        transition: 'all .15s',
+                      }}>
+                      <span>{d.emoji} {d.label}</span>
+                      {avg > 0 && (
+                        <span style={{
+                          padding: '1px 7px', borderRadius: '12px', fontSize: '.72rem',
+                          fontWeight: 800, ...lc,
+                        }}>{avg}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* ── Active domain content ── */}
+              {DEV_ASSESS_DOMAINS.filter(d => d.id === devAssessTab).map(domain => (
+                <div key={domain.id}>
+                  {/* domain header */}
                   <div style={{
                     background: domain.bg, border: `2px solid ${domain.color}30`,
-                    borderRadius: '10px', padding: '.6rem 1rem', marginBottom: '.5rem',
+                    borderRadius: '10px', padding: '.55rem 1rem', marginBottom: '1rem',
                     fontWeight: 900, fontSize: '.88rem', color: domain.color,
                   }}>
-                    {domain.emoji} พัฒนาการด้าน{domain.label}
+                    {domain.emoji} พัฒนาการ{domain.label} — อนุบาลปีที่ 2 (อายุ 4–5 ปี)
                   </div>
 
-                  {domain.standards.map(std => (
-                    <div key={std.id} style={{ marginBottom: '.75rem', marginLeft: '.5rem' }}>
-                      <div style={{ fontWeight: 700, fontSize: '.8rem', color: '#374151', marginBottom: '.35rem', padding: '.3rem .75rem', background: '#f9fafb', borderRadius: '6px' }}>
-                        {std.title}
-                      </div>
-
-                      {std.indicators.map(ind => {
-                        const t1 = ind.indScores.term1;
-                        const t2 = ind.indScores.term2;
-                        const hasAny = ind.actIds.some(id => ind.scores[id].term1 !== null || ind.scores[id].term2 !== null);
-                        return (
-                          <div key={ind.indKey} style={{ marginLeft: '.5rem', marginBottom: '.5rem' }}>
-                            <div style={{
-                              display: 'flex', alignItems: 'center', gap: '.75rem',
-                              padding: '.4rem .75rem', background: '#f3f4f6', borderRadius: '6px',
-                              fontSize: '.8rem', marginBottom: '.25rem',
-                            }}>
-                              <span style={{ fontWeight: 700, flex: 1 }}>{ind.label}</span>
-                              <span style={{ fontSize: '.72rem', color: '#6b7280' }}>ภาคเรียน 1:</span>
-                              <span style={{
-                                fontWeight: 800, fontSize: '.82rem', minWidth: '32px', textAlign: 'center',
-                                ...levelColor(t1 !== null ? Math.round(t1) : 0),
-                                padding: '2px 8px', borderRadius: '4px',
-                              }}>
-                                {t1 !== null ? t1.toFixed(1) : '—'}
-                              </span>
-                              <span style={{ fontSize: '.72rem', color: '#6b7280' }}>ภาคเรียน 2:</span>
-                              <span style={{
-                                fontWeight: 800, fontSize: '.82rem', minWidth: '32px', textAlign: 'center',
-                                ...levelColor(t2 !== null ? Math.round(t2) : 0),
-                                padding: '2px 8px', borderRadius: '4px',
-                              }}>
-                                {t2 !== null ? t2.toFixed(1) : '—'}
-                              </span>
+                  {/* component rows */}
+                  {domain.components.map((comp, ci) => {
+                    const da = devAssessData[comp.key] ?? {};
+                    const lc1 = levelColor(da.t1level ?? 0);
+                    const lc2 = levelColor(da.t2level ?? 0);
+                    const lcs = levelColor(da.summary ?? 0);
+                    const rowBg = ci % 2 === 0 ? 'white' : '#fafafa';
+                    return (
+                      <div key={comp.key} style={{
+                        background: rowBg,
+                        border: '1px solid #e5e7eb', borderRadius: '10px',
+                        padding: '1rem', marginBottom: '.75rem',
+                      }}>
+                        {/* Component label */}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '.5rem', marginBottom: '.6rem' }}>
+                          <span style={{
+                            background: domain.color, color: 'white',
+                            borderRadius: '6px', padding: '2px 8px', fontSize: '.75rem', fontWeight: 800,
+                            whiteSpace: 'nowrap', flexShrink: 0,
+                          }}>{comp.code}</span>
+                          <span style={{ fontWeight: 700, fontSize: '.84rem', color: '#111' }}>{comp.label}</span>
+                        </div>
+                        {/* Descriptor */}
+                        <div style={{
+                          background: '#f9fafb', border: '1px solid #f0f0f0',
+                          borderRadius: '6px', padding: '.45rem .75rem',
+                          fontSize: '.75rem', color: '#4b5563', lineHeight: '1.6',
+                          marginBottom: '.75rem', whiteSpace: 'pre-line',
+                        }}>
+                          {comp.descriptor}
+                        </div>
+                        {/* Fields: 2 terms + summary */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '.75rem', alignItems: 'start' }}>
+                          {/* Term 1 */}
+                          <div>
+                            <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#1e40af', marginBottom: '.3rem' }}>
+                              ภาคเรียนที่ 1
                             </div>
-
-                            {hasAny && (
-                              <div style={{ marginLeft: '.75rem', overflowX: 'auto' }}>
-                                <table style={{ borderCollapse: 'collapse', fontSize: '.76rem', width: '100%' }}>
-                                  <thead>
-                                    <tr style={{ background: '#f9fafb' }}>
-                                      <th style={{ padding: '4px 8px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 600 }}>สภาพที่พึงประสงค์</th>
-                                      <th style={{ padding: '4px 8px', border: '1px solid #e5e7eb', textAlign: 'center', width: '90px', fontWeight: 600 }}>ภาคเรียน 1</th>
-                                      <th style={{ padding: '4px 8px', border: '1px solid #e5e7eb', textAlign: 'center', width: '90px', fontWeight: 600 }}>ภาคเรียน 2</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {ind.actIds.map((actId, ai) => {
-                                      const sc = ind.scores[actId];
-                                      if (sc.term1 === null && sc.term2 === null) return null;
-                                      const t1c = levelColor(sc.term1 !== null ? Math.round(sc.term1) : 0);
-                                      const t2c = levelColor(sc.term2 !== null ? Math.round(sc.term2) : 0);
-                                      return (
-                                        <tr key={actId} style={{ background: ai % 2 === 0 ? 'white' : '#fafafa' }}>
-                                          <td style={{ padding: '4px 8px', border: '1px solid #e5e7eb' }}>{ind.actLabels[actId]}</td>
-                                          <td style={{ padding: '4px 8px', border: '1px solid #e5e7eb', textAlign: 'center', ...t1c, fontWeight: 700 }}>
-                                            {sc.term1 !== null ? sc.term1.toFixed(1) : '—'}
-                                          </td>
-                                          <td style={{ padding: '4px 8px', border: '1px solid #e5e7eb', textAlign: 'center', ...t2c, fontWeight: 700 }}>
-                                            {sc.term2 !== null ? sc.term2.toFixed(1) : '—'}
-                                          </td>
-                                        </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
-                              </div>
-                            )}
-
-                            {!hasAny && (
-                              <div style={{ marginLeft: '.75rem', fontSize: '.75rem', color: '#9ca3af', fontStyle: 'italic', padding: '.2rem .5rem' }}>
-                                ยังไม่มีการประเมินในตัวบ่งชี้นี้
-                              </div>
-                            )}
+                            <select value={da.t1level ?? 0}
+                              onChange={e => updateDevAssess(comp.key, 't1level', Number(e.target.value))}
+                              style={{
+                                width: '100%', padding: '5px 8px', marginBottom: '.35rem',
+                                border: '1px solid #d1d5db', borderRadius: '6px',
+                                fontFamily: 'inherit', fontSize: '.8rem',
+                                background: lc1.bg, color: lc1.color, fontWeight: 700,
+                              }}>
+                              <option value={0}>— ระดับ —</option>
+                              <option value={3}>3  ดี</option>
+                              <option value={2}>2  พอใช้</option>
+                              <option value={1}>1  ปรับปรุง</option>
+                            </select>
+                            <textarea
+                              value={da.t1highlight ?? ''}
+                              onChange={e => updateDevAssess(comp.key, 't1highlight', e.target.value)}
+                              placeholder="จุดเด่นความสามารถ ภาคเรียน 1..."
+                              rows={3}
+                              style={{
+                                width: '100%', padding: '6px 8px', border: '1px solid #d1d5db',
+                                borderRadius: '6px', fontFamily: 'inherit', fontSize: '.78rem',
+                                resize: 'vertical', boxSizing: 'border-box', lineHeight: '1.5',
+                              }} />
                           </div>
-                        );
-                      })}
-                    </div>
-                  ))}
+                          {/* Term 2 */}
+                          <div>
+                            <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#065f46', marginBottom: '.3rem' }}>
+                              ภาคเรียนที่ 2
+                            </div>
+                            <select value={da.t2level ?? 0}
+                              onChange={e => updateDevAssess(comp.key, 't2level', Number(e.target.value))}
+                              style={{
+                                width: '100%', padding: '5px 8px', marginBottom: '.35rem',
+                                border: '1px solid #d1d5db', borderRadius: '6px',
+                                fontFamily: 'inherit', fontSize: '.8rem',
+                                background: lc2.bg, color: lc2.color, fontWeight: 700,
+                              }}>
+                              <option value={0}>— ระดับ —</option>
+                              <option value={3}>3  ดี</option>
+                              <option value={2}>2  พอใช้</option>
+                              <option value={1}>1  ปรับปรุง</option>
+                            </select>
+                            <textarea
+                              value={da.t2highlight ?? ''}
+                              onChange={e => updateDevAssess(comp.key, 't2highlight', e.target.value)}
+                              placeholder="จุดเด่นความสามารถ ภาคเรียน 2..."
+                              rows={3}
+                              style={{
+                                width: '100%', padding: '6px 8px', border: '1px solid #d1d5db',
+                                borderRadius: '6px', fontFamily: 'inherit', fontSize: '.78rem',
+                                resize: 'vertical', boxSizing: 'border-box', lineHeight: '1.5',
+                              }} />
+                          </div>
+                          {/* Summary */}
+                          <div style={{ minWidth: '90px' }}>
+                            <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#374151', marginBottom: '.3rem' }}>
+                              สรุประดับ
+                            </div>
+                            <select value={da.summary ?? 0}
+                              onChange={e => updateDevAssess(comp.key, 'summary', Number(e.target.value))}
+                              style={{
+                                width: '100%', padding: '5px 8px',
+                                border: '1px solid #d1d5db', borderRadius: '6px',
+                                fontFamily: 'inherit', fontSize: '.8rem',
+                                background: lcs.bg, color: lcs.color, fontWeight: 800,
+                              }}>
+                              <option value={0}>—</option>
+                              <option value={3}>3 ดี</option>
+                              <option value={2}>2 พอใช้</option>
+                              <option value={1}>1 ปรับปรุง</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               ))}
             </div>

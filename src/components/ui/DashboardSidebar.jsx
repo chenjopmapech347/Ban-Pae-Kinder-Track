@@ -45,7 +45,7 @@ export default function DashboardSidebar({ groups, activeTab, onTabChange, badge
     return idx > 0 ? [label.slice(0, idx), label.slice(idx + 1)] : [label, ''];
   };
 
-  const W = collapsed ? 58 : 218;
+  const W = collapsed ? 62 : 236;
 
   return (
     <div style={{
@@ -76,14 +76,14 @@ export default function DashboardSidebar({ groups, activeTab, onTabChange, badge
           <span style={{
             background: '#ede9fe', color: '#7c3aed',
             borderRadius: '999px', padding: '.2rem .75rem',
-            fontSize: '.72rem', fontWeight: 800,
+            fontSize: '.8rem', fontWeight: 800,
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
             {badge}
           </span>
         )}
         {!collapsed && !badge && (
-          <span style={{ fontSize: '.7rem', fontWeight: 700, color: '#c4c9d4' }}>เมนู</span>
+          <span style={{ fontSize: '.78rem', fontWeight: 700, color: '#c4c9d4' }}>เมนู</span>
         )}
         <button
           type="button"
@@ -132,14 +132,14 @@ export default function DashboardSidebar({ groups, activeTab, onTabChange, badge
                   }} />
                   <span style={{
                     flex: 1, textAlign: 'left',
-                    fontSize: '.62rem', fontWeight: 800, color: group.color,
+                    fontSize: '.72rem', fontWeight: 800, color: group.color,
                     textTransform: 'uppercase', letterSpacing: '.07em',
                     lineHeight: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
                     {group.label}
                   </span>
                   <span style={{
-                    fontSize: '.55rem', color: '#c4c9d4',
+                    fontSize: '.62rem', color: '#c4c9d4',
                     transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
                     transition: 'transform .15s', display: 'inline-block',
                   }}>▶</span>
@@ -172,15 +172,15 @@ export default function DashboardSidebar({ groups, activeTab, onTabChange, badge
                           style={{
                             width: '100%',
                             display: 'flex', alignItems: 'center',
-                            gap: '.42rem',
-                            padding: collapsed ? '.44rem' : '.38rem .48rem',
+                            gap: '.48rem',
+                            padding: collapsed ? '.5rem' : '.44rem .52rem',
                             borderRadius: '9px',
                             border: 'none',
                             borderLeft: isActive && !collapsed ? `3px solid ${group.color}` : '3px solid transparent',
                             background: isActive ? group.color : 'transparent',
                             color: isActive ? 'white' : '#4b5563',
                             fontFamily: 'inherit',
-                            fontSize: '.76rem',
+                            fontSize: '.86rem',
                             fontWeight: isActive ? 700 : 500,
                             cursor: 'pointer',
                             transition: 'background .12s, color .12s',
@@ -200,11 +200,11 @@ export default function DashboardSidebar({ groups, activeTab, onTabChange, badge
                             }
                           }}
                         >
-                          <span style={{ fontSize: '1rem', lineHeight: 1, flexShrink: 0 }}>{emoji}</span>
+                          <span style={{ fontSize: '1.1rem', lineHeight: 1, flexShrink: 0 }}>{emoji}</span>
                           {!collapsed && (
                             <span style={{
                               overflow: 'hidden', textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap', lineHeight: 1.3, fontSize: '.76rem',
+                              whiteSpace: 'nowrap', lineHeight: 1.3, fontSize: '.86rem',
                             }}>
                               {text}
                             </span>
@@ -221,7 +221,7 @@ export default function DashboardSidebar({ groups, activeTab, onTabChange, badge
                             background: '#1f2937', color: 'white',
                             padding: '.35rem .7rem',
                             borderRadius: '8px',
-                            fontSize: '.74rem', fontWeight: 600,
+                            fontSize: '.82rem', fontWeight: 600,
                             whiteSpace: 'nowrap',
                             zIndex: 9999,
                             pointerEvents: 'none',

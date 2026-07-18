@@ -152,8 +152,43 @@ function emptyPhys() {
   );
 }
 
+// ── monthly growth records ────────────────────────────────────────────────────
+// โครงสร้างตามแบบฟอร์มจริง อ.01:
+//   ภาคเรียน 1 = พ.ค.–ต.ค. (6 เดือน)
+//   ภาคเรียน 2 = ธ.ค.–เม.ย. (5 เดือน)   ← ไม่มีพ.ย. แต่มีเม.ย.
+const GROWTH_MONTHS_T1 = [
+  { key: 'm5',  num: 5,  label: 'พ.ค.'  },
+  { key: 'm6',  num: 6,  label: 'มิ.ย.' },
+  { key: 'm7',  num: 7,  label: 'ก.ค.'  },
+  { key: 'm8',  num: 8,  label: 'ส.ค.'  },
+  { key: 'm9',  num: 9,  label: 'ก.ย.'  },
+  { key: 'm10', num: 10, label: 'ต.ค.'  },
+];
+const GROWTH_MONTHS_T2 = [
+  { key: 'm12', num: 12, label: 'ธ.ค.'  },
+  { key: 'm1',  num: 1,  label: 'ม.ค.'  },
+  { key: 'm2',  num: 2,  label: 'ก.พ.'  },
+  { key: 'm3',  num: 3,  label: 'มี.ค.' },
+  { key: 'm4',  num: 4,  label: 'เม.ย.' },
+];
+const GROWTH_MONTHS_ALL = [...GROWTH_MONTHS_T1, ...GROWTH_MONTHS_T2];
+
+// วันที่อ้างอิง: วันที่ 15 ของเดือนนั้นในปีการศึกษา (เพื่อคำนวณอายุ)
+// เดือน 5–12 → CE = ay-543 ; เดือน 1–4 → CE = ay-542
+function monthRefDate(monthNum, academicYear) {
+  const ay = parseInt(String(academicYear || '2568'));
+  const ce = monthNum >= 5 ? ay - 543 : ay - 542;
+  return `${ce}-${String(monthNum).padStart(2, '0')}-15`;
+}
+
+function emptyGrowth() {
+  return Object.fromEntries(
+    GROWTH_MONTHS_ALL.map(m => [m.key, { weight: '', height: '' }])
+  );
+}
+
 // ── print helper ──────────────────────────────────────────────────────────────
-function printReport({ student, physData, attendanceSummary, healthServices,
+function printReport({ student, physData, growthRecords, attendanceSummary, healthServices,
                        devDomains, teacherComments, parentComments, directorsComment,
                        academicYear, schoolName, schoolPhilosophy, schoolVision }) {
   const _philosophy = schoolPhilosophy?.trim() || PHILOSOPHY_TEXT;
@@ -174,6 +209,52 @@ function printReport({ student, physData, attendanceSummary, healthServices,
       <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center">${levelTag(p.heightLevel)}</td>
     </tr>`;
   }).join('');
+
+  // บันทึกการเจริญเติบโตรายเดือน — layout แนวนอน (เดือนเป็นคอลัมน์)
+  function growthAgeLabel(monthNum) {
+    if (!student?.birthDate) return '';
+    const { ageYear, ageMonth } = ageAt(student.birthDate, monthRefDate(monthNum, academicYear));
+    return `${ageYear}ปี ${ageMonth}ด.`;
+  }
+  const gr = growthRecords ?? {};
+  const thStyle = 'padding:3px 6px;border:1px solid #888;text-align:center;background:#d0d0d0;font-size:8.5px';
+  const tdStyle = 'padding:3px 4px;border:1px solid #888;text-align:center;font-size:8.5px';
+  const t1Cols = GROWTH_MONTHS_T1.map(m => `<th style="${thStyle}">${m.label}</th>`).join('');
+  const t2Cols = GROWTH_MONTHS_T2.map(m => `<th style="${thStyle}">${m.label}</th>`).join('');
+  const growthHtml = `
+    <table style="width:100%;border-collapse:collapse;margin-top:4px">
+      <thead>
+        <tr>
+          <th rowspan="2" style="${thStyle};width:80px;text-align:left;padding-left:6px">รายการ</th>
+          <th colspan="6" style="${thStyle}">ภาคเรียนที่ 1</th>
+          <th colspan="5" style="${thStyle}">ภาคเรียนที่ 2</th>
+        </tr>
+        <tr>${t1Cols}${t2Cols}</tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="${tdStyle};text-align:left;padding-left:6px">อายุ</td>
+          ${GROWTH_MONTHS_T1.map(m => `<td style="${tdStyle};font-size:7.5px">${growthAgeLabel(m.num)}</td>`).join('')}
+          ${GROWTH_MONTHS_T2.map(m => `<td style="${tdStyle};font-size:7.5px">${growthAgeLabel(m.num)}</td>`).join('')}
+        </tr>
+        <tr>
+          <td style="${tdStyle};text-align:left;padding-left:6px">น้ำหนัก (กก.)</td>
+          ${GROWTH_MONTHS_T1.map(m => `<td style="${tdStyle}">${(gr[m.key]?.weight) || ''}</td>`).join('')}
+          ${GROWTH_MONTHS_T2.map(m => `<td style="${tdStyle}">${(gr[m.key]?.weight) || ''}</td>`).join('')}
+        </tr>
+        <tr>
+          <td style="${tdStyle};text-align:left;padding-left:6px">ส่วนสูง (ซม.)</td>
+          ${GROWTH_MONTHS_T1.map(m => `<td style="${tdStyle}">${(gr[m.key]?.height) || ''}</td>`).join('')}
+          ${GROWTH_MONTHS_T2.map(m => `<td style="${tdStyle}">${(gr[m.key]?.height) || ''}</td>`).join('')}
+        </tr>
+      </tbody>
+    </table>
+    <div style="font-size:7.5px;color:#555;margin-top:4px">
+      <strong>หมายเหตุ:</strong>
+      ระดับ 3 หมายถึง ปกติ / เป็นไปตามเกณฑ์มาตรฐาน &nbsp;·&nbsp;
+      ระดับ 2 หมายถึง ค่อนข้างปกติ / ค่อนข้างมาก หรือ ค่อนข้างน้อยกว่าเกณฑ์มาตรฐาน &nbsp;·&nbsp;
+      ระดับ 1 หมายถึง ไม่ปกติ ควรส่งเสริม / มาก หรือน้อยกว่าเกณฑ์มาตรฐาน
+    </div>`;
 
   const attRows = [1, 2].map(t => {
     const a = attendanceSummary[`term${t}`] ?? {};
@@ -453,6 +534,9 @@ function printReport({ student, physData, attendanceSummary, healthServices,
       ${physRows}
     </table>
 
+    <h2 style="margin-top:14px">บันทึกการเจริญเติบโตของร่างกาย</h2>
+    ${growthHtml}
+
     <h2>2. เวลามาเรียน (คิดเป็นวัน)</h2>
     <table>
       <tr><th colspan="2">ภาคเรียน</th><th>เวลาเรียนเต็ม</th><th>มาเรียน</th><th>ไม่มาเรียน</th></tr>
@@ -624,6 +708,7 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
       studentId: selStudentId,
       academicYear,
       physicalRecords: emptyPhys(),
+      growthRecords: emptyGrowth(),
       healthServices: [],
       teacherComments:  { term1: '', term2: '' },
       parentComments:   { term1: '', term2: '' },
@@ -641,6 +726,7 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
     });
     return result;
   })();
+  const growthData = rec?.growthRecords ?? emptyGrowth();
   const healthServices = rec?.healthServices ?? [];
   const teacherComments  = rec?.teacherComments  ?? { term1: '', term2: '' };
   const parentComments   = rec?.parentComments   ?? { term1: '', term2: '' };
@@ -651,7 +737,7 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
     if (!recKey) return;
     setStudentReportRecords(prev => ({
       ...prev,
-      [recKey]: { ...(prev[recKey] ?? { studentId: selStudentId, academicYear, physicalRecords: emptyPhys(), healthServices: [], teacherComments: { term1: '', term2: '' }, parentComments: { term1: '', term2: '' }, directorsComment: '' }), ...patch },
+      [recKey]: { ...(prev[recKey] ?? { studentId: selStudentId, academicYear, physicalRecords: emptyPhys(), growthRecords: emptyGrowth(), healthServices: [], teacherComments: { term1: '', term2: '' }, parentComments: { term1: '', term2: '' }, directorsComment: '' }), ...patch },
     }));
   }, [recKey, setStudentReportRecords, selStudentId, academicYear]);
 
@@ -671,6 +757,12 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
 
     saveRec({ physicalRecords: { ...physData, [key]: updated } });
   }, [physData, saveRec, student]);
+
+  // ── monthly growth record update ──────────────────────────────────────────
+  const updateGrowth = useCallback((key, field, value) => {
+    const current = growthData[key] ?? { weight: '', height: '' };
+    saveRec({ growthRecords: { ...growthData, [key]: { ...current, [field]: value } } });
+  }, [growthData, saveRec]);
 
   // ── attendance summary (computed from dailyRecords) ───────────────────────
   const attendanceSummary = useMemo(() => {
@@ -831,7 +923,7 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
               <span style={{ fontSize: '.82rem', color: '#6b7280' }}>ผู้ปกครอง: {student.parentName}</span>
             )}
             <button type="button"
-              onClick={() => printReport({ student, physData, attendanceSummary, healthServices, devDomains, teacherComments, parentComments, directorsComment, academicYear, schoolName, schoolPhilosophy, schoolVision })}
+              onClick={() => printReport({ student, physData, growthRecords: growthData, attendanceSummary, healthServices, devDomains, teacherComments, parentComments, directorsComment, academicYear, schoolName, schoolPhilosophy, schoolVision })}
               style={{
                 marginLeft: 'auto', padding: '.35rem 1rem', borderRadius: '8px', border: 'none',
                 background: ACCENT, color: 'white', fontFamily: 'inherit', fontWeight: 700, fontSize: '.82rem', cursor: 'pointer',
@@ -948,6 +1040,88 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
               <div style={{ marginTop: '1rem', padding: '.75rem 1rem', background: '#fefce8', border: '1px solid #fde047', borderRadius: '8px', fontSize: '.78rem', color: '#713f12' }}>
                 <strong>หมายเหตุ:</strong> ระดับคุณภาพอ้างอิงเกณฑ์มาตรฐานน้ำหนักและส่วนสูงกรมอนามัย กระทรวงสาธารณสุข พ.ศ. 2543
                 — อายุ 3–6 ปี · ระบบจะคำนวณอัตโนมัติเมื่อกรอกวันที่วัดและมีวันเกิดของนักเรียน
+              </div>
+
+              {/* ── บันทึกการเจริญเติบโตรายเดือน (แนวนอน) ── */}
+              <div style={{ fontWeight: 800, fontSize: '.9rem', color: '#111', margin: '1.5rem 0 .6rem' }}>
+                📈 บันทึกการเจริญเติบโตของร่างกาย
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ borderCollapse: 'collapse', fontSize: '.8rem', minWidth: '700px' }}>
+                  <thead>
+                    {/* แถว 1: รายการ | ภาคเรียน 1 | ภาคเรียน 2 */}
+                    <tr style={{ background: '#f3f4f6' }}>
+                      <th rowSpan={2} style={{ padding: '7px 12px', border: '1px solid #e5e7eb', textAlign: 'left', minWidth: '110px' }}>รายการ</th>
+                      <th colSpan={6} style={{ padding: '6px 10px', border: '1px solid #e5e7eb', textAlign: 'center', background: '#dbeafe', color: '#1e40af' }}>
+                        ภาคเรียนที่ 1
+                      </th>
+                      <th colSpan={5} style={{ padding: '6px 10px', border: '1px solid #e5e7eb', textAlign: 'center', background: '#d1fae5', color: '#065f46' }}>
+                        ภาคเรียนที่ 2
+                      </th>
+                    </tr>
+                    {/* แถว 2: เดือน */}
+                    <tr>
+                      {GROWTH_MONTHS_T1.map(m => (
+                        <th key={m.key} style={{ padding: '5px 8px', border: '1px solid #e5e7eb', textAlign: 'center', background: '#eff6ff', minWidth: '62px', fontSize: '.75rem' }}>
+                          {m.label}
+                        </th>
+                      ))}
+                      {GROWTH_MONTHS_T2.map(m => (
+                        <th key={m.key} style={{ padding: '5px 8px', border: '1px solid #e5e7eb', textAlign: 'center', background: '#f0fdf4', minWidth: '62px', fontSize: '.75rem' }}>
+                          {m.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* แถวอายุ — คำนวณอัตโนมัติ */}
+                    <tr>
+                      <td style={{ padding: '6px 12px', border: '1px solid #e5e7eb', fontWeight: 600 }}>อายุ</td>
+                      {GROWTH_MONTHS_ALL.map(m => {
+                        const { ageYear, ageMonth } = ageAt(student?.birthDate, monthRefDate(m.num, academicYear));
+                        return (
+                          <td key={m.key} style={{ padding: '5px 4px', border: '1px solid #e5e7eb', textAlign: 'center', color: '#4b5563', fontSize: '.72rem' }}>
+                            {student?.birthDate ? `${ageYear}ปี ${ageMonth}ด.` : ''}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                    {/* แถวน้ำหนัก */}
+                    <tr>
+                      <td style={{ padding: '6px 12px', border: '1px solid #e5e7eb', fontWeight: 600 }}>น้ำหนัก (กก.)</td>
+                      {GROWTH_MONTHS_ALL.map(m => {
+                        const g = growthData[m.key] ?? {};
+                        return (
+                          <td key={m.key} style={{ padding: '3px 4px', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                            <input type="number" value={g.weight ?? ''} min={0} step={0.1}
+                              onChange={e => updateGrowth(m.key, 'weight', e.target.value)}
+                              placeholder="—"
+                              style={{ width: '52px', padding: '3px 4px', border: '1px solid #d1d5db', borderRadius: '5px', fontFamily: 'inherit', fontSize: '.78rem', textAlign: 'center' }} />
+                          </td>
+                        );
+                      })}
+                    </tr>
+                    {/* แถวส่วนสูง */}
+                    <tr>
+                      <td style={{ padding: '6px 12px', border: '1px solid #e5e7eb', fontWeight: 600 }}>ส่วนสูง (ซม.)</td>
+                      {GROWTH_MONTHS_ALL.map(m => {
+                        const g = growthData[m.key] ?? {};
+                        return (
+                          <td key={m.key} style={{ padding: '3px 4px', border: '1px solid #e5e7eb', textAlign: 'center' }}>
+                            <input type="number" value={g.height ?? ''} min={0} step={0.1}
+                              onChange={e => updateGrowth(m.key, 'height', e.target.value)}
+                              placeholder="—"
+                              style={{ width: '52px', padding: '3px 4px', border: '1px solid #d1d5db', borderRadius: '5px', fontFamily: 'inherit', fontSize: '.78rem', textAlign: 'center' }} />
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ marginTop: '.5rem', fontSize: '.72rem', color: '#9ca3af' }}>
+                อายุคำนวณอัตโนมัติจากวันเกิด ณ วันที่ 15 ของแต่ละเดือน &nbsp;·&nbsp;
+                ระดับ 3 = ปกติ / ตามเกณฑ์ &nbsp;·&nbsp; ระดับ 2 = ค่อนข้างปกติ &nbsp;·&nbsp; ระดับ 1 = ไม่ปกติ ควรส่งเสริม
               </div>
             </div>
           )}

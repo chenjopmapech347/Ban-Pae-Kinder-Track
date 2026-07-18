@@ -15,7 +15,7 @@ const AFFILIATION_OPTIONS = [
 ];
 
 export default function SchoolsTab() {
-  const { schools, setSchools } = useApp();
+  const { schools, setSchools, setSchoolLogo } = useApp();
   const [isModal, setIsModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm]       = useState({});
@@ -35,6 +35,8 @@ export default function SchoolsTab() {
     e.preventDefault();
     if (editing) setSchools(schools.map(s => s.id === editing.id ? { ...s, ...form } : s));
     else setSchools([...schools, { ...form, id: Date.now() }]);
+    // sync โลโก้ไปยัง schoolLogo ของ AppContext ที่รายงานทุกอันใช้
+    if (form.logo !== undefined) setSchoolLogo(form.logo ?? '');
     setIsModal(false);
   };
 

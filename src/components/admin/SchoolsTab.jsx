@@ -20,7 +20,15 @@ export default function SchoolsTab() {
   const [editing, setEditing] = useState(null);
   const [form, setForm]       = useState({});
 
-  const openNew  = () => { setEditing(null); setForm({ name:'',address:'',phone:'',principal:'',affiliation:'' }); setIsModal(true); };
+  const openNew  = () => { setEditing(null); setForm({ name:'',address:'',phone:'',principal:'',affiliation:'',logo:'' }); setIsModal(true); };
+
+  const handleLogoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => setForm(f => ({ ...f, logo: ev.target.result }));
+    reader.readAsDataURL(file);
+  };
   const openEdit = s => { setEditing(s); setForm(s); setIsModal(true); };
 
   const handleSave = e => {
@@ -41,7 +49,13 @@ export default function SchoolsTab() {
         {schools.map(s => (
           <div key={s.id} className="glass-card" style={{ display:'flex',flexDirection:'column',gap:'.5rem' }}>
             <div className="flex justify-between items-start">
-              <div className="font-bold text-primary" style={{ fontSize:'1rem' }}>{s.name}</div>
+              <div style={{ display:'flex', alignItems:'center', gap:'.75rem' }}>
+                {s.logo && (
+                  <img src={s.logo} alt="โลโก้"
+                    style={{ width:48, height:48, objectFit:'contain', borderRadius:'8px', border:'1.5px solid #e5e7eb', background:'#fafafa' }} />
+                )}
+                <div className="font-bold text-primary" style={{ fontSize:'1rem' }}>{s.name}</div>
+              </div>
               <div className="flex gap-2">
                 <button className="btn btn-sm" onClick={() => openEdit(s)}>แก้ไข</button>
                 <button className="btn btn-sm" style={{ color:'var(--danger)' }}
@@ -74,6 +88,32 @@ export default function SchoolsTab() {
               {AFFILIATION_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
             </select>
           </div>
+
+          {/* Logo upload */}
+          <div>
+            <label style={{ display:'block',marginBottom:'.35rem' }}>โลโก้โรงเรียน</label>
+            <div style={{ display:'flex', alignItems:'center', gap:'1rem' }}>
+              {form.logo && (
+                <img src={form.logo} alt="โลโก้"
+                  style={{ width:64, height:64, objectFit:'contain', borderRadius:'10px', border:'1.5px solid #e5e7eb', background:'#fafafa', flexShrink:0 }} />
+              )}
+              <div style={{ flex:1 }}>
+                <input type="file" accept="image/*" onChange={handleLogoUpload}
+                  style={{ fontSize:'.82rem', width:'100%' }} />
+                <div style={{ fontSize:'.75rem', color:'#9ca3af', marginTop:'.25rem' }}>
+                  แนะนำไฟล์ PNG/SVG พื้นหลังโปร่งใส — ขนาดไม่เกิน 500 KB
+                </div>
+                {form.logo && (
+                  <button type="button"
+                    onClick={() => setForm(f => ({ ...f, logo: '' }))}
+                    style={{ marginTop:'.35rem', fontSize:'.75rem', color:'#dc2626', background:'none', border:'none', cursor:'pointer', padding:0 }}>
+                    ✕ ลบโลโก้
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="flex gap-2 mt-2">
             <ModalCancelBtn onClick={() => setIsModal(false)} />
             <ModalConfirmBtn type="submit" label="💾 บันทึก" />

@@ -146,7 +146,7 @@ function PillSel({ items, sel, onSel, getKey, getLabel, color='#7c3aed', bg='#f5
 }
 
 // ── print helpers ─────────────────────────────────────────────────────────────
-function printStudentReport(student, indicators, activities, assessmentTopics, schoolName) {
+function printStudentReport(student, indicators, activities, assessmentTopics, schoolName, schoolLogo) {
   const topicRows = assessmentTopics.map(topic => {
     const topicInds = indicators.filter(i => i.domainId === topic.id);
     const rows = topicInds.flatMap(ind => {
@@ -165,19 +165,31 @@ function printStudentReport(student, indicators, activities, assessmentTopics, s
     return rows.join('');
   }).join('');
 
+  const logoHtml = schoolLogo
+    ? `<img src="${schoolLogo}" alt="โลโก้" style="height:64px;width:64px;object-fit:contain;margin-right:14px;flex-shrink:0"/>`
+    : '';
+
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
   <title>รายงานผล ${student.name}</title>
   <style>
     body{font-family:'Sarabun',sans-serif;font-size:13px;margin:24px}
-    h2{margin:0 0 4px;font-size:16px} h4{margin:4px 0 12px;color:#555;font-size:12px}
+    .report-header{display:flex;align-items:center;border-bottom:2px solid #e5e7eb;padding-bottom:12px;margin-bottom:8px}
+    .report-header-text h2{margin:0 0 2px;font-size:16px}
+    .report-header-text h4{margin:2px 0 4px;color:#555;font-size:12px}
+    .report-header-text h3{margin:4px 0 0;font-size:14px}
     table{width:100%;border-collapse:collapse;margin-top:12px}
     th,td{border:1px solid #ddd;padding:5px 8px;font-size:11.5px}
     th{background:#f5f5f5;font-weight:700}
     @media print{body{margin:8px}}
   </style></head><body>
-  <h2>รายงานผลการประเมินพัฒนาการ</h2>
-  <h4>${schoolName ?? 'โรงเรียน'} · ชั้น ${student.className} · รหัส ${student.id}</h4>
-  <h3 style="margin:0 0 6px">${student.name}</h3>
+  <div class="report-header">
+    ${logoHtml}
+    <div class="report-header-text">
+      <h2>รายงานผลการประเมินพัฒนาการ</h2>
+      <h4>${schoolName ?? 'โรงเรียน'} · ชั้น ${student.className} · รหัส ${student.id}</h4>
+      <h3>${student.name}</h3>
+    </div>
+  </div>
   <table>
     <thead><tr>
       <th>หัวข้อประเมิน</th><th>ตัวบ่งชี้</th><th>กิจกรรม</th><th>ผลการประเมิน</th>
@@ -190,7 +202,7 @@ function printStudentReport(student, indicators, activities, assessmentTopics, s
   w.document.write(html); w.document.close();
 }
 
-function printClassReport(classStudents, className, indicators, activities, assessmentTopics, schoolName) {
+function printClassReport(classStudents, className, indicators, activities, assessmentTopics, schoolName, schoolLogo) {
   const rows = classStudents.map((student, idx) => {
     const topicCols = assessmentTopics.map(topic => {
       const topicInds = indicators.filter(i => i.domainId === topic.id);
@@ -202,17 +214,26 @@ function printClassReport(classStudents, className, indicators, activities, asse
     return `<tr><td>${idx+1}</td><td>${student.id}</td><td>${student.name}</td>${topicCols}</tr>`;
   }).join('');
   const topicHeaders = assessmentTopics.map(t => `<th>${t.emoji}${t.label}</th>`).join('');
+  const logoHtml = schoolLogo
+    ? `<img src="${schoolLogo}" alt="โลโก้" style="height:56px;width:56px;object-fit:contain;margin-right:12px;flex-shrink:0"/>`
+    : '';
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
   <title>สรุปผลห้อง ${className}</title>
   <style>
     body{font-family:'Sarabun',sans-serif;font-size:12px;margin:20px}
-    h2{font-size:15px;margin:0 0 4px} p{margin:0 0 10px;font-size:11px;color:#555}
+    .report-header{display:flex;align-items:center;border-bottom:2px solid #e5e7eb;padding-bottom:10px;margin-bottom:10px}
+    .report-header h2{font-size:15px;margin:0 0 3px} .report-header p{margin:0;font-size:11px;color:#555}
     table{width:100%;border-collapse:collapse} th,td{border:1px solid #ccc;padding:4px 7px;font-size:11px}
     th{background:#f0f0f0;font-weight:700}
     @media print{body{margin:6px}}
   </style></head><body>
-  <h2>สรุปผลการประเมินพัฒนาการ — ห้อง ${className}</h2>
-  <p>${schoolName ?? 'โรงเรียน'} (คะแนนเฉลี่ยต่อด้าน, ระดับ 1–3)</p>
+  <div class="report-header">
+    ${logoHtml}
+    <div>
+      <h2>สรุปผลการประเมินพัฒนาการ — ห้อง ${className}</h2>
+      <p>${schoolName ?? 'โรงเรียน'} (คะแนนเฉลี่ยต่อด้าน, ระดับ 1–3)</p>
+    </div>
+  </div>
   <table><thead><tr><th>#</th><th>รหัส</th><th>ชื่อ-นามสกุล</th>${topicHeaders}</tr></thead>
   <tbody>${rows}</tbody></table>
   <script>window.print();window.close();</` + `script></body></html>`;
@@ -466,7 +487,7 @@ function ViewClass({ students, assessmentTopics, indicators, activities, allClas
   );
 }
 
-function ViewStudent({ students, assessmentTopics, indicators, activities, schoolName }) {
+function ViewStudent({ students, assessmentTopics, indicators, activities, schoolName, schoolLogo }) {
   const { classMap: CLASS_MAP } = useApp();
   const [selLevel, setLevel] = useState('K1');
   const [selClass, setClass] = useState(() => CLASS_MAP?.K1?.[0] ?? '');
@@ -539,7 +560,7 @@ function ViewStudent({ students, assessmentTopics, indicators, activities, schoo
       {/* ปุ่มพิมพ์ทั้งห้อง */}
       <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:'.75rem' }}>
         <button className="btn btn-primary" onClick={() =>
-          printClassReport(classStudents, selClass, indicators, activities, assessmentTopics, schoolName)
+          printClassReport(classStudents, selClass, indicators, activities, assessmentTopics, schoolName, schoolLogo)
         }>
           🖨️ พิมพ์สรุปทั้งห้อง {selClass}
         </button>
@@ -583,7 +604,7 @@ function ViewStudent({ students, assessmentTopics, indicators, activities, schoo
                 })}
                 <td style={{ textAlign:'center' }}>
                   <button className="btn btn-sm" onClick={() =>
-                    printStudentReport(s, indicators, activities, assessmentTopics, schoolName)
+                    printStudentReport(s, indicators, activities, assessmentTopics, schoolName, schoolLogo)
                   }>🖨️</button>
                 </td>
               </tr>
@@ -984,6 +1005,7 @@ export default function ReportsTab({ teacherClassFilter = null }) {
   const ALL_CLASSES = allClassNames;
   const [subTab, setSubTab] = useState('forms');
   const schoolName = schools?.[0]?.name ?? 'โรงเรียน';
+  const schoolLogo = schools?.[0]?.logo ?? null;
 
   // ถ้าเป็นครูที่ล็อกอิน ให้กรองเฉพาะห้องของตัวเอง
   const students = useMemo(
@@ -993,12 +1015,18 @@ export default function ReportsTab({ teacherClassFilter = null }) {
     [allStudents, teacherClassFilter],
   );
 
-  const props = { students, assessmentTopics, indicators, activities, schoolName, aiApiKey, allClassNames };
+  const props = { students, assessmentTopics, indicators, activities, schoolName, schoolLogo, aiApiKey, allClassNames };
 
   return (
     <div className="glass p-6 animate-fade">
       <div className="page-header mb-4">
-        <h3>📋 รายงานสรุปผลการประเมินพัฒนาการ</h3>
+        <div style={{ display:'flex', alignItems:'center', gap:'.75rem' }}>
+          {schoolLogo && (
+            <img src={schoolLogo} alt="โลโก้โรงเรียน"
+              style={{ height:48, width:48, objectFit:'contain', borderRadius:'8px', border:'1.5px solid #e5e7eb', background:'#fafafa', flexShrink:0 }} />
+          )}
+          <h3>📋 รายงานสรุปผลการประเมินพัฒนาการ</h3>
+        </div>
       </div>
 
       {/* ── Export panel ── */}

@@ -83,7 +83,7 @@ const TEACHER_TAB_GROUPS = [
     tabs: [
       { id: 'evaluation',    label: '✏️ ประเมินพัฒนาการ'  },  // 1. ลงมือประเมิน
       { id: 'activitylog',   label: '📜 ประวัติการประเมิน' },  // 2. ดูประวัติ
-      { id: 'devreport',     label: '📑 รายงานพัฒนาการ'   },  // 3. รายงานพัฒนาการ
+      { id: 'devreport',     label: '📑 ผลการประเมินพัฒนาการ' },  // 3. ผลการประเมินพัฒนาการ
       { id: 'formreports',   label: '📄 รายงานสรุป'       },  // 4. รายงานสรุป
       { id: 'studentreport', label: '📒 สมุดรายงาน อ.01' },  // 5. ผลลัพธ์สุดท้าย
     ],

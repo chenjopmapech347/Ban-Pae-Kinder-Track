@@ -147,6 +147,19 @@ function suggestLevelFromIndicator(student, domainId, standardId, indicatorId, t
   return 1;
 }
 
+/** คะแนนเฉลี่ยทศนิยมจริงจากกิจกรรมประเมิน (ไม่ปัดเป็นระดับ) */
+function rawScoreFromIndicator(student, domainId, standardId, indicatorId, term) {
+  if (!indicatorId) return null;
+  const indKey = `${domainId}__${standardId}__${indicatorId}`;
+  const indData = student?.assessments?.indicators?.[indKey];
+  if (!indData || !Object.keys(indData).length) return null;
+  const rounds = term === 1 ? ['r1', 'r2'] : ['r3', 'r4'];
+  const scores = Object.values(indData)
+    .flatMap(actData => rounds.map(r => actData?.[r]).filter(v => v != null && v > 0));
+  if (!scores.length) return null;
+  return scores.reduce((a, b) => a + b, 0) / scores.length;
+}
+
 // ── gender helper ─────────────────────────────────────────────────────────────
 function genderOf(student) {
   if (student?.gender === 'male' || student?.gender === 'ชาย') return 'male';
@@ -1836,9 +1849,42 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
                 // Shared component card renderer
                 const CompCard = ({ comp, ci }) => {
                   const da = devAssessData[comp.key] ?? {};
-                  const lc1 = levelColor(da.t1level ?? 0);
-                  const lc2 = levelColor(da.t2level ?? 0);
-                  const lcs = levelColor(da.summary ?? 0);
+                  const t1v = da.t1level ?? 0;
+                  const t2v = da.t2level ?? 0;
+                  const lc1 = levelColor(t1v);
+                  const lc2 = levelColor(t2v);
+
+                  // คะแนนเฉลี่ยทศนิยมจากกิจกรรม
+                  const raw1 = rawScoreFromIndicator(student, comp.domainId, comp.standardId, comp.indicatorId, 1);
+                  const raw2 = rawScoreFromIndicator(student, comp.domainId, comp.standardId, comp.indicatorId, 2);
+                  const rlc1 = raw1 !== null ? levelColor(raw1 >= 2.5 ? 3 : raw1 >= 1.5 ? 2 : 1) : null;
+                  const rlc2 = raw2 !== null ? levelColor(raw2 >= 2.5 ? 3 : raw2 >= 1.5 ? 2 : 1) : null;
+
+                  // สรุประดับ = เฉลี่ยทศนิยมจาก t1 + t2
+                  const filledVals = [t1v, t2v].filter(v => v > 0);
+                  const avgLevel   = filledVals.length ? filledVals.reduce((a, b) => a + b, 0) / filledVals.length : 0;
+                  const summaryInt = avgLevel >= 2.5 ? 3 : avgLevel >= 1.5 ? 2 : avgLevel > 0 ? 1 : 0;
+                  const lcs        = levelColor(summaryInt);
+                  const avgLabel   = summaryInt === 3 ? 'ดี' : summaryInt === 2 ? 'พอใช้' : summaryInt === 1 ? 'ปรับปรุง' : null;
+
+                  // onChange — batch-save ทั้ง term level และ summary ที่คำนวณใหม่
+                  const onChangeT1 = e => {
+                    const newT1 = Number(e.target.value);
+                    const vals = [newT1, t2v].filter(v => v > 0);
+                    const avg  = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+                    const newSummary = avg >= 2.5 ? 3 : avg >= 1.5 ? 2 : avg > 0 ? 1 : 0;
+                    const cur = devAssessData[comp.key] ?? {};
+                    saveRec({ devAssessment: { ...devAssessData, [comp.key]: { ...cur, t1level: newT1, summary: newSummary } } });
+                  };
+                  const onChangeT2 = e => {
+                    const newT2 = Number(e.target.value);
+                    const vals = [t1v, newT2].filter(v => v > 0);
+                    const avg  = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+                    const newSummary = avg >= 2.5 ? 3 : avg >= 1.5 ? 2 : avg > 0 ? 1 : 0;
+                    const cur = devAssessData[comp.key] ?? {};
+                    saveRec({ devAssessment: { ...devAssessData, [comp.key]: { ...cur, t2level: newT2, summary: newSummary } } });
+                  };
+
                   const rowBg = ci % 2 === 0 ? 'white' : '#fafafa';
                   return (
                     <div key={comp.key} style={{
@@ -1863,10 +1909,20 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
                         {comp.descriptor}
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '.75rem', alignItems: 'start' }}>
+
+                        {/* ── ภาคเรียนที่ 1 ── */}
                         <div>
-                          <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#1e40af', marginBottom: '.3rem' }}>ภาคเรียนที่ 1</div>
-                          <select value={da.t1level ?? 0}
-                            onChange={e => updateDevAssess(comp.key, 't1level', Number(e.target.value))}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '.4rem', marginBottom: '.3rem' }}>
+                            <span style={{ fontSize: '.72rem', fontWeight: 700, color: '#1e40af' }}>ภาคเรียนที่ 1</span>
+                            {raw1 !== null && rlc1 && (
+                              <span style={{
+                                fontSize: '.72rem', fontWeight: 800,
+                                background: rlc1.bg, color: rlc1.color,
+                                borderRadius: '5px', padding: '1px 7px',
+                              }}>{raw1.toFixed(2)}</span>
+                            )}
+                          </div>
+                          <select value={t1v} onChange={onChangeT1}
                             style={{ width: '100%', padding: '5px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.8rem', background: lc1.bg, color: lc1.color, fontWeight: 700 }}>
                             <option value={0}>— ระดับ —</option>
                             <option value={3}>3  ดี</option>
@@ -1874,10 +1930,20 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
                             <option value={1}>1  ปรับปรุง</option>
                           </select>
                         </div>
+
+                        {/* ── ภาคเรียนที่ 2 ── */}
                         <div>
-                          <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#065f46', marginBottom: '.3rem' }}>ภาคเรียนที่ 2</div>
-                          <select value={da.t2level ?? 0}
-                            onChange={e => updateDevAssess(comp.key, 't2level', Number(e.target.value))}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '.4rem', marginBottom: '.3rem' }}>
+                            <span style={{ fontSize: '.72rem', fontWeight: 700, color: '#065f46' }}>ภาคเรียนที่ 2</span>
+                            {raw2 !== null && rlc2 && (
+                              <span style={{
+                                fontSize: '.72rem', fontWeight: 800,
+                                background: rlc2.bg, color: rlc2.color,
+                                borderRadius: '5px', padding: '1px 7px',
+                              }}>{raw2.toFixed(2)}</span>
+                            )}
+                          </div>
+                          <select value={t2v} onChange={onChangeT2}
                             style={{ width: '100%', padding: '5px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.8rem', background: lc2.bg, color: lc2.color, fontWeight: 700 }}>
                             <option value={0}>— ระดับ —</option>
                             <option value={3}>3  ดี</option>
@@ -1885,17 +1951,29 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
                             <option value={1}>1  ปรับปรุง</option>
                           </select>
                         </div>
+
+                        {/* ── สรุประดับ — อัตโนมัติจากเฉลี่ย 2 ภาคเรียน ── */}
                         <div style={{ minWidth: '90px' }}>
                           <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#374151', marginBottom: '.3rem' }}>สรุประดับ</div>
-                          <select value={da.summary ?? 0}
-                            onChange={e => updateDevAssess(comp.key, 'summary', Number(e.target.value))}
-                            style={{ width: '100%', padding: '5px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.8rem', background: lcs.bg, color: lcs.color, fontWeight: 800 }}>
-                            <option value={0}>—</option>
-                            <option value={3}>3 ดี</option>
-                            <option value={2}>2 พอใช้</option>
-                            <option value={1}>1 ปรับปรุง</option>
-                          </select>
+                          {avgLevel > 0 ? (
+                            <div style={{
+                              background: lcs.bg, color: lcs.color,
+                              border: `1.5px solid ${lcs.color}60`,
+                              borderRadius: '6px', padding: '5px 8px',
+                              textAlign: 'center', fontWeight: 800,
+                            }}>
+                              <div style={{ fontSize: '.95rem', lineHeight: 1.1 }}>{avgLevel.toFixed(2)}</div>
+                              <div style={{ fontSize: '.68rem', opacity: 0.85, marginTop: '2px' }}>{avgLabel}</div>
+                            </div>
+                          ) : (
+                            <div style={{
+                              background: '#f9fafb', border: '1px dashed #d1d5db',
+                              borderRadius: '6px', padding: '10px 8px',
+                              textAlign: 'center', color: '#9ca3af', fontSize: '.75rem',
+                            }}>—</div>
+                          )}
                         </div>
+
                       </div>
                     </div>
                   );

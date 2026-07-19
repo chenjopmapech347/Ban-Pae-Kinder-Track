@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import { INDICATORS_DATA } from '../../data/indicatorsData';
-import { callClaude, buildTeacherCommentPrompt } from '../../utils/aiHelper';
+import { callClaude, buildTeacherCommentPrompt, buildDomainSummaryPrompt } from '../../utils/aiHelper';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 function thaiYear(adYear) { return adYear + 543; }
@@ -117,6 +117,18 @@ function getIndicatorTermScore(indData, actIds, term) {
     .filter(v => v !== null);
   if (!scores.length) return null;
   return parseFloat((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1));
+}
+
+// ── grade label from student.level (K1/K2/K3) ────────────────────────────────
+const GRADE_INFO = {
+  K1: { grade: 'อนุบาลปีที่ 1', ageRange: '3–4' },
+  K2: { grade: 'อนุบาลปีที่ 2', ageRange: '4–5' },
+  K3: { grade: 'อนุบาลปีที่ 3', ageRange: '5–6' },
+};
+function gradeLabelOf(student) {
+  const info = GRADE_INFO[student?.level];
+  if (!info) return '';
+  return `${info.grade} (อายุ ${info.ageRange} ปี)`;
 }
 
 // ── suggest level from indicator scores (อ้างอิง INDICATORS_DATA) ─────────────
@@ -317,9 +329,23 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
         idxOffset += sub.components.length;
         return subHeader + rows;
       }).join('');
-      return domainHeader + subRows;
+      const dsSummary = da[`__domainSummary_${domain.id}`];
+      const dsSummaryRow = dsSummary
+        ? `<tr><td colspan="8" style="${tdDA};background:${domain.color}08;padding:8px 12px">
+            <strong style="color:${domain.color}">📝 สรุปพัฒนาการด้าน${domain.label}</strong><br/>
+            <span style="white-space:pre-line;line-height:1.7">${dsSummary}</span>
+           </td></tr>`
+        : '';
+      return domainHeader + subRows + dsSummaryRow;
     }
-    return domainHeader + renderDevCompRows(domain.components, domain);
+    const dsSummary = da[`__domainSummary_${domain.id}`];
+    const dsSummaryRow = dsSummary
+      ? `<tr><td colspan="8" style="${tdDA};background:${domain.color}08;padding:8px 12px">
+          <strong style="color:${domain.color}">📝 สรุปพัฒนาการด้าน${domain.label}</strong><br/>
+          <span style="white-space:pre-line;line-height:1.7">${dsSummary}</span>
+         </td></tr>`
+      : '';
+    return domainHeader + renderDevCompRows(domain.components, domain) + dsSummaryRow;
   }).join('');
 
   const attRows = [1, 2].map(t => {
@@ -603,16 +629,16 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
     <h2 style="margin-top:14px">บันทึกการเจริญเติบโตของร่างกาย</h2>
     ${growthHtml}
 
-    <h2>2. เวลามาเรียน (คิดเป็นวัน)</h2>
-    <table>
-      <tr><th colspan="2">ภาคเรียน</th><th>เวลาเรียนเต็ม</th><th>มาเรียน</th><th>ไม่มาเรียน</th></tr>
-      ${attRows}
-    </table>
-
-    <h2>3. บันทึกการบริการทางสุขภาพ (การให้ภูมิคุ้มกัน)</h2>
+    <h2>2. บันทึกการบริการทางสุขภาพ (การให้ภูมิคุ้มกัน)</h2>
     <table>
       <tr><th>วัน/เดือน/ปี</th><th>การให้ภูมิคุ้มกัน</th><th>หมายเหตุ</th></tr>
       ${hsRows}
+    </table>
+
+    <h2>3. เวลามาเรียน (คิดเป็นวัน)</h2>
+    <table>
+      <tr><th colspan="2">ภาคเรียน</th><th>เวลาเรียนเต็ม</th><th>มาเรียน</th><th>ไม่มาเรียน</th></tr>
+      ${attRows}
     </table>
 
     <h2>4. บันทึกผลการประเมินพัฒนาการ — ความสามารถผู้เรียนเมื่อจบชั้นปี</h2>
@@ -1069,6 +1095,8 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
 
   const [aiCommentLoading, setAiCommentLoading] = useState({ 1: false, 2: false });
   const [aiCommentError,   setAiCommentError]   = useState({ 1: '', 2: '' });
+  const [aiDomainLoading,  setAiDomainLoading]  = useState({});
+  const [aiDomainError,    setAiDomainError]    = useState({});
 
   const [selStudentId, setSelStudentId] = useState(null);
   const [activeSection, setActiveSection] = useState('physical');
@@ -1193,6 +1221,27 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
     }
   }, [student, devAssessData, saveRec]);
 
+  // ── AI domain summary ─────────────────────────────────────────────────────
+  const handleAIDomainSummary = useCallback(async (domain) => {
+    if (!aiApiKey || !student) return;
+    const comps = domainAllComponents(domain);
+    const compScores = comps.map(comp => {
+      const d = devAssessData[comp.key] ?? {};
+      return { code: comp.code, label: comp.label, t1level: d.t1level ?? 0, t2level: d.t2level ?? 0 };
+    });
+    setAiDomainLoading(p => ({ ...p, [domain.id]: true }));
+    setAiDomainError(p => ({ ...p, [domain.id]: '' }));
+    try {
+      const result = await callClaude(aiApiKey, buildDomainSummaryPrompt(student, domain, compScores));
+      const key = `__domainSummary_${domain.id}`;
+      saveRec({ devAssessment: { ...devAssessData, [key]: result } });
+    } catch (e) {
+      setAiDomainError(p => ({ ...p, [domain.id]: e.message }));
+    } finally {
+      setAiDomainLoading(p => ({ ...p, [domain.id]: false }));
+    }
+  }, [aiApiKey, student, devAssessData, saveRec]);
+
   // ── attendance summary (computed from dailyRecords) ───────────────────────
   const attendanceSummary = useMemo(() => {
     if (!student) return { term1: {}, term2: {} };
@@ -1253,14 +1302,14 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
 
   // ── section tabs ──────────────────────────────────────────────────────────
   const SECTIONS = [
-    { id: 'physical',   label: '⚖️ ร่างกาย'           },
-    { id: 'attendance', label: '📅 เวลาเรียน'           },
-    { id: 'health',     label: '💉 บริการสุขภาพ'       },
-    { id: 'devreport',  label: '📋 พัฒนาการ'           },
+    { id: 'physical',    label: '⚖️ ร่างกาย'              },
+    { id: 'health',      label: '💉 บริการสุขภาพ'          },  // อ.01: ส่วนที่ 2
+    { id: 'attendance',  label: '📅 เวลาเรียน'             },  // อ.01: ส่วนที่ 3
+    { id: 'devreport',   label: '📋 พัฒนาการ'              },
     { id: 'summary',     label: '📊 สรุป 12 มาตรฐาน'      },
-    { id: 'comments',    label: '💬 ความคิดเห็น'            },
-    { id: 'philosophy',  label: '📖 ปรัชญา/วิสัยทัศน์'     },
-    { id: 'growthtable', label: '📏 เกณฑ์การเจริญเติบโต'   },
+    { id: 'comments',    label: '💬 ความคิดเห็น'           },
+    { id: 'philosophy',  label: '📖 ปรัชญา/วิสัยทัศน์'    },
+    { id: 'growthtable', label: '📏 เกณฑ์การเจริญเติบโต'  },
   ];
 
   // ── classes for selector ──────────────────────────────────────────────────
@@ -1816,7 +1865,7 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
                       fontWeight: 900, fontSize: '.88rem', color: domain.color,
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     }}>
-                      <span>{domain.emoji} พัฒนาการ{domain.label} — อนุบาลปีที่ 2 (อายุ 4–5 ปี)</span>
+                      <span>{domain.emoji} พัฒนาการ{domain.label}{gradeLabelOf(student) ? ` — ${gradeLabelOf(student)}` : ''}</span>
                       <button
                         onClick={() => handleSuggestDomain(domain)}
                         style={{
@@ -1856,6 +1905,67 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
                         <CompCard key={comp.key} comp={comp} ci={ci} />
                       ))
                     )}
+
+                    {/* ── Domain-level summary ─────────────────────────── */}
+                    {(() => {
+                      const dsKey   = `__domainSummary_${domain.id}`;
+                      const dsValue = devAssessData[dsKey] ?? '';
+                      const loading = aiDomainLoading[domain.id] ?? false;
+                      const errMsg  = aiDomainError[domain.id] ?? '';
+                      return (
+                        <div style={{
+                          marginTop: '1.25rem',
+                          background: `${domain.color}08`,
+                          border: `1.5px solid ${domain.color}35`,
+                          borderRadius: '10px',
+                          padding: '.85rem 1.1rem',
+                        }}>
+                          <div style={{
+                            display: 'flex', alignItems: 'center',
+                            gap: '.6rem', marginBottom: '.5rem', flexWrap: 'wrap',
+                          }}>
+                            <span style={{ fontWeight: 800, fontSize: '.83rem', color: domain.color }}>
+                              📝 สรุปพัฒนาการด้าน{domain.label}
+                            </span>
+                            {aiApiKey && (
+                              <button
+                                type="button"
+                                onClick={() => handleAIDomainSummary(domain)}
+                                disabled={loading}
+                                style={{
+                                  padding: '.2rem .65rem', borderRadius: '6px', border: 'none',
+                                  background: domain.color, color: 'white', fontFamily: 'inherit',
+                                  fontWeight: 700, fontSize: '.75rem',
+                                  cursor: loading ? 'wait' : 'pointer',
+                                  opacity: loading ? .65 : 1, flexShrink: 0,
+                                }}
+                              >
+                                {loading ? '⏳ กำลังเขียน…' : '✨ AI สรุปให้'}
+                              </button>
+                            )}
+                          </div>
+                          {errMsg && (
+                            <div style={{ fontSize: '.78rem', color: '#dc2626', marginBottom: '.3rem' }}>
+                              ❌ {errMsg}
+                            </div>
+                          )}
+                          <textarea
+                            value={dsValue}
+                            onChange={e => saveRec({ devAssessment: { ...devAssessData, [`__domainSummary_${domain.id}`]: e.target.value } })}
+                            rows={4}
+                            placeholder={`เขียนสรุปพัฒนาการด้าน${domain.label}ของนักเรียน หรือกด ✨ AI สรุปให้`}
+                            style={{
+                              width: '100%', padding: '8px 10px',
+                              border: `1px solid ${domain.color}50`,
+                              borderRadius: '8px', fontFamily: 'inherit',
+                              fontSize: '.82rem', lineHeight: 1.75,
+                              resize: 'vertical', boxSizing: 'border-box',
+                              background: 'white',
+                            }}
+                          />
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })}

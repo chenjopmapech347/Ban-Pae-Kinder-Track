@@ -165,6 +165,28 @@ ${lines}
 }
 
 /**
+ * Prompt สรุปพัฒนาการรายด้าน สำหรับบันทึกใน อ.01
+ * @param {object} student     - ข้อมูลนักเรียน
+ * @param {object} domain      - { label, emoji }
+ * @param {Array}  compScores  - [{ code, label, t1level, t2level }, ...]
+ */
+export function buildDomainSummaryPrompt(student, domain, compScores) {
+  const levelLabel = (v) => v === 3 ? 'ดีมาก' : v === 2 ? 'พอใช้' : v === 1 ? 'ต้องส่งเสริม' : 'ยังไม่ประเมิน';
+  const lines = compScores.map(c =>
+    `- [${c.code}] ${c.label}: ภาค 1 = ${levelLabel(c.t1level)}, ภาค 2 = ${levelLabel(c.t2level)}`
+  ).join('\n');
+
+  return `นักเรียน: ${student.name} ชั้น ${student.className ?? ''} ระดับ ${student.level ? `อนุบาลปีที่ ${student.level.replace('K', '')}` : ''}
+พัฒนาการ${domain.emoji} ด้าน${domain.label}
+
+ผลการประเมินตัวบ่งชี้:
+${lines}
+
+เขียนสรุปพัฒนาการด้าน${domain.label}ของเด็กคนนี้ สำหรับบันทึกใน อ.01
+ใช้ภาษาทางการที่อ่านง่าย เชิงบวก บอกจุดเด่น และจุดที่ควรส่งเสริมต่อ ความยาว 3-5 ประโยค`;
+}
+
+/**
  * สร้าง system context สำหรับ AI chatbot
  * @param {string} schoolName
  * @param {string} academicYear

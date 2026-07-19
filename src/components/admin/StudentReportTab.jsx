@@ -303,16 +303,14 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
         <td style="${tdDA};font-weight:700">${comp.label}</td>
         <td style="${tdDA};font-size:.72rem;color:#4b5563;white-space:pre-line">${comp.descriptor}</td>
         <td style="${tdDA};text-align:center">${lvBadge(row.t1level ?? 0)}</td>
-        <td style="${tdDA}">${row.t1highlight || ''}</td>
         <td style="${tdDA};text-align:center">${lvBadge(row.t2level ?? 0)}</td>
-        <td style="${tdDA}">${row.t2highlight || ''}</td>
         <td style="${tdDA};text-align:center;font-weight:800">${lvBadge(row.summary ?? 0)}</td>
       </tr>`;
     }).join('');
 
   const devAssessHtml = DEV_ASSESS_DOMAINS.map(domain => {
     const domainHeader = `<tr style="background:${domain.color}20">
-        <td colspan="8" style="padding:6px 10px;border:1px solid #d1d5db;font-weight:900;font-size:.85rem;color:${domain.color}">
+        <td colspan="6" style="padding:6px 10px;border:1px solid #d1d5db;font-weight:900;font-size:.85rem;color:${domain.color}">
           ${domain.emoji} พัฒนาการ${domain.label}
         </td>
       </tr>`;
@@ -321,7 +319,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       let idxOffset = 0;
       const subRows = domain.subDomains.map(sub => {
         const subHeader = `<tr style="background:${domain.color}10">
-          <td colspan="8" style="padding:4px 12px;border:1px solid #d1d5db;font-weight:700;font-size:.8rem;color:${domain.color}">
+          <td colspan="6" style="padding:4px 12px;border:1px solid #d1d5db;font-weight:700;font-size:.8rem;color:${domain.color}">
             ${sub.label}
           </td>
         </tr>`;
@@ -331,7 +329,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       }).join('');
       const dsSummary = da[`__domainSummary_${domain.id}`];
       const dsSummaryRow = dsSummary
-        ? `<tr><td colspan="8" style="${tdDA};background:${domain.color}08;padding:8px 12px">
+        ? `<tr><td colspan="6" style="${tdDA};background:${domain.color}08;padding:8px 12px">
             <strong style="color:${domain.color}">📝 สรุปพัฒนาการด้าน${domain.label}</strong><br/>
             <span style="white-space:pre-line;line-height:1.7">${dsSummary}</span>
            </td></tr>`
@@ -340,7 +338,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
     }
     const dsSummary = da[`__domainSummary_${domain.id}`];
     const dsSummaryRow = dsSummary
-      ? `<tr><td colspan="8" style="${tdDA};background:${domain.color}08;padding:8px 12px">
+      ? `<tr><td colspan="6" style="${tdDA};background:${domain.color}08;padding:8px 12px">
           <strong style="color:${domain.color}">📝 สรุปพัฒนาการด้าน${domain.label}</strong><br/>
           <span style="white-space:pre-line;line-height:1.7">${dsSummary}</span>
          </td></tr>`
@@ -647,11 +645,9 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       <tr>
         <th style="${thDA};width:48px">รหัส</th>
         <th style="${thDA}">องค์ประกอบ</th>
-        <th style="${thDA}">สภาพที่พึงประสงค์ อนุบาลปีที่ 2</th>
-        <th style="${thDA};width:44px">ภาค 1 ระดับ</th>
-        <th style="${thDA}">จุดเด่น ภาค 1</th>
-        <th style="${thDA};width:44px">ภาค 2 ระดับ</th>
-        <th style="${thDA}">จุดเด่น ภาค 2</th>
+        <th style="${thDA}">สภาพที่พึงประสงค์</th>
+        <th style="${thDA};width:52px">ภาค 1</th>
+        <th style="${thDA};width:52px">ภาค 2</th>
         <th style="${thDA};width:52px">สรุป</th>
       </tr>
       ${devAssessHtml}
@@ -1816,29 +1812,23 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
                           <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#1e40af', marginBottom: '.3rem' }}>ภาคเรียนที่ 1</div>
                           <select value={da.t1level ?? 0}
                             onChange={e => updateDevAssess(comp.key, 't1level', Number(e.target.value))}
-                            style={{ width: '100%', padding: '5px 8px', marginBottom: '.35rem', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.8rem', background: lc1.bg, color: lc1.color, fontWeight: 700 }}>
+                            style={{ width: '100%', padding: '5px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.8rem', background: lc1.bg, color: lc1.color, fontWeight: 700 }}>
                             <option value={0}>— ระดับ —</option>
                             <option value={3}>3  ดี</option>
                             <option value={2}>2  พอใช้</option>
                             <option value={1}>1  ปรับปรุง</option>
                           </select>
-                          <textarea value={da.t1highlight ?? ''} onChange={e => updateDevAssess(comp.key, 't1highlight', e.target.value)}
-                            placeholder="จุดเด่นความสามารถ ภาคเรียน 1..." rows={3}
-                            style={{ width: '100%', padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.78rem', resize: 'vertical', boxSizing: 'border-box', lineHeight: '1.5' }} />
                         </div>
                         <div>
                           <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#065f46', marginBottom: '.3rem' }}>ภาคเรียนที่ 2</div>
                           <select value={da.t2level ?? 0}
                             onChange={e => updateDevAssess(comp.key, 't2level', Number(e.target.value))}
-                            style={{ width: '100%', padding: '5px 8px', marginBottom: '.35rem', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.8rem', background: lc2.bg, color: lc2.color, fontWeight: 700 }}>
+                            style={{ width: '100%', padding: '5px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.8rem', background: lc2.bg, color: lc2.color, fontWeight: 700 }}>
                             <option value={0}>— ระดับ —</option>
                             <option value={3}>3  ดี</option>
                             <option value={2}>2  พอใช้</option>
                             <option value={1}>1  ปรับปรุง</option>
                           </select>
-                          <textarea value={da.t2highlight ?? ''} onChange={e => updateDevAssess(comp.key, 't2highlight', e.target.value)}
-                            placeholder="จุดเด่นความสามารถ ภาคเรียน 2..." rows={3}
-                            style={{ width: '100%', padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.78rem', resize: 'vertical', boxSizing: 'border-box', lineHeight: '1.5' }} />
                         </div>
                         <div style={{ minWidth: '90px' }}>
                           <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#374151', marginBottom: '.3rem' }}>สรุประดับ</div>

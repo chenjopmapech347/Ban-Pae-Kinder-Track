@@ -1910,30 +1910,66 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
                           borderRadius: '10px',
                           padding: '.85rem 1.1rem',
                         }}>
-                          <div style={{
-                            display: 'flex', alignItems: 'center',
-                            gap: '.6rem', marginBottom: '.5rem', flexWrap: 'wrap',
-                          }}>
-                            <span style={{ fontWeight: 800, fontSize: '.83rem', color: domain.color }}>
-                              📝 สรุปพัฒนาการด้าน{domain.label}
-                            </span>
-                            {aiApiKey && (
-                              <button
-                                type="button"
-                                onClick={() => handleAIDomainSummary(domain)}
-                                disabled={loading}
-                                style={{
-                                  padding: '.2rem .65rem', borderRadius: '6px', border: 'none',
-                                  background: domain.color, color: 'white', fontFamily: 'inherit',
-                                  fontWeight: 700, fontSize: '.75rem',
-                                  cursor: loading ? 'wait' : 'pointer',
-                                  opacity: loading ? .65 : 1, flexShrink: 0,
-                                }}
-                              >
-                                {loading ? '⏳ กำลังเขียน…' : '✨ AI สรุปให้'}
-                              </button>
-                            )}
-                          </div>
+                          {(() => {
+                            const domAvg = devAssessDomainAvg(devAssessData, domain.id);
+                            const avgLabel = domAvg === 3 ? 'ดี' : domAvg === 2 ? 'พอใช้' : domAvg === 1 ? 'ปรับปรุง' : null;
+                            const lc = levelColor(domAvg);
+                            return (
+                              <div style={{
+                                display: 'flex', alignItems: 'center',
+                                gap: '.6rem', marginBottom: '.5rem', flexWrap: 'wrap',
+                              }}>
+                                <span style={{ fontWeight: 800, fontSize: '.83rem', color: domain.color }}>
+                                  📝 สรุปพัฒนาการด้าน{domain.label}
+                                </span>
+                                {aiApiKey && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAIDomainSummary(domain)}
+                                    disabled={loading}
+                                    style={{
+                                      padding: '.2rem .65rem', borderRadius: '6px', border: 'none',
+                                      background: domain.color, color: 'white', fontFamily: 'inherit',
+                                      fontWeight: 700, fontSize: '.75rem',
+                                      cursor: loading ? 'wait' : 'pointer',
+                                      opacity: loading ? .65 : 1, flexShrink: 0,
+                                    }}
+                                  >
+                                    {loading ? '⏳ กำลังเขียน…' : '✨ AI สรุปให้'}
+                                  </button>
+                                )}
+                                {/* เฉลี่ยด้าน + badge */}
+                                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '.5rem', flexShrink: 0 }}>
+                                  {domAvg > 0 && (
+                                    <span style={{ fontSize: '.75rem', color: '#6b7280', fontWeight: 600 }}>
+                                      เฉลี่ยด้าน
+                                    </span>
+                                  )}
+                                  {domAvg > 0 ? (
+                                    <span style={{
+                                      background: lc.bg, color: lc.color,
+                                      border: `1.5px solid ${lc.color}60`,
+                                      borderRadius: '8px', padding: '3px 14px',
+                                      fontWeight: 900, fontSize: '.88rem',
+                                      minWidth: '72px', textAlign: 'center',
+                                      display: 'inline-block',
+                                    }}>
+                                      {domAvg} — {avgLabel}
+                                    </span>
+                                  ) : (
+                                    <span style={{
+                                      border: '1.5px dashed #d1d5db', borderRadius: '8px',
+                                      padding: '3px 14px', color: '#9ca3af',
+                                      fontSize: '.78rem', minWidth: '72px', textAlign: 'center',
+                                      display: 'inline-block',
+                                    }}>
+                                      ยังไม่มีข้อมูล
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })()}
                           {errMsg && (
                             <div style={{ fontSize: '.78rem', color: '#dc2626', marginBottom: '.3rem' }}>
                               ❌ {errMsg}

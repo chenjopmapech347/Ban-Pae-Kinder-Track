@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { INDICATORS_DATA } from '../../data/indicatorsData';
 import { callClaude, buildTeacherCommentPrompt, buildDomainSummaryPrompt } from '../../utils/aiHelper';
@@ -1237,6 +1237,61 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
       setAiDomainLoading(p => ({ ...p, [domain.id]: false }));
     }
   }, [aiApiKey, student, devAssessData, saveRec]);
+
+  // ── auto-fill devAssess levels from indicator scores on student select ───────
+  // เมื่อเลือกนักเรียนใหม่ ดึงคะแนนจากระบบประเมินพัฒนาการมาเติมให้อัตโนมัติ
+  // (เติมเฉพาะช่องที่ยังเป็น 0 — ไม่ทับค่าที่ครูกรอกแล้ว)
+  const autoFilledRecRef = useRef(null);
+
+  useEffect(() => {
+    if (!student || !recKey) return;
+    if (autoFilledRecRef.current === recKey) return; // ป้องกันรัน 2 ครั้งสำหรับ student เดิม
+    autoFilledRecRef.current = recKey;
+
+    const currentDA = studentReportRecords[recKey]?.devAssessment ?? emptyDevAssess();
+    const updates = {};
+    let hasAny = false;
+
+    DEV_ASSESS_DOMAINS.forEach(domain => {
+      domainAllComponents(domain).forEach(comp => {
+        if (!comp.domainId || !comp.standardId || !comp.indicatorId) return;
+        const cur = currentDA[comp.key] ?? { t1level: 0, t2level: 0, summary: 0 };
+        const fillT1 = (cur.t1level ?? 0) === 0
+          ? suggestLevelFromIndicator(student, comp.domainId, comp.standardId, comp.indicatorId, 1)
+          : 0;
+        const fillT2 = (cur.t2level ?? 0) === 0
+          ? suggestLevelFromIndicator(student, comp.domainId, comp.standardId, comp.indicatorId, 2)
+          : 0;
+        if (fillT1 > 0 || fillT2 > 0) {
+          const fillSummary = (cur.summary ?? 0) === 0 ? (fillT2 || fillT1) : 0;
+          updates[comp.key] = {
+            ...cur,
+            ...(fillT1 > 0 && { t1level: fillT1 }),
+            ...(fillT2 > 0 && { t2level: fillT2 }),
+            ...(fillSummary > 0 && { summary: fillSummary }),
+          };
+          hasAny = true;
+        }
+      });
+    });
+
+    if (!hasAny) return;
+    setStudentReportRecords(prev => ({
+      ...prev,
+      [recKey]: {
+        ...(prev[recKey] ?? {
+          studentId: selStudentId, academicYear,
+          physicalRecords: emptyPhys(), growthRecords: emptyGrowth(),
+          devAssessment: emptyDevAssess(), healthServices: [],
+          teacherComments: { term1: '', term2: '' },
+          parentComments: { term1: '', term2: '' },
+          directorsComment: '',
+        }),
+        devAssessment: { ...currentDA, ...updates },
+      },
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [student?.id, recKey]);
 
   // ── attendance summary (computed from dailyRecords) ───────────────────────
   const attendanceSummary = useMemo(() => {

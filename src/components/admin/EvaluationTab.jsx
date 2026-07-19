@@ -773,6 +773,7 @@ export default function EvaluationTab() {
   const [selTopic,     setTopic]     = useState(null);
   const [selIndicator, setIndicator] = useState(null);
   const [selActivity,  setActivity]  = useState(null);
+  const [systemTab,    setSystemTab] = useState('qa');  // 'qa' = ระบบที่ 1 ดย. | 'std' = ระบบที่ 2 หลักสูตร
 
   // Step 2 — ห้อง
   const [selLevel, setLevel] = useState(() => teacherLevel ?? null);
@@ -785,7 +786,7 @@ export default function EvaluationTab() {
   const [saved,      setSaved]      = useState(false);
 
   // filtered indicators + activities
-  const topicIndicators = useMemo(
+  const allTopicIndicators = useMemo(
     () => indicators
       .filter(i => i.domainId === selTopic)
       .sort((a, b) => {
@@ -796,6 +797,13 @@ export default function EvaluationTab() {
         return parse(a.indicatorCode) - parse(b.indicatorCode);
       }),
     [indicators, selTopic]
+  );
+  // split by ระบบ prefix: qa- = ระบบที่ 1 (ดย.), std- = ระบบที่ 2 (หลักสูตร)
+  const hasQA  = allTopicIndicators.some(i => String(i.standardId ?? '').startsWith('qa-'));
+  const hasSTD = allTopicIndicators.some(i => String(i.standardId ?? '').startsWith('std-'));
+  const topicIndicators = useMemo(
+    () => allTopicIndicators.filter(i => String(i.standardId ?? '').startsWith(systemTab + '-')),
+    [allTopicIndicators, systemTab]
   );
   const indActivities = useMemo(
     () => activities.filter(a => a.indicatorId === selIndicator),
@@ -845,7 +853,7 @@ export default function EvaluationTab() {
   }, [selActivity, selIndicator, selClass, round, classStudents, assessDate, dailyRecords]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // reset chain when parent changes
-  const handleTopicChange = id => { setTopic(id); setIndicator(null); setActivity(null); };
+  const handleTopicChange = id => { setTopic(id); setIndicator(null); setActivity(null); setSystemTab('qa'); };
   const handleIndicatorChange = id => { setIndicator(id); setActivity(null); };
   const handleLevelChange = lv => { setLevel(lv); setClass(CLASS_MAP[lv]?.[0] ?? ''); };
 
@@ -1030,9 +1038,52 @@ export default function EvaluationTab() {
         {/* ตัวบ่งชี้ */}
         {selTopic && (
           <div style={{ marginBottom: '.75rem' }}>
-            <label style={{ fontSize: '.77rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '.35rem' }}>
+            <label style={{ fontSize: '.77rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '.45rem' }}>
               📋 ตัวบ่งชี้
             </label>
+
+            {/* ระบบ tabs — แสดงเฉพาะเมื่อมีทั้งสองระบบ */}
+            {hasQA && hasSTD && (
+              <div style={{ display: 'flex', gap: '.4rem', marginBottom: '.6rem' }}>
+                {[
+                  { key: 'qa',  label: 'ระบบที่ 1 — ดย.',     color: '#7c3aed' },
+                  { key: 'std', label: 'ระบบที่ 2 — หลักสูตร', color: '#0891b2' },
+                ].map(tab => {
+                  const active = systemTab === tab.key;
+                  const count = allTopicIndicators.filter(i => String(i.standardId ?? '').startsWith(tab.key + '-')).length;
+                  return (
+                    <button key={tab.key} type="button"
+                      onClick={() => { setSystemTab(tab.key); setIndicator(null); setActivity(null); }}
+                      style={{
+                        padding: '.3rem .85rem',
+                        borderRadius: '8px',
+                        border: `2px solid ${active ? tab.color : '#e5e7eb'}`,
+                        background: active ? tab.color : 'white',
+                        color: active ? 'white' : '#6b7280',
+                        fontFamily: 'inherit',
+                        fontWeight: 700,
+                        fontSize: '.78rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '.4rem',
+                        transition: 'all .15s',
+                      }}>
+                      {tab.label}
+                      <span style={{
+                        background: active ? 'rgba(255,255,255,0.25)' : '#f3f4f6',
+                        color: active ? 'white' : '#9ca3af',
+                        borderRadius: '5px',
+                        padding: '0 .4rem',
+                        fontSize: '.7rem',
+                        fontWeight: 800,
+                      }}>{count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
             <PillGroup
               items={topicIndicators}
               selected={selIndicator}

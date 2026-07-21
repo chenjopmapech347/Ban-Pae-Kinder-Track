@@ -813,6 +813,28 @@ export function AppProvider({ children }) {
       applyHX(setLunchRecords);
       applyHX(setToothBrushRecords);
 
+      // ── DailyRoutine → ทำกิจกรรมปกติ 7 key = true สำหรับห้องที่มีนักเรียนมา ──
+      // เป็น record ระดับห้องเรียน (ไม่ใช่รายนักเรียน) — เช็ค class-level เท่านั้น
+      {
+        const DAILY_ROUTINE_KEYS = ['morning', 'exercise', 'circle', 'story', 'cleanup', 'dressing', 'dance'];
+        const allTrue = Object.fromEntries(DAILY_ROUTINE_KEYS.map(k => [k, true]));
+        setDailyRoutineRecords(prev => {
+          const next = { ...prev };
+          Object.keys(byClass).forEach(cls => {
+            const k   = makeKey(cls);
+            const rec = next[k]
+              ? { ...next[k], days: { ...next[k].days } }
+              : { id: k, className: cls, academicYear, year: thaiYear, month, days: {} };
+            // เติมเฉพาะวันที่ยังไม่มีข้อมูล (ไม่ overwrite ที่ครูบันทึกแล้ว)
+            if (!(day in (rec.days ?? {}))) {
+              rec.days[day] = { ...allTrue };
+            }
+            next[k] = rec;
+          });
+          return next;
+        });
+      }
+
       // ── IllnessCheck → มา:'√' | ขาด/ลา:'X' | ป่วย:'C' ──
       setIllnessCheckRecords(prev => {
         const next = { ...prev };
@@ -986,6 +1008,7 @@ export function AppProvider({ children }) {
       milkRecords,       setMilkRecords,
       lunchRecords,      setLunchRecords,
       toothBrushRecords, setToothBrushRecords,
+      setDailyRoutineRecords,
       setIllnessCheckRecords,
       healthCheckRecords, setHealthCheckRecords,
       cornerRecords,      setCornerRecords,      cornerDefs,

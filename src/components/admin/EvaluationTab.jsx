@@ -298,8 +298,8 @@ function thaiDate(iso) {
 // ── Daily stats helpers ───────────────────────────────────────────────────────
 // คำนวณจำนวนวันและอัตรา % จาก records ที่มี structure:
 // { [key]: { className, students: { [sid]: { days: { [day]: value } } } } }
-// value: 'H' = ทำ, '' = ไม่ทำ (แต่มา), 'X' = ขาด/ลา/ป่วย (auto-fill)
-// → นับเฉพาะวันที่มา ('H' และ '') ใน total; 'X' ข้ามทั้ง total และ done
+// value: '√' = ทำ, '' = ไม่ทำ (แต่มา), 'X' = ขาด/ลา/ป่วย (auto-fill)
+// → นับเฉพาะวันที่มา ('√' และ '') ใน total; 'X' ข้ามทั้ง total และ done
 function computeMonthlyStats(records, studentId, className) {
   let done = 0, total = 0;
   Object.values(records ?? {}).forEach(rec => {
@@ -309,7 +309,7 @@ function computeMonthlyStats(records, studentId, className) {
     Object.values(sData.days).forEach(v => {
       if (v === 'X') return;   // วันขาด/ลา/ป่วย — ไม่นับในตัวหาร ไม่ลดคะแนน
       total++;
-      if (v === 'H') done++;   // นับเฉพาะ 'H' = ทำจริง
+      if (v === '√' || v === 'H') done++;   // นับ '√' = ทำจริง (รองรับข้อมูลเก่า 'H')
     });
   });
   return total > 0 ? { done, total, pct: Math.round(done / total * 100) } : null;

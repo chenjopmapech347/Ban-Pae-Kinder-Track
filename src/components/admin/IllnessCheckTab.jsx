@@ -41,14 +41,13 @@ function genderOf(student) {
 // ── สัญลักษณ์การบันทึก ────────────────────────────────────────────────────────
 // √  = มาเรียนปกติ
 // C  = มาเรียน + อาการหวัด/ไข้ (โรคทั่วไป)
-// H  = มาเรียน + อาการมือเท้าปาก
 // D  = มาเรียน + อุจจาระร่วง
 // X  = ไม่มาเรียน
 // '' = ว่าง (วันหยุด / ยังไม่บันทึก)
 
-const SYMBOLS = ['', '√', 'X', 'C', 'H', 'D'];
+const SYMBOLS = ['', '√', 'X', 'C', 'D'];
 
-// วงจรคลิก: ว่าง → √ → X → C → H → D → ว่าง
+// วงจรคลิก: ว่าง → √ → X → C → D → ว่าง
 function nextSymbol(current) {
   const i = SYMBOLS.indexOf(current ?? '');
   return SYMBOLS[(i + 1) % SYMBOLS.length];
@@ -60,7 +59,6 @@ const SYM_STYLE = {
   '√': { bg: '#d1fae5', color: '#065f46', fw: 700 },
   'X': { bg: '#f3f4f6', color: '#9ca3af', fw: 700 },
   'C': { bg: '#fef3c7', color: '#92400e', fw: 800 },
-  'H': { bg: '#fee2e2', color: '#991b1b', fw: 800 },
   'D': { bg: '#ede9fe', color: '#5b21b6', fw: 800 },
 };
 
@@ -95,12 +93,12 @@ function makeDefaultRecord(k, cls, ay, yr, mo) {
 
 // นับวันป่วย
 function countSick(days) {
-  return Object.values(days ?? {}).filter(d => ['C','H','D'].includes(d?.v)).length;
+  return Object.values(days ?? {}).filter(d => ['C','D'].includes(d?.v)).length;
 }
 
 // นับวันมาเรียน
 function countPresent(days) {
-  return Object.values(days ?? {}).filter(d => d?.v === '√' || ['C','H','D'].includes(d?.v)).length;
+  return Object.values(days ?? {}).filter(d => d?.v === '√' || ['C','D'].includes(d?.v)).length;
 }
 
 // ── DayCell ───────────────────────────────────────────────────────────────────
@@ -162,7 +160,7 @@ function DayDetailModal({ studentName, day, month, year, entry, onSave, onClose 
         </div>
 
         {/* การแยกเด็ก (แสดงเฉพาะตอนป่วย C/H/D) */}
-        {['C','H','D'].includes(local.v) && (
+        {['C','D'].includes(local.v) && (
           <div>
             <label style={lbl}>การแยกเด็กป่วย</label>
             <div style={{ display:'flex', gap:'.35rem' }}>
@@ -467,8 +465,8 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
     return dayArr.map(d => {
       const syms = classStudents.map(s => draft.students[s.id]?.days?.[d]?.v ?? '');
       return {
-        present: syms.filter(v => v === '√' || ['C','H','D'].includes(v)).length,
-        sick:    syms.filter(v => ['C','H','D'].includes(v)).length,
+        present: syms.filter(v => v === '√' || ['C','D'].includes(v)).length,
+        sick:    syms.filter(v => ['C','D'].includes(v)).length,
         absent:  syms.filter(v => v === 'X').length,
       };
     });
@@ -527,7 +525,6 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
         {[
           ['√','มาปกติ','#d1fae5','#065f46'],
           ['C','หวัด/ไข้','#fef3c7','#92400e'],
-          ['H','มือเท้าปาก','#fee2e2','#991b1b'],
           ['D','อุจจาระร่วง','#ede9fe','#5b21b6'],
           ['X','ไม่มาเรียน','#f3f4f6','#9ca3af'],
         ].map(([sym,label,bg,color]) => (

@@ -787,7 +787,7 @@ export function AppProvider({ children }) {
             ids.forEach(id => {
               const sData = rec.students[id] ?? { days: {} };
               if (!(day in (sData.days ?? {}))) {
-                rec.students[id] = { ...sData, days: { ...(sData.days ?? {}), [day]: 'H' } };
+                rec.students[id] = { ...sData, days: { ...(sData.days ?? {}), [day]: '√' } };
               }
             });
             next[k] = rec;

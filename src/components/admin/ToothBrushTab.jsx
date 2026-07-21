@@ -2,16 +2,19 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 
 // ── สัญลักษณ์ ────────────────────────────────────────────────────────────────
-// H  = แปรงฟัน (brushed)
+// √  = แปรงฟัน (brushed)
 // X  = ไม่มาเรียน / ขาด
 // '' = ว่าง (วันหยุด / ยังไม่บันทึก)
-const CYCLE = ['', 'H', 'X']; // วนคลิก
+const CYCLE = ['', '√', 'X']; // วนคลิก
+const DONE_SYM = '√'; // เดิมใช้ 'H'
 
 const CELL_STYLE = {
-  H:  { bg: '#fef9c3', color: '#713f12', fw: 800 }, // เหลืองทอง = แปรงฟัน
-  X:  { bg: '#f3f4f6', color: '#9ca3af', fw: 700 }, // เทา = ไม่มาเรียน
-  '': { bg: 'white',   color: '#d1d5db', fw: 400 }, // ว่าง
+  '√': { bg: '#fef9c3', color: '#713f12', fw: 800 }, // เหลืองทอง = แปรงฟัน
+  H:   { bg: '#fef9c3', color: '#713f12', fw: 800 }, // backward compat (ข้อมูลเก่า)
+  X:   { bg: '#f3f4f6', color: '#9ca3af', fw: 700 }, // เทา = ไม่มาเรียน
+  '':  { bg: 'white',   color: '#d1d5db', fw: 400 }, // ว่าง
 };
+function isDone(v) { return v === DONE_SYM || v === 'H'; } // รองรับข้อมูลเก่า
 
 // วันในสัปดาห์ (ย่อ)
 const DOW_SHORT = ['อา','จ','อ','พ','พฤ','ศ','ส'];
@@ -41,9 +44,9 @@ function nextSym(cur) {
   return CYCLE[(i + 1) % CYCLE.length];
 }
 
-// นับ H
+// นับ √ (รองรับข้อมูลเก่าที่ใช้ 'H')
 function countH(days) {
-  return Object.values(days ?? {}).filter(v => v === 'H').length;
+  return Object.values(days ?? {}).filter(v => isDone(v)).length;
 }
 
 // ไม่ patch อัตโนมัติ — ครูใช้ checkbox เลือกเอง
@@ -161,17 +164,17 @@ export default function ToothBrushTab({ teacherClassFilter = null }) {
     });
   }
 
-  // toggle H ทั้งคอลัมน์ — checked → H, unchecked → ว่าง
+  // toggle √ ทั้งคอลัมน์ — checked → √, unchecked → ว่าง
   function toggleAllH(day) {
     if (isWeekend(selYear, selMonth, day)) return;
     const allH = classStudents.length > 0 &&
-      classStudents.every(s => draft.students[s.id]?.days?.[day] === 'H');
+      classStudents.every(s => isDone(draft.students[s.id]?.days?.[day]));
     setSaved(false);
     setDraft(prev => {
       const updated = { ...prev.students };
       classStudents.forEach(s => {
         const sData = updated[s.id] ?? { days: {} };
-        updated[s.id] = { ...sData, days: { ...(sData.days ?? {}), [day]: allH ? '' : 'H' } };
+        updated[s.id] = { ...sData, days: { ...(sData.days ?? {}), [day]: allH ? '' : DONE_SYM } };
       });
       return { ...prev, students: updated };
     });
@@ -198,7 +201,7 @@ export default function ToothBrushTab({ teacherClassFilter = null }) {
 
   // สรุปแต่ละวัน (จำนวน H ของทั้งห้อง)
   const daySummary = useMemo(() =>
-    dayArr.map(d => classStudents.filter(s => draft.students[s.id]?.days?.[d] === 'H').length),
+    dayArr.map(d => classStudents.filter(s => isDone(draft.students[s.id]?.days?.[d])).length),
     [draft, classStudents, dayArr]
   );
 
@@ -219,7 +222,7 @@ export default function ToothBrushTab({ teacherClassFilter = null }) {
       const cells = dayArr.map(d => {
         const v = sData.days?.[d] ?? '';
         const wknd = isWeekend(selYear, selMonth, d);
-        const cls = wknd ? 'wknd' : v === 'H' ? 'brush' : v === 'X' ? 'abs' : '';
+        const cls = wknd ? 'wknd' : isDone(v) ? 'brush' : v === 'X' ? 'abs' : '';
         return `<td class="${cls}">${v}</td>`;
       }).join('');
       const total = countH(sData.days);
@@ -229,7 +232,7 @@ export default function ToothBrushTab({ teacherClassFilter = null }) {
 
     // footer row — count H per day
     const footRow = dayArr.map(d => {
-      const cnt = classStudents.filter(s => draft.students[s.id]?.days?.[d] === 'H').length;
+      const cnt = classStudents.filter(s => isDone(draft.students[s.id]?.days?.[d])).length;
       return `<td class="footd">${cnt > 0 ? cnt : ''}</td>`;
     }).join('');
 
@@ -340,7 +343,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
       {/* ── Legend ── */}
       <div style={{ display:'flex', gap:'.5rem', flexWrap:'wrap', marginBottom:'.75rem', fontSize:'.72rem', alignItems:'center' }}>
         {[
-          ['H','แปรงฟัน','#fef9c3','#713f12'],
+          ['√','แปรงฟัน','#fef9c3','#713f12'],
           ['X','ไม่มาเรียน','#f3f4f6','#9ca3af'],
           ['—','วันหยุด/ไม่บันทึก','white','#d1d5db'],
         ].map(([sym,label,bg,color]) => (
@@ -400,7 +403,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                     <td key={d} style={{ border:'1px solid #e5e7eb', background:'#e5e7eb', padding:'1px' }} />
                   );
                   const allH = classStudents.length > 0 &&
-                    classStudents.every(s => draft.students[s.id]?.days?.[d] === 'H');
+                    classStudents.every(s => isDone(draft.students[s.id]?.days?.[d]));
                   return (
                     <td key={d}
                       onClick={() => toggleAllH(d)}

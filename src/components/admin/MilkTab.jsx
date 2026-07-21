@@ -1,16 +1,19 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 
-// H  = ดื่มนม
+// √  = ดื่มนม
 // X  = ไม่มาเรียน / ขาด
 // '' = ว่าง (วันหยุด / ยังไม่บันทึก)
-const CYCLE = ['', 'H', 'X'];
+const CYCLE = ['', '√', 'X'];
+const DONE_SYM = '√'; // เดิมใช้ 'H'
 
 const CELL_STYLE = {
-  H:  { bg: '#dbeafe', color: '#1e40af', fw: 800 }, // ฟ้าอ่อน = ดื่มนม
-  X:  { bg: '#f3f4f6', color: '#9ca3af', fw: 700 }, // เทา = ไม่มาเรียน
-  '': { bg: 'white',   color: '#d1d5db', fw: 400 },
+  '√': { bg: '#dbeafe', color: '#1e40af', fw: 800 }, // ฟ้าอ่อน = ดื่มนม
+  H:   { bg: '#dbeafe', color: '#1e40af', fw: 800 }, // backward compat (ข้อมูลเก่า)
+  X:   { bg: '#f3f4f6', color: '#9ca3af', fw: 700 }, // เทา = ไม่มาเรียน
+  '':  { bg: 'white',   color: '#d1d5db', fw: 400 },
 };
+function isDone(v) { return v === DONE_SYM || v === 'H'; } // รองรับข้อมูลเก่า
 
 const DOW_SHORT   = ['อา','จ','อ','พ','พฤ','ศ','ส'];
 const THAI_MONTHS = ['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
@@ -24,7 +27,7 @@ function recKey(className, academicYear, year, month) {
   return `${className}__${academicYear}__${year}-${String(month).padStart(2, '0')}`;
 }
 function nextSym(cur) { const i = CYCLE.indexOf(cur ?? ''); return CYCLE[(i + 1) % CYCLE.length]; }
-function countH(days) { return Object.values(days ?? {}).filter(v => v === 'H').length; }
+function countH(days) { return Object.values(days ?? {}).filter(v => isDone(v)).length; }
 
 // ไม่ patch อัตโนมัติ — ครูใช้ checkbox เลือกเอง
 function patchCurrentMonth(rec) { return rec; }
@@ -141,13 +144,13 @@ export default function MilkTab({ teacherClassFilter = null }) {
   function toggleAllH(day) {
     if (isWeekend(selYear, selMonth, day)) return;
     const allH = classStudents.length > 0 &&
-      classStudents.every(s => draft.students[s.id]?.days?.[day] === 'H');
+      classStudents.every(s => isDone(draft.students[s.id]?.days?.[day]));
     setSaved(false);
     setDraft(prev => {
       const updated = { ...prev.students };
       classStudents.forEach(s => {
         const sData = updated[s.id] ?? { days: {} };
-        updated[s.id] = { ...sData, days: { ...(sData.days ?? {}), [day]: allH ? '' : 'H' } };
+        updated[s.id] = { ...sData, days: { ...(sData.days ?? {}), [day]: allH ? '' : DONE_SYM } };
       });
       return { ...prev, students: updated };
     });
@@ -173,7 +176,7 @@ export default function MilkTab({ teacherClassFilter = null }) {
   }, [isTeacher, user, teachers, selClass]);
 
   const daySummary = useMemo(() =>
-    dayArr.map(d => classStudents.filter(s => draft.students[s.id]?.days?.[d] === 'H').length),
+    dayArr.map(d => classStudents.filter(s => isDone(draft.students[s.id]?.days?.[d])).length),
     [draft, classStudents, dayArr]
   );
 
@@ -192,7 +195,7 @@ export default function MilkTab({ teacherClassFilter = null }) {
       const cells = dayArr.map(d => {
         const v    = sData.days?.[d] ?? '';
         const wknd = isWeekend(selYear, selMonth, d);
-        const cls  = wknd ? 'wknd' : v === 'H' ? 'milk' : v === 'X' ? 'abs' : '';
+        const cls  = wknd ? 'wknd' : isDone(v) ? 'milk' : v === 'X' ? 'abs' : '';
         return `<td class="${cls}">${v}</td>`;
       }).join('');
       const total = countH(sData.days);
@@ -310,7 +313,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
       {/* Legend */}
       <div style={{ display:'flex', gap:'.5rem', flexWrap:'wrap', marginBottom:'.75rem', fontSize:'.72rem', alignItems:'center' }}>
         {[
-          ['H','ดื่มนม','#dbeafe','#1e40af'],
+          ['√','ดื่มนม','#dbeafe','#1e40af'],
           ['X','ไม่มาเรียน','#f3f4f6','#9ca3af'],
           ['—','วันหยุด/ไม่บันทึก','white','#d1d5db'],
         ].map(([sym, label, bg, color]) => (
@@ -368,11 +371,11 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                   const wknd = isWeekend(selYear, selMonth, d);
                   if (wknd) return <td key={d} style={{ border:'1px solid #e5e7eb', background:'#e5e7eb', padding:'1px' }} />;
                   const allH = classStudents.length > 0 &&
-                    classStudents.every(s => draft.students[s.id]?.days?.[d] === 'H');
+                    classStudents.every(s => isDone(draft.students[s.id]?.days?.[d]));
                   return (
                     <td key={d}
                       onClick={() => toggleAllH(d)}
-                      title={allH ? 'ยกเลิก H ทั้งคอลัมน์' : 'H ทุกคน'}
+                      title={allH ? 'ยกเลิก √ ทั้งคอลัมน์' : '√ ทุกคน'}
                       style={{ textAlign:'center', cursor:'pointer', padding:'2px', border:'1px solid #d1d5db', background: allH ? '#dbeafe' : '#f9fafb' }}>
                       <input
                         type="checkbox" checked={allH}

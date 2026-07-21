@@ -21,7 +21,14 @@ function daysBetween(start, end) {
 }
 
 export default function TermsTab() {
-  const { schoolTerms, setSchoolTerms, academicYear } = useApp();
+  const { schoolTerms, setSchoolTerms, lockedTerms, setLockedTerms, academicYear } = useApp();
+
+  const lockKey     = (idx) => `${academicYear}-${idx}`;
+  const isLocked    = (idx) => !!lockedTerms?.[lockKey(idx)];
+  const toggleLock  = (idx) => {
+    const k = lockKey(idx);
+    setLockedTerms(prev => ({ ...prev, [k]: !prev?.[k] }));
+  };
 
 
   const terms = schoolTerms?.[academicYear] ?? [
@@ -85,10 +92,28 @@ export default function TermsTab() {
                     )}
                   </div>
                 </div>
-                {terms.length > 1 && (
-                  <button type="button" className="btn btn-sm" style={{ color: 'var(--danger)' }}
-                    onClick={() => removeTerm(idx)}>ลบ</button>
-                )}
+                <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center' }}>
+                  {/* Lock / Unlock toggle */}
+                  <button
+                    type="button"
+                    onClick={() => toggleLock(idx)}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '.35rem',
+                      padding: '.25rem .75rem', borderRadius: '999px', fontSize: '.75rem',
+                      fontWeight: 700, cursor: 'pointer', border: 'none',
+                      background: isLocked(idx) ? '#fef2f2' : '#f0fdf4',
+                      color:      isLocked(idx) ? '#b91c1c' : '#15803d',
+                      boxShadow:  isLocked(idx) ? '0 0 0 1.5px #fca5a5' : '0 0 0 1.5px #86efac',
+                    }}
+                    title={isLocked(idx) ? 'คลิกเพื่อปลดล็อกภาคเรียน' : 'คลิกเพื่อล็อกไม่ให้แก้ไขข้อมูล'}
+                  >
+                    {isLocked(idx) ? '🔒 ล็อกอยู่' : '🔓 ปลดล็อก'}
+                  </button>
+                  {terms.length > 1 && (
+                    <button type="button" className="btn btn-sm" style={{ color: 'var(--danger)' }}
+                      onClick={() => removeTerm(idx)}>ลบ</button>
+                  )}
+                </div>
               </div>
 
               {/* Date fields */}
@@ -103,7 +128,8 @@ export default function TermsTab() {
                     className="input"
                     value={term.open}
                     onChange={e => updateTerm(idx, 'open', e.target.value)}
-                    style={{ borderColor: c.border }}
+                    disabled={isLocked(idx)}
+                    style={{ borderColor: c.border, opacity: isLocked(idx) ? 0.6 : 1 }}
                   />
                   {term.open && (
                     <div style={{ fontSize: '.72rem', color: c.color, marginTop: '.3rem' }}>
@@ -122,7 +148,8 @@ export default function TermsTab() {
                     value={term.close}
                     onChange={e => updateTerm(idx, 'close', e.target.value)}
                     min={term.open || undefined}
-                    style={{ borderColor: c.border }}
+                    disabled={isLocked(idx)}
+                    style={{ borderColor: c.border, opacity: isLocked(idx) ? 0.6 : 1 }}
                   />
                   {term.close && (
                     <div style={{ fontSize: '.72rem', color: c.color, marginTop: '.3rem' }}>

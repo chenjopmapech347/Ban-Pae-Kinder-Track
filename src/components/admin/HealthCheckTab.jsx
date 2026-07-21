@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 
 // ── รายการตรวจสุขภาพ 6 หมวด ──────────────────────────────────────────────────
 const CHECK_ITEMS = [
@@ -81,6 +82,7 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
   const [selClass, setSelClass] = useState(() => myClass ?? (classes[0]?.name ?? ''));
   const [selDate,  setSelDate]  = useState(todayIso);
   const [saved,    setSaved]    = useState(false);
+  const isLocked = useIsTermLocked(selDate);
 
   const key = useMemo(() => recordKey(selClass, academicYear, selDate), [selClass, academicYear, selDate]);
 
@@ -505,9 +507,20 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:6px"><img src="${sch
         </div>
       )}
 
+      {/* Lock banner */}
+      {isLocked && (
+        <div style={{ padding:'.6rem 1rem', background:'#fef2f2', border:'1.5px solid #fca5a5',
+          borderRadius:'10px', color:'#b91c1c', fontWeight:700, fontSize:'.82rem',
+          marginTop:'.75rem', display:'flex', alignItems:'center', gap:'.5rem' }}>
+          🔒 ภาคเรียนนี้ถูกล็อกแล้ว — ไม่สามารถบันทึกหรือแก้ไขข้อมูลได้
+        </div>
+      )}
       {/* ── Actions ── */}
       <div style={{ display: 'flex', gap: '.6rem', marginTop: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-        <button className="btn btn-primary" onClick={handleSave}>💾 บันทึก</button>
+        <button className="btn btn-primary" onClick={handleSave}
+          disabled={isLocked} style={{ opacity: isLocked ? 0.5 : 1, cursor: isLocked ? 'not-allowed' : 'pointer' }}>
+          {isLocked ? '🔒 ล็อกแล้ว' : '💾 บันทึก'}
+        </button>
         <button className="btn btn-secondary" onClick={handlePrint}>🖨️ พิมพ์แบบฟอร์ม</button>
         <button
           type="button" onClick={handleClear}

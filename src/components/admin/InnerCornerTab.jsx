@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { getMondayOf, getWeekLabel, genUniqueKey } from '../../utils/helpers';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
+import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 
 // ── พิมพ์แบบบันทึก ───────────────────────────────────────────────────────────
 function printInnerCornerSheet(rows, CORNERS, weekNo, weekDate, className, schoolName, teacher, academicYear, schoolLogo) {
@@ -153,6 +154,7 @@ export default function InnerCornerTab({ teacherClassFilter = null }) {
   const today = new Date().toISOString().slice(0, 10);
   const [selClass, setSelClass] = useState(teacherClassFilter ?? '');
   const [selDate,  setSelDate]  = useState(today);
+  const isLocked = useIsTermLocked(selDate);
   const [weekNo,   setWeekNo]   = useState('');
   const [showMgmt, setShowMgmt] = useState(false);
 
@@ -180,6 +182,7 @@ export default function InnerCornerTab({ teacherClassFilter = null }) {
   const emptyRec = Object.fromEntries(CORNERS.map(c => [c.key, false]));
 
   function toggleCorner(studentId, cornerKey) {
+    if (isLocked) return; // ล็อกภาคเรียน — ห้ามแก้ไข
     const sid = String(studentId);
     const cur = weekData[sid] ?? { ...emptyRec };
     setInnerCornerRecords(prev => ({
@@ -189,6 +192,7 @@ export default function InnerCornerTab({ teacherClassFilter = null }) {
   }
 
   function toggleAll(cornerKey) {
+    if (isLocked) return; // ล็อกภาคเรียน — ห้ามแก้ไข
     const allOn = classStudents.every(s => weekData[String(s.id)]?.[cornerKey]);
     const updated = {};
     classStudents.forEach(s => {
@@ -210,6 +214,14 @@ export default function InnerCornerTab({ teacherClassFilter = null }) {
 
   return (
     <div className="animate-fade">
+      {/* Lock banner */}
+      {isLocked && (
+        <div style={{ padding:'.6rem 1rem', background:'#fef2f2', border:'1.5px solid #fca5a5',
+          borderRadius:'10px', color:'#b91c1c', fontWeight:700, fontSize:'.82rem',
+          marginBottom:'.75rem', display:'flex', alignItems:'center', gap:'.5rem' }}>
+          🔒 ภาคเรียนนี้ถูกล็อกแล้ว — ไม่สามารถบันทึกหรือแก้ไขข้อมูลได้
+        </div>
+      )}
       {/* ── Header ── */}
       <div style={{ background:'linear-gradient(135deg,#059669,#34d399)', borderRadius:'16px', padding:'1.1rem 1.5rem', color:'white', marginBottom:'1.25rem', display:'flex', alignItems:'center', gap:'1rem', flexWrap:'wrap' }}>
         <div style={{ flex:1 }}>

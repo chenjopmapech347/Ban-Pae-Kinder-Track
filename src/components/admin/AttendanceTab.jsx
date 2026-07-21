@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { getDayRecord } from '../../utils/attendance';
 import { todayISO, formatDateThai } from '../../utils/helpers';
+import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 
 // ALL_CLASSES ดึงจาก AppContext แบบ dynamic ภายในคอมโพเนนต์
 
@@ -215,6 +216,7 @@ export default function AttendanceTab({ defaultClass }) {
 
   const [mainView,     setMainView]     = useState('daily');   // 'daily' | 'monthly'
   const [selectedDate, setSelectedDate] = useState(todayISO());
+  const isLocked = useIsTermLocked(selectedDate);
   const [filterClass,  setFilterClass]  = useState(defaultClass ?? 'ทั้งหมด');
   const [viewMode,     setViewMode]     = useState('card');  // 'card' | 'table'
   const [showHygiene,  setShowHygiene]  = useState(false);
@@ -710,6 +712,16 @@ export default function AttendanceTab({ defaultClass }) {
       )}
 
       {/* ════ DAILY VIEW ════ */}
+      {mainView === 'daily' && isLocked && (
+        <div style={{
+          padding: '.65rem 1rem', background: '#fef2f2',
+          border: '1.5px solid #fca5a5', borderRadius: '10px',
+          color: '#b91c1c', fontWeight: 700, fontSize: '.82rem',
+          marginBottom: '.5rem', display: 'flex', alignItems: 'center', gap: '.5rem',
+        }}>
+          🔒 ภาคเรียนนี้ถูกล็อกแล้ว — ไม่สามารถบันทึกหรือแก้ไขข้อมูลการมาเรียนได้
+        </div>
+      )}
       {mainView === 'daily' && (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {classSections.map(({ cls, teacher, rows, counts, total }) => (
@@ -746,16 +758,18 @@ export default function AttendanceTab({ defaultClass }) {
                   ✅ มาทั้งหมด
                 </button>
                 <button
-                  onClick={() => handleSaveClass(cls)}
+                  onClick={() => !isLocked && handleSaveClass(cls)}
+                  disabled={isLocked}
                   style={{
                     padding: '.25rem .75rem', borderRadius: '8px', border: 'none',
-                    background: dirtyClasses.has(cls) ? '#7c3aed' : '#e5e7eb',
-                    color: dirtyClasses.has(cls) ? 'white' : '#9ca3af',
+                    background: isLocked ? '#f3f4f6' : dirtyClasses.has(cls) ? '#7c3aed' : '#e5e7eb',
+                    color: isLocked ? '#9ca3af' : dirtyClasses.has(cls) ? 'white' : '#9ca3af',
                     fontFamily: 'inherit', fontWeight: 700, fontSize: '.73rem',
-                    cursor: 'pointer',
+                    cursor: isLocked ? 'not-allowed' : 'pointer',
+                    opacity: isLocked ? 0.6 : 1,
                   }}
                 >
-                  💾 บันทึก{dirtyClasses.has(cls) ? '' : ' (บันทึกแล้ว)'}
+                  {isLocked ? '🔒 ล็อกแล้ว' : `💾 บันทึก${dirtyClasses.has(cls) ? '' : ' (บันทึกแล้ว)'}`}
                 </button>
               </div>
             </div>

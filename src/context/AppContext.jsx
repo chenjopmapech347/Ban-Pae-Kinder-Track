@@ -136,6 +136,7 @@ export function AppProvider({ children }) {
   const [indicators, setIndicators] = useLocalStorage(STORAGE_KEYS.indicators, INITIAL_INDICATORS);
   const [activities, setActivities] = useLocalStorage(STORAGE_KEYS.activities, INITIAL_ACTIVITIES);
   const [schoolTerms, setSchoolTerms] = useLocalStorage(STORAGE_KEYS.schoolTerms, {});
+  const [lockedTerms, setLockedTerms] = useLocalStorage(STORAGE_KEYS.lockedTerms, {});
   const [currentTerm, setCurrentTerm] = useLocalStorage(STORAGE_KEYS.currentTerm, '1');
   const [aiApiKey, setAiApiKey] = useLocalStorage(STORAGE_KEYS.aiApiKey, '');
   const [activityLogs, setActivityLogs] = useLocalStorage(STORAGE_KEYS.activityLogs, []);
@@ -1106,6 +1107,8 @@ export function AppProvider({ children }) {
     setActivities,
     schoolTerms,
     setSchoolTerms,
+    lockedTerms,
+    setLockedTerms,
     currentTerm,
     setCurrentTerm,
     importStudentAssessmentExcel,

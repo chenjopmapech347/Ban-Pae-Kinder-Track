@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 
 // ── กิจกรรมที่ติดตาม ─────────────────────────────────────────────────────────
 // บันทึกระดับชั้นเรียน (ไม่ใช่รายนักเรียน) — ครูเพียงติ๊กว่ากิจกรรมนั้นเกิดขึ้นวันนั้นหรือไม่
@@ -114,6 +115,7 @@ export default function DailyRoutineTab({ teacherClassFilter = null }) {
   const [selClass,  setSelClass]  = useState(() => myClass ?? (classes[0]?.name ?? ''));
   const [selYear,   setSelYear]   = useState(now.getFullYear() + 543);
   const [selMonth,  setSelMonth]  = useState(now.getMonth() + 1);
+  const isLocked = useIsTermLocked(`${selYear - 543}-${String(selMonth).padStart(2, '0')}-01`);
   const [saved, setSaved]         = useState(false);
   const [view, setView]           = useState('grid'); // 'grid' | 'summary'
 
@@ -247,6 +249,14 @@ export default function DailyRoutineTab({ teacherClassFilter = null }) {
   return (
     <div style={{ padding: '1rem', maxWidth: '100%', fontFamily: 'Sarabun, sans-serif' }}>
 
+      {/* Lock banner */}
+      {isLocked && (
+        <div style={{ padding:'.6rem 1rem', background:'#fef2f2', border:'1.5px solid #fca5a5',
+          borderRadius:'10px', color:'#b91c1c', fontWeight:700, fontSize:'.82rem',
+          marginBottom:'.75rem', display:'flex', alignItems:'center', gap:'.5rem' }}>
+          🔒 ภาคเรียนนี้ถูกล็อกแล้ว — ไม่สามารถบันทึกหรือแก้ไขข้อมูลได้
+        </div>
+      )}
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
         <div>
@@ -272,11 +282,15 @@ export default function DailyRoutineTab({ teacherClassFilter = null }) {
               </button>
             ))}
           </div>
-          <button onClick={handleSave}
-            style={{ padding: '.45rem 1.1rem', background: saved ? '#10b981' : '#6366f1', color: 'white',
+          <button onClick={() => !isLocked && handleSave()}
+            disabled={isLocked}
+            style={{ padding: '.45rem 1.1rem',
+              background: isLocked ? '#e5e7eb' : saved ? '#10b981' : '#6366f1',
+              color: isLocked ? '#9ca3af' : 'white',
               border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '.85rem',
-              cursor: 'pointer', fontFamily: 'inherit', transition: 'background .2s' }}>
-            {saved ? '✓ บันทึกแล้ว' : '💾 บันทึก'}
+              cursor: isLocked ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+              transition: 'background .2s', opacity: isLocked ? 0.7 : 1 }}>
+            {isLocked ? '🔒 ล็อกแล้ว' : saved ? '✓ บันทึกแล้ว' : '💾 บันทึก'}
           </button>
         </div>
       </div>

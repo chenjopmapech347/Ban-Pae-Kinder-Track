@@ -26,9 +26,9 @@ export async function pushSnapshotToFirebase(payload) {
     const data = { ...payload, updatedAt: serverTimestamp() };
     await setDoc(snapshotRef(), data);
 
-    // สำรองรายวัน
+    // สำรองรายวัน — non-blocking เพื่อไม่ให้ backup failure ทำให้ sync แสดงเป็น error
     const dateKey = new Date().toISOString().slice(0, 10);
-    await addDoc(backupColRef(), { ...data, backupDate: dateKey });
+    addDoc(backupColRef(), { ...data, backupDate: dateKey }).catch(() => {});
 
     return { ok: true, message: 'อัปโหลดสำเร็จ ✅' };
   } catch (e) {

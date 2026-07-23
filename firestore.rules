@@ -1,10 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // ปิดการเข้าถึงทั้งหมดจาก client โดยตรง
-    // แอปใช้ custom PIN auth — ข้อมูลทั้งหมดผ่าน localStorage + Cloud sync
-    match /{document=**} {
-      allow read, write: if false;
+    // แอปใช้ custom PIN auth (ไม่ใช่ Firebase Auth)
+    // อนุญาตให้อ่าน/เขียน snapshots ของโรงเรียน — ไม่เปิดรูทอื่น
+    match /schools/{schoolId}/snapshots/{snapshotId} {
+      allow read, write: if true;
     }
   }
 }

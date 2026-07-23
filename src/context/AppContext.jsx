@@ -365,7 +365,9 @@ export function AppProvider({ children }) {
   // ─── Firebase Sync ──────────────────────────────────────
   const syncPushToFirebase = useCallback(async () => {
     const payload = buildAppSnapshot(getSnapshotData());
-    return pushSnapshotToFirebase(payload);
+    const result  = await pushSnapshotToFirebase(payload);
+    if (result.ok) localStorage.setItem('kt_lastPushAt', Date.now().toString());
+    return result;
   }, [getSnapshotData]);
 
   const syncPullFromFirebase = useCallback(async () => {
@@ -393,14 +395,30 @@ export function AppProvider({ children }) {
         if (!result.ok) { setPullSyncStatus('error'); return; }
         const check = validateSnapshot(result.payload);
         if (check.ok) {
-          // ป้องกัน snapshot เก่าเขียนทับข้อมูล local ที่มีนักเรียนมากกว่า
           const cloudStudentCount = check.snapshot.students?.length ?? 0;
-          if (cloudStudentCount < students.length) {
-            // Firebase มีข้อมูลน้อยกว่า local → ข้ามการ restore เพื่อป้องกัน data loss
-            console.warn(`[KinderTrack] Firebase pull skipped: cloud has ${cloudStudentCount} students, local has ${students.length}`);
+          const localHasData = students.length > 0;
+
+          if (localHasData) {
+            // Local มีข้อมูลแล้ว → ใช้ timestamp เปรียบเทียบ
+            // ถ้า Firebase ใหม่กว่า local อย่างชัดเจน (เช่น sync จากเครื่องอื่น) ค่อย restore
+            // แต่ถ้า Firebase เก่ากว่าหรือเท่ากัน → ข้ามเพื่อป้องกัน rollback
+            const cloudTime   = check.snapshot.exportedAt ? new Date(check.snapshot.exportedAt).getTime() : 0;
+            const localPushTs = parseInt(localStorage.getItem('kt_lastPushAt') ?? '0', 10);
+
+            if (cloudTime > localPushTs + 60_000) {
+              // Firebase ใหม่กว่า local push ล่าสุดมากกว่า 1 นาที → เป็น sync จากเครื่องอื่น
+              restoreSnapshotData(check.snapshot);
+              setPullSyncStatus('done');
+            } else {
+              // Firebase เก่ากว่าหรือเท่ากับ local → ข้ามป้องกัน rollback
+              console.info(`[KinderTrack] Pull skipped (local is up-to-date): cloud=${new Date(cloudTime).toLocaleString('th-TH')}`);
+              setPullSyncStatus('done');
+            }
+          } else if (cloudStudentCount > 0) {
+            // Local ว่างเปล่า (device ใหม่) → restore จาก Firebase
+            restoreSnapshotData(check.snapshot);
             setPullSyncStatus('done');
           } else {
-            restoreSnapshotData(check.snapshot);
             setPullSyncStatus('done');
           }
         } else {
@@ -437,6 +455,7 @@ export function AppProvider({ children }) {
       try {
         const payload = buildAppSnapshot(getSnapshotData());
         const result  = await pushSnapshotToFirebase(payload);
+        if (result.ok) localStorage.setItem('kt_lastPushAt', Date.now().toString());
         setAutoSyncStatus(result.ok ? 'done' : 'error');
       } catch {
         setAutoSyncStatus('error');

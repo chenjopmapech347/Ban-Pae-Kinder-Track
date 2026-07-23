@@ -393,8 +393,16 @@ export function AppProvider({ children }) {
         if (!result.ok) { setPullSyncStatus('error'); return; }
         const check = validateSnapshot(result.payload);
         if (check.ok) {
-          restoreSnapshotData(check.snapshot);
-          setPullSyncStatus('done');
+          // ป้องกัน snapshot เก่าเขียนทับข้อมูล local ที่มีนักเรียนมากกว่า
+          const cloudStudentCount = check.snapshot.students?.length ?? 0;
+          if (cloudStudentCount < students.length) {
+            // Firebase มีข้อมูลน้อยกว่า local → ข้ามการ restore เพื่อป้องกัน data loss
+            console.warn(`[KinderTrack] Firebase pull skipped: cloud has ${cloudStudentCount} students, local has ${students.length}`);
+            setPullSyncStatus('done');
+          } else {
+            restoreSnapshotData(check.snapshot);
+            setPullSyncStatus('done');
+          }
         } else {
           setPullSyncStatus('error');
         }

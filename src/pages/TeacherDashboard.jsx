@@ -1,4 +1,4 @@
-import { useState, useMemo, lazy, Suspense } from 'react';
+import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
 import { useApp } from '../context/AppContext';
 import { todayISO, formatDateThai, isStudentActive } from '../utils/helpers';
 import { getDayRecord, hasHygieneToday } from '../utils/attendance';
@@ -480,6 +480,53 @@ export default function TeacherDashboard() {
     assessed: activeStudents.filter(s => s.assessments?.summary).length,
   }), [activeStudents, dailyRecords, today]);
 
+  // ── Monthly attendance chart (auto-slide) ─────────────────────────────
+  const THAI_M_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const monthlyChartData = useMemo(() => {
+    const now    = new Date();
+    const todayS = todayISO();
+    const result = [];
+    for (let offset = 0; offset < 4; offset++) {
+      const d          = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+      const year       = d.getFullYear();
+      const month      = d.getMonth();
+      const daysInMon  = new Date(year, month + 1, 0).getDate();
+      const monthISO   = `${year}-${String(month + 1).padStart(2, '0')}`;
+      const label      = `${THAI_M_SHORT[month]} ${year + 543}`;
+
+      const bars = [];
+      for (let day = 1; day <= daysInMon; day++) {
+        const dateISO = `${monthISO}-${String(day).padStart(2, '0')}`;
+        if (dateISO > todayS) break;
+        const dow = new Date(dateISO).getDay();
+        if (dow === 0 || dow === 6) continue;
+
+        const activeOnDay = myStudents.filter(s => isStudentActive(s, dateISO));
+        if (activeOnDay.length === 0) continue;
+
+        const hasRecord = activeOnDay.some(s => getDayRecord(dailyRecords, dateISO, s.id)?.attendance);
+        if (!hasRecord) { bars.push({ day, dateISO, pct: null }); continue; }
+
+        const present = activeOnDay.filter(s => getDayRecord(dailyRecords, dateISO, s.id)?.attendance === 'มา').length;
+        bars.push({ day, dateISO, pct: Math.round(present / activeOnDay.length * 100) });
+      }
+
+      const recorded = bars.filter(b => b.pct !== null);
+      const avgPct   = recorded.length > 0
+        ? Math.round(recorded.reduce((s, b) => s + b.pct, 0) / recorded.length)
+        : null;
+      result.push({ label, monthISO, bars, avgPct });
+    }
+    return result.filter(m => m.bars.length > 0);
+  }, [myStudents, dailyRecords]);
+
+  const [slideIdx, setSlideIdx] = useState(0);
+  useEffect(() => {
+    if (monthlyChartData.length <= 1) return;
+    const t = setInterval(() => setSlideIdx(i => (i + 1) % monthlyChartData.length), 5000);
+    return () => clearInterval(t);
+  }, [monthlyChartData.length]);
+
   const loadDraft   = date => { setRecordDate(date); setDraft(buildDraft(activeStudents, dailyRecords, date)); };
   const updateDraft = (id, patch) => setDraft(prev => ({ ...prev, [id]: { ...prev[id], ...patch } }));
 
@@ -893,6 +940,87 @@ export default function TeacherDashboard() {
                   <div className="stat-label">ประเมินแล้ว</div>
                 </div>
               </div>
+
+              {/* Monthly attendance slide chart */}
+              {monthlyChartData.length > 0 && (() => {
+                const cur = monthlyChartData[slideIdx] ?? monthlyChartData[0];
+                const avgColor = cur.avgPct === null ? '#64748b'
+                  : cur.avgPct >= 80 ? '#065f46' : cur.avgPct >= 60 ? '#92400e' : '#991b1b';
+                const avgBg = cur.avgPct === null ? '#f1f5f9'
+                  : cur.avgPct >= 80 ? '#d1fae5' : cur.avgPct >= 60 ? '#fef3c7' : '#fee2e2';
+                const BAR_W = 11, BAR_GAP = 3, CHART_H = 52, BASE_Y = 58;
+                const totalW = cur.bars.length * (BAR_W + BAR_GAP);
+                return (
+                  <div style={{
+                    marginBottom: '.75rem', background: '#fff', borderRadius: '14px',
+                    padding: '.85rem 1rem .6rem', boxShadow: '0 1px 4px #0001',
+                    userSelect: 'none',
+                  }}>
+                    {/* Header row */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '.35rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+                        <span style={{ fontSize: '.8rem', fontWeight: 800, color: '#334155' }}>📊 สถิติการมาเรียน</span>
+                        <span style={{ fontSize: '.75rem', color: '#7c3aed', fontWeight: 700, background: '#f5f3ff', padding: '.1rem .45rem', borderRadius: '8px' }}>
+                          {cur.label}
+                        </span>
+                      </div>
+                      <span style={{ fontWeight: 800, fontSize: '.95rem', background: avgBg, color: avgColor, padding: '.15rem .6rem', borderRadius: '8px' }}>
+                        {cur.avgPct !== null ? `${cur.avgPct}%` : '—'}
+                      </span>
+                    </div>
+
+                    {/* SVG bar chart */}
+                    <div style={{ overflowX: 'hidden' }}>
+                      <svg
+                        viewBox={`0 0 ${Math.max(totalW, 200)} 65`}
+                        preserveAspectRatio="none"
+                        style={{ width: '100%', height: '68px', display: 'block' }}
+                      >
+                        {/* Guideline 80% */}
+                        <line x1="0" y1={BASE_Y - CHART_H * 0.8} x2={Math.max(totalW, 200)} y2={BASE_Y - CHART_H * 0.8}
+                          stroke="#e2e8f0" strokeWidth="0.8" strokeDasharray="3,2" />
+                        {/* Bars */}
+                        {cur.bars.map((bar, i) => {
+                          const x = i * (BAR_W + BAR_GAP);
+                          if (bar.pct === null) {
+                            return <rect key={bar.dateISO} x={x} y={BASE_Y - 3} width={BAR_W} height={3} rx="2" fill="#e2e8f0" />;
+                          }
+                          const h = Math.max(Math.round(bar.pct * CHART_H / 100), 2);
+                          const fill = bar.pct >= 80 ? '#10b981' : bar.pct >= 60 ? '#f59e0b' : '#ef4444';
+                          return (
+                            <g key={bar.dateISO}>
+                              <rect x={x} y={BASE_Y - h} width={BAR_W} height={h} rx="2" fill={fill} opacity="0.9" />
+                            </g>
+                          );
+                        })}
+                        {/* Baseline */}
+                        <line x1="0" y1={BASE_Y} x2={Math.max(totalW, 200)} y2={BASE_Y} stroke="#cbd5e1" strokeWidth="0.8" />
+                      </svg>
+                    </div>
+
+                    {/* Legend + dots */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '.25rem' }}>
+                      <div style={{ display: 'flex', gap: '.6rem' }}>
+                        {[['#10b981','≥80%'],['#f59e0b','60-79%'],['#ef4444','<60%'],['#e2e8f0','ยังไม่บันทึก']].map(([c, l]) => (
+                          <span key={l} style={{ display: 'flex', alignItems: 'center', gap: '.2rem', fontSize: '.65rem', color: '#64748b' }}>
+                            <span style={{ width: 8, height: 8, borderRadius: 2, background: c, display: 'inline-block' }} />{l}
+                          </span>
+                        ))}
+                      </div>
+                      <div style={{ display: 'flex', gap: '.3rem', alignItems: 'center' }}>
+                        {monthlyChartData.map((_, i) => (
+                          <button key={i} type="button" onClick={() => setSlideIdx(i)}
+                            style={{
+                              width: i === slideIdx ? 18 : 7, height: 7, borderRadius: 4, border: 'none',
+                              cursor: 'pointer', padding: 0, transition: 'width .3s ease',
+                              background: i === slideIdx ? '#7c3aed' : '#cbd5e1',
+                            }} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Quick actions */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '.75rem', marginBottom: '1.5rem' }}>

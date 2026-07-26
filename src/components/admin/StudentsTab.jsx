@@ -426,7 +426,11 @@ export default function StudentsTab() {
                   <td>
                     {(s.status ?? 'ปกติ') === 'ปกติ'
                       ? <span className="badge" style={{ background:'#d1fae5',color:'#065f46' }}>✅ ปกติ</span>
-                      : <span className="badge" style={{ background:'#f3f4f6',color:'#6b7280' }}>⛔ นอกระบบ</span>}
+                      : (s.status === 'ลาออก')
+                        ? <span className="badge" style={{ background:'#fef3c7',color:'#92400e' }}>
+                            🚪 ลาออก{s.withdrawDate ? ` ${s.withdrawDate}` : ''}
+                          </span>
+                        : <span className="badge" style={{ background:'#f3f4f6',color:'#6b7280' }}>⛔ นอกระบบ</span>}
                   </td>
                   <td><code style={{ background: '#f5f3ff', padding: '.15rem .5rem', borderRadius: '6px', fontSize: '.8rem' }}>{s.parentPin ?? '—'}</code></td>
                   <td>

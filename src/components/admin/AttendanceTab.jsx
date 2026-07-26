@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { getDayRecord } from '../../utils/attendance';
-import { todayISO, formatDateThai } from '../../utils/helpers';
+import { todayISO, formatDateThai, isStudentActive } from '../../utils/helpers';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 
 // ALL_CLASSES ดึงจาก AppContext แบบ dynamic ภายในคอมโพเนนต์
@@ -232,7 +232,7 @@ export default function AttendanceTab({ defaultClass }) {
     if (mainView !== 'daily') return;
     const newDrafts = {};
     ALL_CLASSES.forEach(cls => {
-      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'));
+      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)') && isStudentActive(s, selectedDate));
       const draft = {};
       sts.forEach(s => {
         const rec = getDayRecord(dailyRecords, selectedDate, s.id);
@@ -255,7 +255,7 @@ export default function AttendanceTab({ defaultClass }) {
 
   // รีเซ็ตทั้งห้องเป็น "มา"
   function resetAllPresent(cls) {
-    const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'));
+    const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)') && isStudentActive(s, selectedDate));
     const draft = {};
     sts.forEach(s => { draft[s.id] = 'มา'; });
     setClassDrafts(prev => ({ ...prev, [cls]: draft }));
@@ -399,7 +399,7 @@ export default function AttendanceTab({ defaultClass }) {
 
   // ── สรุปรวมทุกห้อง ─────────────────────────────────────────────────
   const grandSummary = useMemo(() => {
-    const real = students.filter(s => !s.name.startsWith('(ว่าง)'));
+    const real = students.filter(s => !s.name.startsWith('(ว่าง)') && isStudentActive(s, selectedDate));
     const counts = { มา: 0, ขาด: 0, ลา: 0, ป่วย: 0, none: 0 };
     real.forEach(s => {
       const att = classDrafts[s.className]?.[s.id]
@@ -414,7 +414,7 @@ export default function AttendanceTab({ defaultClass }) {
   // ── ข้อมูลรายห้อง ─────────────────────────────────────────────────
   const classSections = useMemo(() => {
     return displayClasses.map(cls => {
-      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'));
+      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)') && isStudentActive(s, selectedDate));
       const teacher = teachers?.find(t => t.className === cls);
       const rows = sts.map(s => {
         const rec = getDayRecord(dailyRecords, selectedDate, s.id);

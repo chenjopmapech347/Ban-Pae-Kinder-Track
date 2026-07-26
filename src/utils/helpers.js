@@ -1,3 +1,19 @@
+/**
+ * ตรวจสอบว่านักเรียนยังเรียนอยู่ ณ วันที่ dateISO (YYYY-MM-DD)
+ * - ปกติ → true เสมอ
+ * - ลาออก → true ก็ต่อเมื่อ dateISO < withdrawDate (ก่อนวันลาออก)
+ * - นอกระบบ → false เสมอ
+ */
+export function isStudentActive(student, dateISO) {
+  const st = student?.status ?? 'ปกติ';
+  if (st === 'นอกระบบ') return false;
+  if (st === 'ลาออก') {
+    if (!student.withdrawDate) return false;
+    return dateISO < student.withdrawDate;
+  }
+  return true; // ปกติ
+}
+
 export function getLevelColor(level) {
   switch (level) {
     case 'K1':

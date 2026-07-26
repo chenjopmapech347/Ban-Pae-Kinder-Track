@@ -52,6 +52,7 @@ const emptyStudent = {
   level:       'K1',
   className:   '',
   status:      'ปกติ',
+  withdrawDate: '',         // วันที่ลาออก (YYYY-MM-DD) — ใช้เมื่อ status='ลาออก'
   weight:      '',
   height:      '',
   age:         '',
@@ -330,10 +331,26 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
                 <label className="text-xs font-bold">สถานะ</label>
                 <select className="input" value={formData.status ?? 'ปกติ'}
                   onChange={e => setFormData(set(formData, 'status', e.target.value))}
-                  style={{ color: (formData.status ?? 'ปกติ') === 'นอกระบบ' ? '#6b7280' : '#065f46', fontWeight: 700 }}>
+                  style={{
+                    color: (formData.status ?? 'ปกติ') === 'นอกระบบ' ? '#6b7280'
+                         : (formData.status ?? 'ปกติ') === 'ลาออก'   ? '#b45309'
+                         : '#065f46',
+                    fontWeight: 700,
+                  }}>
                   <option value="ปกติ">✅ ปกติ</option>
+                  <option value="ลาออก">🚪 ลาออก</option>
                   <option value="นอกระบบ">⛔ นอกระบบ</option>
                 </select>
+                {(formData.status ?? 'ปกติ') === 'ลาออก' && (
+                  <div className="flex flex-col gap-1 mt-1">
+                    <label className="text-xs text-amber-700 font-bold">📅 วันที่ลาออก</label>
+                    <input className="input" type="date" {...f('withdrawDate')}
+                      style={{ borderColor: '#f59e0b', color: '#92400e' }} />
+                    <p className="text-xs text-amber-600" style={{ margin: 0 }}>
+                      ชื่อยังแสดงในระบบ — กิจกรรมจะหยุดนับตั้งแต่วันนี้
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

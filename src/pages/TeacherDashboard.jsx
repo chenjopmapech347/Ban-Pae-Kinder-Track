@@ -1,6 +1,6 @@
 import { useState, useMemo, lazy, Suspense } from 'react';
 import { useApp } from '../context/AppContext';
-import { todayISO, formatDateThai } from '../utils/helpers';
+import { todayISO, formatDateThai, isStudentActive } from '../utils/helpers';
 import { getDayRecord, hasHygieneToday } from '../utils/attendance';
 import StudentModal from '../components/StudentModal';
 import DashboardSidebar from '../components/ui/DashboardSidebar';
@@ -445,8 +445,8 @@ export default function TeacherDashboard() {
     [students, myClass],
   );
   const activeStudents = useMemo(
-    () => myStudents.filter(s => (s.status ?? 'ปกติ') === 'ปกติ'),
-    [myStudents],
+    () => myStudents.filter(s => isStudentActive(s, recordDate)),
+    [myStudents, recordDate],
   );
 
   /* ── Announcements visible to this teacher ── */

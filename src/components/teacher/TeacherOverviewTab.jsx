@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
-import { todayISO, formatDateThai, getMondayOf } from '../../utils/helpers';
+import { todayISO, formatDateThai, getMondayOf, isStudentActive } from '../../utils/helpers';
 
 /**
  * TeacherOverviewTab — แสดงรายการกิจกรรมที่ต้องบันทึก จำแนกตามความถี่
@@ -29,7 +29,7 @@ export default function TeacherOverviewTab({ onTabChange }) {
   const todayTH = formatDateThai(today);
 
   const myStudents = useMemo(
-    () => students.filter(s => s.className === myClass && !s.name.startsWith('(ว่าง)') && (s.status ?? 'ปกติ') === 'ปกติ'),
+    () => students.filter(s => s.className === myClass && !s.name.startsWith('(ว่าง)') && isStudentActive(s, todayISO())),
     [students, myClass],
   );
 

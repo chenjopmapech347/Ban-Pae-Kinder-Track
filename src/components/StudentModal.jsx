@@ -305,11 +305,11 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
               <input className="input" placeholder="x-xxxx-xxxxx-xx-x" {...f('nationalId')} />
             </div>
 
-            {/* เลขประจำตัวนักเรียน + PIN */}
+            {/* รหัสประจำตัวนักเรียน + PIN */}
             <div className="grid grid-2 gap-2">
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold">เลขประจำตัวนักเรียน</label>
-                <input className="input" {...f('studentId')} />
+                <label className="text-xs font-bold">รหัสประจำตัว</label>
+                <input className="input" placeholder="เช่น 001, 2567001" {...f('studentId')} />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-bold">รหัสผู้ปกครอง (PIN)</label>

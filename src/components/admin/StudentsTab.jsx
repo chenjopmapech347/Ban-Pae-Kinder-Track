@@ -404,7 +404,7 @@ export default function StudentsTab() {
                         }
                       </div>
                       <code style={{ fontSize: '.75rem', background: '#f1f5f9', padding: '.1rem .4rem', borderRadius: '5px', color: '#475569', fontWeight: 700 }}>
-                        {s.code ?? s.id}
+                        {s.studentId || s.code || '—'}
                       </code>
                     </div>
                   </td>

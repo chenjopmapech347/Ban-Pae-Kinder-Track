@@ -1292,6 +1292,7 @@ function devAssessDomainAvg(devAssessment, domainId) {
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function StudentReportTab({ teacherClassFilter = null, initialStudentId = null }) {
   const {
+    role,
     students, classes, teachers, academicYear, schoolName,
     schoolPhilosophy, schoolVision, schoolLogo, schoolDirectorName,
     dailyRecords,
@@ -2691,7 +2692,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                 ))}
               </div>
 
-              {/* Director's Comment — read-only for teachers; editable by Admin */}
+              {/* Director's Comment — editable by Admin, read-only for others */}
               <div style={{ background: '#fdf4ff', border: '1.5px solid #e9d5ff', borderRadius: '12px', padding: '1rem 1.25rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.75rem' }}>
                   <div style={{ fontWeight: 800, fontSize: '.88rem', color: '#7e22ce' }}>
@@ -2702,19 +2703,39 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                     borderRadius: '99px', background: '#f3e8ff', color: '#7e22ce',
                     border: '1px solid #d8b4fe',
                   }}>
-                    ผู้อำนวยการกรอกเอง
+                    {role === 'admin' ? '✏️ แก้ไขได้' : 'ผู้อำนวยการกรอกเอง'}
                   </span>
                 </div>
-                <div style={{
-                  minHeight: '68px', padding: '8px 10px',
-                  border: '1px solid #d8b4fe', borderRadius: '8px',
-                  fontSize: '.82rem', lineHeight: '1.6', background: '#fdf8ff',
-                  color: directorsComment ? '#111827' : '#9ca3af',
-                  fontStyle: directorsComment ? 'normal' : 'italic',
-                  whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                }}>
-                  {directorsComment || '(ยังไม่มีความคิดเห็น — ผู้อำนวยการจะกรอกในส่วนของ Admin)'}
-                </div>
+                {role === 'admin' ? (
+                  <textarea
+                    value={directorsComment}
+                    onChange={e => saveRec({ directorsComment: e.target.value })}
+                    placeholder="กรอกความคิดเห็นของผู้อำนวยการสถานศึกษา..."
+                    rows={4}
+                    style={{
+                      width: '100%', boxSizing: 'border-box',
+                      padding: '8px 10px', border: '1.5px solid #d8b4fe',
+                      borderRadius: '8px', fontFamily: 'inherit',
+                      fontSize: '.82rem', lineHeight: '1.6',
+                      background: '#fdf8ff', color: '#111827',
+                      resize: 'vertical', outline: 'none',
+                      transition: 'border-color .15s',
+                    }}
+                    onFocus={e => { e.target.style.borderColor = '#7e22ce'; }}
+                    onBlur={e => { e.target.style.borderColor = '#d8b4fe'; }}
+                  />
+                ) : (
+                  <div style={{
+                    minHeight: '68px', padding: '8px 10px',
+                    border: '1px solid #d8b4fe', borderRadius: '8px',
+                    fontSize: '.82rem', lineHeight: '1.6', background: '#fdf8ff',
+                    color: directorsComment ? '#111827' : '#9ca3af',
+                    fontStyle: directorsComment ? 'normal' : 'italic',
+                    whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                  }}>
+                    {directorsComment || '(ยังไม่มีความคิดเห็น — ผู้อำนวยการจะกรอกในส่วนของ Admin)'}
+                  </div>
+                )}
                 <div style={{ marginTop: '.5rem', fontSize: '.75rem', color: '#6b7280' }}>
                   ลงชื่อ _________________________ (ผู้อำนวยการสถานศึกษา)
                 </div>

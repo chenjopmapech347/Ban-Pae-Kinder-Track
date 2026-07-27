@@ -1191,8 +1191,15 @@ export function AppProvider({ children }) {
       const name = c.name ?? c.id;
       if (name && map[c.level]) map[c.level].push(name);
     });
+    // เพิ่มห้องที่นักเรียนมีอยู่จริงแต่ไม่ได้ลงทะเบียนใน classes
+    (students ?? []).forEach(s => {
+      if (s.className && s.level && map[s.level] && !map[s.level].includes(s.className)) {
+        map[s.level].push(s.className);
+      }
+    });
+    Object.keys(map).forEach(k => map[k].sort());
     return map;
-  }, [classes]);
+  }, [classes, students]);
 
   const value = {
     role,

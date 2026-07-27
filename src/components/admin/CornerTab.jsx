@@ -18,7 +18,7 @@ function printCornerSheet(rows, CORNERS, weekNo, weekDate, className, schoolName
     th,td{border:1px solid #555;padding:2px 3px;vertical-align:middle}
     th{background:#ddd;text-align:center;font-weight:700;white-space:pre-line;line-height:1.3}
     .tc{text-align:center} .tl{text-align:left}
-    .sig{margin-top:2rem;text-align:right;font-size:9.5pt}
+    .sig{margin-top:2rem;text-align:center;font-size:9.5pt}
     @media print{@page{size:A4 portrait;margin:1in}body{margin:0}}
   `;
   const thCell = (t) => `<th style="width:58px" class="tc">${t}</th>`;

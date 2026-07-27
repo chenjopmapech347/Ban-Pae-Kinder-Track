@@ -80,7 +80,7 @@ function printPickupSheet(rows, dateStr, className, schoolName, teacher, schoolL
     th{background:#ddd;text-align:center;font-weight:700}
     .tc{text-align:center}
     .tl{text-align:left}
-    .sig{margin-top:2rem;text-align:right;font-size:9.5pt}
+    .sig{margin-top:2rem;text-align:center;font-size:9.5pt}
     @media print{@page{size:A4 portrait;margin:1in}body{margin:0}}
   `;
   const dateLabel = dateStr

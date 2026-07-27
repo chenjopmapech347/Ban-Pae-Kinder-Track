@@ -242,7 +242,7 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
   .cc { min-width: 20px }
   .nt { min-width: 60px }
   .hd { background: #f3f4f6; font-weight: bold }
-  .sig { margin-top: 24px; text-align: right; font-size: 10pt; line-height: 2 }
+  .sig { margin-top: 24px; text-align: center; font-size: 10pt; line-height: 2 }
 </style></head><body>
 ${schoolLogo ? `<div style="text-align:center;margin-bottom:6px"><img src="${schoolLogo}" style="height:60px;object-fit:contain"/></div>` : ''}
 <h3>แบบบันทึกการตรวจสุขภาพประจำสัปดาห์</h3>

@@ -117,7 +117,8 @@ function printRollCall(classSections, selMonth, schoolName, schoolLogo, holidayI
   const thMonthYear = new Date(yr, mo - 1, 1)
     .toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
 
-  const attMark = v => ({ มา: '', ป่วย: 'ป', ลา: 'ล', ขาด: 'ข' }[v] ?? '');
+  const attMark  = v => ({ มา: '✓', ป่วย: 'ป', ลา: 'ล', ขาด: 'ข' }[v] ?? '');
+  const attClass = v => ({ มา: 'ma', ป่วย: 'ป', ลา: 'ล', ขาด: 'ข' }[v] ?? '');
   const weekendBg = 'background:#f0f0f0';
 
   const css = `
@@ -132,6 +133,7 @@ function printRollCall(classSections, selMonth, schoolName, schoolLogo, holidayI
     .tl{text-align:left!important;padding-left:4px!important;white-space:normal;word-break:break-word}
     .pg{break-after:page;page-break-after:always}
     .wk{background:#f0f0f0}
+    .ma{color:#065f46;font-weight:700}
     .ข{color:#dc2626;font-weight:800}
     .ป{color:#1e40af;font-weight:800}
     .ล{color:#b45309;font-weight:800}
@@ -156,7 +158,7 @@ function printRollCall(classSections, selMonth, schoolName, schoolLogo, holidayI
         const iso = `${yr}-${String(mo).padStart(2,'0')}-${String(d.date).padStart(2,'0')}`;
         const att = s.dailyAtt?.[iso] ?? '';
         const mark = attMark(att);
-        const cls2 = (d.dow===0||d.dow===6||d.holiday) ? 'wk' : (mark || '');
+        const cls2 = (d.dow===0||d.dow===6||d.holiday) ? 'wk' : (att ? attClass(att) : '');
         return `<td class="${cls2}">${mark}</td>`;
       }).join('');
       const { มา=0, ขาด=0, ลา=0, ป่วย=0 } = s.counts;
@@ -178,7 +180,7 @@ function printRollCall(classSections, selMonth, schoolName, schoolLogo, holidayI
         ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
         <h2>บัญชีเรียกชื่อ ประจำเดือน ${thMonthYear}</h2>
         <div class="sub">${schoolName||''} · ห้อง ${cls}${teacher?' · ครู'+teacher.name:''}</div>
-        <div class="sub" style="font-size:8px;margin-bottom:4px">มาเรียน = ว่าง &nbsp;|&nbsp; ป่วย = ป &nbsp;|&nbsp; ลา = ล &nbsp;|&nbsp; ขาด = ข</div>
+        <div class="sub" style="font-size:8px;margin-bottom:4px">มาเรียน = ✓ &nbsp;|&nbsp; ป่วย = ป &nbsp;|&nbsp; ลากิจ = ล &nbsp;|&nbsp; ขาด = ข</div>
         <table>
           <thead>
             <tr>

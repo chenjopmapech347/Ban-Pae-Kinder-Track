@@ -423,7 +423,7 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
   .abs  { background: #f9fafb; color: #9ca3af }
   .sick { background: #fef3c7; color: #92400e; font-weight: bold }
   .note { font-size: 8pt; margin-top: 10px }
-  .sig  { margin-top: 16px; display: flex; justify-content: space-between; font-size: 9pt; line-height: 2 }
+  .sig  { margin-top: 16px; display: flex; justify-content: center; gap: 100pt; font-size: 9pt; line-height: 2 }
 </style></head><body>
 ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
 <h3>แบบคัดกรองอาการป่วยรายห้องเรียน</h3>

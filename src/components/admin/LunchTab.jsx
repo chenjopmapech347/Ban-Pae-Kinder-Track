@@ -271,7 +271,7 @@ export default function LunchTab({ teacherClassFilter = null }) {
   .eat { background: #fef3c7; color: '#92400e'; font-weight: 800 }
   .abs { background: #f3f4f6; color: #9ca3af }
   .footd{ background: #fef9c3; color: '#78350f'; font-weight: 700 }
-  .sig  { margin-top: 14px; display: flex; justify-content: space-between; font-size: 9pt; line-height: 2 }
+  .sig  { margin-top: 14px; display: flex; justify-content: center; gap: 100pt; font-size: 9pt; line-height: 2 }
 </style></head><body>
 ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
 <h3>บันทึกการรับประทานอาหารกลางวัน</h3>

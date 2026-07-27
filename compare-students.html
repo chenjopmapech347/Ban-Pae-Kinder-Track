@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>เปรียบเทียบข้อมูลนักเรียน — KinderTrack</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Sarabun', sans-serif; background: #f1f5f9; color: #1e293b; min-height: 100vh; padding: 24px; }
+    h1 { font-size: 1.4rem; font-weight: 700; color: #4f46e5; margin-bottom: 4px; }
+    .subtitle { font-size: .85rem; color: #64748b; margin-bottom: 24px; }
+    .card { background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.07); padding: 20px; margin-bottom: 20px; }
+    .card h2 { font-size: 1rem; font-weight: 700; color: #334155; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #4f46e5; color: #fff; border: none; border-radius: 10px;
+      padding: 9px 18px; font-size: .9rem; font-weight: 600; cursor: pointer;
+      transition: background .15s;
+    }
+    .btn:hover { background: #4338ca; }
+    .btn:disabled { background: #a5b4fc; cursor: not-allowed; }
+    .btn-outline {
+      background: transparent; color: #4f46e5; border: 1.5px solid #4f46e5;
+    }
+    .btn-outline:hover { background: #ede9fe; }
+    input[type="file"] { display: none; }
+    label.file-label {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 2px dashed #a5b4fc; border-radius: 10px;
+      padding: 10px 20px; color: #4f46e5; font-weight: 600;
+      cursor: pointer; transition: .15s;
+    }
+    label.file-label:hover { background: #ede9fe; border-color: #4f46e5; }
+    .status { font-size: .84rem; margin-top: 8px; }
+    .ok  { color: #16a34a; font-weight: 600; }
+    .err { color: #dc2626; font-weight: 600; }
+    .warn { color: #d97706; font-weight: 600; }
+
+    /* comparison table */
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; margin-top: 12px; }
+    th { background: #f8fafc; color: #475569; font-weight: 700; padding: 10px 14px; text-align: center; border-bottom: 2px solid #e2e8f0; }
+    th.left { text-align: left; }
+    td { padding: 9px 14px; border-bottom: 1px solid #f1f5f9; text-align: center; }
+    td.left { text-align: left; }
+    tr:last-child td { border-bottom: none; }
+    tr.match td { background: #f0fdf4; }
+    tr.mismatch td { background: #fef2f2; }
+    tr.missing td { background: #fffbeb; }
+    tr.total td { background: #eff6ff; font-weight: 700; border-top: 2px solid #bfdbfe; }
+
+    .badge {
+      display: inline-block; border-radius: 99px; padding: 2px 10px;
+      font-size: .78rem; font-weight: 700;
+    }
+    .badge-green { background: #dcfce7; color: #15803d; }
+    .badge-red   { background: #fee2e2; color: #b91c1c; }
+    .badge-yellow { background: #fef9c3; color: #a16207; }
+
+    .summary-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-top: 12px; }
+    .summary-box { border-radius: 12px; padding: 14px 16px; }
+    .summary-box .num { font-size: 1.8rem; font-weight: 800; }
+    .summary-box .label { font-size: .78rem; color: #475569; margin-top: 2px; }
+    .box-green  { background: #dcfce7; color: #15803d; }
+    .box-red    { background: #fee2e2; color: #b91c1c; }
+    .box-yellow { background: #fef9c3; color: #a16207; }
+
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    #result { display: none; }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2.5px solid #fff; border-top-color: transparent; border-radius: 50%; animation: spin .6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<h1>🔍 เปรียบเทียบข้อมูลนักเรียน</h1>
+<p class="subtitle">เทียบจำนวนนักเรียนในระบบ (Firebase) กับไฟล์ Excel ที่อัปโหลด</p>
+
+<!-- Step 1: Excel -->
+<div class="card">
+  <h2>📄 ขั้นตอนที่ 1 — ข้อมูล Excel</h2>
+  <div class="actions">
+    <label class="file-label" for="excelFile">📂 เลือกไฟล์ .xlsx</label>
+    <input type="file" id="excelFile" accept=".xlsx,.xls" onchange="handleExcel(this)" />
+    <span id="excelStatus" class="status"></span>
+  </div>
+  <p style="margin-top:10px;font-size:.82rem;color:#64748b">
+    หรือใช้ข้อมูลจากไฟล์ที่อัปโหลดล่าสุด (27 พ.ค. 2569):
+  </p>
+  <button class="btn btn-outline" style="margin-top:8px;font-size:.82rem" onclick="usePreloaded()">
+    ✅ ใช้ข้อมูล Excel ที่มีอยู่แล้ว
+  </button>
+</div>
+
+<!-- Step 2: Firebase -->
+<div class="card">
+  <h2>☁️ ขั้นตอนที่ 2 — ดึงข้อมูลจาก Firebase</h2>
+  <div class="actions">
+    <button class="btn" id="fetchBtn" onclick="fetchFirebase()">
+      <span id="fetchSpinner" style="display:none" class="spinner"></span>
+      ดึงข้อมูล Firebase
+    </button>
+    <span id="fbStatus" class="status"></span>
+  </div>
+</div>
+
+<!-- Step 3: Compare -->
+<div class="card">
+  <h2>📊 ขั้นตอนที่ 3 — เปรียบเทียบ</h2>
+  <button class="btn btn-outline" onclick="compare()" id="compareBtn" disabled>เปรียบเทียบ</button>
+</div>
+
+<!-- Result -->
+<div id="result">
+  <div class="card">
+    <h2>📋 ผลการเปรียบเทียบ</h2>
+
+    <div class="summary-grid">
+      <div class="summary-box box-green">
+        <div class="num" id="sumMatch">—</div>
+        <div class="label">ห้องที่ตรงกัน</div>
+      </div>
+      <div class="summary-box box-red">
+        <div class="num" id="sumMismatch">—</div>
+        <div class="label">ห้องที่ไม่ตรง</div>
+      </div>
+      <div class="summary-box box-yellow">
+        <div class="num" id="sumMissing">—</div>
+        <div class="label">ห้องที่ขาดหายไป</div>
+      </div>
+    </div>
+
+    <table id="cmpTable" style="margin-top:16px">
+      <thead>
+        <tr>
+          <th class="left">ห้อง</th>
+          <th>Excel<br/><span style="font-weight:400;font-size:.78rem">(ไฟล์อ้างอิง)</span></th>
+          <th>ระบบ<br/><span style="font-weight:400;font-size:.78rem">(Firebase)</span></th>
+          <th>ผลต่าง</th>
+          <th>สถานะ</th>
+        </tr>
+      </thead>
+      <tbody id="cmpBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────
+let excelData = {};   // { "อ.1/1": 23, ... }
+let fbData    = {};   // { "อ.1/1": 25, ... }
+
+// ข้อมูล Excel ที่ parse ไว้แล้ว (ไฟล์ 27 พ.ค. 2569)
+const PRELOADED_EXCEL = {
+  'อ.1/1': 23, 'อ.1/2': 22,
+  'อ.2/1': 19, 'อ.2/2': 19,
+  'อ.3/1': 15, 'อ.3/2': 18, 'อ.3/3': 20,
+};
+
+function usePreloaded() {
+  excelData = { ...PRELOADED_EXCEL };
+  const total = Object.values(excelData).reduce((s, v) => s + v, 0);
+  const st = document.getElementById('excelStatus');
+  st.innerHTML = `<span class="ok">✅ ใช้ข้อมูล Excel (27 พ.ค. 2569) — 7 ห้อง, รวม ${total} คน</span>`;
+  tryEnableCompare();
+}
+
+// ─── Firebase Config ──────────────────────────────────────
+const FB_PROJECT = 'kinder-track-57770';
+const FB_API_KEY = 'AIzaSyB4zokDQo4AcUuOhw-mmheD_mxDZ1gzVP4';
+
+// ─── Firestore value decoder ──────────────────────────────
+function decode(v) {
+  if (!v) return null;
+  if ('stringValue'  in v) return v.stringValue;
+  if ('integerValue' in v) return parseInt(v.integerValue);
+  if ('doubleValue'  in v) return v.doubleValue;
+  if ('booleanValue' in v) return v.booleanValue;
+  if ('nullValue'    in v) return null;
+  if ('timestampValue' in v) return v.timestampValue;
+  if ('arrayValue'   in v) return (v.arrayValue.values || []).map(decode);
+  if ('mapValue'     in v) {
+    const obj = {};
+    for (const [k, val] of Object.entries(v.mapValue.fields || {})) obj[k] = decode(val);
+    return obj;
+  }
+  return null;
+}
+
+// ─── Step 1: Excel ────────────────────────────────────────
+function handleExcel(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const st = document.getElementById('excelStatus');
+  st.textContent = 'กำลังอ่าน...';
+  st.className = 'status';
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      excelData = {};
+      let total = 0;
+
+      wb.SheetNames.forEach(name => {
+        const ws = wb.Sheets[name];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+        // นับแถวที่คอลัมน์แรกเป็นตัวเลข (ลำดับนักเรียน)
+        let count = 0;
+        rows.forEach(r => {
+          const v = String(r[0]).trim();
+          if (/^\d+$/.test(v)) count++;
+        });
+        // แปลง sheet name เป็น className (อ.X-Y → อ.X/Y)
+        const cls = name.trim().replace(/-/g, '/');
+        excelData[cls] = count;
+        total += count;
+      });
+
+      st.innerHTML = `<span class="ok">✅ อ่านสำเร็จ — ${wb.SheetNames.length} ห้อง, รวม ${total} คน</span>`;
+      tryEnableCompare();
+    } catch (err) {
+      st.innerHTML = `<span class="err">❌ อ่านไม่ได้: ${err.message}</span>`;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ─── Step 2: Firebase ─────────────────────────────────────
+async function fetchFirebase() {
+  const btn = document.getElementById('fetchBtn');
+  const sp  = document.getElementById('fetchSpinner');
+  const st  = document.getElementById('fbStatus');
+
+  btn.disabled = true;
+  sp.style.display = 'inline-block';
+  st.innerHTML = 'กำลังดึงข้อมูล...';
+  st.className = 'status';
+
+  try {
+    // ดึงเฉพาะ field students เพื่อความเร็ว
+    const url = `https://firestore.googleapis.com/v1/projects/${FB_PROJECT}/databases/(default)/documents/schools/default/snapshots/latest`
+              + `?mask.fieldPaths=students&key=${FB_API_KEY}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const doc = await res.json();
+
+    if (!doc.fields?.students) throw new Error('ไม่พบข้อมูล students ใน Firebase');
+
+    const students = decode(doc.fields.students);
+    if (!Array.isArray(students)) throw new Error('students ไม่ใช่ array');
+
+    // นับตาม className (ไม่นับ "(ว่าง)")
+    fbData = {};
+    let total = 0;
+    students.forEach(s => {
+      if (!s.className || (s.name || '').startsWith('(ว่าง)')) return;
+      fbData[s.className] = (fbData[s.className] || 0) + 1;
+      total++;
+    });
+
+    const classCount = Object.keys(fbData).length;
+    st.innerHTML = `<span class="ok">✅ ดึงสำเร็จ — ${classCount} ห้อง, รวม ${total} คน (${new Date().toLocaleTimeString('th-TH')})</span>`;
+    tryEnableCompare();
+  } catch (err) {
+    st.innerHTML = `<span class="err">❌ ${err.message}</span>`;
+  } finally {
+    btn.disabled = false;
+    sp.style.display = 'none';
+  }
+}
+
+// ─── Enable compare button ────────────────────────────────
+function tryEnableCompare() {
+  const hasExcel = Object.keys(excelData).length > 0;
+  const hasFb    = Object.keys(fbData).length > 0;
+  document.getElementById('compareBtn').disabled = !(hasExcel && hasFb);
+}
+
+// ─── Step 3: Compare ──────────────────────────────────────
+function compare() {
+  const allClasses = [...new Set([...Object.keys(excelData), ...Object.keys(fbData)])].sort();
+
+  let matchCount = 0, mismatchCount = 0, missingCount = 0;
+  let excelTotal = 0, fbTotal = 0;
+
+  const rows = allClasses.map(cls => {
+    const xl = excelData[cls];
+    const fb = fbData[cls];
+    const diff = (fb ?? 0) - (xl ?? 0);
+
+    let rowClass, badge;
+    if (xl === undefined) {
+      rowClass = 'missing'; missingCount++;
+      badge = '<span class="badge badge-yellow">มีใน Firebase แต่ไม่มีใน Excel</span>';
+    } else if (fb === undefined) {
+      rowClass = 'missing'; missingCount++;
+      badge = '<span class="badge badge-yellow">มีใน Excel แต่ไม่มีใน Firebase</span>';
+    } else if (diff === 0) {
+      rowClass = 'match'; matchCount++;
+      badge = '<span class="badge badge-green">✓ ตรงกัน</span>';
+    } else {
+      rowClass = 'mismatch'; mismatchCount++;
+      badge = `<span class="badge badge-red">❌ ต่างกัน</span>`;
+    }
+
+    if (xl !== undefined) excelTotal += xl;
+    if (fb !== undefined) fbTotal    += fb;
+
+    const diffStr = diff === 0 ? '—'
+      : diff > 0 ? `<span style="color:#16a34a">+${diff}</span>`
+                 : `<span style="color:#dc2626">${diff}</span>`;
+
+    return `<tr class="${rowClass}">
+      <td class="left"><strong>${cls}</strong></td>
+      <td>${xl ?? '—'}</td>
+      <td>${fb ?? '—'}</td>
+      <td>${diffStr}</td>
+      <td>${badge}</td>
+    </tr>`;
+  });
+
+  // Total row
+  const totalDiff = fbTotal - excelTotal;
+  const totalDiffStr = totalDiff === 0 ? '—'
+    : totalDiff > 0 ? `<span style="color:#16a34a">+${totalDiff}</span>`
+                    : `<span style="color:#dc2626">${totalDiff}</span>`;
+
+  rows.push(`<tr class="total">
+    <td class="left">รวมทั้งหมด</td>
+    <td>${excelTotal}</td>
+    <td>${fbTotal}</td>
+    <td>${totalDiffStr}</td>
+    <td>${totalDiff === 0
+      ? '<span class="badge badge-green">✓ ตรงกัน</span>'
+      : '<span class="badge badge-red">❌ ไม่ตรง</span>'}</td>
+  </tr>`);
+
+  document.getElementById('cmpBody').innerHTML = rows.join('');
+  document.getElementById('sumMatch').textContent   = matchCount;
+  document.getElementById('sumMismatch').textContent = mismatchCount;
+  document.getElementById('sumMissing').textContent  = missingCount;
+
+  const resultEl = document.getElementById('result');
+  resultEl.style.display = 'block';
+  resultEl.scrollIntoView({ behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

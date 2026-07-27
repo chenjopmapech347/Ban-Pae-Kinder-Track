@@ -452,7 +452,7 @@ export default function NutritionTab({ teacherClassFilter = null }) {
   table { border-collapse: collapse; width: 100%; margin-top: 8px }
   td, th { border: 1px solid #555; padding: 3px 5px; text-align: center; font-size: 9pt }
   th { background: #e8f4fd; font-weight: bold }
-  .sig { margin-top: 16px; display: flex; justify-content: space-between; font-size: 10pt; line-height: 2 }
+  .sig { margin-top: 16px; display: flex; justify-content: center; gap: 100pt; font-size: 10pt; line-height: 2 }
 </style></head><body>
 ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
 <h3>การประเมินภาวะโภชนาการ</h3>

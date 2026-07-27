@@ -1290,7 +1290,7 @@ function devAssessDomainAvg(devAssessment, domainId) {
 // ═══════════════════════════════════════════════════════════════════════════════
 //  Main Component
 // ═══════════════════════════════════════════════════════════════════════════════
-export default function StudentReportTab({ teacherClassFilter = null }) {
+export default function StudentReportTab({ teacherClassFilter = null, initialStudentId = null }) {
   const {
     students, classes, teachers, academicYear, schoolName,
     schoolPhilosophy, schoolVision, schoolLogo, schoolDirectorName,
@@ -1306,7 +1306,7 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
   const [aiDomainLoading,  setAiDomainLoading]  = useState({});
   const [aiDomainError,    setAiDomainError]    = useState({});
 
-  const [selStudentId, setSelStudentId] = useState(null);
+  const [selStudentId, setSelStudentId] = useState(initialStudentId ? String(initialStudentId) : null);
   const [activeSection, setActiveSection] = useState('physical');
   const [devAssessTab, setDevAssessTab] = useState('d1');
   const [newHs, setNewHs] = useState({ date: todayISO(), service: '', note: '' });
@@ -1599,8 +1599,8 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
         <h3>📒 สมุดรายงานประจำตัวเด็กปฐมวัย (อ.01)</h3>
       </div>
 
-      {/* ── Selector ── */}
-      <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+      {/* ── Selector (ซ่อนเมื่อ parent เปิดจาก ParentView) ── */}
+      {!initialStudentId && <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
         {/* Class selector */}
         <div style={{ minWidth: '140px' }}>
           <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#6b7280', marginBottom: '.25rem' }}>ห้องเรียน</div>
@@ -1642,7 +1642,7 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
             })}
           </div>
         </div>
-      </div>
+      </div>}
 
       {!student ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#9ca3af', fontSize: '.9rem' }}>

@@ -7,6 +7,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
 import ParentView from './pages/ParentView';
 import ReportPage from './pages/ReportPage';
+import StudentReportTab from './components/admin/StudentReportTab';
 import EvaluationForm from './components/EvaluationForm';
 import StudentModal from './components/StudentModal';
 import ChangePasswordModal from './components/ChangePasswordModal';
@@ -32,7 +33,7 @@ function AppShell() {
     academicYears, academicYear, setAcademicYear,
     currentTerm, setCurrentTerm,
     evaluatingStudent, setEvaluatingStudent,
-    selectedStudent,
+    selectedStudent, setSelectedStudent,
     isSettingsOpen, setIsSettingsOpen,
     isAdding, setIsAdding,
     handleSaveEvaluation, assessmentTopics, addStudent,
@@ -180,6 +181,13 @@ function AppShell() {
         {evaluatingStudent ? (
           <EvaluationForm student={evaluatingStudent} onSave={handleSaveEvaluation}
             onCancel={() => setEvaluatingStudent(null)} assessmentTopics={assessmentTopics} />
+        ) : selectedStudent && role === 'parent' ? (
+          <div className="animate-fade">
+            <div className="page-header mb-5 no-print">
+              <button type="button" className="btn" onClick={() => setSelectedStudent(null)}>← ย้อนกลับ</button>
+            </div>
+            <StudentReportTab initialStudentId={selectedStudent.id} />
+          </div>
         ) : selectedStudent ? (
           <ReportPage />
         ) : isSettingsOpen ? (

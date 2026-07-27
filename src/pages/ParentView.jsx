@@ -186,36 +186,6 @@ export default function ParentView() {
         )}
       </div>
 
-      {/* Parent Info Card */}
-      {(student.guardianName || student.guardianOcc || student.parentPhone) && (
-        <div className="glass-card mb-6" style={{ background:'#f0fdf4', border:'1px solid #bbf7d0' }}>
-          <h3 className="mb-3" style={{ color:'#166534' }}>👨‍👩‍👧 ข้อมูลผู้ปกครอง</h3>
-          <div style={{ display:'grid', gridTemplateColumns:'auto 1fr', gap:'.35rem .85rem',
-            fontSize:'.875rem', alignItems:'center' }}>
-            {student.guardianName && (
-              <>
-                <span style={{ color:'#6b7280', fontWeight:600, whiteSpace:'nowrap' }}>ชื่อ-นามสกุล</span>
-                <span style={{ fontWeight:800, color:'#14532d' }}>{student.guardianName}</span>
-              </>
-            )}
-            {student.guardianOcc && (
-              <>
-                <span style={{ color:'#6b7280', fontWeight:600 }}>อาชีพ</span>
-                <span style={{ color:'#166534' }}>{student.guardianOcc}</span>
-              </>
-            )}
-            {student.parentPhone && (
-              <>
-                <span style={{ color:'#6b7280', fontWeight:600 }}>โทรศัพท์</span>
-                <a href={`tel:${student.parentPhone}`}
-                  style={{ color:'#15803d', fontWeight:700, textDecoration:'none' }}>
-                  📞 {student.parentPhone}
-                </a>
-              </>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Announcements */}
       {parentAnnouncements.length > 0 && (
@@ -340,65 +310,6 @@ export default function ParentView() {
         </div>
       </div>
 
-      {/* AI Summary */}
-      <div className="glass-card mb-6">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '.75rem' }}>
-          <h3 style={{ margin: 0 }}>🤖 สรุปพัฒนาการโดย AI</h3>
-          {aiApiKey && !aiLoading && (
-            <button type="button"
-              onClick={async () => {
-                setAiLoading(true); setAiError(''); setAiText('');
-                try {
-                  const topicScores = assessmentTopics.map(t => ({ label: t.label, score: topicAvg(student, t) }));
-                  const result = await callClaude(aiApiKey, buildParentSummaryPrompt(student, topicScores));
-                  setAiText(result);
-                } catch (e) { setAiError(e.message); }
-                finally { setAiLoading(false); }
-              }}
-              style={{
-                background: 'linear-gradient(135deg,#7c3aed,#a855f7)',
-                color: 'white', border: 'none', borderRadius: '10px',
-                padding: '.4rem .9rem', fontFamily: 'inherit', fontWeight: 700,
-                fontSize: '.8rem', cursor: 'pointer',
-              }}>
-              ✨ สร้างสรุป
-            </button>
-          )}
-        </div>
-
-        {!aiApiKey && (
-          <div style={{ fontSize: '.83rem', color: '#6b7280', fontStyle: 'italic' }}>
-            ยังไม่ได้เปิดใช้งาน AI — ติดต่อครูเพื่อตั้งค่า API Key
-          </div>
-        )}
-        {aiLoading && (
-          <div style={{ textAlign: 'center', padding: '1.5rem', color: '#7c3aed', fontSize: '.9rem' }}>
-            ⏳ AI กำลังวิเคราะห์พัฒนาการ...
-          </div>
-        )}
-        {aiError && (
-          <div style={{ background: '#fee2e2', borderRadius: '10px', padding: '.75rem', fontSize: '.83rem', color: '#991b1b' }}>
-            ❌ {aiError}
-          </div>
-        )}
-        {aiText && (
-          <div style={{
-            background: 'linear-gradient(135deg,#f5f3ff,#faf5ff)',
-            border: '1.5px solid #c4b5fd', borderRadius: '12px',
-            padding: '1rem 1.1rem', lineHeight: 1.8, fontSize: '.88rem', color: '#374151',
-          }}>
-            <div style={{ fontSize: '.7rem', fontWeight: 800, color: '#7c3aed', marginBottom: '.4rem' }}>
-              🤖 CLAUDE AI
-            </div>
-            {aiText}
-          </div>
-        )}
-        {!aiText && !aiLoading && !aiError && aiApiKey && (
-          <div style={{ fontSize: '.82rem', color: '#9ca3af', fontStyle: 'italic' }}>
-            กดปุ่ม "สร้างสรุป" เพื่อให้ AI สรุปพัฒนาการและข้อแนะนำสำหรับผู้ปกครอง
-          </div>
-        )}
-      </div>
 
       {/* Physical Info */}
       <div className="glass-card mb-6">

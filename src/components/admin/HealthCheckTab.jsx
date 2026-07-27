@@ -72,6 +72,7 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
     students, classes, teachers, role, user,
     academicYear, schoolLogo,
     healthCheckRecords, setHealthCheckRecords,
+    backfillHealthCheckRecords,
   } = useApp();
 
   const isTeacher = role === 'teacher';
@@ -81,7 +82,8 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
 
   const [selClass, setSelClass] = useState(() => myClass ?? (classes[0]?.name ?? ''));
   const [selDate,  setSelDate]  = useState(todayIso);
-  const [saved,    setSaved]    = useState(false);
+  const [saved,         setSaved]         = useState(false);
+  const [backfillMsg,   setBackfillMsg]   = useState('');
   const isLocked = useIsTermLocked(selDate);
 
   const key = useMemo(() => recordKey(selClass, academicYear, selDate), [selClass, academicYear, selDate]);
@@ -527,7 +529,20 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:6px"><img src="${sch
           style={{ padding: '.35rem .9rem', borderRadius: '8px', border: '1px solid #fca5a5', background: '#fff5f5', color: '#dc2626', fontFamily: 'inherit', fontSize: '.8rem', cursor: 'pointer' }}>
           🗑️ ล้างข้อมูลวันนี้
         </button>
+        {!isLocked && (
+          <button
+            type="button"
+            onClick={() => {
+              const n = backfillHealthCheckRecords();
+              setBackfillMsg(`✅ ตรวจสอบย้อนหลังแล้ว ${n} สัปดาห์`);
+              setTimeout(() => setBackfillMsg(''), 4000);
+            }}
+            style={{ padding: '.35rem .9rem', borderRadius: '8px', border: '1px solid #a5b4fc', background: '#eef2ff', color: '#4338ca', fontFamily: 'inherit', fontSize: '.8rem', cursor: 'pointer' }}>
+            🔄 ตรวจสอบย้อนหลัง
+          </button>
+        )}
         {saved && <span style={{ color: '#059669', fontWeight: 700, fontSize: '.82rem' }}>✅ บันทึกแล้ว</span>}
+        {backfillMsg && <span style={{ color: '#4338ca', fontWeight: 700, fontSize: '.82rem' }}>{backfillMsg}</span>}
       </div>
 
       {/* ── History panel ── */}

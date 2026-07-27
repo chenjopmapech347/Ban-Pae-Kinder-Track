@@ -917,12 +917,10 @@ export function AppProvider({ children }) {
         return next;
       });
 
-      // ── HealthCheck → เฉพาะวันจันทร์ (หรืออังคารถ้าจันทร์เป็นวันหยุด) ──
+      // ── HealthCheck → วันแรกของสัปดาห์ที่ไม่ใช่วันหยุด (จันทร์→อังคาร→พุธ→พฤหัส→ศุกร์) ──
       // key: className__academicYear__YYYY-MM-DD
-      // ค่า: null=ยังไม่ตรวจ | 1|2|3 = ครั้งที่ในเดือน
+      // ค่า: null=ยังไม่ตรวจ | 3 = ผ่าน (auto-fill ค่าคงที่ 3 ทุกหมวด)
       (() => {
-        const weekday = new Date(date).getDay(); // 0=อาทิตย์ 1=จันทร์ 2=อังคาร
-
         // ฟังก์ชันตรวจสอบว่า ISO date ตรงกับวันหยุดใน holidays หรือไม่
         // รองรับทั้ง YYYY-MM-DD (ค.ศ.) และ DD/MM/YYYY (พ.ศ. เดิม)
         const isHoliday = (isoDate) => holidays.some(h => {
@@ -935,21 +933,21 @@ export function AppProvider({ children }) {
           return h.date === isoDate;
         });
 
-        let isHealthCheckDay = false;
-        if (weekday === 1) {
-          isHealthCheckDay = !isHoliday(date);       // จันทร์ที่ไม่ใช่วันหยุด
-        } else if (weekday === 2) {
-          // อังคาร — ตรวจสอบว่าจันทร์ก่อนหน้าเป็นวันหยุดไหม
-          const prevMon = new Date(date);
-          prevMon.setDate(prevMon.getDate() - 1);
-          const prevMonISO = prevMon.toISOString().split('T')[0];
-          isHealthCheckDay = isHoliday(prevMonISO);
+        // หาวัน health check ของสัปดาห์นี้: จันทร์ → อังคาร → พุธ → พฤหัส → ศุกร์
+        // (เลื่อนไปวันถัดไปถ้าวันก่อนหน้าเป็นวันหยุดทั้งหมด)
+        const d = new Date(date);
+        const dow = d.getDay(); // 0=อาทิตย์ 1=จันทร์ ... 6=เสาร์
+        const mondayOfWeek = new Date(d);
+        mondayOfWeek.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+        let healthCheckDay = null;
+        for (let offset = 0; offset <= 4; offset++) {
+          const candidate = new Date(mondayOfWeek);
+          candidate.setDate(mondayOfWeek.getDate() + offset);
+          const iso = candidate.toISOString().split('T')[0];
+          if (!isHoliday(iso)) { healthCheckDay = iso; break; }
         }
+        if (healthCheckDay !== date) return; // วันนี้ไม่ใช่ health check day ของสัปดาห์นี้
 
-        if (!isHealthCheckDay) return;
-
-        // คำนวณครั้งที่ในเดือน (1–3) จากวันที่
-        const weekNum = Math.min(Math.ceil(dayNum / 7), 3);
         const healthEntry = (val) => ({
           body: val, hair: val, cloth: val,
           ear: val,  mouth: val, nail: val, note: '',
@@ -957,13 +955,13 @@ export function AppProvider({ children }) {
 
         setHealthCheckRecords(prev => {
           const next = { ...prev };
-          // มา → เติมค่าครั้งที่ (weekNum)
+          // มา → เติมค่า 3 ทุกหมวด
           Object.entries(byClass).forEach(([cls, ids]) => {
             const k   = `${cls}__${academicYear}__${date}`;
             const rec = next[k]
               ? { ...next[k], students: { ...next[k].students } }
               : { id: k, className: cls, academicYear, date, students: {} };
-            ids.forEach(id => { if (!rec.students[id]) rec.students[id] = healthEntry(weekNum); });
+            ids.forEach(id => { if (!rec.students[id]) rec.students[id] = healthEntry(3); });
             next[k] = rec;
           });
           // ขาด/ลา/ป่วย → บันทึก record เปล่า (null = ยังไม่ได้ตรวจ)
@@ -1077,6 +1075,82 @@ export function AppProvider({ children }) {
       holidays, activitySchedule,
     ],
   );
+
+  // ── backfillHealthCheckRecords ──
+  // สแกน dailyRecords ย้อนหลัง เติม healthCheckRecords ที่ขาดหายในวัน health check
+  // ใช้ค่า 3 สำหรับนักเรียนที่มา, null สำหรับขาด/ลา/ป่วย (ไม่ overwrite ข้อมูลที่มีอยู่แล้ว)
+  // คืนค่าจำนวนวัน health check ที่พบใน dailyRecords ทั้งหมด
+  const backfillHealthCheckRecords = useCallback(() => {
+    const isHolidayFn = (isoDate) => holidays.some(h => {
+      if (!h.date) return false;
+      if (h.date.includes('/')) {
+        const [dd, mm, bYear] = h.date.split('/');
+        const adYear = parseInt(bYear, 10) - 543;
+        return `${adYear}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}` === isoDate;
+      }
+      return h.date === isoDate;
+    });
+
+    // หา health check day ของสัปดาห์ที่มี isoDate นั้น
+    const getHealthCheckDay = (isoDate) => {
+      const d = new Date(isoDate);
+      const dow = d.getDay();
+      const monday = new Date(d);
+      monday.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+      for (let offset = 0; offset <= 4; offset++) {
+        const candidate = new Date(monday);
+        candidate.setDate(monday.getDate() + offset);
+        const iso = candidate.toISOString().split('T')[0];
+        if (!isHolidayFn(iso)) return iso;
+      }
+      return null;
+    };
+
+    const healthEntry = (val) => ({
+      body: val, hair: val, cloth: val,
+      ear: val,  mouth: val, nail: val, note: '',
+    });
+
+    let daysProcessed = 0;
+    setHealthCheckRecords(prev => {
+      const next = { ...prev };
+      Object.entries(dailyRecords).forEach(([date, dayData]) => {
+        if (getHealthCheckDay(date) !== date) return; // ไม่ใช่ health check day
+        daysProcessed++;
+        const byClassPresent = {};
+        const byClassAbsent  = {};
+        Object.entries(dayData).forEach(([id, rec]) => {
+          const stu = students.find(s => String(s.id) === String(id));
+          if (!stu) return;
+          if (rec.attendance === 'มา') {
+            (byClassPresent[stu.className] ??= []).push(String(id));
+          } else if (['ขาด', 'ลา', 'ป่วย'].includes(rec.attendance)) {
+            (byClassAbsent[stu.className] ??= []).push(String(id));
+          }
+        });
+        // นักเรียนที่มา → ค่า 3
+        Object.entries(byClassPresent).forEach(([cls, ids]) => {
+          const k = `${cls}__${academicYear}__${date}`;
+          const rec = next[k]
+            ? { ...next[k], students: { ...next[k].students } }
+            : { id: k, className: cls, academicYear, date, students: {} };
+          ids.forEach(id => { if (!rec.students[id]) rec.students[id] = healthEntry(3); });
+          next[k] = rec;
+        });
+        // นักเรียนที่ขาด/ลา/ป่วย → null (ยังไม่ตรวจ)
+        Object.entries(byClassAbsent).forEach(([cls, ids]) => {
+          const k = `${cls}__${academicYear}__${date}`;
+          const rec = next[k]
+            ? { ...next[k], students: { ...next[k].students } }
+            : { id: k, className: cls, academicYear, date, students: {} };
+          ids.forEach(id => { if (!rec.students[id]) rec.students[id] = healthEntry(null); });
+          next[k] = rec;
+        });
+      });
+      return next;
+    });
+    return daysProcessed;
+  }, [dailyRecords, students, holidays, academicYear, setHealthCheckRecords]);
 
   const saveDailyHygiene = useCallback(
     (date, recordsByStudentId) => {
@@ -1235,6 +1309,7 @@ export function AppProvider({ children }) {
     // Health Check
     healthCheckRecords,
     setHealthCheckRecords,
+    backfillHealthCheckRecords,
     // Illness Check
     illnessCheckRecords,
     setIllnessCheckRecords,

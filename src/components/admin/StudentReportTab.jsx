@@ -716,17 +716,20 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
     <h2 style="margin-top:14px">บันทึกการเจริญเติบโตของร่างกาย</h2>
     ${growthHtml}
 
-    <h2>2. บันทึกการบริการทางสุขภาพ (การให้ภูมิคุ้มกัน)</h2>
-    <table>
-      <tr><th>วัน/เดือน/ปี</th><th>การให้ภูมิคุ้มกัน</th><th>หมายเหตุ</th></tr>
-      ${hsRows}
-    </table>
+    <!-- ══ รวมหน้า: บริการสุขภาพ + เวลามาเรียน ══ -->
+    <div class="page-break">
+      <h2>2. บันทึกการบริการทางสุขภาพ (การให้ภูมิคุ้มกัน)</h2>
+      <table>
+        <tr><th>วัน/เดือน/ปี</th><th>การให้ภูมิคุ้มกัน</th><th>หมายเหตุ</th></tr>
+        ${hsRows}
+      </table>
 
-    <h2>3. เวลามาเรียน (คิดเป็นวัน)</h2>
-    <table>
-      <tr><th colspan="2">ภาคเรียน</th><th>เวลาเรียนเต็ม</th><th>มาเรียน</th><th>ไม่มาเรียน</th></tr>
-      ${attRows}
-    </table>
+      <h2 style="margin-top:20px">3. เวลามาเรียน (คิดเป็นวัน)</h2>
+      <table>
+        <tr><th colspan="2">ภาคเรียน</th><th>เวลาเรียนเต็ม</th><th>มาเรียน</th><th>ไม่มาเรียน</th></tr>
+        ${attRows}
+      </table>
+    </div>
 
     <h2>4. บันทึกผลการประเมินพัฒนาการ — ความสามารถผู้เรียนเมื่อจบชั้นปี</h2>
     <p style="font-size:.78rem;color:#555;margin-bottom:6px">อนุบาลปีที่ 2 (อายุ 4–5 ปี) · ระดับ 3 = ดี · ระดับ 2 = พอใช้ · ระดับ 1 = ปรับปรุง</p>

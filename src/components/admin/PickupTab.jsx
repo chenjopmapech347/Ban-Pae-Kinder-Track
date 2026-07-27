@@ -160,11 +160,62 @@ export default function PickupTab({ defaultClass }) {
   const totalPickedUp = classStudents.filter(s => dayRecords[s.id]?.relation).length;
   const totalDroppedOff = classStudents.filter(s => dayRecords[s.id]?.dropoffRelation || dayRecords[s.id]?.dropoffName).length;
 
+  // ── quick-save: บันทึกผู้ส่ง (เช้า) จาก defaultDropoff ──
+  function saveDropoffDefault(student) {
+    const rel  = student.defaultDropoffRelation || '';
+    const name = student.defaultDropoffName || '';
+    setPickupRecords(prev => ({
+      ...prev,
+      [selectedDate]: {
+        ...(prev[selectedDate] ?? {}),
+        [student.id]: {
+          ...(prev[selectedDate]?.[student.id] ?? {}),
+          dropoffRelation: rel,
+          dropoffName:     name,
+          dropoffTime:     nowHHMM(),
+          savedAt:         new Date().toISOString(),
+        },
+      },
+    }));
+    setSaved(`d-${student.id}`);
+    setTimeout(() => setSaved(null), 2000);
+  }
+
+  // ── quick-save: บันทึกผู้รับ (เย็น) จาก defaultPickup ──
+  function savePickupDefault(student) {
+    const rel  = student.defaultPickupRelation || 'บิดา';
+    const name = student.defaultPickupName || '';
+    const existing = dayRecords[student.id] ?? {};
+    setPickupRecords(prev => ({
+      ...prev,
+      [selectedDate]: {
+        ...(prev[selectedDate] ?? {}),
+        [student.id]: {
+          ...existing,
+          relation:  rel,
+          time:      nowHHMM(),
+          note:      existing.note || '✓',
+          savedAt:   new Date().toISOString(),
+          ...(rel === 'อื่นๆ' && name ? { otherName: name } : {}),
+        },
+      },
+    }));
+    setSaved(`p-${student.id}`);
+    setTimeout(() => setSaved(null), 2000);
+  }
+
   function openModal(student) {
     const existing = dayRecords[student.id];
     setForm(existing
       ? { ...EMPTY_FORM, ...existing }
-      : { ...EMPTY_FORM, time: nowHHMM(), dropoffTime: nowHHMM() }
+      : {
+          ...EMPTY_FORM,
+          time:            nowHHMM(),
+          dropoffTime:     nowHHMM(),
+          dropoffRelation: student.defaultDropoffRelation || '',
+          dropoffName:     student.defaultDropoffName || '',
+          relation:        student.defaultPickupRelation || 'บิดา',
+        }
     );
     setModal({ student });
   }
@@ -323,23 +374,68 @@ export default function PickupTab({ defaultClass }) {
               <tr>
                 <th style={{ width: '36px' }}>#</th>
                 <th>ชื่อ-นามสกุล</th>
-                <th style={{ textAlign: 'center', width: '110px' }}>ส่ง</th>
-                <th style={{ textAlign: 'center', width: '60px' }}>เวลาส่ง</th>
-                <th style={{ textAlign: 'center', width: '110px' }}>รับ</th>
-                <th style={{ textAlign: 'center', width: '60px' }}>เวลารับ</th>
-                <th style={{ textAlign: 'center', width: '60px' }}>หมายเหตุ</th>
-                <th style={{ textAlign: 'center', width: '80px' }}>จัดการ</th>
+                <th style={{ textAlign: 'center', width: '62px' }}>🌅 เวลาส่ง</th>
+                <th style={{ textAlign: 'center', width: '110px' }}>ผู้ส่ง</th>
+                <th style={{ textAlign: 'center', width: '74px' }}>บันทึกส่ง</th>
+                <th style={{ textAlign: 'center', width: '62px' }}>🌆 เวลารับ</th>
+                <th style={{ textAlign: 'center', width: '110px' }}>ผู้รับ</th>
+                <th style={{ textAlign: 'center', width: '74px' }}>บันทึกรับ</th>
+                <th style={{ textAlign: 'center', width: '58px' }}>แก้ไข</th>
               </tr>
             </thead>
             <tbody>
               {classStudents.map((s, idx) => {
-                const rec    = dayRecords[s.id];
-                const pickC  = rec?.relation ? (REL_COLOR[rec.relation] ?? REL_COLOR['อื่นๆ']) : null;
-                const dropC  = rec?.dropoffRelation ? (REL_COLOR[rec.dropoffRelation] ?? REL_COLOR['อื่นๆ']) : null;
-                const isBoy  = s.name.includes('ชาย');
-                const noteOpt = NOTE_OPTS.find(n => n.value === rec?.note);
+                const rec     = dayRecords[s.id];
+                const isBoy   = s.name.includes('ชาย');
+
+                // ── ผู้ส่ง ──
+                const defDropRel  = s.defaultDropoffRelation || '';
+                const defDropName = s.defaultDropoffName || '';
+                const actDropRel  = rec?.dropoffRelation || '';
+                const actDropName = rec?.dropoffName || '';
+                const showDropRel = actDropRel || defDropRel;   // ชื่อที่แสดง
+                const dropSaved   = !!(rec?.dropoffRelation || rec?.dropoffName || rec?.dropoffTime);
+                const dropDiffers = dropSaved && actDropRel !== defDropRel;
+                const dropC       = REL_COLOR[showDropRel] ?? REL_COLOR['อื่นๆ'];
+
+                // ── ผู้รับ ──
+                const defPickRel  = s.defaultPickupRelation || 'บิดา';
+                const defPickName = s.defaultPickupName || '';
+                const actPickRel  = rec?.relation || '';
+                const actPickName = rec?.otherName || '';
+                const showPickRel = actPickRel || defPickRel;
+                const pickSaved   = !!rec?.relation;
+                const pickDiffers = pickSaved && actPickRel !== defPickRel;
+                const pickC       = REL_COLOR[showPickRel] ?? REL_COLOR['อื่นๆ'];
+
+                const dropJustSaved = saved === `d-${s.id}`;
+                const pickJustSaved = saved === `p-${s.id}`;
+
+                // helper สร้าง person chip
+                const personChip = (rel, name, color, differs, saved) => {
+                  if (!rel) return <span style={{ color: '#d1d5db', fontSize: '.75rem' }}>—</span>;
+                  return (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: '.2rem',
+                      background: saved ? color.bg : '#f9fafb',
+                      color:      saved ? color.color : '#9ca3af',
+                      border:     `1.5px ${saved ? 'solid' : 'dashed'} ${saved ? color.border : '#d1d5db'}`,
+                      borderRadius: '8px', padding: '.15rem .5rem',
+                      fontWeight: 700, fontSize: '.75rem',
+                      outline: differs ? '2px solid #f59e0b' : 'none',
+                      outlineOffset: '1px',
+                    }}>
+                      {REL_ICON[rel] ?? '🧑'} {rel}
+                      {name && <span style={{ fontWeight: 400, fontSize: '.68rem', opacity: .8 }}>({name})</span>}
+                      {differs && <span style={{ fontSize: '.65rem', color: '#b45309', marginLeft: '.1rem' }}>⚠️</span>}
+                    </span>
+                  );
+                };
+
                 return (
-                  <tr key={s.id} className="hover-row" style={{ background: saved === s.id ? '#f0fdf4' : undefined }}>
+                  <tr key={s.id} className="hover-row" style={{
+                    background: (dropJustSaved || pickJustSaved) ? '#f0fdf4' : undefined,
+                  }}>
                     <td style={{ color: 'var(--text-muted)', textAlign: 'center' }}>{idx + 1}</td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
@@ -353,65 +449,76 @@ export default function PickupTab({ defaultClass }) {
                         <span style={{ fontWeight: 600 }}>{shortName(s.name)}</span>
                       </div>
                     </td>
-                    {/* ส่ง */}
-                    <td style={{ textAlign: 'center' }}>
-                      {(rec?.dropoffRelation || rec?.dropoffName) ? (
-                        <span style={{
-                          display: 'inline-flex', alignItems: 'center', gap: '.2rem',
-                          background: dropC?.bg ?? '#f3f4f6', color: dropC?.color ?? '#374151',
-                          border: `1px solid ${dropC?.border ?? '#d1d5db'}`,
-                          borderRadius: '8px', padding: '.15rem .5rem',
-                          fontWeight: 700, fontSize: '.78rem',
-                        }}>
-                          {REL_ICON[rec.dropoffRelation] ?? '🧑'} {rec.dropoffRelation || rec.dropoffName}
-                        </span>
-                      ) : <span style={{ color: '#d1d5db', fontSize: '.78rem' }}>—</span>}
-                    </td>
-                    <td style={{ textAlign: 'center', color: rec?.dropoffTime ? '#374151' : '#d1d5db', fontWeight: rec?.dropoffTime ? 700 : 400, fontSize: '.8rem' }}>
+
+                    {/* เวลาส่ง */}
+                    <td style={{ textAlign: 'center', fontWeight: rec?.dropoffTime ? 700 : 400,
+                      color: rec?.dropoffTime ? '#374151' : '#d1d5db', fontSize: '.8rem' }}>
                       {rec?.dropoffTime ?? '—'}
                     </td>
-                    {/* รับ */}
+
+                    {/* ผู้ส่ง */}
                     <td style={{ textAlign: 'center' }}>
-                      {rec?.relation ? (
-                        <span style={{
-                          display: 'inline-flex', alignItems: 'center', gap: '.2rem',
-                          background: pickC.bg, color: pickC.color,
-                          border: `1px solid ${pickC.border}`,
-                          borderRadius: '8px', padding: '.15rem .5rem',
-                          fontWeight: 700, fontSize: '.78rem',
-                        }}>
-                          {REL_ICON[rec.relation]} {rec.relation}
-                          {rec.relation === 'อื่นๆ' && rec.otherName && (
-                            <span style={{ fontWeight: 400, fontSize: '.68rem', opacity: .8 }}>{rec.otherName}</span>
-                          )}
-                        </span>
-                      ) : <span style={{ color: '#d1d5db', fontSize: '.78rem' }}>⏳ รอ</span>}
+                      {personChip(
+                        dropSaved ? actDropRel : defDropRel,
+                        dropSaved ? actDropName : defDropName,
+                        dropC, dropDiffers, dropSaved
+                      )}
                     </td>
-                    <td style={{ textAlign: 'center', color: rec?.time ? '#374151' : '#d1d5db', fontWeight: rec?.time ? 700 : 400, fontSize: '.8rem' }}>
+
+                    {/* ปุ่ม บันทึก ส่ง */}
+                    <td style={{ textAlign: 'center' }}>
+                      {dropSaved ? (
+                        <span style={{ fontSize: '.72rem', color: '#059669', fontWeight: 700 }}>✅ ส่งแล้ว</span>
+                      ) : (
+                        <button onClick={() => saveDropoffDefault(s)} style={{
+                          padding: '.22rem .5rem', borderRadius: '7px', border: 'none',
+                          background: '#f59e0b', color: 'white',
+                          fontFamily: 'inherit', fontWeight: 700, fontSize: '.72rem', cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                        }}>+ บันทึก</button>
+                      )}
+                    </td>
+
+                    {/* เวลารับ */}
+                    <td style={{ textAlign: 'center', fontWeight: rec?.time ? 700 : 400,
+                      color: rec?.time ? '#374151' : '#d1d5db', fontSize: '.8rem' }}>
                       {rec?.time ?? '—'}
                     </td>
-                    {/* หมายเหตุ */}
+
+                    {/* ผู้รับ */}
                     <td style={{ textAlign: 'center' }}>
-                      {rec?.note ? (
-                        <span style={{
-                          display: 'inline-block', padding: '.1rem .45rem', borderRadius: '6px',
-                          background: noteOpt?.bg ?? '#f3f4f6',
-                          color: noteOpt?.color ?? '#374151',
-                          fontWeight: 800, fontSize: '.85rem',
-                        }}>{rec.note}</span>
-                      ) : '—'}
+                      {personChip(
+                        pickSaved ? actPickRel : defPickRel,
+                        pickSaved ? actPickName : defPickName,
+                        pickC, pickDiffers, pickSaved
+                      )}
                     </td>
+
+                    {/* ปุ่ม บันทึก รับ */}
                     <td style={{ textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '.3rem', justifyContent: 'center' }}>
-                        <button onClick={() => openModal(s)} style={{
-                          padding: '.2rem .55rem', borderRadius: '7px', border: 'none',
-                          background: rec ? '#fef3c7' : '#f59e0b',
-                          color: rec ? '#92400e' : 'white',
+                      {pickSaved ? (
+                        <span style={{ fontSize: '.72rem', color: '#059669', fontWeight: 700 }}>✅ รับแล้ว</span>
+                      ) : (
+                        <button onClick={() => savePickupDefault(s)} style={{
+                          padding: '.22rem .5rem', borderRadius: '7px', border: 'none',
+                          background: '#10b981', color: 'white',
                           fontFamily: 'inherit', fontWeight: 700, fontSize: '.72rem', cursor: 'pointer',
-                        }}>{rec ? '✏️ แก้' : '+ บันทึก'}</button>
+                          whiteSpace: 'nowrap',
+                        }}>+ บันทึก</button>
+                      )}
+                    </td>
+
+                    {/* แก้ไข */}
+                    <td style={{ textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: '.25rem', justifyContent: 'center' }}>
+                        <button onClick={() => openModal(s)} style={{
+                          padding: '.22rem .45rem', borderRadius: '7px', border: 'none',
+                          background: '#f3f4f6', color: '#374151',
+                          fontFamily: 'inherit', fontWeight: 700, fontSize: '.72rem', cursor: 'pointer',
+                        }}>✏️</button>
                         {rec && (
                           <button onClick={() => deleteRecord(s.id)} style={{
-                            padding: '.2rem .45rem', borderRadius: '7px', border: 'none',
+                            padding: '.22rem .45rem', borderRadius: '7px', border: 'none',
                             background: '#fee2e2', color: '#991b1b',
                             fontFamily: 'inherit', fontWeight: 700, fontSize: '.72rem', cursor: 'pointer',
                           }}>🗑</button>
@@ -423,7 +530,7 @@ export default function PickupTab({ defaultClass }) {
               })}
               {classStudents.length === 0 && (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
+                  <td colSpan={9} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
                     ไม่มีนักเรียนในห้องนี้
                   </td>
                 </tr>

@@ -71,6 +71,12 @@ const emptyStudent = {
   guardianRelation: 'มารดา', // ความเกี่ยวข้อง (มารดา/บิดา/อื่น)
   parentPhone:      '',     // เบอร์โทรผู้ปกครอง
 
+  // ── การรับ-ส่ง (ค่าเริ่มต้น) ────────────────────────────────
+  defaultDropoffRelation: 'บิดา',   // ผู้ส่งเช้า (ค่า default)
+  defaultDropoffName:     '',        // ชื่อเพิ่มเติมกรณีอื่นๆ
+  defaultPickupRelation:  'มารดา',  // ผู้รับเย็น (ค่า default)
+  defaultPickupName:      '',        // ชื่อเพิ่มเติมกรณีอื่นๆ
+
   // ── รูปภาพ ──────────────────────────────────────────────────
   photo:       '',          // base64 data URL
 
@@ -131,6 +137,9 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
       ...(newISO ? { birthDate: newISO, age: calcAge(newISO) } : {}),
     }));
   };
+
+  const PICKUP_RELATIONS = ['บิดา', 'มารดา', 'ย่า-ยาย', 'ปู่-ตา', 'อื่นๆ'];
+  const PICKUP_REL_ICON  = { บิดา: '👨', มารดา: '👩', 'ย่า-ยาย': '👵', 'ปู่-ตา': '👴', อื่นๆ: '🧑' };
 
   const TABS = [
     { id: 'personal', label: '1. ประวัติส่วนตัว' },
@@ -405,6 +414,59 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-bold">อาชีพ</label>
                   <input className="input" {...f('motherOcc')} />
+                </div>
+              </div>
+            </div>
+
+            {/* 🚌 การรับ-ส่ง (ค่าเริ่มต้น) */}
+            <div style={{ background: '#fffbeb', borderRadius: '10px', padding: '.75rem 1rem', border: '1.5px solid #fde68a' }}>
+              <div className="text-xs font-bold mb-3" style={{ color: '#92400e' }}>🚌 การรับ-ส่ง (ผู้ส่ง-รับประจำ)</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                {/* ผู้ส่ง เช้า */}
+                <div>
+                  <div className="text-xs font-bold mb-2" style={{ color: '#b45309' }}>🌅 ผู้ส่ง (ตอนเช้า)</div>
+                  <div style={{ display: 'flex', gap: '.3rem', flexWrap: 'wrap', marginBottom: '.5rem' }}>
+                    {PICKUP_RELATIONS.map(r => (
+                      <button key={r} type="button"
+                        onClick={() => setFormData(fd => ({ ...fd, defaultDropoffRelation: r }))}
+                        style={{
+                          padding: '.2rem .55rem', borderRadius: '8px', fontFamily: 'inherit',
+                          fontWeight: 700, fontSize: '.75rem', cursor: 'pointer',
+                          border: formData.defaultDropoffRelation === r ? '2px solid #f59e0b' : '1.5px solid #e5e7eb',
+                          background: formData.defaultDropoffRelation === r ? '#fef3c7' : 'white',
+                          color: formData.defaultDropoffRelation === r ? '#92400e' : '#6b7280',
+                        }}>
+                        {PICKUP_REL_ICON[r]} {r}
+                      </button>
+                    ))}
+                  </div>
+                  <input className="input" placeholder="ชื่อเพิ่มเติม (กรณีอื่นๆ)"
+                    style={{ fontSize: '.82rem' }}
+                    value={formData.defaultDropoffName ?? ''}
+                    onChange={e => setFormData(fd => ({ ...fd, defaultDropoffName: e.target.value }))} />
+                </div>
+                {/* ผู้รับ เย็น */}
+                <div>
+                  <div className="text-xs font-bold mb-2" style={{ color: '#166534' }}>🌆 ผู้รับ (ตอนเย็น)</div>
+                  <div style={{ display: 'flex', gap: '.3rem', flexWrap: 'wrap', marginBottom: '.5rem' }}>
+                    {PICKUP_RELATIONS.map(r => (
+                      <button key={r} type="button"
+                        onClick={() => setFormData(fd => ({ ...fd, defaultPickupRelation: r }))}
+                        style={{
+                          padding: '.2rem .55rem', borderRadius: '8px', fontFamily: 'inherit',
+                          fontWeight: 700, fontSize: '.75rem', cursor: 'pointer',
+                          border: formData.defaultPickupRelation === r ? '2px solid #86efac' : '1.5px solid #e5e7eb',
+                          background: formData.defaultPickupRelation === r ? '#dcfce7' : 'white',
+                          color: formData.defaultPickupRelation === r ? '#14532d' : '#6b7280',
+                        }}>
+                        {PICKUP_REL_ICON[r]} {r}
+                      </button>
+                    ))}
+                  </div>
+                  <input className="input" placeholder="ชื่อเพิ่มเติม (กรณีอื่นๆ)"
+                    style={{ fontSize: '.82rem' }}
+                    value={formData.defaultPickupName ?? ''}
+                    onChange={e => setFormData(fd => ({ ...fd, defaultPickupName: e.target.value }))} />
                 </div>
               </div>
             </div>

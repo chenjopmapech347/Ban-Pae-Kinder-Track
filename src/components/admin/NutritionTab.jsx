@@ -445,7 +445,7 @@ export default function NutritionTab({ teacherClassFilter = null }) {
     win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>ประเมินภาวะโภชนาการ</title>
 <style>
-  @page { size: A4 landscape; margin: 10mm }
+  @page { size: A4 landscape; margin: 1in }
   body { font-family: 'TH Sarabun New', Sarabun, sans-serif; font-size: 11pt }
   h3, h4, p { text-align: center; margin: 2px 0 }
   h3 { font-size: 14pt }

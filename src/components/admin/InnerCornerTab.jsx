@@ -19,7 +19,7 @@ function printInnerCornerSheet(rows, CORNERS, weekNo, weekDate, className, schoo
     th{background:#ddd;text-align:center;font-weight:700;white-space:pre-line;line-height:1.3}
     .tc{text-align:center} .tl{text-align:left}
     .sig{margin-top:2rem;text-align:right;font-size:9.5pt}
-    @media print{@page{margin:1.5cm;size:A4 portrait}body{margin:0}}
+    @media print{@page{size:A4 portrait;margin:1in}body{margin:0}}
   `;
   const thCell = (t) => `<th style="width:65px" class="tc">${t}</th>`;
   const headerRow = `<tr>

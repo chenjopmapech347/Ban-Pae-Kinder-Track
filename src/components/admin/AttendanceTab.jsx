@@ -71,7 +71,7 @@ function printMonthlySummary(classSections, monthLabel, schoolName, schoolLogo) 
     th{background:#d0d0d0;font-weight:700}
     .tl{text-align:left!important;padding-left:5px!important}
     .pg{page-break-after:always}
-    @media print{@page{size:A4 portrait;margin:1.5cm}}
+    @media print{@page{size:A4 portrait;margin:1in}}
   `;
   const pages = classSections.map(({ cls, teacher, rows }, i) => {
     const isLast = i === classSections.length - 1;
@@ -134,7 +134,7 @@ function printRollCall(classSections, selMonth, schoolName, schoolLogo) {
     .ข{color:#dc2626;font-weight:800}
     .ป{color:#1e40af;font-weight:800}
     .ล{color:#b45309;font-weight:800}
-    @media print{@page{size:A4 landscape;margin:0.8cm}}
+    @media print{@page{size:A4 landscape;margin:1in}}
   `;
 
   const pages = classSections.map(({ cls, teacher, rows }, pi) => {

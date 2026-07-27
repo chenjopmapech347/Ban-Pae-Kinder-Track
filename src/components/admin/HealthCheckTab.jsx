@@ -232,7 +232,7 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
     win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>แบบบันทึกการตรวจสุขภาพประจำสัปดาห์</title>
 <style>
-  @page { size: A4 landscape; margin: 10mm }
+  @page { size: A4 landscape; margin: 1in }
   body { font-family: 'TH Sarabun New', Sarabun, sans-serif; font-size: 11pt }
   h3 { text-align: center; margin: 2px 0; font-size: 13pt }
   table { border-collapse: collapse; width: 100% }

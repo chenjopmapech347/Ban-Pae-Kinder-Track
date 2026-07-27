@@ -180,7 +180,7 @@ function printStudentReport(student, indicators, activities, assessmentTopics, s
     table{width:100%;border-collapse:collapse;margin-top:12px}
     th,td{border:1px solid #ddd;padding:5px 8px;font-size:11.5px}
     th{background:#f5f5f5;font-weight:700}
-    @media print{body{margin:8px}}
+    @media print{@page{size:A4 portrait;margin:1in}body{margin:0}}
   </style></head><body>
   <div class="report-header">
     ${logoHtml}
@@ -225,7 +225,7 @@ function printClassReport(classStudents, className, indicators, activities, asse
     .report-header h2{font-size:15px;margin:0 0 3px} .report-header p{margin:0;font-size:11px;color:#555}
     table{width:100%;border-collapse:collapse} th,td{border:1px solid #ccc;padding:4px 7px;font-size:11px}
     th{background:#f0f0f0;font-weight:700}
-    @media print{body{margin:6px}}
+    @media print{@page{size:A4 portrait;margin:1in}body{margin:0}}
   </style></head><body>
   <div class="report-header">
     ${logoHtml}

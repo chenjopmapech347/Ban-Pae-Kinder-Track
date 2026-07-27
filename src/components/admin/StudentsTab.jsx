@@ -78,8 +78,9 @@ export default function StudentsTab() {
   th, td { border:1px solid #000; padding:3px 6px; font-size:13pt; }
   th     { background:#e8e8e8; text-align:center; font-weight:bold; }
   .center { text-align:center; }
+  @page { size: A4 portrait; margin: 1in; }
   @media print {
-    .page { padding: 10mm 15mm; }
+    .page { padding: 0; }
   }
 </style>
 </head><body>${pages}</body></html>`;

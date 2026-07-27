@@ -92,7 +92,7 @@ function printKhamChiaeng() {
     .formula-title{font-weight:800;color:#166534;margin-bottom:8px;font-size:13px}
     .formula-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:11.5px;color:#14532d}
     .formula-grid div{line-height:1.6}
-    @media print{@page{size:A4 portrait;margin:1.5cm} body{padding:0}}
+    @media print{@page{size:A4 portrait;margin:1in} body{padding:0}}
   `;
 
   const items = KHAM_CHIAENG.map(item => {
@@ -528,7 +528,7 @@ function SummaryView({ students, indicators, activities, className, schoolName, 
     win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>สรุปผลการประเมินพัฒนาการ</title>
 <style>
-  @page{size:A4 landscape;margin:10mm}
+  @page{size:A4 landscape;margin:1in}
   body{font-family:'TH Sarabun New',Sarabun,sans-serif;font-size:10pt}
   h3{text-align:center;margin:3px 0}
   table{border-collapse:collapse;width:100%}
@@ -700,7 +700,7 @@ function DetailView({ students, indicators, activities, className, schoolName, a
     win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>${stdDef.title}</title>
 <style>
-  @page{size:A4 landscape;margin:8mm}
+  @page{size:A4 landscape;margin:1in}
   body{font-family:'TH Sarabun New',Sarabun,sans-serif;font-size:9pt}
   h3{text-align:center;margin:3px 0}
   table{border-collapse:collapse;width:100%}

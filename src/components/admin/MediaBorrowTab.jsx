@@ -59,7 +59,7 @@ function isOverdue(record) {
 }
 
 /* ── Print borrow list ─────────────────────────────────────────────────────── */
-function printBorrowList(records, cn, schoolName, academicYear) {
+function printBorrowList(records, cn, schoolName, academicYear, schoolLogo) {
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
     *{box-sizing:border-box}
@@ -71,7 +71,7 @@ function printBorrowList(records, cn, schoolName, academicYear) {
     th{background:#ddd;text-align:center;font-weight:700}
     .tc{text-align:center} .tl{text-align:left}
     .overdue{color:#dc2626;font-weight:700}
-    @media print{@page{margin:1.5cm;size:A4 portrait}body{margin:0}}
+    @media print{@page{size:A4 portrait;margin:1in}body{margin:0}}
   `;
   const rows = records.map((r, i) => `
     <tr>
@@ -88,6 +88,7 @@ function printBorrowList(records, cn, schoolName, academicYear) {
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
     <title>รายการยืม-คืนสื่อ</title><style>${css}</style></head>
     <body>
+      ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
       <h2>รายการยืม-คืนสื่อการสอน</h2>
       ${academicYear ? `<div class="sub">ปีการศึกษา ${academicYear}</div>` : ''}
       ${cn ? `<div class="sub">ห้องเรียน ${cn}</div>` : ''}
@@ -120,7 +121,7 @@ function printBorrowList(records, cn, schoolName, academicYear) {
 export default function MediaBorrowTab({ teacherClassFilter = null }) {
   const {
     mediaRecords, mediaBorrowRecords, setMediaBorrowRecords,
-    classes, schoolName, academicYear, user, role,
+    classes, schoolName, academicYear, schoolLogo, user, role,
     addSystemLog,
   } = useApp();
 
@@ -318,7 +319,7 @@ export default function MediaBorrowTab({ teacherClassFilter = null }) {
             </select>
           )}
           <button type="button"
-            onClick={() => printBorrowList(records, cn, schoolName, academicYear)}
+            onClick={() => printBorrowList(records, cn, schoolName, academicYear, schoolLogo)}
             style={{ padding: '.4rem .9rem', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,.5)', background: 'rgba(255,255,255,.15)', color: 'white', fontFamily: 'inherit', fontWeight: 600, fontSize: '.82rem', cursor: 'pointer' }}>
             🖨️ พิมพ์
           </button>

@@ -242,7 +242,7 @@ export default function ToothBrushTab({ teacherClassFilter = null }) {
     win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
 <title>บันทึกการแปรงฟัน</title>
 <style>
-  @page { size: A4 landscape; margin: 8mm }
+  @page { size: A4 landscape; margin: 1in }
   body { font-family: 'TH Sarabun New', Sarabun, sans-serif; font-size: 10pt }
   h3, h4 { text-align: center; margin: 2px 0 }
   h3 { font-size: 13pt }

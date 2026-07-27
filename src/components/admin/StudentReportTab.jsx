@@ -231,7 +231,7 @@ function emptyGrowth() {
 // ── print helper ──────────────────────────────────────────────────────────────
 function printReport({ student, physData, growthRecords, devAssessment, attendanceSummary, healthServices,
                        devDomains, teacherComments, parentComments, directorsComment,
-                       academicYear, schoolName, schoolPhilosophy, schoolVision }) {
+                       academicYear, schoolName, schoolPhilosophy, schoolVision, schoolLogo }) {
   const _philosophy = schoolPhilosophy?.trim() || PHILOSOPHY_TEXT;
   const _vision     = schoolVision?.trim()     || VISION_TEXT;
   const levelTag = (n) => {
@@ -434,7 +434,11 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       table { width:100%; border-collapse:collapse; margin-bottom:12px; }
       th { background:#f3f4f6; padding:5px 8px; border:1px solid #d1d5db; font-weight:700; font-size:.8rem; }
       .page-break { page-break-after:always; break-after:page; margin-bottom:20px; }
-      @media print { body { margin:8mm; } .page-break { page-break-after:always; break-after:page; } }
+      @page { size:A4 portrait; margin:1in; }
+      @media print {
+        body { margin:0; }
+        .page-break { page-break-after:always; break-after:page; }
+      }
     </style>
   </head><body>
 
@@ -452,6 +456,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
         color:white; width:100%; padding:14px 20px; margin-bottom:36px;
         border-radius:6px; box-shadow:0 4px 16px rgba(79,70,229,.3);
       ">
+        ${schoolLogo ? `<div style="margin-bottom:8px"><img src="${schoolLogo}" style="height:60px;object-fit:contain;filter:brightness(0) invert(1)"/></div>` : ''}
         <div style="font-size:1.1rem;font-weight:800;letter-spacing:.5px">
           โรงเรียน${schoolName}
         </div>
@@ -1094,7 +1099,7 @@ function devAssessDomainAvg(devAssessment, domainId) {
 export default function StudentReportTab({ teacherClassFilter = null }) {
   const {
     students, classes, academicYear, schoolName,
-    schoolPhilosophy, schoolVision,
+    schoolPhilosophy, schoolVision, schoolLogo,
     dailyRecords,
     studentReportRecords, setStudentReportRecords,
     indicators, activities, assessmentTopics,
@@ -1465,7 +1470,7 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
               <span style={{ fontSize: '.82rem', color: '#6b7280' }}>ผู้ปกครอง: {student.parentName}</span>
             )}
             <button type="button"
-              onClick={() => printReport({ student, physData, growthRecords: growthData, devAssessment: devAssessData, attendanceSummary, healthServices, devDomains, teacherComments, parentComments, directorsComment, academicYear, schoolName, schoolPhilosophy, schoolVision })}
+              onClick={() => printReport({ student, physData, growthRecords: growthData, devAssessment: devAssessData, attendanceSummary, healthServices, devDomains, teacherComments, parentComments, directorsComment, academicYear, schoolName, schoolPhilosophy, schoolVision, schoolLogo })}
               style={{
                 marginLeft: 'auto', padding: '.35rem 1rem', borderRadius: '8px', border: 'none',
                 background: ACCENT, color: 'white', fontFamily: 'inherit', fontWeight: 700, fontSize: '.82rem', cursor: 'pointer',

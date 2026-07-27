@@ -81,7 +81,7 @@ function printPickupSheet(rows, dateStr, className, schoolName, teacher, schoolL
     .tc{text-align:center}
     .tl{text-align:left}
     .sig{margin-top:2rem;text-align:right;font-size:9.5pt}
-    @media print{@page{margin:1.5cm;size:A4 portrait}body{margin:0}}
+    @media print{@page{size:A4 portrait;margin:1in}body{margin:0}}
   `;
   const dateLabel = dateStr
     ? new Date(dateStr).toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })

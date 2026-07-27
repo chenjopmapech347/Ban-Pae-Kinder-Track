@@ -35,7 +35,7 @@ function buildCtxText(r) {
 }
 
 // ── พิมพ์ทะเบียนสื่อ ────────────────────────────────────────────────────────
-function printMediaList(records, cn, schoolName, teacher, academicYear) {
+function printMediaList(records, cn, schoolName, teacher, academicYear, schoolLogo) {
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
     *{box-sizing:border-box}
@@ -52,7 +52,7 @@ function printMediaList(records, cn, schoolName, teacher, academicYear) {
     .img-cell{text-align:center;padding:3px}
     .img-cell img{width:60px;height:45px;object-fit:cover;border-radius:4px;border:1px solid #ccc}
     .no-img{color:#aaa;font-size:8pt}
-    @media print{@page{margin:1.5cm;size:A4 portrait}body{margin:0}}
+    @media print{@page{size:A4 portrait;margin:1in}body{margin:0}}
   `;
   const rows = records.map((r, i) => `
     <tr>
@@ -72,6 +72,7 @@ function printMediaList(records, cn, schoolName, teacher, academicYear) {
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
     <title>ทะเบียนผลิตสื่อ</title><style>${css}</style></head>
     <body>
+      ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
       <h2>ทะเบียนผลิตสื่อ / นวัตกรรมการเรียนการสอน</h2>
       ${academicYear ? `<div class="sub">ปีการศึกษา ${academicYear}</div>` : ''}
       ${teacherLine   ? `<div class="info">${teacherLine}</div>` : ''}
@@ -104,7 +105,7 @@ function printMediaList(records, cn, schoolName, teacher, academicYear) {
 }
 
 export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry' }) {
-  const { mediaRecords, setMediaRecords, classes, schoolName, academicYear, teachers, user, role } = useApp();
+  const { mediaRecords, setMediaRecords, classes, schoolName, academicYear, schoolLogo, teachers, user, role } = useApp();
   const isAdmin = role === 'admin';
 
   const [form, setForm]         = useState(EMPTY_FORM);
@@ -293,7 +294,7 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
               {classList.map(c => <option key={c} value={c} style={{ color: '#000' }}>{c}</option>)}
             </select>
           )}
-          <button type="button" onClick={() => printMediaList(records, cn, schoolName, printTeacher, academicYear)}
+          <button type="button" onClick={() => printMediaList(records, cn, schoolName, printTeacher, academicYear, schoolLogo)}
             style={{ padding: '.4rem .9rem', borderRadius: '8px', border: '1.5px solid rgba(255,255,255,.5)', background: 'rgba(255,255,255,.15)', color: 'white', fontFamily: 'inherit', fontWeight: 600, fontSize: '.82rem', cursor: 'pointer' }}>
             🖨️ พิมพ์
           </button>

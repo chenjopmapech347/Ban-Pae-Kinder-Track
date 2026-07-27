@@ -16,7 +16,8 @@ export default function ParentView() {
     indicators: allIndicators, activities: allActivities,
     aiApiKey, teachers, announcements,
     dailyRecords, syncPullFromFirebase, isFirebaseConfigured,
-    studentReportRecords, setStudentReportRecords, academicYear } = useApp();
+    studentReportRecords, setStudentReportRecords, academicYear,
+    parentCommentDeadlines } = useApp();
 
   const [aiText, setAiText]       = useState('');
   const [aiLoading, setAiLoading] = useState(false);
@@ -327,57 +328,109 @@ export default function ParentView() {
       </div>
 
       {/* ── Parent Comments ── */}
-      <div className="glass-card mb-6" style={{ border: '1.5px solid #bbf7d0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-          <h3 style={{ margin: 0, color: '#166534' }}>✍️ ความคิดเห็นของผู้ปกครอง</h3>
-          {commentSaved && (
-            <span style={{
-              fontSize: '.75rem', fontWeight: 700, color: '#059669',
-              background: '#d1fae5', padding: '.2rem .65rem', borderRadius: '999px',
-            }}>
-              ✓ บันทึกแล้ว
-            </span>
-          )}
-        </div>
-        <p style={{ fontSize: '.8rem', color: '#6b7280', marginBottom: '1rem', lineHeight: 1.6 }}>
-          ความคิดเห็นของท่านจะถูกบันทึกลงในสมุดรายงานประจำตัว (อ.01) ของบุตรหลาน
-          ครูจะได้รับทราบและนำไปใช้ในการดูแลพัฒนาการต่อไป
-        </p>
-
-        {[1, 2].map(term => (
-          <div key={term} style={{ marginBottom: term === 1 ? '1rem' : 0 }}>
-            <div style={{
-              fontSize: '.8rem', fontWeight: 700, color: '#166534',
-              marginBottom: '.4rem',
-            }}>
-              ภาคเรียนที่ {term}
-            </div>
-            <textarea
-              value={parentComments[`term${term}`]}
-              onChange={e => updateParentComment(`term${term}`, e.target.value)}
-              placeholder={`บันทึกความคิดเห็นของผู้ปกครอง ภาคเรียนที่ ${term}...`}
-              rows={3}
-              style={{
-                width: '100%', boxSizing: 'border-box',
-                padding: '.65rem .85rem', borderRadius: '10px',
-                border: '1.5px solid #bbf7d0',
-                fontFamily: 'inherit', fontSize: '.85rem', lineHeight: 1.7,
-                background: '#f0fdf4', color: '#14532d', resize: 'vertical',
-                outline: 'none', transition: 'border-color .15s',
-              }}
-              onFocus={e => { e.target.style.borderColor = '#059669'; }}
-              onBlur={e => { e.target.style.borderColor = '#bbf7d0'; }}
-            />
-            {parentComments[`term${term}`] && (
-              <div style={{ textAlign: 'right', marginTop: '.2rem' }}>
-                <span style={{ fontSize: '.7rem', color: '#9ca3af' }}>
-                  {parentComments[`term${term}`].length} ตัวอักษร
+      {(() => {
+        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+        const isLocked = (term) => {
+          const dl = parentCommentDeadlines?.[`term${term}`];
+          return dl && today > dl;
+        };
+        const formatDateTH = (iso) => {
+          if (!iso) return '';
+          const [y, m, d] = iso.split('-');
+          return `${d}/${m}/${parseInt(y) + 543}`;
+        };
+        return (
+          <div className="glass-card mb-6" style={{ border: '1.5px solid #bbf7d0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <h3 style={{ margin: 0, color: '#166534' }}>✍️ ความคิดเห็นของผู้ปกครอง</h3>
+              {commentSaved && (
+                <span style={{
+                  fontSize: '.75rem', fontWeight: 700, color: '#059669',
+                  background: '#d1fae5', padding: '.2rem .65rem', borderRadius: '999px',
+                }}>
+                  ✓ บันทึกแล้ว
                 </span>
-              </div>
-            )}
+              )}
+            </div>
+            <p style={{ fontSize: '.8rem', color: '#6b7280', marginBottom: '1rem', lineHeight: 1.6 }}>
+              ความคิดเห็นของท่านจะถูกบันทึกลงในสมุดรายงานประจำตัว (อ.01) ของบุตรหลาน
+              ครูจะได้รับทราบและนำไปใช้ในการดูแลพัฒนาการต่อไป
+            </p>
+
+            {[1, 2].map(term => {
+              const locked = isLocked(term);
+              const dl = parentCommentDeadlines?.[`term${term}`];
+              const val = parentComments[`term${term}`];
+              return (
+                <div key={term} style={{ marginBottom: term === 1 ? '1rem' : 0 }}>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    marginBottom: '.4rem',
+                  }}>
+                    <span style={{ fontSize: '.8rem', fontWeight: 700, color: locked ? '#9ca3af' : '#166534' }}>
+                      ภาคเรียนที่ {term}
+                    </span>
+                    {locked ? (
+                      <span style={{
+                        fontSize: '.7rem', fontWeight: 700, color: '#b45309',
+                        background: '#fef3c7', padding: '.15rem .6rem', borderRadius: '999px',
+                      }}>
+                        🔒 ปิดรับวันที่ {formatDateTH(dl)}
+                      </span>
+                    ) : dl ? (
+                      <span style={{
+                        fontSize: '.7rem', fontWeight: 700, color: '#059669',
+                        background: '#d1fae5', padding: '.15rem .6rem', borderRadius: '999px',
+                      }}>
+                        📅 ปิดรับ {formatDateTH(dl)}
+                      </span>
+                    ) : null}
+                  </div>
+
+                  {locked ? (
+                    /* ล็อกแล้ว: แสดงข้อความที่กรอกไว้ (read-only) */
+                    <div style={{
+                      width: '100%', boxSizing: 'border-box',
+                      padding: '.65rem .85rem', borderRadius: '10px',
+                      border: '1.5px solid #e5e7eb',
+                      fontFamily: 'inherit', fontSize: '.85rem', lineHeight: 1.7,
+                      background: '#f9fafb', color: val ? '#374151' : '#9ca3af',
+                      minHeight: '4.5rem',
+                    }}>
+                      {val || '(ไม่ได้กรอกความคิดเห็น)'}
+                    </div>
+                  ) : (
+                    /* เปิดกรอกปกติ */
+                    <textarea
+                      value={val}
+                      onChange={e => updateParentComment(`term${term}`, e.target.value)}
+                      placeholder={`บันทึกความคิดเห็นของผู้ปกครอง ภาคเรียนที่ ${term}...`}
+                      rows={3}
+                      style={{
+                        width: '100%', boxSizing: 'border-box',
+                        padding: '.65rem .85rem', borderRadius: '10px',
+                        border: '1.5px solid #bbf7d0',
+                        fontFamily: 'inherit', fontSize: '.85rem', lineHeight: 1.7,
+                        background: '#f0fdf4', color: '#14532d', resize: 'vertical',
+                        outline: 'none', transition: 'border-color .15s',
+                      }}
+                      onFocus={e => { e.target.style.borderColor = '#059669'; }}
+                      onBlur={e => { e.target.style.borderColor = '#bbf7d0'; }}
+                    />
+                  )}
+                  {!locked && val && (
+                    <div style={{ textAlign: 'right', marginTop: '.2rem' }}>
+                      <span style={{ fontSize: '.7rem', color: '#9ca3af' }}>
+                        {val.length} ตัวอักษร
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
-        ))}
-      </div>
+        );
+      })()}
 
       {/* CTA */}
       <button

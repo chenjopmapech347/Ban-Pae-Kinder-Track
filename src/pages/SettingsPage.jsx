@@ -20,6 +20,7 @@ export default function SettingsPage({ onBack }) {
     syncPushToFirebase, syncPullFromFirebase, isFirebaseConfigured,
     students, dailyRecords,
     aiApiKey, setAiApiKey,
+    parentCommentDeadlines, setParentCommentDeadlines,
   } = useApp();
 
   const [newYear, setNewYear]         = useState('');
@@ -456,6 +457,58 @@ export default function SettingsPage({ onBack }) {
           <div className="text-xs text-muted mt-3">
             🔒 Key เก็บในเครื่องของคุณเท่านั้น ไม่ส่งออกไปไหน · ใช้ claude-haiku (ประหยัด ~$0.001/ครั้ง)
           </div>
+        </div>
+
+        {/* ─── Parent Comment Deadline ─── */}
+        <div className="glass p-6" style={{ border: '1.5px solid #bbf7d0' }}>
+          <h3 className="mb-1">📅 กำหนดวันปิดรับความคิดเห็นผู้ปกครอง</h3>
+          <p className="text-sm text-muted mb-4">
+            หลังจากวันที่กำหนด ช่องกรอกความคิดเห็นจะถูกล็อกอัตโนมัติ
+            ผู้ปกครองจะเห็นข้อความ "หมดเวลากรอก" แต่ยังอ่านที่เขียนไว้ได้
+            ถ้าเว้นว่างไว้ หมายความว่าไม่มีกำหนดเวลา (กรอกได้ตลอด)
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            {[1, 2].map(term => (
+              <div key={term}>
+                <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 700, fontSize: '.85rem' }}>
+                  วันปิดรับ ภาคเรียนที่ {term}
+                </label>
+                <input
+                  type="date"
+                  className="input"
+                  value={parentCommentDeadlines[`term${term}`] ?? ''}
+                  onChange={e => setParentCommentDeadlines(prev => ({
+                    ...prev,
+                    [`term${term}`]: e.target.value,
+                  }))}
+                />
+                {parentCommentDeadlines[`term${term}`] && (
+                  <div style={{ marginTop: '.3rem', fontSize: '.75rem', color: '#059669', fontWeight: 700 }}>
+                    ✅ ล็อกหลังวันที่{' '}
+                    {(() => {
+                      const [y, m, d] = parentCommentDeadlines[`term${term}`].split('-');
+                      return `${d}/${m}/${parseInt(y) + 543}`;
+                    })()}
+                  </div>
+                )}
+                {!parentCommentDeadlines[`term${term}`] && (
+                  <div style={{ marginTop: '.3rem', fontSize: '.75rem', color: '#9ca3af' }}>
+                    ไม่ล็อก — กรอกได้ตลอด
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+          {(parentCommentDeadlines.term1 || parentCommentDeadlines.term2) && (
+            <button
+              type="button"
+              className="btn"
+              style={{ marginTop: '.85rem', fontSize: '.8rem', color: '#6b7280', border: '1px solid #d1d5db' }}
+              onClick={() => setParentCommentDeadlines({ term1: '', term2: '' })}
+            >
+              🔓 ยกเลิกกำหนดวัน (เปิดทุกภาค)
+            </button>
+          )}
         </div>
 
         {/* ─── Growth Reference ─── */}

@@ -178,6 +178,10 @@ export function AppProvider({ children }) {
     t2m1: '', // ภาคเรียน 2 ครั้งที่ 1 (อ้างอิง ธ.ค.)
     t2m2: '', // ภาคเรียน 2 ครั้งที่ 2 (อ้างอิง ก.พ.)
   });
+  const [parentCommentDeadlines, setParentCommentDeadlines] = useLocalStorage(
+    STORAGE_KEYS.parentCommentDeadlines,
+    { term1: '', term2: '' } // YYYY-MM-DD — ว่างหมายถึงไม่ล็อก
+  );
 
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [evaluatingStudent, setEvaluatingStudent] = useState(null);
@@ -1344,6 +1348,9 @@ export function AppProvider({ children }) {
     // Measurement dates config (อ.01 physical section)
     measurementDates,
     setMeasurementDates,
+    // Parent comment deadline (วันปิดรับความคิดเห็นผู้ปกครอง)
+    parentCommentDeadlines,
+    setParentCommentDeadlines,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

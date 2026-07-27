@@ -1397,6 +1397,7 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
     { id: 'attendance',  label: '📅 เวลาเรียน'             },  // อ.01: ส่วนที่ 3
     { id: 'devreport',   label: '📋 พัฒนาการ'              },
     { id: 'summary',     label: '📊 สรุป 12 มาตรฐาน'      },
+    { id: 'domain4',    label: '🎯 สรุปพัฒนาการ 4 ด้าน'  },
     { id: 'comments',    label: '💬 ความคิดเห็น'           },
     { id: 'philosophy',  label: '📖 ปรัชญา/วิสัยทัศน์'    },
     { id: 'growthtable', label: '📏 เกณฑ์การเจริญเติบโต'  },
@@ -2317,16 +2318,23 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
                 </table>
               </div>
 
-              {/* 4-Domain Yearly Summary */}
-              <div style={{ marginTop: '1.5rem', fontWeight: 800, fontSize: '.88rem', color: '#111', marginBottom: '.75rem' }}>
+            </div>
+          )}
+
+          {/* ══════════════════════════════════════════════════════════
+              SECTION 6: 4-Domain Yearly Summary + Criteria
+          ══════════════════════════════════════════════════════════ */}
+          {activeSection === 'domain4' && (
+            <div>
+              <div style={{ fontWeight: 800, fontSize: '.9rem', color: '#111', marginBottom: '.75rem' }}>
                 ผลการประเมินความพร้อมด้านพัฒนาการทั้ง 4 ด้าน ตลอดปีการศึกษา
               </div>
-              <table style={{ borderCollapse: 'collapse', fontSize: '.82rem' }}>
+              <table style={{ borderCollapse: 'collapse', fontSize: '.84rem', width: '100%', maxWidth: '540px' }}>
                 <thead>
                   <tr style={{ background: '#f3f4f6' }}>
-                    <th style={{ padding: '8px 16px', border: '1px solid #e5e7eb', textAlign: 'center', minWidth: '160px' }}>พัฒนาการ</th>
+                    <th style={{ padding: '9px 18px', border: '1px solid #e5e7eb', textAlign: 'center', minWidth: '160px' }}>พัฒนาการ</th>
                     {[3,2,1].map(n => (
-                      <th key={n} style={{ padding: '8px 16px', border: '1px solid #e5e7eb', textAlign: 'center', width: '100px', ...levelColor(n) }}>
+                      <th key={n} style={{ padding: '9px 18px', border: '1px solid #e5e7eb', textAlign: 'center', width: '110px', ...levelColor(n) }}>
                         {n === 3 ? 'ปฏิบัติได้ดี' : n === 2 ? 'ปฏิบัติได้พอใช้' : 'ปรับปรุง'}<br/>
                         <span style={{ fontSize: '.72rem', fontWeight: 400 }}>({n})</span>
                       </th>
@@ -2341,11 +2349,11 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
                     const yearly = allT2.length ? Math.round(allT2.reduce((a,b)=>a+b,0)/allT2.length) : null;
                     return (
                       <tr key={domain.id}>
-                        <td style={{ padding: '8px 16px', border: '1px solid #e5e7eb', fontWeight: 700 }}>
+                        <td style={{ padding: '9px 18px', border: '1px solid #e5e7eb', fontWeight: 700 }}>
                           {domain.emoji} ด้าน{domain.label}
                         </td>
                         {[3,2,1].map(n => (
-                          <td key={n} style={{ padding: '8px 16px', border: '1px solid #e5e7eb', textAlign: 'center',
+                          <td key={n} style={{ padding: '9px 18px', border: '1px solid #e5e7eb', textAlign: 'center',
                             fontWeight: yearly === n ? 800 : 400, ...(yearly === n ? levelColor(n) : {}) }}>
                             {yearly === n ? '✓' : ''}
                           </td>
@@ -2358,11 +2366,48 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
               <div style={{ marginTop: '.5rem', fontSize: '.72rem', color: '#6b7280' }}>
                 หมายเหตุ: นำผลการประเมินภาคเรียนที่ 2 ในมาตรฐานของด้านพัฒนาการมารวมกัน แล้วหารด้วยจำนวนมาตรฐานในด้านนั้น
               </div>
+
+              {/* เกณฑ์สรุปผลการตัดสิน */}
+              <div style={{
+                marginTop: '1.75rem',
+                border: '1.5px solid #e5e7eb',
+                borderRadius: '12px',
+                padding: '1.1rem 1.25rem',
+                background: '#fafafa',
+              }}>
+                <div style={{ fontWeight: 800, fontSize: '.88rem', color: '#111', marginBottom: '1rem' }}>
+                  เกณฑ์สรุปผลการตัดสิน
+                </div>
+                {[
+                  { n: 3, label: 'ดี', desc: 'ผ่านเกณฑ์การประเมินในระดับดี มีพัฒนาการสูงกว่าหรือเป็นไปตามเกณฑ์มาตรฐาน' },
+                  { n: 2, label: 'พอใช้', desc: 'ผ่านเกณฑ์การประเมินในระดับพอใช้ มีพัฒนาการเป็นไปตามเกณฑ์แต่ควรได้รับการส่งเสริมบางส่วน' },
+                  { n: 1, label: 'ควรส่งเสริม', desc: 'ยังไม่ผ่านเกณฑ์การประเมินในบางรายการ ควรได้รับการดูแลช่วยเหลือเป็นพิเศษ' },
+                ].map(({ n, label, desc }) => {
+                  const lc = levelColor(n);
+                  return (
+                    <div key={n} style={{ display: 'flex', alignItems: 'flex-start', gap: '.85rem', marginBottom: '.75rem' }}>
+                      <span style={{
+                        flexShrink: 0,
+                        background: lc.bg, color: lc.color,
+                        borderRadius: '8px', padding: '3px 12px',
+                        fontWeight: 800, fontSize: '.82rem',
+                        border: `1.5px solid ${lc.color}55`,
+                        whiteSpace: 'nowrap',
+                      }}>
+                        ระดับ {n} ({label})
+                      </span>
+                      <span style={{ fontSize: '.84rem', color: '#374151', lineHeight: 1.7, paddingTop: '2px' }}>
+                        {desc}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
           {/* ══════════════════════════════════════════════════════════
-              SECTION 6: Comments (Teacher / Parent / Director)
+              SECTION 7: Comments (Teacher / Parent / Director)
           ══════════════════════════════════════════════════════════ */}
           {activeSection === 'comments' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>

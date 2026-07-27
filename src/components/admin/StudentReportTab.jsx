@@ -796,6 +796,78 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
     </table>
     <p style="font-size:.75rem;color:#666">หมายเหตุ: สรุปตลอดปีการศึกษา นำผลการประเมินภาคเรียนที่ 2 มารวมกัน แล้วหารด้วยจำนวนมาตรฐานในด้านพัฒนาการนั้น</p>
 
+    <!-- ══ หน้า: จุดเด่นและความสามารถผู้เรียน (ภาคเรียนที่ 1 และ 2) ══ -->
+    ${[1, 2].map(term => {
+      const termTh = term === 1 ? '๑' : '๒';
+      // domain 4 sub-items from INDICATORS_DATA (index 3)
+      const d4 = devDomains[3];
+      const d4Subs = d4 ? d4.standards.map((std, si) => {
+        const subNums = ['๔.๑','๔.๒','๔.๓','๔.๔','๔.๕'];
+        return `<tr>
+          <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top">
+            <span style="font-weight:600">${subNums[si] ?? `๔.${si+1}`}</span> ${std.name}
+          </td>
+          <td style="padding:6px 8px;border:1px solid #374151;min-height:50px;font-size:.78rem;vertical-align:top"> </td>
+          <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top"> </td>
+        </tr>`;
+      }).join('') : '';
+
+      const mainRows = [
+        { num:'๑', name: devDomains[0]?.name ?? 'ด้านสุขภาวะทางกาย' },
+        { num:'๒', name: devDomains[1]?.name ?? 'ด้านอารมณ์ จิตใจ และสังคม' },
+        { num:'๓', name: devDomains[2]?.name ?? 'ด้านความเป็นพลเมืองและความเป็นไทย' },
+      ].map(r => `<tr>
+        <td style="padding:8px;border:1px solid #374151;font-weight:600;font-size:.8rem;vertical-align:top">
+          ${r.num}. ${r.name}
+        </td>
+        <td style="padding:6px 8px;border:1px solid #374151;min-height:60px;font-size:.78rem;vertical-align:top"> </td>
+        <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top"> </td>
+      </tr>`).join('');
+
+      const d4Header = `<tr>
+        <td style="padding:8px;border:1px solid #374151;font-weight:600;font-size:.8rem;vertical-align:top">
+          ๔. ${devDomains[3]?.name ?? 'ด้านสติปัญญา'}
+        </td>
+        <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top"> </td>
+        <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top"> </td>
+      </tr>`;
+
+      return `
+      <div class="page-break">
+        <div style="text-align:center;margin-bottom:16px;font-size:.95rem;font-weight:700">
+          จุดเด่นและความสามารถผู้เรียน ภาคเรียนที่ ${termTh}
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:.82rem">
+          <colgroup>
+            <col style="width:28%">
+            <col style="width:52%">
+            <col style="width:20%">
+          </colgroup>
+          <thead>
+            <tr>
+              <th style="padding:8px;border:1px solid #374151;background:#f3f4f6;text-align:center">ความสามารถผู้เรียน</th>
+              <th style="padding:8px;border:1px solid #374151;background:#f3f4f6;text-align:center" colspan="1">
+                ภาคเรียนที่ ${termTh}<br>
+                <span style="font-weight:400;font-size:.75rem">ความคิดเห็นครูประจำชั้น (จุดเด่น)</span><br>
+                <span style="font-weight:400;font-size:.72rem">ลงชื่อ ............................................</span><br>
+                <span style="font-weight:400;font-size:.72rem">(ครูประจำชั้น)</span>
+              </th>
+              <th style="padding:8px;border:1px solid #374151;background:#f3f4f6;text-align:center">
+                ความคิดเห็นผู้ปกครอง<br>
+                <span style="font-weight:400;font-size:.72rem">ลงชื่อ ..........................</span><br>
+                <span style="font-weight:400;font-size:.72rem">(ผู้ปกครอง)</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            ${mainRows}
+            ${d4Header}
+            ${d4Subs}
+          </tbody>
+        </table>
+      </div>`;
+    }).join('')}
+
     <!-- ══ หน้า: สมรรถนะผู้เรียน (bar chart) ══ -->
     <div class="page-break">
       <div style="text-align:center;margin-bottom:20px">

@@ -231,13 +231,71 @@ function emptyGrowth() {
 // ── print helper ──────────────────────────────────────────────────────────────
 function printReport({ student, physData, growthRecords, devAssessment, attendanceSummary, healthServices,
                        devDomains, teacherComments, parentComments, directorsComment,
-                       academicYear, schoolName, schoolPhilosophy, schoolVision, schoolLogo }) {
+                       academicYear, schoolName, schoolPhilosophy, schoolVision, schoolLogo,
+                       teacherName, directorName }) {
+  // ── Compute overall yearly level from all term2 indicator scores ──────────
+  const allT2 = devDomains.flatMap(d =>
+    d.standards.flatMap(std =>
+      std.indicators.map(ind => ind.indScores?.term2).filter(v => v !== null && v !== undefined)
+    )
+  );
+  const overallLevel = allT2.length ? Math.round(allT2.reduce((a, b) => a + b, 0) / allT2.length) : null;
+  const overallLevelLabel = overallLevel === 3 ? 'ดี' : overallLevel === 2 ? 'พอใช้' : overallLevel === 1 ? 'ควรส่งเสริม' : '—';
+  const levelBg    = overallLevel === 3 ? '#16a34a' : overallLevel === 2 ? '#ca8a04' : '#dc2626';
+
+  // ── Determine next class level ────────────────────────────────────────────
+  const cn = student?.className ?? student?.level ?? '';
+  const nextLevelLabel = /อ\.?[- ]?1/i.test(cn) ? 'อนุบาลปีที่ 2'
+    : /อ\.?[- ]?2/i.test(cn) ? 'อนุบาลปีที่ 3'
+    : 'ระดับถัดไป';
+
+  // ── Gender ────────────────────────────────────────────────────────────────
+  const genderPrefix = student?.gender === 'F' ? 'เด็กหญิง' : 'เด็กชาย';
+
   const _philosophy = schoolPhilosophy?.trim() || PHILOSOPHY_TEXT;
   const _vision     = schoolVision?.trim()     || VISION_TEXT;
   const levelTag = (n) => {
     const c = n === 3 ? '#059669' : n === 2 ? '#b45309' : n === 1 ? '#dc2626' : '#9ca3af';
     return `<span style="background:${c}20;color:${c};border-radius:4px;padding:1px 5px;font-size:.75rem;font-weight:700">${levelLabel(n)}</span>`;
   };
+
+  // ── Bar chart data: avg score per domain per term ────────────────────────
+  const domainChartData = devDomains.map(domain => {
+    const allInds = domain.standards.flatMap(std => std.indicators);
+    const t1 = allInds.map(i => i.indScores?.term1).filter(v => v !== null && v !== undefined);
+    const t2 = allInds.map(i => i.indScores?.term2).filter(v => v !== null && v !== undefined);
+    const avg1 = t1.length ? t1.reduce((a, b) => a + b, 0) / t1.length : 0;
+    const avg2 = t2.length ? t2.reduce((a, b) => a + b, 0) / t2.length : 0;
+    const avgY = t2.length ? avg2 : (t1.length ? avg1 : 0); // yearly = term2 score
+    return { label: domain.name, avg1, avg2, avgY };
+  });
+  // append overall average group
+  const allT2Chart = domainChartData.map(d => d.avg2).filter(v => v > 0);
+  const allT1Chart = domainChartData.map(d => d.avg1).filter(v => v > 0);
+  const overallAvg1 = allT1Chart.length ? allT1Chart.reduce((a, b) => a + b, 0) / allT1Chart.length : 0;
+  const overallAvg2 = allT2Chart.length ? allT2Chart.reduce((a, b) => a + b, 0) / allT2Chart.length : 0;
+  domainChartData.push({ label: 'สรุปการประเมินเพื่อ\nความก้าวหน้า', avg1: overallAvg1, avg2: overallAvg2, avgY: overallAvg2, isOverall: true });
+
+  const BAR_MAX = 3;
+  const pct = (v) => Math.round((v / BAR_MAX) * 100);
+  const chartGroupHtml = domainChartData.map((d, i) => `
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+      <div style="display:flex;align-items:flex-end;gap:3px;height:160px;border-bottom:2px solid #374151;padding-bottom:0">
+        <div style="width:22px;background:#3b82f6;height:${pct(d.avg1)}%;position:relative;border-radius:2px 2px 0 0" title="ภาคเรียนที่ 1: ${d.avg1.toFixed(2)}">
+          ${d.avg1 > 0 ? `<span style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9px;color:#374151;white-space:nowrap">${d.avg1.toFixed(1)}</span>` : ''}
+        </div>
+        <div style="width:22px;background:#f59e0b;height:${pct(d.avg2)}%;position:relative;border-radius:2px 2px 0 0" title="ภาคเรียนที่ 2: ${d.avg2.toFixed(2)}">
+          ${d.avg2 > 0 ? `<span style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9px;color:#374151;white-space:nowrap">${d.avg2.toFixed(1)}</span>` : ''}
+        </div>
+        <div style="width:22px;background:#9ca3af;height:${pct(d.avgY)}%;position:relative;border-radius:2px 2px 0 0" title="สรุปปี: ${d.avgY.toFixed(2)}">
+          ${d.avgY > 0 ? `<span style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9px;color:#374151;white-space:nowrap">${d.avgY.toFixed(1)}</span>` : ''}
+        </div>
+      </div>
+      <div style="font-size:.65rem;text-align:center;color:#374151;line-height:1.4;max-width:80px;margin-top:4px;${d.isOverall ? 'font-weight:700' : ''}">
+        ${i + 1 <= 4 ? `${i + 1}. ` : ''}${d.label.replace('\n', '<br>')}
+      </div>
+    </div>
+  `).join('');
 
   const physRows = PHYS_KEYS.map((k, i) => {
     const p = physData[k] ?? {};
@@ -738,6 +796,28 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
     </table>
     <p style="font-size:.75rem;color:#666">หมายเหตุ: สรุปตลอดปีการศึกษา นำผลการประเมินภาคเรียนที่ 2 มารวมกัน แล้วหารด้วยจำนวนมาตรฐานในด้านพัฒนาการนั้น</p>
 
+    <!-- ══ หน้า: สมรรถนะผู้เรียน (bar chart) ══ -->
+    <div class="page-break">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="display:inline-block;border:2px solid #333;padding:6px 20px;font-size:1rem;font-weight:800">
+          สมรรถนะผู้เรียน
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:12px;padding:20px 8px 0;border:1px solid #e5e7eb;border-radius:8px;background:#fafafa;position:relative">
+        <!-- Y-axis labels -->
+        <div style="display:flex;flex-direction:column;justify-content:space-between;height:160px;padding-bottom:0;font-size:.7rem;color:#6b7280;text-align:right;min-width:20px;flex-shrink:0">
+          <span>๓</span><span>๒</span><span>๑</span><span>๐</span>
+        </div>
+        ${chartGroupHtml}
+      </div>
+      <!-- Legend -->
+      <div style="display:flex;gap:20px;justify-content:center;margin-top:16px;font-size:.75rem">
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:14px;height:14px;background:#3b82f6;border-radius:2px"></div>ภาคเรียนที่ ๑</div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:14px;height:14px;background:#f59e0b;border-radius:2px"></div>ภาคเรียนที่ ๒</div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:14px;height:14px;background:#9ca3af;border-radius:2px"></div>สรุปปี ${academicYear}</div>
+      </div>
+    </div>
+
     <h2>6. ความคิดเห็นของครู</h2>
     <p style="font-weight:700">ภาคเรียนที่ 1:</p>
     <p style="min-height:60px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${teacherComments?.term1 || '—'}</p>
@@ -753,12 +833,30 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
     <h2>8. ความคิดเห็นของผู้อำนวยการสถานศึกษา</h2>
     <p style="min-height:60px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${directorsComment || '—'}</p>
 
-    <div style="margin-top:24px;display:flex;justify-content:space-around;text-align:center">
-      <div>
-        <div style="border-top:1px solid #000;width:180px;margin:0 auto;padding-top:4px">ครูประจำชั้น</div>
+    ${overallLevel !== null ? `
+    <div style="margin-top:28px;padding:14px 18px;border:1.5px solid #d1d5db;border-radius:8px;background:#f9fafb;font-size:.87rem;line-height:2;text-align:justify">
+      สรุปผลการประเมินภาพรวมเมื่อจบชั้นปีการศึกษา ${academicYear} จากการประเมินพัฒนาการทั้ง ๔ ด้าน
+      พบว่า ${genderPrefix} ${student?.name ?? ''} มีผลการประเมินอยู่ในเกณฑ์
+      <strong style="display:inline-block;padding:1px 10px;border-radius:4px;background:${levelBg};color:#fff;margin:0 4px">
+        ระดับ ${overallLevel} (${overallLevelLabel})
+      </strong>
+      มีความพร้อมในการเลื่อนชั้นขึ้นสู่ระดับชั้น <strong>${nextLevelLabel}</strong> ต่อไป
+    </div>` : ''}
+
+    <div style="margin-top:32px;display:flex;justify-content:space-around;text-align:center">
+      <div style="min-width:200px">
+        <div style="height:52px"></div>
+        <div style="border-top:1px solid #000;padding-top:6px;font-size:.85rem">
+          ลงชื่อ..................................ครูประจำชั้น
+        </div>
+        ${teacherName ? `<div style="font-size:.82rem;color:#374151;margin-top:4px">(${teacherName})</div>` : ''}
       </div>
-      <div>
-        <div style="border-top:1px solid #000;width:180px;margin:0 auto;padding-top:4px">ผู้อำนวยการ</div>
+      <div style="min-width:200px">
+        <div style="height:52px"></div>
+        <div style="border-top:1px solid #000;padding-top:6px;font-size:.85rem">
+          ลงชื่อ..................................ผู้บริหารสถานศึกษา
+        </div>
+        ${directorName ? `<div style="font-size:.82rem;color:#374151;margin-top:4px">(${directorName})</div>` : ''}
       </div>
     </div>
   </body></html>`;
@@ -1119,8 +1217,8 @@ function devAssessDomainAvg(devAssessment, domainId) {
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function StudentReportTab({ teacherClassFilter = null }) {
   const {
-    students, classes, academicYear, schoolName,
-    schoolPhilosophy, schoolVision, schoolLogo,
+    students, classes, teachers, academicYear, schoolName,
+    schoolPhilosophy, schoolVision, schoolLogo, schoolDirectorName,
     dailyRecords,
     studentReportRecords, setStudentReportRecords,
     indicators, activities, assessmentTopics,
@@ -1492,7 +1590,10 @@ export default function StudentReportTab({ teacherClassFilter = null }) {
               <span style={{ fontSize: '.82rem', color: '#6b7280' }}>ผู้ปกครอง: {student.parentName}</span>
             )}
             <button type="button"
-              onClick={() => printReport({ student, physData, growthRecords: growthData, devAssessment: devAssessData, attendanceSummary, healthServices, devDomains, teacherComments, parentComments, directorsComment, academicYear, schoolName, schoolPhilosophy, schoolVision, schoolLogo })}
+              onClick={() => {
+                const classTeacher = teachers?.find(t => t.className === (student?.className ?? student?.level));
+                printReport({ student, physData, growthRecords: growthData, devAssessment: devAssessData, attendanceSummary, healthServices, devDomains, teacherComments, parentComments, directorsComment, academicYear, schoolName, schoolPhilosophy, schoolVision, schoolLogo, teacherName: classTeacher?.name ?? '', directorName: schoolDirectorName ?? '' });
+              }}
               style={{
                 marginLeft: 'auto', padding: '.35rem 1rem', borderRadius: '8px', border: 'none',
                 background: ACCENT, color: 'white', fontFamily: 'inherit', fontWeight: 700, fontSize: '.82rem', cursor: 'pointer',

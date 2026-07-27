@@ -12,6 +12,7 @@ export default function SettingsPage({ onBack }) {
     localGovSlogan, setLocalGovSlogan,
     schoolSlogan, setSchoolSlogan,
     schoolLogo, setSchoolLogo,
+    schoolDirectorName, setSchoolDirectorName,
     academicYears, setAcademicYears,
     resetAllData, authConfig, updateAuthConfig,
     exportBackupJson, importBackupJson,
@@ -40,12 +41,12 @@ export default function SettingsPage({ onBack }) {
   const [schoolSaved,   setSchoolSaved]   = useState(false);
   const [schoolDraft, setSchoolDraft] = useState({
     name: schoolName, localGov: localGovSlogan, school: schoolSlogan,
-    philosophy: schoolPhilosophy, vision: schoolVision,
+    philosophy: schoolPhilosophy, vision: schoolVision, directorName: schoolDirectorName,
   });
 
   function handleSchoolEdit() {
     setSchoolDraft({ name: schoolName, localGov: localGovSlogan, school: schoolSlogan,
-      philosophy: schoolPhilosophy, vision: schoolVision });
+      philosophy: schoolPhilosophy, vision: schoolVision, directorName: schoolDirectorName });
     setSchoolEditing(true);
     setSchoolSaved(false);
   }
@@ -55,6 +56,7 @@ export default function SettingsPage({ onBack }) {
     setSchoolSlogan(schoolDraft.school);
     setSchoolPhilosophy(schoolDraft.philosophy);
     setSchoolVision(schoolDraft.vision);
+    setSchoolDirectorName(schoolDraft.directorName);
     setSchoolEditing(false);
     setSchoolSaved(true);
   }
@@ -237,6 +239,8 @@ export default function SettingsPage({ onBack }) {
                 placeholder:'เช่น วินัยดี มีวิชา กีฬาเด่น เป็นโรงเรียนของชุมชน' },
               { label:'📖 ปรัชญาการศึกษาปฐมวัย', key:'philosophy', type:'textarea', rows:4 },
               { label:'🎯 วิสัยทัศน์', key:'vision', type:'textarea', rows:3 },
+              { label:'👤 ชื่อผู้บริหารสถานศึกษา', key:'directorName', type:'input',
+                placeholder:'เช่น นายสมชาย ใจดี' },
             ].map(({ label, key, type, placeholder, rows }) => (
               <div key={key}>
                 <label style={{ display:'block', marginBottom:'.35rem', fontWeight:700, fontSize:'.85rem' }}>
@@ -264,7 +268,8 @@ export default function SettingsPage({ onBack }) {
                     whiteSpace:'pre-wrap', wordBreak:'break-word',
                   }}>
                     {(key === 'name' ? schoolName : key === 'localGov' ? localGovSlogan :
-                      key === 'school' ? schoolSlogan : key === 'philosophy' ? schoolPhilosophy : schoolVision)
+                      key === 'school' ? schoolSlogan : key === 'philosophy' ? schoolPhilosophy :
+                      key === 'directorName' ? schoolDirectorName : schoolVision)
                       || <span style={{ color:'#9ca3af' }}>{placeholder || '(ยังไม่ได้กรอก)'}</span>}
                   </div>
                 )}

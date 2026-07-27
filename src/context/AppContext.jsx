@@ -130,6 +130,7 @@ export function AppProvider({ children }) {
   const [schoolSlogan, setSchoolSlogan] = useLocalStorage(STORAGE_KEYS.schoolSlogan,
     'วินัยดี มีวิชา กีฬาเด่น เป็นโรงเรียนของชุมชน');
   const [schoolLogo, setSchoolLogo] = useLocalStorage(STORAGE_KEYS.schoolLogo, '');
+  const [schoolDirectorName, setSchoolDirectorName] = useLocalStorage(STORAGE_KEYS.schoolDirectorName, '');
   const [academicYear, setAcademicYear] = useLocalStorage(STORAGE_KEYS.academicYear, '2569');
   const [dailyRecords, setDailyRecords] = useLocalStorage(STORAGE_KEYS.dailyRecords, {});
   const [qaData, setQaData] = useLocalStorage(STORAGE_KEYS.qaData, null);
@@ -1123,6 +1124,8 @@ export function AppProvider({ children }) {
     setSchoolSlogan,
     schoolLogo,
     setSchoolLogo,
+    schoolDirectorName,
+    setSchoolDirectorName,
     academicYear,
     setAcademicYear,
     dailyRecords,

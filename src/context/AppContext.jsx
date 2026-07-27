@@ -885,8 +885,23 @@ export function AppProvider({ children }) {
               ? { ...next[k], students: { ...next[k].students } }
               : { id: k, className: cls, academicYear, year: thaiYear, month, students: {} };
             ids.forEach(id => {
-              const sData = rec.students[id] ?? { days: {}, weight: 0, height: 0 };
-              if (!(day in (sData.days ?? {}))) {
+              const sData   = rec.students[id] ?? { days: {}, weight: 0, height: 0 };
+              const existing = sData.days?.[day];
+              const cur      = existing?.v ?? '';
+
+              // กำหนดว่าควรเขียนค่าใหม่หรือไม่:
+              // - วันที่ยังไม่มีข้อมูล → เขียนเสมอ
+              // - ขาด/ลา (X) → อัปเดตเสมอ (แก้กรณีที่เคยบันทึกว่ามาแล้วแก้เป็นขาด)
+              // - มา (√) → อัปเดตเฉพาะถ้าปัจจุบันเป็น X (ครูแก้จากขาด→มา), รักษา C/D ที่ครูตั้ง
+              // - ป่วย (C) → อัปเดตถ้าปัจจุบันเป็น X หรือ √, รักษา D ที่ครูแก้แล้ว
+              let shouldWrite = !existing;
+              if (existing) {
+                if      (statusVal === 'X') shouldWrite = cur !== 'X';
+                else if (statusVal === '√') shouldWrite = cur === 'X';
+                else if (statusVal === 'C') shouldWrite = cur === 'X' || cur === '√';
+              }
+
+              if (shouldWrite) {
                 rec.students[id] = {
                   ...sData,
                   days: { ...(sData.days ?? {}), [day]: { v: statusVal, sep: 0, home: false, fam: false, note: '' } },

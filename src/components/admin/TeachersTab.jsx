@@ -96,7 +96,7 @@ export default function TeachersTab() {
             </tr>
           </thead>
           <tbody>
-            {teachers.map(t => (
+            {[...teachers].sort((a, b) => (a.className || '').localeCompare(b.className || '') || (a.name || '').localeCompare(b.name || '', 'th')).map(t => (
               <tr key={t.id} className="hover-row">
                 <td>
                   <div className="font-bold">{t.name}</div>

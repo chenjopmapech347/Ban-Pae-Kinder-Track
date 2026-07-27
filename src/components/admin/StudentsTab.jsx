@@ -200,7 +200,7 @@ export default function StudentsTab() {
     const matchLevel = selectedLevel === 'all' || s.level === selectedLevel;
     const matchClass = selectedClass === 'all' || s.className === selectedClass;
     return matchName && matchLevel && matchClass;
-  });
+  }).sort((a, b) => (a.className || '').localeCompare(b.className || '') || Number(a.id) - Number(b.id));
 
   return (
     <div className="glass p-6 animate-fade">

@@ -173,7 +173,7 @@ export default function InnerCornerTab({ teacherClassFilter = null }) {
   );
 
   const classStudents = useMemo(
-    () => (students ?? []).filter(s => s.className === cn && !s.name.startsWith('(ว่าง)')),
+    () => (students ?? []).filter(s => s.className === cn && !s.name.startsWith('(ว่าง)')).sort((a, b) => Number(a.id) - Number(b.id)),
     [students, cn]
   );
 

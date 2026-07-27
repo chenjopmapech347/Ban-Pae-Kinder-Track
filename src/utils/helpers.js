@@ -41,10 +41,17 @@ export function todayISO() {
   return `${y}-${m}-${day}`;
 }
 
+const THAI_MONTHS_LONG = [
+  '','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+  'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม',
+];
 export function formatDateThai(iso) {
   if (!iso) return '';
   const [y, m, d] = iso.split('-');
-  return `${d}-${m}-${y}`;
+  const day   = parseInt(d, 10);
+  const month = parseInt(m, 10);
+  const year  = parseInt(y, 10) + 543;
+  return `${day} ${THAI_MONTHS_LONG[month]} ${year}`;
 }
 
 /** หา Monday ของสัปดาห์ที่ dateStr อยู่ (YYYY-MM-DD) */

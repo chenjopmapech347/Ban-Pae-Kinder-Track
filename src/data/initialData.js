@@ -215,18 +215,21 @@ export const INITIAL_CLASSES = [
 ];
 
 // ── วันหยุด ───────────────────────────────────────────────
+// รูปแบบวันที่: YYYY-MM-DD (ค.ศ. / AD) เช่น 2026-01-01
 export const INITIAL_HOLIDAYS = [
-  { id: 1,  date: '01/01/2569', label: 'วันขึ้นปีใหม่',           type: 'Holiday' },
-  { id: 2,  date: '13/04/2569', label: 'วันสงกรานต์ (วันที่ 1)', type: 'Holiday' },
-  { id: 3,  date: '14/04/2569', label: 'วันสงกรานต์ (วันที่ 2)', type: 'Holiday' },
-  { id: 4,  date: '15/04/2569', label: 'วันสงกรานต์ (วันที่ 3)', type: 'Holiday' },
-  { id: 5,  date: '01/05/2569', label: 'วันแรงงานแห่งชาติ',      type: 'Holiday' },
-  { id: 6,  date: '05/05/2569', label: 'วันฉัตรมงคล',            type: 'Holiday' },
-  { id: 7,  date: '12/08/2569', label: 'วันแม่แห่งชาติ',         type: 'Holiday' },
-  { id: 8,  date: '23/10/2569', label: 'วันปิยมหาราช',           type: 'Holiday' },
-  { id: 9,  date: '05/12/2569', label: 'วันพ่อแห่งชาติ',         type: 'Holiday' },
-  { id: 10, date: '10/12/2569', label: 'วันรัฐธรรมนูญ',          type: 'Holiday' },
-  { id: 11, date: '31/12/2569', label: 'วันสิ้นปี',              type: 'Holiday' },
+  { id: 1,  date: '2026-01-01', label: 'วันขึ้นปีใหม่',           type: 'Holiday' },
+  { id: 2,  date: '2026-04-13', label: 'วันสงกรานต์ (วันที่ 1)', type: 'Holiday' },
+  { id: 3,  date: '2026-04-14', label: 'วันสงกรานต์ (วันที่ 2)', type: 'Holiday' },
+  { id: 4,  date: '2026-04-15', label: 'วันสงกรานต์ (วันที่ 3)', type: 'Holiday' },
+  { id: 5,  date: '2026-05-01', label: 'วันแรงงานแห่งชาติ',      type: 'Holiday' },
+  { id: 6,  date: '2026-05-05', label: 'วันฉัตรมงคล',            type: 'Holiday' },
+  { id: 7,  date: '2026-08-12', label: 'วันแม่แห่งชาติ',         type: 'Holiday' },
+  { id: 8,  date: '2026-10-23', label: 'วันปิยมหาราช',           type: 'Holiday' },
+  { id: 9,  date: '2026-12-05', label: 'วันพ่อแห่งชาติ',         type: 'Holiday' },
+  { id: 10, date: '2026-12-10', label: 'วันรัฐธรรมนูญ',                            type: 'Holiday' },
+  { id: 11, date: '2026-12-31', label: 'วันสิ้นปี',                                type: 'Holiday' },
+  { id: 12, date: '2026-07-27', label: 'หยุดกรณีพิเศษ (ชดเชย 8 ส.ค.)',            type: 'Holiday' },
+  { id: 13, date: '2026-07-31', label: 'หยุดกรณีพิเศษ (ชดเชย 15 ส.ค.)',           type: 'Holiday' },
 ];
 
 // ── หัวข้อประเมิน 4 ด้าน ──────────────────────────────────

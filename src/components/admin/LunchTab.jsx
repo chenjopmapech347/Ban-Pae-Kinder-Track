@@ -59,7 +59,30 @@ export default function LunchTab({ teacherClassFilter = null }) {
     students, classes, teachers, role, user,
     academicYear, schoolLogo,
     lunchRecords, setLunchRecords,
+    holidays,
   } = useApp();
+
+  // Set ของวันหยุด (ISO YYYY-MM-DD) เพื่อ highlight เหมือนวันเสาร์-อาทิตย์
+  const holidayISOs = useMemo(() => {
+    const s = new Set();
+    holidays.forEach(h => {
+      if (!h.date) return;
+      if (h.date.includes('/')) {
+        const [dd, mm, bYear] = h.date.split('/');
+        s.add(`${parseInt(bYear,10)-543}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`);
+      } else {
+        s.add(h.date);
+      }
+    });
+    return s;
+  }, [holidays]);
+
+  // วันที่ปิดเรียน = วันหยุดราชการ + เสาร์-อาทิตย์
+  function isSchoolOff(ty, mo, d) {
+    if (isWeekend(ty, mo, d)) return true;
+    const iso = `${ty-543}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    return holidayISOs.has(iso);
+  }
 
   const isTeacher = role === 'teacher';
   const myClass   = teacherClassFilter ?? (isTeacher ? user?.className : null);
@@ -158,7 +181,7 @@ export default function LunchTab({ teacherClassFilter = null }) {
   }
 
   function toggleAllH(day) {
-    if (isWeekend(selYear, selMonth, day)) return;
+    if (isSchoolOff(selYear, selMonth, day)) return;
     const allH = classStudents.length > 0 &&
       classStudents.every(s => isDone(draft.students[s.id]?.days?.[day]));
     setSaved(false);
@@ -199,11 +222,11 @@ export default function LunchTab({ teacherClassFilter = null }) {
   // ── Print ───────────────────────────────────────────────────────────────────
   function handlePrint() {
     const thRow1 = dayArr.map(d => {
-      const wknd = isWeekend(selYear, selMonth, d);
+      const wknd = isSchoolOff(selYear, selMonth, d);
       return `<th class="${wknd?'wknd':'hdc'}">${d}</th>`;
     }).join('');
     const thRow2 = dayArr.map(d => {
-      const wknd = isWeekend(selYear, selMonth, d);
+      const wknd = isSchoolOff(selYear, selMonth, d);
       const dow  = getDow(selYear, selMonth, d);
       return `<th class="${wknd?'wknd':'hdc2'}">${DOW_SHORT[dow]}</th>`;
     }).join('');
@@ -212,7 +235,7 @@ export default function LunchTab({ teacherClassFilter = null }) {
       const sData = draft.students[s.id] ?? { days: {} };
       const cells = dayArr.map(d => {
         const v    = sData.days?.[d] ?? '';
-        const wknd = isWeekend(selYear, selMonth, d);
+        const wknd = isSchoolOff(selYear, selMonth, d);
         const cls  = wknd ? 'wknd' : isDone(v) ? 'eat' : v === 'X' ? 'abs' : '';
         return `<td class="${cls}">${v}</td>`;
       }).join('');
@@ -222,7 +245,7 @@ export default function LunchTab({ teacherClassFilter = null }) {
     }).join('');
 
     const footRow = dayArr.map((d, i) => {
-      const wknd = isWeekend(selYear, selMonth, d);
+      const wknd = isSchoolOff(selYear, selMonth, d);
       const cnt  = daySummary[i];
       return `<td class="footd">${!wknd && cnt > 0 ? cnt : ''}</td>`;
     }).join('');
@@ -356,7 +379,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                 <th rowSpan={3} style={th({ minWidth:'32px', background:'#fef3c7', color:'#92400e' })}>เลขที่</th>
                 <th rowSpan={3} style={th({ minWidth:'110px', textAlign:'left', padding:'2px 6px', background:'#fef3c7', color:'#92400e' })}>ชื่อ-นามสกุล</th>
                 {dayArr.map(d => {
-                  const wknd = isWeekend(selYear, selMonth, d);
+                  const wknd = isSchoolOff(selYear, selMonth, d);
                   return (
                     <th key={d}
                       style={{
@@ -373,7 +396,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
               </tr>
               <tr>
                 {dayArr.map(d => {
-                  const wknd = isWeekend(selYear, selMonth, d);
+                  const wknd = isSchoolOff(selYear, selMonth, d);
                   const dow  = getDow(selYear, selMonth, d);
                   return (
                     <th key={d} style={{
@@ -389,7 +412,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
               {/* Row 3: Checkbox — คลิก = H ทั้งคอลัมน์ */}
               <tr>
                 {dayArr.map(d => {
-                  const wknd = isWeekend(selYear, selMonth, d);
+                  const wknd = isSchoolOff(selYear, selMonth, d);
                   if (wknd) return <td key={d} style={{ border:'1px solid #e5e7eb', background:'#e5e7eb', padding:'1px' }} />;
                   const allH = classStudents.length > 0 &&
                     classStudents.every(s => isDone(draft.students[s.id]?.days?.[d]));
@@ -421,7 +444,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                     </td>
                     {dayArr.map(d => {
                       const v    = sData.days?.[d] ?? '';
-                      const wknd = isWeekend(selYear, selMonth, d);
+                      const wknd = isSchoolOff(selYear, selMonth, d);
                       const st   = CELL_STYLE[v] ?? CELL_STYLE[''];
                       return (
                         <td key={d}
@@ -456,7 +479,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                 <td style={{ border:'1px solid #d1d5db', textAlign:'center', fontWeight:800, fontSize:'.65rem', color:'#78350f' }}>รวม</td>
                 <td style={{ border:'1px solid #d1d5db' }} />
                 {daySummary.map((cnt, i) => {
-                  const wknd = isWeekend(selYear, selMonth, i + 1);
+                  const wknd = isSchoolOff(selYear, selMonth, i + 1);
                   return (
                     <td key={i} style={{
                       border:'1px solid #d1d5db', textAlign:'center', fontSize:'.65rem',

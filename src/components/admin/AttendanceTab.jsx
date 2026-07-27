@@ -105,13 +105,14 @@ function printMonthlySummary(classSections, monthLabel, schoolName, schoolLogo) 
 // ── บัญชีเรียกชื่อ — พิมพ์ ────────────────────────────────────────────────
 // marks: มา = ว่าง, ป่วย = ป, ลา = ล, ขาด = ข  (ตามคำอธิบายบัญชีเรียกชื่อ)
 const DAY_ABBR = ['อา','จ','อ','พ','พฤ','ศ','ส']; // 0=Sun … 6=Sat
-function printRollCall(classSections, selMonth, schoolName, schoolLogo) {
+function printRollCall(classSections, selMonth, schoolName, schoolLogo, holidayISOs = new Set()) {
   const [yr, mo] = selMonth.split('-').map(Number);
   const daysInMonth = new Date(yr, mo, 0).getDate();
   // build day-header cells: date number + day abbr
   const dayCols = Array.from({ length: daysInMonth }, (_, i) => {
     const d = new Date(yr, mo - 1, i + 1);
-    return { date: i + 1, dow: d.getDay() }; // dow 0=Sun,6=Sat
+    const iso = `${yr}-${String(mo).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`;
+    return { date: i + 1, dow: d.getDay(), holiday: holidayISOs.has(iso) }; // dow 0=Sun,6=Sat
   });
   const thMonthYear = new Date(yr, mo - 1, 1)
     .toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
@@ -140,20 +141,22 @@ function printRollCall(classSections, selMonth, schoolName, schoolLogo) {
   const pages = classSections.map(({ cls, teacher, rows }, pi) => {
     const isLast = pi === classSections.length - 1;
     // day header row 1: date number
-    const thDates = dayCols.map(d =>
-      `<th style="width:14px${d.dow===0||d.dow===6?';'+weekendBg:''}" class="${d.dow===0||d.dow===6?'wk':''}">${d.date}</th>`
-    ).join('');
+    const thDates = dayCols.map(d => {
+      const off = d.dow===0||d.dow===6||d.holiday;
+      return `<th style="width:14px${off?';'+weekendBg:''}" class="${off?'wk':''}">${d.date}</th>`;
+    }).join('');
     // day header row 2: day abbr
-    const thDays = dayCols.map(d =>
-      `<th style="${d.dow===0||d.dow===6?weekendBg:''}" class="${d.dow===0||d.dow===6?'wk':''}">${DAY_ABBR[d.dow]}</th>`
-    ).join('');
+    const thDays = dayCols.map(d => {
+      const off = d.dow===0||d.dow===6||d.holiday;
+      return `<th style="${off?weekendBg:''}" class="${off?'wk':''}">${DAY_ABBR[d.dow]}</th>`;
+    }).join('');
 
     const trs = rows.map((s, idx) => {
       const dayCells = dayCols.map(d => {
         const iso = `${yr}-${String(mo).padStart(2,'0')}-${String(d.date).padStart(2,'0')}`;
         const att = s.dailyAtt?.[iso] ?? '';
         const mark = attMark(att);
-        const cls2 = d.dow===0||d.dow===6 ? 'wk' : (mark || '');
+        const cls2 = (d.dow===0||d.dow===6||d.holiday) ? 'wk' : (mark || '');
         return `<td class="${cls2}">${mark}</td>`;
       }).join('');
       const { มา=0, ขาด=0, ลา=0, ป่วย=0 } = s.counts;
@@ -211,7 +214,21 @@ export default function AttendanceTab({ defaultClass }) {
     students, dailyRecords, teachers, saveDailyAttendance,
     schoolName, schoolLogo, allClassNames, schoolTerms, academicYear,
     dailyRoutineRecords, setDailyRoutineRecords,
+    holidays,
   } = useApp();
+
+  // Set ของวันหยุด (ISO YYYY-MM-DD)
+  const holidayISOs = useMemo(() => {
+    const s = new Set();
+    holidays.forEach(h => {
+      if (!h.date) return;
+      if (h.date.includes('/')) {
+        const [dd, mm, bYear] = h.date.split('/');
+        s.add(`${parseInt(bYear,10)-543}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`);
+      } else { s.add(h.date); }
+    });
+    return s;
+  }, [holidays]);
   const ALL_CLASSES = allClassNames;
 
   const [mainView,     setMainView]     = useState('daily');   // 'daily' | 'monthly'
@@ -391,6 +408,19 @@ export default function AttendanceTab({ defaultClass }) {
   const isToday = selectedDate === todayISO();
   const dateLabel = formatDateThai(selectedDate);
 
+  // ชื่อวันภาษาไทย + วันหยุด
+  const THAI_DAY_NAMES = ['วันอาทิตย์','วันจันทร์','วันอังคาร','วันพุธ','วันพฤหัสบดี','วันศุกร์','วันเสาร์'];
+  const selectedDow    = selectedDate ? new Date(selectedDate).getDay() : -1;
+  const thaiDayName    = selectedDow >= 0 ? THAI_DAY_NAMES[selectedDow] : '';
+  const todayHoliday   = holidays.find(h => {
+    if (!h.date) return false;
+    if (h.date.includes('/')) {
+      const [dd, mm, bYear] = h.date.split('/');
+      return `${parseInt(bYear,10)-543}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}` === selectedDate;
+    }
+    return h.date === selectedDate;
+  });
+
   // ── กรองห้องที่แสดง ────────────────────────────────────────────────
   const displayClasses = useMemo(
     () => filterClass === 'ทั้งหมด' ? ALL_CLASSES : [filterClass],
@@ -440,8 +470,13 @@ export default function AttendanceTab({ defaultClass }) {
           <div style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: '.25rem' }}>
             📅 การมาเรียน
           </div>
-          <div style={{ opacity: .85, fontSize: '.83rem' }}>
-            {isToday ? '🟢 วันนี้ — ' : ''}{dateLabel} · <LiveClock />
+          <div style={{ opacity: .9, fontSize: '.83rem', display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
+            {isToday && <span style={{ background: 'rgba(255,255,255,.18)', borderRadius: '6px', padding: '1px 8px', fontWeight: 700 }}>🟢 วันนี้</span>}
+            {todayHoliday && <span style={{ background: 'rgba(255,255,255,.22)', borderRadius: '6px', padding: '1px 8px', fontWeight: 700 }}>🏖️ {todayHoliday.label}</span>}
+            <span style={{ fontWeight: 700 }}>{thaiDayName}</span>
+            <span style={{ opacity: .75 }}>{dateLabel}</span>
+            <span>·</span>
+            <LiveClock />
           </div>
         </div>
 
@@ -601,7 +636,7 @@ export default function AttendanceTab({ defaultClass }) {
             🖨️ พิมพ์สรุป
           </button>
           <button type="button"
-            onClick={() => printRollCall(monthlyData, selMonth, schoolName, schoolLogo)}
+            onClick={() => printRollCall(monthlyData, selMonth, schoolName, schoolLogo, holidayISOs)}
             style={{
               padding: '.4rem 1rem', borderRadius: '8px', border: 'none',
               background: '#7c3aed', color: 'white', fontFamily: 'inherit',

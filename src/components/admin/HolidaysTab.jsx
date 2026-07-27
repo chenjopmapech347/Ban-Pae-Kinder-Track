@@ -4,12 +4,18 @@ import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 
 const EMPTY = { label: '', date: '' };
 
-// แปลง YYYY-MM-DD → วัน/เดือน/ปีพ.ศ.
+// แปลง YYYY-MM-DD (ค.ศ.) หรือ DD/MM/YYYY (พ.ศ. เดิม) → วัน เดือน ปีพ.ศ.
 function toThaiDate(iso) {
   if (!iso) return '';
-  const [y, m, d] = iso.split('-');
   const thaiMonths = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  return `${parseInt(d, 10)} ${thaiMonths[parseInt(m, 10) - 1]} ${parseInt(y, 10) + 543}`;
+  if (iso.includes('/')) {
+    // รูปแบบเดิม: DD/MM/YYYY (พ.ศ.) เก็บไว้ backward compat
+    const [d, m, bYear] = iso.split('/');
+    return `${parseInt(d, 10)} ${thaiMonths[parseInt(m, 10) - 1] ?? ''} ${bYear}`;
+  }
+  // รูปแบบมาตรฐาน: YYYY-MM-DD (ค.ศ.)
+  const [y, m, d] = iso.split('-');
+  return `${parseInt(d, 10)} ${thaiMonths[parseInt(m, 10) - 1] ?? ''} ${parseInt(y, 10) + 543}`;
 }
 
 // inline mini-calendar component

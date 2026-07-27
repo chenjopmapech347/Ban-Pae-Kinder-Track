@@ -106,7 +106,27 @@ export default function DailyRoutineTab({ teacherClassFilter = null }) {
   const {
     students, classes, role, user, academicYear,
     dailyRoutineRecords, setDailyRoutineRecords,
+    holidays,
   } = useApp();
+
+  // Set ของวันหยุด (ISO YYYY-MM-DD)
+  const holidayISOs = useMemo(() => {
+    const s = new Set();
+    holidays.forEach(h => {
+      if (!h.date) return;
+      if (h.date.includes('/')) {
+        const [dd, mm, bYear] = h.date.split('/');
+        s.add(`${parseInt(bYear,10)-543}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`);
+      } else { s.add(h.date); }
+    });
+    return s;
+  }, [holidays]);
+
+  function isSchoolOff(ty, mo, d) {
+    if (isWeekend(ty, mo, d)) return true;
+    const iso = `${ty-543}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    return holidayISOs.has(iso);
+  }
 
   const isTeacher = role === 'teacher';
   const myClass   = teacherClassFilter ?? (isTeacher ? user?.className : null);
@@ -195,7 +215,7 @@ export default function DailyRoutineTab({ teacherClassFilter = null }) {
   // ติ๊กทั้ง column (เปิด/ปิดกิจกรรมทุกวันทำการ)
   const toggleAllCol = useCallback((routineKey) => {
     setDraft(prev => {
-      const schoolDayNums = dayArr.filter(d => !isWeekend(selYear, selMonth, d));
+      const schoolDayNums = dayArr.filter(d => !isSchoolOff(selYear, selMonth, d));
       const allTrue = schoolDayNums.every(d => prev.days?.[d]?.[routineKey] === true);
       const updatedDays = { ...prev.days };
       schoolDayNums.forEach(d => {
@@ -225,14 +245,14 @@ export default function DailyRoutineTab({ teacherClassFilter = null }) {
 
   // ── สรุปรายเดือน ──────────────────────────────────────────────────────────
   const summary = useMemo(() => {
-    const schoolDays = dayArr.filter(d => !isWeekend(selYear, selMonth, d)).length;
+    const schoolDays = dayArr.filter(d => !isSchoolOff(selYear, selMonth, d)).length;
     return ROUTINE_DEFS.map(def => ({
       ...def,
       done:  countKey(draft.days, def.key),
       total: schoolDays,
       pct:   schoolDays > 0 ? Math.round(countKey(draft.days, def.key) / schoolDays * 100) : 0,
     }));
-  }, [draft.days, dayArr, selYear, selMonth]);
+  }, [draft.days, dayArr, selYear, selMonth, holidayISOs]);
 
   const recorded = useMemo(() => countRecorded(draft.days), [draft.days]);
 
@@ -405,7 +425,7 @@ export default function DailyRoutineTab({ teacherClassFilter = null }) {
             </thead>
             <tbody>
               {dayArr.map(day => {
-                const weekend = isWeekend(selYear, selMonth, day);
+                const weekend = isSchoolOff(selYear, selMonth, day);
                 const dow     = getDow(selYear, selMonth, day);
                 const dayData = draft.days?.[day] ?? {};
                 const doneCount = ROUTINE_KEYS.filter(k => dayData[k] === true).length;
@@ -542,7 +562,7 @@ export default function DailyRoutineTab({ teacherClassFilter = null }) {
           </h3>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
             {dayArr.map(day => {
-              const weekend = isWeekend(selYear, selMonth, day);
+              const weekend = isSchoolOff(selYear, selMonth, day);
               const dayData = draft.days?.[day] ?? {};
               const done    = ROUTINE_KEYS.filter(k => dayData[k] === true).length;
               const pct     = done / ROUTINE_KEYS.length;

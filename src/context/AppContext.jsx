@@ -408,8 +408,19 @@ export function AppProvider({ children }) {
 
             if (cloudTime > localPushTs + 60_000) {
               // Firebase ใหม่กว่า local push ล่าสุดมากกว่า 1 นาที → เป็น sync จากเครื่องอื่น
-              restoreSnapshotData(check.snapshot);
-              setPullSyncStatus('done');
+              // ป้องกัน: ถ้า Firebase มีนักเรียนน้อยกว่า local อย่างมีนัย (> 3 คน)
+              // แสดงว่า Firebase อาจถูกดัน snapshot เก่าทับ → ข้ามเพื่อป้องกันข้อมูลสูญ
+              const localStudentCount = students.length;
+              if (cloudStudentCount < localStudentCount - 3) {
+                console.warn(
+                  `[KinderTrack] Pull blocked — cloud has ${cloudStudentCount} students` +
+                  ` but local has ${localStudentCount}. Possible stale Firebase push detected.`
+                );
+                setPullSyncStatus('done');
+              } else {
+                restoreSnapshotData(check.snapshot);
+                setPullSyncStatus('done');
+              }
             } else {
               // Firebase เก่ากว่าหรือเท่ากับ local → ข้ามป้องกัน rollback
               console.info(`[KinderTrack] Pull skipped (local is up-to-date): cloud=${new Date(cloudTime).toLocaleString('th-TH')}`);
@@ -898,9 +909,15 @@ export function AppProvider({ children }) {
         const weekday = new Date(date).getDay(); // 0=อาทิตย์ 1=จันทร์ 2=อังคาร
 
         // ฟังก์ชันตรวจสอบว่า ISO date ตรงกับวันหยุดใน holidays หรือไม่
+        // รองรับทั้ง YYYY-MM-DD (ค.ศ.) และ DD/MM/YYYY (พ.ศ. เดิม)
         const isHoliday = (isoDate) => holidays.some(h => {
-          const [dd, mm, bYear] = h.date.split('/');
-          return `${parseInt(bYear, 10) - 543}-${mm}-${dd}` === isoDate;
+          if (!h.date) return false;
+          if (h.date.includes('/')) {
+            const [dd, mm, bYear] = h.date.split('/');
+            const adYear = parseInt(bYear, 10) - 543;
+            return `${adYear}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}` === isoDate;
+          }
+          return h.date === isoDate;
         });
 
         let isHealthCheckDay = false;

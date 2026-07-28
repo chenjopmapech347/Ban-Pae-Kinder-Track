@@ -116,17 +116,26 @@ function AppShell() {
               ⚠️ โหลดข้อมูลไม่สำเร็จ
             </div>
           )}
-          {isFirebaseConfigured && autoSyncStatus !== 'idle' && pullSyncStatus !== 'pulling' && (
+          {autoSyncStatus !== 'idle' && pullSyncStatus !== 'pulling' && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: '.35rem',
-              background: 'rgba(255,255,255,0.15)', borderRadius: '999px',
+              background: autoSyncStatus === 'done' && !isFirebaseConfigured
+                ? 'rgba(251,191,36,0.25)'
+                : autoSyncStatus === 'error'
+                  ? 'rgba(255,80,80,0.25)'
+                  : 'rgba(255,255,255,0.15)',
+              borderRadius: '999px',
               padding: '.2rem .7rem', fontSize: '.72rem', fontWeight: 700,
-              color: 'white', border: '1.5px solid rgba(255,255,255,0.3)',
+              color: 'white',
+              border: autoSyncStatus === 'done' && !isFirebaseConfigured
+                ? '1.5px solid rgba(251,191,36,0.5)'
+                : '1.5px solid rgba(255,255,255,0.3)',
               transition: 'all .3s',
             }}>
               {autoSyncStatus === 'pending'  && <><span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>⏳</span> รอบันทึก…</>}
-              {autoSyncStatus === 'syncing'  && <><span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>🔄</span> กำลังบันทึก…</>}
-              {autoSyncStatus === 'done'     && <>✅ บันทึกแล้ว</>}
+              {autoSyncStatus === 'syncing'  && <><span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>🔄</span> {isFirebaseConfigured ? 'กำลังบันทึกลงฐานข้อมูล…' : 'กำลังบันทึก…'}</>}
+              {autoSyncStatus === 'done'     && isFirebaseConfigured  && <>✅ บันทึกลงฐานข้อมูลแล้ว</>}
+              {autoSyncStatus === 'done'     && !isFirebaseConfigured && <>💾 บันทึกเฉพาะในเครื่องนี้</>}
               {autoSyncStatus === 'error'    && <>❌ บันทึกไม่สำเร็จ</>}
             </div>
           )}

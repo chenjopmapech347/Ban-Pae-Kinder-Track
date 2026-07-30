@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 /**
  * DashboardSidebar — collapsible left sidebar navigation.
@@ -10,9 +10,20 @@ import { useState } from 'react';
  *   onTabChange — (tabId: string) => void
  *   badge       — optional chip shown in header (e.g. "🏫 ห้อง ป.1")
  */
+const AUTO_COLLAPSE_BREAKPOINT = 900; // px
+
 export default function DashboardSidebar({ groups, activeTab, onTabChange, badge }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => window.innerWidth < AUTO_COLLAPSE_BREAKPOINT);
   const [hoveredId, setHoveredId] = useState(null);
+
+  /* ── Auto-collapse เมื่อหน้าจอแคบ ── */
+  useEffect(() => {
+    const handleResize = () => {
+      setCollapsed(window.innerWidth < AUTO_COLLAPSE_BREAKPOINT);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   /* ── find which group owns the active tab ── */
   const activeGroupLabel = groups.find(g => g.tabs.some(t => t.id === activeTab))?.label;

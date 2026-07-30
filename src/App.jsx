@@ -38,10 +38,27 @@ function AppShell() {
     isAdding, setIsAdding,
     handleSaveEvaluation, assessmentTopics, addStudent,
     autoSyncStatus, pullSyncStatus, isFirebaseConfigured,
-    schools,
+    schools, schoolLogo,
   } = useApp();
 
   const schoolName = schools?.[0]?.name ?? 'KinderTrack';
+
+  /* ── Dynamic favicon: ใช้โลโก้โรงเรียนแทน vite.svg ── */
+  useEffect(() => {
+    let link = document.querySelector("link[rel='icon']");
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    if (schoolLogo) {
+      link.href = schoolLogo;
+      link.type = 'image/png';
+    } else {
+      link.href = '/logo.png';
+      link.type = 'image/png';
+    }
+  }, [schoolLogo]);
 
   const [changePwOpen, setChangePwOpen] = useState(false);
 

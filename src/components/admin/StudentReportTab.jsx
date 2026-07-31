@@ -395,14 +395,9 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       </tr>`;
     }).join('');
 
-  const devAssessHtml = DEV_ASSESS_DOMAINS.map(domain => {
-    const domainHeader = `<tr style="background:${domain.color}20">
-        <td colspan="6" style="padding:6px 10px;border:1px solid #d1d5db;font-weight:900;font-size:.85rem;color:${domain.color}">
-          ${domain.emoji} พัฒนาการ${domain.label}
-        </td>
-      </tr>`;
+  const devAssessHtml = DEV_ASSESS_DOMAINS.map((domain, di) => {
+    let domainRows;
     if (domain.subDomains) {
-      // D4: render each sub-domain with its own header row
       let idxOffset = 0;
       const subRows = domain.subDomains.map(sub => {
         const subHeader = `<tr style="background:${domain.color}10">
@@ -421,43 +416,66 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
             <span style="white-space:pre-line;line-height:1.7">${dsSummary}</span>
            </td></tr>`
         : '';
-      return domainHeader + subRows + dsSummaryRow;
+      domainRows = subRows + dsSummaryRow;
+    } else {
+      const dsSummary = da[`__domainSummary_${domain.id}`];
+      const dsSummaryRow = dsSummary
+        ? `<tr><td colspan="6" style="${tdDA};background:${domain.color}08;padding:8px 12px">
+            <strong style="color:${domain.color}">📝 สรุปพัฒนาการด้าน${domain.label}</strong><br/>
+            <span style="white-space:pre-line;line-height:1.7">${dsSummary}</span>
+           </td></tr>`
+        : '';
+      domainRows = renderDevCompRows(domain.components, domain) + dsSummaryRow;
     }
-    const dsSummary = da[`__domainSummary_${domain.id}`];
-    const dsSummaryRow = dsSummary
-      ? `<tr><td colspan="6" style="${tdDA};background:${domain.color}08;padding:8px 12px">
-          <strong style="color:${domain.color}">📝 สรุปพัฒนาการด้าน${domain.label}</strong><br/>
-          <span style="white-space:pre-line;line-height:1.7">${dsSummary}</span>
-         </td></tr>`
-      : '';
-    return domainHeader + renderDevCompRows(domain.components, domain) + dsSummaryRow;
+    return `<div style="${di > 0 ? 'page-break-before:always;break-before:page;' : ''}">
+      ${di === 0
+        ? `<h2 style="font-size:.95rem;margin:14px 0 4px;background:#f3f4f6;padding:4px 8px;border-radius:4px">4. บันทึกผลการประเมินพัฒนาการ — ความสามารถผู้เรียนเมื่อจบชั้นปี</h2>
+           <p style="font-size:.78rem;color:#555;margin-bottom:6px">อนุบาลปีที่ 2 (อายุ 4–5 ปี) · ระดับ 3 = ดี · ระดับ 2 = พอใช้ · ระดับ 1 = ปรับปรุง</p>`
+        : `<h2 style="font-size:.95rem;margin:14px 0 4px;background:#f3f4f6;padding:4px 8px;border-radius:4px">4. บันทึกผลการประเมินพัฒนาการ (ต่อ)</h2>`}
+      <table>
+        <tr>
+          <th style="${thDA};width:48px">รหัส</th>
+          <th style="${thDA}">องค์ประกอบ</th>
+          <th style="${thDA}">สภาพที่พึงประสงค์</th>
+          <th style="${thDA};width:52px">ภาค 1</th>
+          <th style="${thDA};width:52px">ภาค 2</th>
+          <th style="${thDA};width:52px">สรุป</th>
+        </tr>
+        <tr style="background:${domain.color}20">
+          <td colspan="6" style="padding:6px 10px;border:1px solid #d1d5db;font-weight:900;font-size:.85rem;color:${domain.color}">
+            ${domain.emoji} พัฒนาการ${domain.label}
+          </td>
+        </tr>
+        ${domainRows}
+      </table>
+    </div>`;
   }).join('');
 
   const attRows = [1, 2].map(t => {
     const a = attendanceSummary[`term${t}`] ?? {};
     const yearly = t === 2
-      ? `<tr><td colspan="2" style="padding:4px 8px;border:1px solid #d1d5db;font-weight:700">ตลอดปี</td>
-          <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center">${(attendanceSummary.term1?.totalDays ?? 0) + (attendanceSummary.term2?.totalDays ?? 0)}</td>
-          <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center">${(attendanceSummary.term1?.presentDays ?? 0) + (attendanceSummary.term2?.presentDays ?? 0)}</td>
-          <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center">${(attendanceSummary.term1?.absentDays ?? 0) + (attendanceSummary.term2?.absentDays ?? 0)}</td>
+      ? `<tr><td colspan="2" style="padding:3px 6px;border:1px solid #374151;font-weight:700;font-size:.8rem">ตลอดปี</td>
+          <td style="padding:3px 6px;border:1px solid #374151;text-align:center;font-size:.8rem">${(attendanceSummary.term1?.totalDays ?? 0) + (attendanceSummary.term2?.totalDays ?? 0)}</td>
+          <td style="padding:3px 6px;border:1px solid #374151;text-align:center;font-size:.8rem">${(attendanceSummary.term1?.presentDays ?? 0) + (attendanceSummary.term2?.presentDays ?? 0)}</td>
+          <td style="padding:3px 6px;border:1px solid #374151;text-align:center;font-size:.8rem">${(attendanceSummary.term1?.absentDays ?? 0) + (attendanceSummary.term2?.absentDays ?? 0)}</td>
          </tr>` : '';
     return `<tr>
-      <td colspan="2" style="padding:4px 8px;border:1px solid #d1d5db">ภาคเรียนที่ ${t}</td>
-      <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center">${a.totalDays ?? '—'}</td>
-      <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center">${a.presentDays ?? '—'}</td>
-      <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center">${a.absentDays ?? '—'}</td>
+      <td colspan="2" style="padding:3px 6px;border:1px solid #374151;font-size:.8rem">ภาคเรียนที่ ${t}</td>
+      <td style="padding:3px 6px;border:1px solid #374151;text-align:center;font-size:.8rem">${a.totalDays ?? '—'}</td>
+      <td style="padding:3px 6px;border:1px solid #374151;text-align:center;font-size:.8rem">${a.presentDays ?? '—'}</td>
+      <td style="padding:3px 6px;border:1px solid #374151;text-align:center;font-size:.8rem">${a.absentDays ?? '—'}</td>
     </tr>${yearly}`;
   }).join('');
 
   const hsRows = (healthServices ?? []).map(h =>
     `<tr>
-      <td style="padding:4px 8px;border:1px solid #d1d5db">${isoToThai(h.date) || '—'}</td>
-      <td style="padding:4px 8px;border:1px solid #d1d5db">${h.service || '—'}</td>
-      <td style="padding:4px 8px;border:1px solid #d1d5db">${h.note || ''}</td>
+      <td style="padding:3px 6px;border:1px solid #374151;font-size:.8rem">${isoToThai(h.date) || '—'}</td>
+      <td style="padding:3px 6px;border:1px solid #374151;font-size:.8rem">${h.service || '—'}</td>
+      <td style="padding:3px 6px;border:1px solid #374151;font-size:.8rem">${h.note || ''}</td>
     </tr>`
-  ).join('') || `<tr><td colspan="3" style="padding:8px;text-align:center;color:#9ca3af">ไม่มีข้อมูล</td></tr>`;
+  ).join('') || `<tr><td colspan="3" style="padding:6px;text-align:center;color:#9ca3af;border:1px solid #374151;font-size:.8rem">ไม่มีข้อมูล</td></tr>`;
 
-  const devHtml = devDomains.map(domain => {
+  const devHtml = devDomains.map((domain, di) => {
     const stdRows = domain.standards.map(std => {
       const indRows = std.indicators.map(ind => {
         const actRows = ind.actIds.map(actId => {
@@ -481,9 +499,16 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
           <td colspan="3" style="padding:5px 8px;border:1px solid #d1d5db;font-weight:800;font-size:.82rem;color:${domain.color}">${std.title}</td>
         </tr>${indRows}`;
     }).join('');
-    return `<tr style="background:${domain.color}20">
-        <td colspan="3" style="padding:6px 8px;border:1px solid #d1d5db;font-weight:900;font-size:.88rem;color:${domain.color}">${domain.emoji} พัฒนาการด้าน${domain.label}</td>
-      </tr>${stdRows}`;
+    return `<div style="page-break-before:always;break-before:page">
+      <h2 style="font-size:.95rem;margin:14px 0 4px;background:#f3f4f6;padding:4px 8px;border-radius:4px">4.1 ผลการประเมินตัวบ่งชี้ — ${domain.emoji} ด้าน${domain.label}</h2>
+      <table>
+        <tr><th style="width:60%">พฤติกรรม / ตัวบ่งชี้</th><th>ภาคเรียน 1</th><th>ภาคเรียน 2</th></tr>
+        <tr style="background:${domain.color}20">
+          <td colspan="3" style="padding:6px 8px;border:1px solid #d1d5db;font-weight:900;font-size:.88rem;color:${domain.color}">${domain.emoji} พัฒนาการด้าน${domain.label}</td>
+        </tr>
+        ${stdRows}
+      </table>
+    </div>`;
   }).join('');
 
   const photoHtml = student?.photo
@@ -532,10 +557,10 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       ">
         ${schoolLogo ? `<div style="margin-bottom:8px"><img src="${schoolLogo}" style="height:60px;object-fit:contain;filter:brightness(0) invert(1)"/></div>` : ''}
         <div style="font-size:1.1rem;font-weight:800;letter-spacing:.5px">
-          โรงเรียน${schoolName}
+          ${schoolName.startsWith('โรงเรียน') ? schoolName : 'โรงเรียน' + schoolName}
         </div>
         <div style="font-size:.85rem;opacity:.85;margin-top:3px">
-          สังกัดสำนักการศึกษา กรุงเทพมหานคร
+          สังกัดกองการศึกษา เทศบาลตำบลบ้านเพ อำเภอเมืองระยอง จังหวัดระยอง
         </div>
       </div>
 
@@ -619,7 +644,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
         โรงเรียน${schoolName} · ปีการศึกษา ${academicYear}
       </p>
       <p style="font-size:.9rem;font-weight:700;margin-bottom:12px">เรียน ท่านผู้ปกครอง</p>
-      <div style="font-size:.85rem;line-height:2;text-align:justify;white-space:pre-line">${INTRO_LETTER}</div>
+      <div style="font-size:.85rem;line-height:2;text-align:justify;white-space:pre-line;text-indent:1cm">${INTRO_LETTER}</div>
       <div style="margin-top:48px;text-align:right">
         <div style="display:inline-block;text-align:center">
           <div style="height:60px"></div>
@@ -635,11 +660,11 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       <div style="border:2px solid #333;padding:8px 16px;text-align:center;font-size:1rem;font-weight:800;margin-bottom:20px;display:inline-block">
         ปรัชญาการศึกษาปฐมวัย
       </div>
-      <p style="font-size:.87rem;line-height:2;text-align:justify;text-indent:2em;margin-bottom:28px">${_philosophy}</p>
+      <p style="font-size:.87rem;line-height:2;text-align:justify;text-indent:1cm;margin-bottom:28px">${_philosophy}</p>
       <div style="border:2px solid #333;padding:8px 16px;text-align:center;font-size:1rem;font-weight:800;margin-bottom:20px;display:inline-block">
         วิสัยทัศน์
       </div>
-      <p style="font-size:.87rem;line-height:2;text-align:justify;text-indent:2em">${_vision}</p>
+      <p style="font-size:.87rem;line-height:2;text-align:justify;text-indent:1cm">${_vision}</p>
     </div>
 
     <!-- ══ หน้า 3: จุดมุ่งหมายของหลักสูตร ══ -->
@@ -647,7 +672,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       <div style="border:2px solid #333;padding:8px 16px;text-align:center;font-size:1rem;font-weight:800;margin-bottom:20px;display:inline-block">
         จุดมุ่งหมายของหลักสูตรการศึกษาปฐมวัย พุทธศักราช 2560
       </div>
-      <p style="font-size:.85rem;line-height:1.9;text-align:justify;margin-bottom:20px">
+      <p style="font-size:.85rem;line-height:1.9;text-align:justify;margin-bottom:20px;text-indent:1cm">
         หลักสูตรการศึกษาปฐมวัย พุทธศักราช 2560 มุ่งให้เด็กอายุตั้งแต่แรกเกิดจนถึง 6 ปีบริบูรณ์ ได้รับการพัฒนาทุกด้านอย่างสมดุลและต่อเนื่อง โดยมีจุดมุ่งหมายให้เด็กมีคุณลักษณะที่พึงประสงค์ ดังนี้
       </p>
       <ol style="font-size:.87rem;line-height:2.2;padding-left:1.4em;margin:0">
@@ -735,72 +760,70 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
     <!-- ══ รวมหน้า: บริการสุขภาพ + เวลามาเรียน ══ -->
     <div class="page-break">
       <h2>2. บันทึกการบริการทางสุขภาพ (การให้ภูมิคุ้มกัน)</h2>
-      <table>
-        <tr><th>วัน/เดือน/ปี</th><th>การให้ภูมิคุ้มกัน</th><th>หมายเหตุ</th></tr>
+      <table style="font-size:.8rem">
+        <tr>
+          <th style="padding:4px 6px;border:1px solid #374151;background:#f3f4f6;font-weight:700">วัน/เดือน/ปี</th>
+          <th style="padding:4px 6px;border:1px solid #374151;background:#f3f4f6;font-weight:700">การให้ภูมิคุ้มกัน</th>
+          <th style="padding:4px 6px;border:1px solid #374151;background:#f3f4f6;font-weight:700">หมายเหตุ</th>
+        </tr>
         ${hsRows}
       </table>
 
-      <h2 style="margin-top:20px">3. เวลามาเรียน (คิดเป็นวัน)</h2>
-      <table>
-        <tr><th colspan="2">ภาคเรียน</th><th>เวลาเรียนเต็ม</th><th>มาเรียน</th><th>ไม่มาเรียน</th></tr>
+      <h2 style="margin-top:14px">3. เวลามาเรียน (คิดเป็นวัน)</h2>
+      <table style="font-size:.8rem">
+        <tr>
+          <th colspan="2" style="padding:4px 6px;border:1px solid #374151;background:#f3f4f6;font-weight:700">ภาคเรียน</th>
+          <th style="padding:4px 6px;border:1px solid #374151;background:#f3f4f6;font-weight:700">เวลาเรียนเต็ม</th>
+          <th style="padding:4px 6px;border:1px solid #374151;background:#f3f4f6;font-weight:700">มาเรียน</th>
+          <th style="padding:4px 6px;border:1px solid #374151;background:#f3f4f6;font-weight:700">ไม่มาเรียน</th>
+        </tr>
         ${attRows}
       </table>
     </div>
 
-    <h2>4. บันทึกผลการประเมินพัฒนาการ — ความสามารถผู้เรียนเมื่อจบชั้นปี</h2>
-    <p style="font-size:.78rem;color:#555;margin-bottom:6px">อนุบาลปีที่ 2 (อายุ 4–5 ปี) · ระดับ 3 = ดี · ระดับ 2 = พอใช้ · ระดับ 1 = ปรับปรุง</p>
-    <table>
-      <tr>
-        <th style="${thDA};width:48px">รหัส</th>
-        <th style="${thDA}">องค์ประกอบ</th>
-        <th style="${thDA}">สภาพที่พึงประสงค์</th>
-        <th style="${thDA};width:52px">ภาค 1</th>
-        <th style="${thDA};width:52px">ภาค 2</th>
-        <th style="${thDA};width:52px">สรุป</th>
-      </tr>
-      ${devAssessHtml}
-    </table>
+    ${devAssessHtml}
 
-    <h2>4.1 ผลการประเมินตัวบ่งชี้ (จากระบบประเมิน)</h2>
-    <table>
-      <tr><th style="width:60%">พฤติกรรม / ตัวบ่งชี้</th><th>ภาคเรียน 1</th><th>ภาคเรียน 2</th></tr>
-      ${devHtml}
-    </table>
+    ${devHtml}
 
+    <!-- ══ ข้อ 5 สรุป 12 มาตรฐาน ══ -->
+    <div style="page-break-before:always;break-before:page">
     <h2>5. สรุปผลการประเมินพัฒนาการตามมาตรฐานคุณลักษณะที่พึงประสงค์</h2>
-    <table>
+    <table style="font-size:.73rem">
       <tr>
-        <th style="width:40px">ลำดับ</th>
-        <th>มาตรฐานคุณลักษณะที่พึงประสงค์</th>
-        <th colspan="3" style="text-align:center">ภาคเรียน 1</th>
-        <th colspan="3" style="text-align:center">ภาคเรียน 2</th>
-        <th>สรุปตลอดปี</th>
+        <th style="width:36px;padding:3px 5px;border:1px solid #d1d5db;background:#f3f4f6">ลำดับ</th>
+        <th style="padding:3px 5px;border:1px solid #d1d5db;background:#f3f4f6">มาตรฐานคุณลักษณะที่พึงประสงค์</th>
+        <th colspan="3" style="text-align:center;padding:3px 5px;border:1px solid #d1d5db;background:#f3f4f6">ภาคเรียน 1</th>
+        <th colspan="3" style="text-align:center;padding:3px 5px;border:1px solid #d1d5db;background:#f3f4f6">ภาคเรียน 2</th>
+        <th style="padding:3px 5px;border:1px solid #d1d5db;background:#f3f4f6">สรุปตลอดปี</th>
       </tr>
       <tr>
-        <th></th><th></th>
-        <th>3</th><th>2</th><th>1</th>
-        <th>3</th><th>2</th><th>1</th>
-        <th></th>
+        <th style="padding:2px 5px;border:1px solid #d1d5db;background:#f3f4f6"></th>
+        <th style="padding:2px 5px;border:1px solid #d1d5db;background:#f3f4f6"></th>
+        <th style="padding:2px 5px;border:1px solid #d1d5db;background:#f3f4f6">3</th>
+        <th style="padding:2px 5px;border:1px solid #d1d5db;background:#f3f4f6">2</th>
+        <th style="padding:2px 5px;border:1px solid #d1d5db;background:#f3f4f6">1</th>
+        <th style="padding:2px 5px;border:1px solid #d1d5db;background:#f3f4f6">3</th>
+        <th style="padding:2px 5px;border:1px solid #d1d5db;background:#f3f4f6">2</th>
+        <th style="padding:2px 5px;border:1px solid #d1d5db;background:#f3f4f6">1</th>
+        <th style="padding:2px 5px;border:1px solid #d1d5db;background:#f3f4f6"></th>
       </tr>
       ${devDomains.map(domain => {
         const domainRows = domain.standards.map((std, si) => {
-          const stdNum = domain.standards.reduce((acc, _, i) => i < si ? acc + 1 : acc, 0);
-          // compute average score per term for this standard
           const allIndScores1 = std.indicators.map(ind => ind.indScores.term1).filter(v => v !== null);
           const allIndScores2 = std.indicators.map(ind => ind.indScores.term2).filter(v => v !== null);
           const t1 = allIndScores1.length ? Math.round(allIndScores1.reduce((a,b)=>a+b,0)/allIndScores1.length) : null;
           const t2 = allIndScores2.length ? Math.round(allIndScores2.reduce((a,b)=>a+b,0)/allIndScores2.length) : null;
-          const yearly = t2; // หมายเหตุ: สรุปตลอดปีใช้ค่าภาคเรียน 2
+          const yearly = t2;
           return `<tr>
-            <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center">${std.stdNo ?? (si+1)}</td>
-            <td style="padding:4px 8px;border:1px solid #d1d5db;font-size:.78rem">${std.title}</td>
-            <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center">${t1 === 3 ? '✓' : ''}</td>
-            <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center">${t1 === 2 ? '✓' : ''}</td>
-            <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center">${t1 === 1 ? '✓' : ''}</td>
-            <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center">${t2 === 3 ? '✓' : ''}</td>
-            <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center">${t2 === 2 ? '✓' : ''}</td>
-            <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center">${t2 === 1 ? '✓' : ''}</td>
-            <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center;font-weight:700">${yearly !== null ? yearly : '—'}</td>
+            <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center">${std.stdNo ?? (si+1)}</td>
+            <td style="padding:3px 5px;border:1px solid #d1d5db">${std.title}</td>
+            <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center">${t1 === 3 ? '✓' : ''}</td>
+            <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center">${t1 === 2 ? '✓' : ''}</td>
+            <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center">${t1 === 1 ? '✓' : ''}</td>
+            <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center">${t2 === 3 ? '✓' : ''}</td>
+            <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center">${t2 === 2 ? '✓' : ''}</td>
+            <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center">${t2 === 1 ? '✓' : ''}</td>
+            <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center;font-weight:700">${yearly !== null ? yearly : '—'}</td>
           </tr>`;
         }).join('');
         const allDomainT2 = domain.standards.flatMap(std =>
@@ -808,12 +831,13 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
         );
         const domainYearly = allDomainT2.length ? Math.round(allDomainT2.reduce((a,b)=>a+b,0)/allDomainT2.length) : null;
         return `<tr style="background:#f0f0f0">
-          <td colspan="8" style="padding:5px 8px;border:1px solid #d1d5db;font-weight:800">${domain.emoji} ด้าน${domain.label}</td>
-          <td style="padding:5px 8px;border:1px solid #d1d5db;text-align:center;font-weight:800">${domainYearly !== null ? domainYearly : '—'}</td>
+          <td colspan="8" style="padding:4px 8px;border:1px solid #d1d5db;font-weight:800">${domain.emoji} ด้าน${domain.label}</td>
+          <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center;font-weight:800">${domainYearly !== null ? domainYearly : '—'}</td>
         </tr>${domainRows}`;
       }).join('')}
     </table>
-    <p style="font-size:.75rem;color:#666">หมายเหตุ: สรุปตลอดปีการศึกษา นำผลการประเมินภาคเรียนที่ 2 มารวมกัน แล้วหารด้วยจำนวนมาตรฐานในด้านพัฒนาการนั้น</p>
+    <p style="font-size:.7rem;color:#666">หมายเหตุ: สรุปตลอดปีการศึกษา นำผลการประเมินภาคเรียนที่ 2 มารวมกัน แล้วหารด้วยจำนวนมาตรฐานในด้านพัฒนาการนั้น</p>
+    </div>
 
     <!-- ══ หน้า: จุดเด่นและความสามารถผู้เรียน (ภาคเรียนที่ 1 และ 2) ══ -->
     ${[1, 2].map(term => {
@@ -860,7 +884,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       </tr>`;
 
       return `
-      <div class="page-break">
+      <div class="page-break" style="page-break-before:always;break-before:page">
         <div style="text-align:center;margin-bottom:16px;font-size:.95rem;font-weight:700">
           จุดเด่นและความสามารถผู้เรียน ภาคเรียนที่ ${termTh}
         </div>
@@ -903,9 +927,12 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
         </div>
       </div>
       <div style="display:flex;align-items:flex-end;gap:12px;padding:20px 8px 0;border:1px solid #e5e7eb;border-radius:8px;background:#fafafa;position:relative">
-        <!-- Y-axis labels -->
-        <div style="display:flex;flex-direction:column;justify-content:space-between;height:160px;padding-bottom:0;font-size:.7rem;color:#6b7280;text-align:right;min-width:20px;flex-shrink:0">
-          <span>๓</span><span>๒</span><span>๑</span><span>๐</span>
+        <!-- Y-axis labels — absolutely positioned for precise baseline alignment -->
+        <div style="position:relative;height:160px;min-width:24px;flex-shrink:0;font-size:.7rem;color:#6b7280;text-align:right;border-bottom:2px solid #374151">
+          <span style="position:absolute;top:0;right:2px;transform:translateY(-50%)">๓</span>
+          <span style="position:absolute;top:33.3%;right:2px;transform:translateY(-50%)">๒</span>
+          <span style="position:absolute;top:66.7%;right:2px;transform:translateY(-50%)">๑</span>
+          <span style="position:absolute;bottom:-1px;right:2px;transform:translateY(50%)">๐</span>
         </div>
         ${chartGroupHtml}
       </div>

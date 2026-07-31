@@ -283,7 +283,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
     const avg1 = t1.length ? t1.reduce((a, b) => a + b, 0) / t1.length : 0;
     const avg2 = t2.length ? t2.reduce((a, b) => a + b, 0) / t2.length : 0;
     const avgY = t2.length ? avg2 : (t1.length ? avg1 : 0); // yearly = term2 score
-    return { label: domain.name, avg1, avg2, avgY };
+    return { label: domain.label ?? domain.name ?? '', avg1, avg2, avgY };
   });
   // append overall average group
   const allT2Chart = domainChartData.map(d => d.avg2).filter(v => v > 0);
@@ -959,22 +959,23 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       </div>
     </div>
   </body></html>`;
-  // ใช้ hidden iframe แทน window.open เพื่อหลีกเลี่ยง popup blocker
-  const _blob   = new Blob([html], { type: 'text/html;charset=utf-8' });
-  const _blobUrl = URL.createObjectURL(_blob);
-  const iframe   = document.createElement('iframe');
-  iframe.style.cssText = 'position:fixed;width:1px;height:1px;left:-9999px;top:-9999px;opacity:0;border:0';
-  iframe.src = _blobUrl;
+  // เขียน HTML ลง iframe โดยตรง — ไม่ใช้ blob URL (หลีกเลี่ยง CSP + popup blocker)
+  const iframe = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;width:0;height:0;left:-9999px;top:-9999px;border:0';
   document.body.appendChild(iframe);
-  iframe.onload = () => {
+  const iDoc = iframe.contentDocument || iframe.contentWindow.document;
+  iDoc.open('text/html', 'replace');
+  iDoc.write(html);
+  iDoc.close();
+  setTimeout(() => {
     try {
       iframe.contentWindow.focus();
       iframe.contentWindow.print();
-    } finally {
-      URL.revokeObjectURL(_blobUrl);
-      setTimeout(() => { if (document.body.contains(iframe)) document.body.removeChild(iframe); }, 3000);
+    } catch (e) {
+      console.error('[print]', e);
     }
-  };
+    setTimeout(() => { if (document.body.contains(iframe)) document.body.removeChild(iframe); }, 4000);
+  }, 400);
 }
 
 // ── static book content ──────────────────────────────────────────────────────

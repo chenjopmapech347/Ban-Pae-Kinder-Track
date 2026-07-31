@@ -2754,7 +2754,8 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
             const TBL_S   = { width: '100%', borderCollapse: 'collapse', fontSize: '.82rem', marginTop: '.75rem' };
             const HDR_TD  = { padding: '8px 10px', border: '1px solid #374151', background: '#f3f4f6', fontWeight: 700, textAlign: 'center', fontSize: '.8rem' };
             const BODY_TH = { padding: '8px', border: '1px solid #d1d5db', fontWeight: 700, fontSize: '.8rem', verticalAlign: 'top', background: '#f9fafb', whiteSpace: 'pre-wrap', width: '26%' };
-            const CELL_TD = { padding: '4px 6px', border: '1px solid #d1d5db', verticalAlign: 'top' };
+            const CELL_TEACHER = { padding: '4px 6px', border: '2px solid #ef4444', verticalAlign: 'top', background: '#fff5f5' };
+            const CELL_PARENT  = { padding: '4px 6px', border: '2px solid #3b82f6', verticalAlign: 'top', background: '#eff6ff' };
 
             const TA = ({ rowKey, termKey, role, placeholder }) => (
               <textarea
@@ -2811,10 +2812,10 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                           {mainDomainRows.map(r => (
                             <tr key={r.key}>
                               <td style={BODY_TH}>{r.num}. {r.label}</td>
-                              <td style={CELL_TD}>
+                              <td style={CELL_TEACHER}>
                                 <TA rowKey={r.key} termKey={termKey} role="teacher" placeholder="จุดเด่น..." />
                               </td>
-                              <td style={CELL_TD}>
+                              <td style={CELL_PARENT}>
                                 <TA rowKey={r.key} termKey={termKey} role="parent" placeholder="ความเห็นผู้ปกครอง..." />
                               </td>
                             </tr>
@@ -2836,10 +2837,10 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                                 <td style={{ ...BODY_TH, paddingLeft: '20px', fontWeight: 600, fontSize: '.78rem' }}>
                                   {subNums[si] ?? `๔.${si+1}`} {D4_STD_LABELS[si] ?? ''}
                                 </td>
-                                <td style={CELL_TD}>
+                                <td style={CELL_TEACHER}>
                                   <TA rowKey={hKey} termKey={termKey} role="teacher" placeholder="จุดเด่น..." />
                                 </td>
-                                <td style={CELL_TD}>
+                                <td style={CELL_PARENT}>
                                   <TA rowKey={hKey} termKey={termKey} role="parent" placeholder="ความเห็นผู้ปกครอง..." />
                                 </td>
                               </tr>

@@ -294,22 +294,24 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
 
   const BAR_MAX = 3;
   const pct = (v) => Math.round((v / BAR_MAX) * 100);
-  const chartGroupHtml = domainChartData.map((d, i) => `
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
-      <div style="display:flex;align-items:flex-end;gap:3px;height:160px;border-bottom:2px solid #374151;padding-bottom:0">
-        <div style="width:22px;background:#3b82f6;height:${pct(d.avg1)}%;position:relative;border-radius:2px 2px 0 0" title="ภาคเรียนที่ 1: ${d.avg1.toFixed(2)}">
-          ${d.avg1 > 0 ? `<span style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9px;color:#374151;white-space:nowrap">${d.avg1.toFixed(1)}</span>` : ''}
-        </div>
-        <div style="width:22px;background:#f59e0b;height:${pct(d.avg2)}%;position:relative;border-radius:2px 2px 0 0" title="ภาคเรียนที่ 2: ${d.avg2.toFixed(2)}">
-          ${d.avg2 > 0 ? `<span style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9px;color:#374151;white-space:nowrap">${d.avg2.toFixed(1)}</span>` : ''}
-        </div>
-        <div style="width:22px;background:#9ca3af;height:${pct(d.avgY)}%;position:relative;border-radius:2px 2px 0 0" title="สรุปปี: ${d.avgY.toFixed(2)}">
-          ${d.avgY > 0 ? `<span style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9px;color:#374151;white-space:nowrap">${d.avgY.toFixed(1)}</span>` : ''}
-        </div>
+  // bars only (no label) — labels go in a separate row below the baseline
+  const chartGroupHtml = domainChartData.map((d) => `
+    <div style="flex:1;display:flex;align-items:flex-end;justify-content:center;gap:3px;height:160px">
+      <div style="width:22px;background:#3b82f6;height:${Math.max(pct(d.avg1),1)}%;position:relative;border-radius:2px 2px 0 0" title="ภาคเรียนที่ 1: ${d.avg1.toFixed(2)}">
+        ${d.avg1 > 0 ? `<span style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9px;color:#374151;white-space:nowrap">${d.avg1.toFixed(1)}</span>` : ''}
       </div>
-      <div style="font-size:.65rem;text-align:center;color:#374151;line-height:1.4;max-width:80px;margin-top:4px;${d.isOverall ? 'font-weight:700' : ''}">
-        ${i + 1 <= 4 ? `${i + 1}. ` : ''}${d.label.replace('\n', '<br>')}
+      <div style="width:22px;background:#10b981;height:${Math.max(pct(d.avg2),1)}%;position:relative;border-radius:2px 2px 0 0" title="ภาคเรียนที่ 2: ${d.avg2.toFixed(2)}">
+        ${d.avg2 > 0 ? `<span style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9px;color:#374151;white-space:nowrap">${d.avg2.toFixed(1)}</span>` : ''}
       </div>
+      <div style="width:22px;background:#f97316;height:${Math.max(pct(d.avgY),1)}%;position:relative;border-radius:2px 2px 0 0" title="สรุปปี: ${d.avgY.toFixed(2)}">
+        ${d.avgY > 0 ? `<span style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:9px;color:#374151;white-space:nowrap">${d.avgY.toFixed(1)}</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+  // labels below the chart baseline
+  const chartLabelHtml = domainChartData.map((d, i) => `
+    <div style="flex:1;font-size:.65rem;text-align:center;color:#374151;line-height:1.4;padding:4px 2px 0;${d.isOverall ? 'font-weight:700' : ''}">
+      ${i + 1 <= 4 ? `${i + 1}. ` : ''}${d.label.replace('\n', '<br>')}
     </div>
   `).join('');
 
@@ -502,11 +504,15 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
     return `<div style="page-break-before:always;break-before:page">
       <h2 style="font-size:.95rem;margin:14px 0 4px;background:#f3f4f6;padding:4px 8px;border-radius:4px">4.1 ผลการประเมินตัวบ่งชี้ — ${domain.emoji} ด้าน${domain.label}</h2>
       <table>
-        <tr><th style="width:60%">พฤติกรรม / ตัวบ่งชี้</th><th>ภาคเรียน 1</th><th>ภาคเรียน 2</th></tr>
-        <tr style="background:${domain.color}20">
-          <td colspan="3" style="padding:6px 8px;border:1px solid #d1d5db;font-weight:900;font-size:.88rem;color:${domain.color}">${domain.emoji} พัฒนาการด้าน${domain.label}</td>
-        </tr>
-        ${stdRows}
+        <thead style="display:table-header-group">
+          <tr><th style="width:60%">พฤติกรรม / ตัวบ่งชี้</th><th>ภาคเรียน 1</th><th>ภาคเรียน 2</th></tr>
+        </thead>
+        <tbody>
+          <tr style="background:${domain.color}20">
+            <td colspan="3" style="padding:6px 8px;border:1px solid #d1d5db;font-weight:900;font-size:.88rem;color:${domain.color}">${domain.emoji} พัฒนาการด้าน${domain.label}</td>
+          </tr>
+          ${stdRows}
+        </tbody>
       </table>
     </div>`;
   }).join('');
@@ -644,7 +650,9 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
         โรงเรียน${schoolName} · ปีการศึกษา ${academicYear}
       </p>
       <p style="font-size:.9rem;font-weight:700;margin-bottom:12px">เรียน ท่านผู้ปกครอง</p>
-      <div style="font-size:.85rem;line-height:2;text-align:justify;white-space:pre-line;text-indent:1cm">${INTRO_LETTER}</div>
+      ${INTRO_LETTER.split('\n').filter(l => l.trim()).map(line =>
+        `<p style="font-size:.85rem;line-height:2;text-align:justify;text-indent:1cm;margin:0 0 6px">${line.trim()}</p>`
+      ).join('')}
       <div style="margin-top:48px;text-align:right">
         <div style="display:inline-block;text-align:center">
           <div style="height:60px"></div>
@@ -675,17 +683,17 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       <p style="font-size:.85rem;line-height:1.9;text-align:justify;margin-bottom:20px;text-indent:1cm">
         หลักสูตรการศึกษาปฐมวัย พุทธศักราช 2560 มุ่งให้เด็กอายุตั้งแต่แรกเกิดจนถึง 6 ปีบริบูรณ์ ได้รับการพัฒนาทุกด้านอย่างสมดุลและต่อเนื่อง โดยมีจุดมุ่งหมายให้เด็กมีคุณลักษณะที่พึงประสงค์ ดังนี้
       </p>
-      <ol style="font-size:.87rem;line-height:2.2;padding-left:1.4em;margin:0">
-        ${AIMS.map(a => `<li style="margin-bottom:4px">${a}</li>`).join('')}
+      <ol style="font-size:.87rem;line-height:2.2;padding-left:1cm;margin:0">
+        ${AIMS.map(a => `<li style="margin-bottom:4px;text-align:justify">${a}</li>`).join('')}
       </ol>
     </div>
 
     <!-- ══ หน้า 4: เกณฑ์มาตรฐานน้ำหนักและส่วนสูง ══ -->
     <div class="page-break">
-      <h2 style="text-align:center;font-size:.95rem;margin-bottom:12px">
+      <h2 style="text-align:center;font-size:.95rem;margin-top:0;margin-bottom:4px">
         ตารางแสดงการเจริญเติบโตของเพศชายและหญิง อายุ 3–6 ปี
       </h2>
-      <p style="text-align:center;font-size:.72rem;color:#666;margin-bottom:10px">
+      <p style="text-align:center;font-size:.72rem;color:#666;margin-bottom:4px">
         กองโภชนาการ กรมอนามัย กระทรวงสาธารณสุข พ.ศ. 2543 · ต่ำแหน่ง = –2SD · บนสุด = +2SD
       </p>
       <table style="font-size:.72rem">
@@ -926,21 +934,28 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
           สมรรถนะผู้เรียน
         </div>
       </div>
-      <div style="display:flex;align-items:flex-end;gap:12px;padding:20px 8px 0;border:1px solid #e5e7eb;border-radius:8px;background:#fafafa;position:relative">
-        <!-- Y-axis labels — absolutely positioned for precise baseline alignment -->
-        <div style="position:relative;height:160px;min-width:24px;flex-shrink:0;font-size:.7rem;color:#6b7280;text-align:right;border-bottom:2px solid #374151">
-          <span style="position:absolute;top:0;right:2px;transform:translateY(-50%)">๓</span>
-          <span style="position:absolute;top:33.3%;right:2px;transform:translateY(-50%)">๒</span>
-          <span style="position:absolute;top:66.7%;right:2px;transform:translateY(-50%)">๑</span>
-          <span style="position:absolute;bottom:-1px;right:2px;transform:translateY(50%)">๐</span>
+      <div style="padding:20px 8px 8px;border:1px solid #e5e7eb;border-radius:8px;background:#fafafa">
+        <!-- bars + Y-axis row — shared border-bottom = single x-axis baseline -->
+        <div style="display:flex;align-items:flex-end;border-bottom:2px solid #374151">
+          <!-- Y-axis labels -->
+          <div style="position:relative;height:160px;min-width:28px;flex-shrink:0;font-size:.7rem;color:#6b7280;text-align:right">
+            <span style="position:absolute;top:0;right:4px;transform:translateY(-50%)">๓</span>
+            <span style="position:absolute;top:33.3%;right:4px;transform:translateY(-50%)">๒</span>
+            <span style="position:absolute;top:66.7%;right:4px;transform:translateY(-50%)">๑</span>
+            <span style="position:absolute;bottom:0;right:4px;transform:translateY(50%)">๐</span>
+          </div>
+          ${chartGroupHtml}
         </div>
-        ${chartGroupHtml}
+        <!-- label row — separate from bars so baseline stays aligned -->
+        <div style="display:flex;padding-left:28px">
+          ${chartLabelHtml}
+        </div>
       </div>
       <!-- Legend -->
-      <div style="display:flex;gap:20px;justify-content:center;margin-top:16px;font-size:.75rem">
+      <div style="display:flex;gap:20px;justify-content:center;margin-top:12px;font-size:.75rem">
         <div style="display:flex;align-items:center;gap:5px"><div style="width:14px;height:14px;background:#3b82f6;border-radius:2px"></div>ภาคเรียนที่ ๑</div>
-        <div style="display:flex;align-items:center;gap:5px"><div style="width:14px;height:14px;background:#f59e0b;border-radius:2px"></div>ภาคเรียนที่ ๒</div>
-        <div style="display:flex;align-items:center;gap:5px"><div style="width:14px;height:14px;background:#9ca3af;border-radius:2px"></div>สรุปปี ${academicYear}</div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:14px;height:14px;background:#10b981;border-radius:2px"></div>ภาคเรียนที่ ๒</div>
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:14px;height:14px;background:#f97316;border-radius:2px"></div>สรุปปี ${academicYear}</div>
       </div>
     </div>
 
@@ -982,7 +997,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
         <div style="border-top:1px solid #000;padding-top:6px;font-size:.85rem">
           ลงชื่อ..................................ผู้บริหารสถานศึกษา
         </div>
-        ${directorName ? `<div style="font-size:.82rem;color:#374151;margin-top:4px">(${directorName})</div>` : ''}
+        <div style="font-size:.82rem;color:#374151;margin-top:4px">(${directorName || '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'})</div>
       </div>
     </div>
   </body></html>`;
@@ -1006,15 +1021,11 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
 }
 
 // ── static book content ──────────────────────────────────────────────────────
-const INTRO_LETTER = `การจัดการศึกษาสำหรับเด็กปฐมวัย มุ่งเน้นให้เด็กมีพัฒนาการที่เหมาะสมกับวัยตามความสามารถ และความแตกต่างระหว่างบุคคล ทั้งทางด้านร่างกาย อารมณ์ จิตใจ สังคม และสติปัญญา เมื่อเด็กจบการศึกษาในระดับการศึกษาปฐมวัยแล้ว จะมีมาตรฐานคุณลักษณะที่พึงประสงค์ตามตัวบ่งชี้ และสภาพที่พึงประสงค์ตามหลักสูตรการศึกษาปฐมวัย พุทธศักราช 2560 ที่กำหนดไว้
-
-สมุดรายงานประจำตัวเด็กฉบับนี้ เป็นการรายงานผลการพัฒนาของบุตร-หลานท่าน ว่ามีพัฒนาการและความพร้อมที่จะเรียนต่อในระดับที่สูงขึ้นหรือไม่ โดยครูจะสังเกต สนทนา สัมภาษณ์ บันทึกพฤติกรรมเด็กและวิเคราะห์ข้อมูลผลงานที่เก็บอย่างเป็นระบบ ผ่านกิจวัตรและกิจกรรมประจำวัน โดยมีเกณฑ์การประเมิน 3 ระดับ คือ
-
-ระดับ 3 คือ ดี          หมายถึง สามารถแสดงพฤติกรรมหรือปฏิบัติถูกต้องได้คล่องแคล่ว ชัดเจนและมั่นคง
-ระดับ 2 คือ พอใช้     หมายถึง สามารถแสดงพฤติกรรมถูกต้องแต่ยังไม่คล่องแคล่ว ไม่มั่นคง
-ระดับ 1 คือ ปรับปรุง  หมายถึง ยังแสดงพฤติกรรมได้น้อยหรือไม่ได้เลย แสดงพฤติกรรมหรือปฏิบัติได้บ้าง แต่ต้องให้ความช่วยเหลือ
-
-ผู้ปกครองสามารถสังเกตจากการแสดงออกของบุตร-หลานได้ และหากผู้ปกครองมีข้อเสนอแนะใดๆ เกี่ยวกับเด็ก ขณะที่อยู่บ้าน สามารถแสดงความคิดเห็นได้ในตอนท้ายของสมุดรายงานเล่มนี้ ทั้งนี้ โรงเรียนมุ่งหวังที่จะร่วมมือกับผู้ปกครองในการพัฒนาบุตร-หลาน ให้มีความเจริญงอกงามอย่างสมดุล รอบด้านเต็มความสามารถของเด็กเพื่อให้เป็นทรัพยากรบุคคลที่มีคุณภาพต่อไป`;
+const INTRO_LETTER = `สมุดรายงานประจำตัวเด็กฉบับนี้ เป็นการรายงานผลการพัฒนาของบุตร-หลานท่าน ว่ามีพัฒนาการและความพร้อมที่จะเรียนต่อในระดับที่สูงขึ้นหรือไม่ โดยครูจะสังเกต สนทนา สัมภาษณ์ บันทึกพฤติกรรมเด็กและวิเคราะห์ข้อมูลผลงานที่เก็บอย่างเป็นระบบ ผ่านกิจวัตรและกิจกรรมประจำวัน โดยมีเกณฑ์การประเมิน 3 ระดับ คือ
+ระดับ 3 คือ ดี หมายถึง สามารถแสดงพฤติกรรมหรือปฏิบัติถูกต้องได้คล่องแคล่ว ชัดเจนและมั่นคง
+ระดับ 2 คือ พอใช้ หมายถึง สามารถแสดงพฤติกรรมถูกต้องแต่ยังไม่คล่องแคล่ว ไม่มั่นคง
+ระดับ 1 คือ ปรับปรุง หมายถึง ยังแสดงพฤติกรรมได้น้อยหรือไม่ได้เลย แสดงพฤติกรรมหรือปฏิบัติได้บ้าง แต่ต้องให้ความช่วยเหลือ
+ผู้ปกครองสามารถสังเกตจากการแสดงออกของบุตร-หลานได้ และหากผู้ปกครองมีข้อเสนอแนะใดๆ เกี่ยวกับเด็กขณะที่อยู่บ้าน สามารถแสดงความคิดเห็นได้ในตอนท้ายของสมุดรายงานเล่มนี้ ทั้งนี้ โรงเรียนมุ่งหวังที่จะร่วมมือกับผู้ปกครองในการพัฒนาบุตร-หลาน ให้มีความเจริญงอกงามอย่างสมดุล รอบด้านเต็มความสามารถของเด็กเพื่อให้เป็นทรัพยากรบุคคลที่มีคุณภาพต่อไป`;
 
 const PHILOSOPHY_TEXT = `การศึกษาปฐมวัย เป็นการพัฒนาเด็กตั้งแต่แรกเกิดถึง 6 ปีบริบูรณ์ อย่างเป็นองค์รวม บนพื้นฐานการอบรมเลี้ยงดูและการส่งเสริมกระบวนการเรียนรู้ที่สนองต่อธรรมชาติและพัฒนาการตามวัยของเด็กแต่ละคนให้เต็มตามศักยภาพ ภายใต้บริบทสังคมและวัฒนธรรมที่เด็กอาศัยอยู่ ด้วยความรัก ความเอื้ออาทร และความเข้าใจของทุกคน เพื่อสร้างรากฐานคุณภาพชีวิตให้เด็กพัฒนาไปสู่ความเป็นมนุษย์ที่สมบูรณ์ เกิดคุณค่าต่อตนเอง ครอบครัว ชุมชน สังคม และประเทศชาติ`;
 

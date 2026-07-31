@@ -717,16 +717,16 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
         <tbody>
           ${GROWTH_ROWS.map((r, idx) => `
             <tr style="background:${r.month === 0 ? '#eff6ff' : idx % 2 === 0 ? 'white' : '#f9fafb'}">
-              <td style="padding:3px 6px;border:1px solid #e5e7eb;text-align:center;font-weight:${r.month === 0 ? 700 : 400}">${r.month === 0 ? r.year : ''}</td>
-              <td style="padding:3px 6px;border:1px solid #e5e7eb;text-align:center">${r.month}</td>
-              <td style="padding:3px 6px;border:1px solid #e5e7eb;text-align:center">${r.bwl}</td>
-              <td style="padding:3px 6px;border:1px solid #e5e7eb;text-align:center">${r.bwh}</td>
-              <td style="padding:3px 6px;border:1px solid #e5e7eb;text-align:center">${r.gwl}</td>
-              <td style="padding:3px 6px;border:1px solid #e5e7eb;text-align:center">${r.gwh}</td>
-              <td style="padding:3px 6px;border:1px solid #e5e7eb;text-align:center">${r.bhl}</td>
-              <td style="padding:3px 6px;border:1px solid #e5e7eb;text-align:center">${r.bhh}</td>
-              <td style="padding:3px 6px;border:1px solid #e5e7eb;text-align:center">${r.ghl}</td>
-              <td style="padding:3px 6px;border:1px solid #e5e7eb;text-align:center">${r.ghh}</td>
+              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center;font-weight:${r.month === 0 ? 700 : 400}">${r.month === 0 ? r.year : ''}</td>
+              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center">${r.month}</td>
+              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center">${r.bwl}</td>
+              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center">${r.bwh}</td>
+              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center">${r.gwl}</td>
+              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center">${r.gwh}</td>
+              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center">${r.bhl}</td>
+              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center">${r.bhh}</td>
+              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center">${r.ghl}</td>
+              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center">${r.ghh}</td>
             </tr>`).join('')}
         </tbody>
       </table>
@@ -1364,7 +1364,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
   const {
     role,
     students, classes, teachers, academicYear, schoolName,
-    schoolPhilosophy, schoolVision, schoolLogo, schoolDirectorName,
+    schoolPhilosophy, schoolVision, schoolLogo, schoolDirectorName, schools,
     dailyRecords,
     studentReportRecords, setStudentReportRecords,
     indicators, activities, assessmentTopics,
@@ -1749,7 +1749,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
             <button type="button"
               onClick={() => {
                 const classTeacher = teachers?.find(t => t.className === (student?.className ?? student?.level));
-                printReport({ student, physData, growthRecords: growthData, devAssessment: devAssessData, attendanceSummary, healthServices, devDomains, teacherComments, parentComments, directorsComment, highlights, academicYear, schoolName, schoolPhilosophy, schoolVision, schoolLogo, teacherName: classTeacher?.name ?? '', directorName: schoolDirectorName ?? '' });
+                printReport({ student, physData, growthRecords: growthData, devAssessment: devAssessData, attendanceSummary, healthServices, devDomains, teacherComments, parentComments, directorsComment, highlights, academicYear, schoolName, schoolPhilosophy, schoolVision, schoolLogo, teacherName: classTeacher?.name ?? '', directorName: schoolDirectorName || schools?.[0]?.principal || '' });
               }}
               style={{
                 marginLeft: 'auto', padding: '.35rem 1rem', borderRadius: '8px', border: 'none',

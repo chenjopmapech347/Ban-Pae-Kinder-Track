@@ -1,5 +1,5 @@
 import './index.css';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import LoginPage from './pages/LoginPage';
 import SettingsPage from './pages/SettingsPage';
@@ -7,7 +7,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
 import ParentView from './pages/ParentView';
 import ReportPage from './pages/ReportPage';
-import StudentReportTab from './components/admin/StudentReportTab';
+const StudentReportTab = lazy(() => import('./components/admin/StudentReportTab'));
 import EvaluationForm from './components/EvaluationForm';
 import StudentModal from './components/StudentModal';
 import ChangePasswordModal from './components/ChangePasswordModal';
@@ -212,7 +212,9 @@ function AppShell() {
             <div className="page-header mb-5 no-print">
               <button type="button" className="btn" onClick={() => setSelectedStudent(null)}>← ย้อนกลับ</button>
             </div>
-            <StudentReportTab initialStudentId={selectedStudent.id} />
+            <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>กำลังโหลด...</div>}>
+              <StudentReportTab initialStudentId={selectedStudent.id} />
+            </Suspense>
           </div>
         ) : selectedStudent ? (
           <ReportPage />

@@ -228,9 +228,25 @@ function emptyGrowth() {
   );
 }
 
+// ── อ.01 section: จุดเด่นและความสามารถผู้เรียน — labels ──────────────────────
+const DOMAIN_LABELS = [
+  'ด้านสุขภาวะทางกาย',
+  'ด้านอารมณ์ จิตใจ และสังคม',
+  'ด้านความเป็นพลเมืองและความเป็นไทย',
+  'ด้านสติปัญญา',
+];
+const D4_STD_LABELS = [
+  'ภาษาและการรู้หนังสือ',
+  'การคิดรวบยอดและการคิดคำนวณ',
+  'การคิดแก้ปัญหาและตัดสินใจ',
+  'การแสวงหาความรู้',
+  'จินตนาการและความคิดสร้างสรรค์',
+];
+
 // ── print helper ──────────────────────────────────────────────────────────────
 function printReport({ student, physData, growthRecords, devAssessment, attendanceSummary, healthServices,
                        devDomains, teacherComments, parentComments, directorsComment,
+                       highlights = {},
                        academicYear, schoolName, schoolPhilosophy, schoolVision, schoolLogo,
                        teacherName, directorName }) {
   // ── Compute overall yearly level from all term2 indicator scores ──────────
@@ -806,33 +822,41 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       const d4 = devDomains[3];
       const d4Subs = d4 ? d4.standards.map((std, si) => {
         const subNums = ['๔.๑','๔.๒','๔.๓','๔.๔','๔.๕'];
+        const hKey = `d3s${si}`;
+        const teacherTxt = highlights[hKey]?.[`term${term}`]?.teacher || '&nbsp;';
+        const parentTxt  = highlights[hKey]?.[`term${term}`]?.parent  || '&nbsp;';
         return `<tr>
           <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top">
-            <span style="font-weight:600">${subNums[si] ?? `๔.${si+1}`}</span> ${std.name}
+            <span style="font-weight:600">${subNums[si] ?? `๔.${si+1}`}</span> ${D4_STD_LABELS[si] ?? ''}
           </td>
-          <td style="padding:6px 8px;border:1px solid #374151;min-height:50px;font-size:.78rem;vertical-align:top"> </td>
-          <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top"> </td>
+          <td style="padding:6px 8px;border:1px solid #374151;min-height:50px;font-size:.78rem;vertical-align:top;white-space:pre-wrap">${teacherTxt}</td>
+          <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top;white-space:pre-wrap">${parentTxt}</td>
         </tr>`;
       }).join('') : '';
 
-      const mainRows = [
-        { num:'๑', name: devDomains[0]?.name ?? 'ด้านสุขภาวะทางกาย' },
-        { num:'๒', name: devDomains[1]?.name ?? 'ด้านอารมณ์ จิตใจ และสังคม' },
-        { num:'๓', name: devDomains[2]?.name ?? 'ด้านความเป็นพลเมืองและความเป็นไทย' },
-      ].map(r => `<tr>
+      const mainRowsData = [
+        { num:'๑', name: DOMAIN_LABELS[0], key: 'd0' },
+        { num:'๒', name: DOMAIN_LABELS[1], key: 'd1' },
+        { num:'๓', name: DOMAIN_LABELS[2], key: 'd2' },
+      ];
+      const mainRows = mainRowsData.map(r => {
+        const teacherTxt = highlights[r.key]?.[`term${term}`]?.teacher || '&nbsp;';
+        const parentTxt  = highlights[r.key]?.[`term${term}`]?.parent  || '&nbsp;';
+        return `<tr>
         <td style="padding:8px;border:1px solid #374151;font-weight:600;font-size:.8rem;vertical-align:top">
           ${r.num}. ${r.name}
         </td>
-        <td style="padding:6px 8px;border:1px solid #374151;min-height:60px;font-size:.78rem;vertical-align:top"> </td>
-        <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top"> </td>
-      </tr>`).join('');
+        <td style="padding:6px 8px;border:1px solid #374151;min-height:60px;font-size:.78rem;vertical-align:top;white-space:pre-wrap">${teacherTxt}</td>
+        <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top;white-space:pre-wrap">${parentTxt}</td>
+      </tr>`;
+      }).join('');
 
       const d4Header = `<tr>
-        <td style="padding:8px;border:1px solid #374151;font-weight:600;font-size:.8rem;vertical-align:top">
-          ๔. ${devDomains[3]?.name ?? 'ด้านสติปัญญา'}
+        <td style="padding:8px;border:1px solid #374151;font-weight:600;font-size:.8rem;vertical-align:top;background:#f9fafb">
+          ๔. ${DOMAIN_LABELS[3]}
         </td>
-        <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top"> </td>
-        <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top"> </td>
+        <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top;background:#f9fafb"> </td>
+        <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top;background:#f9fafb"> </td>
       </tr>`;
 
       return `
@@ -1344,6 +1368,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
       teacherComments:  { term1: '', term2: '' },
       parentComments:   { term1: '', term2: '' },
       directorsComment: '',
+      highlights: {},
     };
   }, [recKey, studentReportRecords, selStudentId, academicYear]);
 
@@ -1363,15 +1388,24 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
   const teacherComments  = rec?.teacherComments  ?? { term1: '', term2: '' };
   const parentComments   = rec?.parentComments   ?? { term1: '', term2: '' };
   const directorsComment = rec?.directorsComment ?? '';
+  const highlights       = rec?.highlights       ?? {};
 
   // ── save helper ───────────────────────────────────────────────────────────
   const saveRec = useCallback((patch) => {
     if (!recKey) return;
     setStudentReportRecords(prev => ({
       ...prev,
-      [recKey]: { ...(prev[recKey] ?? { studentId: selStudentId, academicYear, physicalRecords: emptyPhys(), growthRecords: emptyGrowth(), devAssessment: emptyDevAssess(), healthServices: [], teacherComments: { term1: '', term2: '' }, parentComments: { term1: '', term2: '' }, directorsComment: '' }), ...patch },
+      [recKey]: { ...(prev[recKey] ?? { studentId: selStudentId, academicYear, physicalRecords: emptyPhys(), growthRecords: emptyGrowth(), devAssessment: emptyDevAssess(), healthServices: [], teacherComments: { term1: '', term2: '' }, parentComments: { term1: '', term2: '' }, directorsComment: '', highlights: {} }), ...patch },
     }));
   }, [recKey, setStudentReportRecords, selStudentId, academicYear]);
+
+  // ── highlights update helper ──────────────────────────────────────────────
+  // rowKey: 'd0','d1','d2','d3s0'–'d3s4'  |  term: 'term1'|'term2'  |  role: 'teacher'|'parent'
+  const saveHighlight = useCallback((rowKey, term, role, value) => {
+    const current = highlights[rowKey] ?? { term1: { teacher: '', parent: '' }, term2: { teacher: '', parent: '' } };
+    const updated  = { ...current, [term]: { ...current[term], [role]: value } };
+    saveRec({ highlights: { ...highlights, [rowKey]: updated } });
+  }, [highlights, saveRec]);
 
   // ── physical record update ────────────────────────────────────────────────
   const updatePhys = useCallback((key, field, value) => {
@@ -1571,7 +1605,8 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
     { id: 'attendance',  label: '📅 เวลาเรียน'             },  // อ.01: ส่วนที่ 3
     { id: 'devreport',   label: '📋 พัฒนาการ'              },
     { id: 'summary',     label: '📊 สรุป 12 มาตรฐาน'      },
-    { id: 'domain4',    label: '🎯 สรุปพัฒนาการ 4 ด้าน'  },
+    { id: 'domain4',     label: '🎯 สรุปพัฒนาการ 4 ด้าน'  },
+    { id: 'highlights',  label: '✨ จุดเด่น/ความสามารถ'   },
     { id: 'comments',    label: '💬 ความคิดเห็น'           },
     { id: 'philosophy',  label: '📖 ปรัชญา/วิสัยทัศน์'    },
     { id: 'growthtable', label: '📏 เกณฑ์การเจริญเติบโต'  },
@@ -1668,7 +1703,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
             <button type="button"
               onClick={() => {
                 const classTeacher = teachers?.find(t => t.className === (student?.className ?? student?.level));
-                printReport({ student, physData, growthRecords: growthData, devAssessment: devAssessData, attendanceSummary, healthServices, devDomains, teacherComments, parentComments, directorsComment, academicYear, schoolName, schoolPhilosophy, schoolVision, schoolLogo, teacherName: classTeacher?.name ?? '', directorName: schoolDirectorName ?? '' });
+                printReport({ student, physData, growthRecords: growthData, devAssessment: devAssessData, attendanceSummary, healthServices, devDomains, teacherComments, parentComments, directorsComment, highlights, academicYear, schoolName, schoolPhilosophy, schoolVision, schoolLogo, teacherName: classTeacher?.name ?? '', directorName: schoolDirectorName ?? '' });
               }}
               style={{
                 marginLeft: 'auto', padding: '.35rem 1rem', borderRadius: '8px', border: 'none',
@@ -2707,6 +2742,117 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
               </div>
             </div>
           )}
+
+          {/* ══════════════════════════════════════════════════════════
+              SECTION 6b: จุดเด่นและความสามารถผู้เรียน (ทั้ง 2 ภาคเรียน)
+          ══════════════════════════════════════════════════════════ */}
+          {activeSection === 'highlights' && (() => {
+            const d4 = devDomains[3];
+            const d4StdCount = d4?.standards?.length ?? 0;
+
+            const HL_BG   = { background: '#fefce8', border: '1.5px solid #fde68a', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.5rem' };
+            const TBL_S   = { width: '100%', borderCollapse: 'collapse', fontSize: '.82rem', marginTop: '.75rem' };
+            const HDR_TD  = { padding: '8px 10px', border: '1px solid #374151', background: '#f3f4f6', fontWeight: 700, textAlign: 'center', fontSize: '.8rem' };
+            const BODY_TH = { padding: '8px', border: '1px solid #d1d5db', fontWeight: 700, fontSize: '.8rem', verticalAlign: 'top', background: '#f9fafb', whiteSpace: 'pre-wrap', width: '26%' };
+            const CELL_TD = { padding: '4px 6px', border: '1px solid #d1d5db', verticalAlign: 'top' };
+
+            const TA = ({ rowKey, termKey, role, placeholder }) => (
+              <textarea
+                value={highlights[rowKey]?.[termKey]?.[role] ?? ''}
+                onChange={e => saveHighlight(rowKey, termKey, role, e.target.value)}
+                placeholder={placeholder}
+                rows={3}
+                style={{
+                  width: '100%', border: 'none', outline: 'none', resize: 'vertical',
+                  fontFamily: 'inherit', fontSize: '.78rem', lineHeight: 1.5,
+                  background: 'transparent', color: '#374151',
+                }}
+              />
+            );
+
+            const mainDomainRows = [
+              { num: '๑', label: DOMAIN_LABELS[0], key: 'd0' },
+              { num: '๒', label: DOMAIN_LABELS[1], key: 'd1' },
+              { num: '๓', label: DOMAIN_LABELS[2], key: 'd2' },
+            ];
+
+            return (
+              <div>
+                <div style={{ fontWeight: 800, fontSize: '.9rem', color: '#111', marginBottom: '1rem' }}>
+                  ✨ จุดเด่นและความสามารถผู้เรียน — บันทึกทั้ง 2 ภาคเรียน
+                </div>
+                <p style={{ fontSize: '.78rem', color: '#6b7280', marginBottom: '1rem' }}>
+                  ข้อมูลที่บันทึกจะปรากฏในการพิมพ์รายงาน อ.01 ส่วน "จุดเด่นและความสามารถผู้เรียน"
+                </p>
+
+                {[1, 2].map(term => {
+                  const termKey = `term${term}`;
+                  const termTh  = term === 1 ? '๑' : '๒';
+                  return (
+                    <div key={term} style={HL_BG}>
+                      <div style={{ fontWeight: 800, fontSize: '.88rem', color: '#92400e', marginBottom: '.75rem' }}>
+                        📋 ภาคเรียนที่ {termTh}
+                      </div>
+                      <table style={TBL_S}>
+                        <colgroup>
+                          <col style={{ width: '26%' }} />
+                          <col style={{ width: '42%' }} />
+                          <col style={{ width: '32%' }} />
+                        </colgroup>
+                        <thead>
+                          <tr>
+                            <th style={HDR_TD}>ความสามารถผู้เรียน</th>
+                            <th style={HDR_TD}>ความคิดเห็นครูประจำชั้น (จุดเด่น)</th>
+                            <th style={HDR_TD}>ความคิดเห็นผู้ปกครอง</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {/* domains 1–3 */}
+                          {mainDomainRows.map(r => (
+                            <tr key={r.key}>
+                              <td style={BODY_TH}>{r.num}. {r.label}</td>
+                              <td style={CELL_TD}>
+                                <TA rowKey={r.key} termKey={termKey} role="teacher" placeholder="จุดเด่น..." />
+                              </td>
+                              <td style={CELL_TD}>
+                                <TA rowKey={r.key} termKey={termKey} role="parent" placeholder="ความเห็นผู้ปกครอง..." />
+                              </td>
+                            </tr>
+                          ))}
+
+                          {/* domain 4 header row */}
+                          <tr>
+                            <td colSpan={3} style={{ padding: '6px 8px', border: '1px solid #d1d5db', fontWeight: 800, fontSize: '.8rem', background: '#f3f4f6' }}>
+                              ๔. {DOMAIN_LABELS[3]}
+                            </td>
+                          </tr>
+
+                          {/* domain 4 sub-items */}
+                          {Array.from({ length: d4StdCount }).map((_, si) => {
+                            const subNums = ['๔.๑','๔.๒','๔.๓','๔.๔','๔.๕'];
+                            const hKey    = `d3s${si}`;
+                            return (
+                              <tr key={hKey}>
+                                <td style={{ ...BODY_TH, paddingLeft: '20px', fontWeight: 600, fontSize: '.78rem' }}>
+                                  {subNums[si] ?? `๔.${si+1}`} {D4_STD_LABELS[si] ?? ''}
+                                </td>
+                                <td style={CELL_TD}>
+                                  <TA rowKey={hKey} termKey={termKey} role="teacher" placeholder="จุดเด่น..." />
+                                </td>
+                                <td style={CELL_TD}>
+                                  <TA rowKey={hKey} termKey={termKey} role="parent" placeholder="ความเห็นผู้ปกครอง..." />
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {/* ══════════════════════════════════════════════════════════
               SECTION 7: Comments (Teacher / Parent / Director)

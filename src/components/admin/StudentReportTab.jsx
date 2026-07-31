@@ -959,15 +959,22 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       </div>
     </div>
   </body></html>`;
-  const _blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  // ใช้ hidden iframe แทน window.open เพื่อหลีกเลี่ยง popup blocker
+  const _blob   = new Blob([html], { type: 'text/html;charset=utf-8' });
   const _blobUrl = URL.createObjectURL(_blob);
-  const win = window.open(_blobUrl, '_blank', 'width=900,height=1200');
-  if (!win) { URL.revokeObjectURL(_blobUrl); return; }
-  win.addEventListener('load', () => {
-    win.focus();
-    win.print();
-    URL.revokeObjectURL(_blobUrl);
-  });
+  const iframe   = document.createElement('iframe');
+  iframe.style.cssText = 'position:fixed;width:1px;height:1px;left:-9999px;top:-9999px;opacity:0;border:0';
+  iframe.src = _blobUrl;
+  document.body.appendChild(iframe);
+  iframe.onload = () => {
+    try {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    } finally {
+      URL.revokeObjectURL(_blobUrl);
+      setTimeout(() => { if (document.body.contains(iframe)) document.body.removeChild(iframe); }, 3000);
+    }
+  };
 }
 
 // ── static book content ──────────────────────────────────────────────────────

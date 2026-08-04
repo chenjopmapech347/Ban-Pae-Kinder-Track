@@ -2,6 +2,11 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { INDICATORS_DATA } from '../../data/indicatorsData';
 import { callClaude, buildTeacherCommentPrompt, buildDomainSummaryPrompt } from '../../utils/aiHelper';
+import CompCard from './report/CompCard';
+import SubDomainSummaryBox from './report/SubDomainSummaryBox';
+import DomainSummaryBox from './report/DomainSummaryBox';
+import DomainSummarySection from './report/DomainSummarySection';
+import HighlightsSection from './report/HighlightsSection';
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 function thaiYear(adYear) { return adYear + 543; }
@@ -689,7 +694,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
     </div>
 
     <!-- ══ หน้า 4: เกณฑ์มาตรฐานน้ำหนักและส่วนสูง ══ -->
-    <div class="page-break">
+    <div class="page-break" style="margin-top:-1.2cm">
       <h2 style="text-align:center;font-size:.95rem;margin-top:0;margin-bottom:4px">
         ตารางแสดงการเจริญเติบโตของเพศชายและหญิง อายุ 3–6 ปี
       </h2>
@@ -2131,139 +2136,6 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
 
               {/* ── Active domain content ── */}
               {DEV_ASSESS_DOMAINS.filter(d => d.id === devAssessTab).map(domain => {
-                // Shared component card renderer
-                const CompCard = ({ comp, ci }) => {
-                  const da = devAssessData[comp.key] ?? {};
-                  const t1v = da.t1level ?? 0;
-                  const t2v = da.t2level ?? 0;
-                  const lc1 = levelColor(t1v);
-                  const lc2 = levelColor(t2v);
-
-                  // คะแนนเฉลี่ยทศนิยมจากกิจกรรม
-                  const raw1 = rawScoreFromIndicator(student, comp.domainId, comp.standardId, comp.indicatorId, 1);
-                  const raw2 = rawScoreFromIndicator(student, comp.domainId, comp.standardId, comp.indicatorId, 2);
-                  const rlc1 = raw1 !== null ? levelColor(raw1 >= 2.5 ? 3 : raw1 >= 1.5 ? 2 : 1) : null;
-                  const rlc2 = raw2 !== null ? levelColor(raw2 >= 2.5 ? 3 : raw2 >= 1.5 ? 2 : 1) : null;
-
-                  // สรุประดับ = เฉลี่ยทศนิยมจาก t1 + t2
-                  const filledVals = [t1v, t2v].filter(v => v > 0);
-                  const avgLevel   = filledVals.length ? filledVals.reduce((a, b) => a + b, 0) / filledVals.length : 0;
-                  const summaryInt = avgLevel >= 2.5 ? 3 : avgLevel >= 1.5 ? 2 : avgLevel > 0 ? 1 : 0;
-                  const lcs        = levelColor(summaryInt);
-                  const avgLabel   = summaryInt === 3 ? 'ดี' : summaryInt === 2 ? 'พอใช้' : summaryInt === 1 ? 'ปรับปรุง' : null;
-
-                  // onChange — batch-save ทั้ง term level และ summary ที่คำนวณใหม่
-                  const onChangeT1 = e => {
-                    const newT1 = Number(e.target.value);
-                    const vals = [newT1, t2v].filter(v => v > 0);
-                    const avg  = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
-                    const newSummary = avg >= 2.5 ? 3 : avg >= 1.5 ? 2 : avg > 0 ? 1 : 0;
-                    const cur = devAssessData[comp.key] ?? {};
-                    saveRec({ devAssessment: { ...devAssessData, [comp.key]: { ...cur, t1level: newT1, summary: newSummary } } });
-                  };
-                  const onChangeT2 = e => {
-                    const newT2 = Number(e.target.value);
-                    const vals = [t1v, newT2].filter(v => v > 0);
-                    const avg  = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
-                    const newSummary = avg >= 2.5 ? 3 : avg >= 1.5 ? 2 : avg > 0 ? 1 : 0;
-                    const cur = devAssessData[comp.key] ?? {};
-                    saveRec({ devAssessment: { ...devAssessData, [comp.key]: { ...cur, t2level: newT2, summary: newSummary } } });
-                  };
-
-                  const rowBg = ci % 2 === 0 ? 'white' : '#fafafa';
-                  return (
-                    <div key={comp.key} style={{
-                      background: rowBg,
-                      border: '1px solid #e5e7eb', borderRadius: '10px',
-                      padding: '1rem', marginBottom: '.75rem',
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '.5rem', marginBottom: '.6rem' }}>
-                        <span style={{
-                          background: domain.color, color: 'white',
-                          borderRadius: '6px', padding: '2px 8px', fontSize: '.75rem', fontWeight: 800,
-                          whiteSpace: 'nowrap', flexShrink: 0,
-                        }}>{comp.code}</span>
-                        <span style={{ fontWeight: 700, fontSize: '.84rem', color: '#111' }}>{comp.label}</span>
-                      </div>
-                      <div style={{
-                        background: '#f9fafb', border: '1px solid #f0f0f0',
-                        borderRadius: '6px', padding: '.45rem .75rem',
-                        fontSize: '.75rem', color: '#4b5563', lineHeight: '1.6',
-                        marginBottom: '.75rem', whiteSpace: 'pre-line',
-                      }}>
-                        {comp.descriptor}
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '.75rem', alignItems: 'start' }}>
-
-                        {/* ── ภาคเรียนที่ 1 ── */}
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '.4rem', marginBottom: '.3rem' }}>
-                            <span style={{ fontSize: '.72rem', fontWeight: 700, color: '#1e40af' }}>ภาคเรียนที่ 1</span>
-                            {raw1 !== null && rlc1 && (
-                              <span style={{
-                                fontSize: '.72rem', fontWeight: 800,
-                                background: rlc1.bg, color: rlc1.color,
-                                borderRadius: '5px', padding: '1px 7px',
-                              }}>{raw1.toFixed(2)}</span>
-                            )}
-                          </div>
-                          <select value={t1v} onChange={onChangeT1}
-                            style={{ width: '100%', padding: '5px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.8rem', background: lc1.bg, color: lc1.color, fontWeight: 700 }}>
-                            <option value={0}>— ระดับ —</option>
-                            <option value={3}>3  ดี</option>
-                            <option value={2}>2  พอใช้</option>
-                            <option value={1}>1  ปรับปรุง</option>
-                          </select>
-                        </div>
-
-                        {/* ── ภาคเรียนที่ 2 ── */}
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '.4rem', marginBottom: '.3rem' }}>
-                            <span style={{ fontSize: '.72rem', fontWeight: 700, color: '#065f46' }}>ภาคเรียนที่ 2</span>
-                            {raw2 !== null && rlc2 && (
-                              <span style={{
-                                fontSize: '.72rem', fontWeight: 800,
-                                background: rlc2.bg, color: rlc2.color,
-                                borderRadius: '5px', padding: '1px 7px',
-                              }}>{raw2.toFixed(2)}</span>
-                            )}
-                          </div>
-                          <select value={t2v} onChange={onChangeT2}
-                            style={{ width: '100%', padding: '5px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.8rem', background: lc2.bg, color: lc2.color, fontWeight: 700 }}>
-                            <option value={0}>— ระดับ —</option>
-                            <option value={3}>3  ดี</option>
-                            <option value={2}>2  พอใช้</option>
-                            <option value={1}>1  ปรับปรุง</option>
-                          </select>
-                        </div>
-
-                        {/* ── สรุประดับ — อัตโนมัติจากเฉลี่ย 2 ภาคเรียน ── */}
-                        <div style={{ minWidth: '90px' }}>
-                          <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#374151', marginBottom: '.3rem' }}>สรุประดับ</div>
-                          {avgLevel > 0 ? (
-                            <div style={{
-                              background: lcs.bg, color: lcs.color,
-                              border: `1.5px solid ${lcs.color}60`,
-                              borderRadius: '6px', padding: '5px 8px',
-                              textAlign: 'center', fontWeight: 800,
-                            }}>
-                              <div style={{ fontSize: '.95rem', lineHeight: 1.1 }}>{avgLevel.toFixed(2)}</div>
-                              <div style={{ fontSize: '.68rem', opacity: 0.85, marginTop: '2px' }}>{avgLabel}</div>
-                            </div>
-                          ) : (
-                            <div style={{
-                              background: '#f9fafb', border: '1px dashed #d1d5db',
-                              borderRadius: '6px', padding: '10px 8px',
-                              textAlign: 'center', color: '#9ca3af', fontSize: '.75rem',
-                            }}>—</div>
-                          )}
-                        </div>
-
-                      </div>
-                    </div>
-                  );
-                };
-
                 return (
                   <div key={domain.id}>
                     {/* domain header */}
@@ -2288,7 +2160,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                     </div>
 
                     {domain.subDomains ? (
-                      // all domains: render sub-domain sections
+                      // domain with sub-domains: render per-sub section
                       (() => {
                         let globalIdx = 0;
                         return domain.subDomains.map(sub => (
@@ -2300,193 +2172,54 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                             }}>
                               {sub.label}
                             </div>
-                            {sub.components.map((comp) => {
+                            {sub.components.map(comp => {
                               const ci = globalIdx++;
-                              return <CompCard key={comp.key} comp={comp} ci={ci} />;
-                            })}
-
-                            {/* ── Section-level (มาตรฐาน) summary ── */}
-                            {(() => {
-                              const t1vals = sub.components
-                                .map(c => devAssessData[c.key]?.t1level ?? 0)
-                                .filter(v => v > 0);
-                              const t2vals = sub.components
-                                .map(c => devAssessData[c.key]?.t2level ?? 0)
-                                .filter(v => v > 0);
-                              if (!t1vals.length && !t2vals.length) return null;
-                              const t1avg = t1vals.length
-                                ? t1vals.reduce((a, b) => a + b, 0) / t1vals.length : 0;
-                              const t2avg = t2vals.length
-                                ? t2vals.reduce((a, b) => a + b, 0) / t2vals.length : 0;
-                              const allVals = [...t1vals, ...t2vals];
-                              const combined = allVals.reduce((a, b) => a + b, 0) / allVals.length;
-                              const summaryLevel = combined >= 2.5 ? 3 : combined >= 1.5 ? 2 : 1;
-                              const lc1 = levelColor(t1vals.length ? (t1avg >= 2.5 ? 3 : t1avg >= 1.5 ? 2 : 1) : 0);
-                              const lc2 = levelColor(t2vals.length ? (t2avg >= 2.5 ? 3 : t2avg >= 1.5 ? 2 : 1) : 0);
-                              const lcs = levelColor(summaryLevel);
                               return (
-                                <div style={{
-                                  display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '.6rem',
-                                  background: `${domain.color}12`,
-                                  borderLeft: `4px solid ${domain.color}`,
-                                  borderRadius: '0 8px 8px 0',
-                                  padding: '.6rem 1rem .6rem .85rem',
-                                  marginTop: '-.4rem',
-                                }}>
-                                  <span style={{ fontSize: '.78rem', fontWeight: 800, color: domain.color, flex: '1 1 auto', whiteSpace: 'nowrap' }}>
-                                    📊 สรุปค่ามาตรฐานนี้
-                                  </span>
-
-                                  {/* ภาคเรียน 1 avg */}
-                                  <div style={{ textAlign: 'center' }}>
-                                    <div style={{ fontSize: '.63rem', color: '#64748b', fontWeight: 600, marginBottom: '2px' }}>ภาคเรียน 1</div>
-                                    {t1vals.length ? (
-                                      <span style={{
-                                        background: lc1.bg, color: lc1.color,
-                                        borderRadius: '6px', padding: '2px 9px',
-                                        fontWeight: 800, fontSize: '.78rem', whiteSpace: 'nowrap',
-                                      }}>
-                                        {t1avg.toFixed(2)} · {t1avg >= 2.5 ? 'ดี' : t1avg >= 1.5 ? 'พอใช้' : 'ปรับปรุง'}
-                                      </span>
-                                    ) : <span style={{ color: '#9ca3af', fontSize: '.76rem' }}>—</span>}
-                                  </div>
-
-                                  {/* ภาคเรียน 2 avg */}
-                                  <div style={{ textAlign: 'center' }}>
-                                    <div style={{ fontSize: '.63rem', color: '#64748b', fontWeight: 600, marginBottom: '2px' }}>ภาคเรียน 2</div>
-                                    {t2vals.length ? (
-                                      <span style={{
-                                        background: lc2.bg, color: lc2.color,
-                                        borderRadius: '6px', padding: '2px 9px',
-                                        fontWeight: 800, fontSize: '.78rem', whiteSpace: 'nowrap',
-                                      }}>
-                                        {t2avg.toFixed(2)} · {t2avg >= 2.5 ? 'ดี' : t2avg >= 1.5 ? 'พอใช้' : 'ปรับปรุง'}
-                                      </span>
-                                    ) : <span style={{ color: '#9ca3af', fontSize: '.76rem' }}>—</span>}
-                                  </div>
-
-                                  {/* สรุประดับ */}
-                                  <div style={{ textAlign: 'center' }}>
-                                    <div style={{ fontSize: '.63rem', color: '#64748b', fontWeight: 600, marginBottom: '2px' }}>สรุประดับ</div>
-                                    <span style={{
-                                      background: lcs.bg, color: lcs.color,
-                                      borderRadius: '6px', padding: '2px 10px',
-                                      fontWeight: 900, fontSize: '.88rem',
-                                      border: `1.5px solid ${lcs.color}55`,
-                                      whiteSpace: 'nowrap',
-                                    }}>
-                                      {summaryLevel} {summaryLevel === 3 ? 'ดี' : summaryLevel === 2 ? 'พอใช้' : 'ปรับปรุง'}
-                                    </span>
-                                  </div>
-                                </div>
+                                <CompCard
+                                  key={comp.key}
+                                  comp={comp}
+                                  ci={ci}
+                                  domain={domain}
+                                  devAssessData={devAssessData}
+                                  student={student}
+                                  saveRec={saveRec}
+                                />
                               );
-                            })()}
+                            })}
+                            <SubDomainSummaryBox
+                              sub={sub}
+                              domainColor={domain.color}
+                              devAssessData={devAssessData}
+                            />
                           </div>
                         ));
                       })()
                     ) : (
-                      // D1-D3: flat components
+                      // flat components (D1–D3)
                       domain.components.map((comp, ci) => (
-                        <CompCard key={comp.key} comp={comp} ci={ci} />
+                        <CompCard
+                          key={comp.key}
+                          comp={comp}
+                          ci={ci}
+                          domain={domain}
+                          devAssessData={devAssessData}
+                          student={student}
+                          saveRec={saveRec}
+                        />
                       ))
                     )}
 
                     {/* ── Domain-level summary ─────────────────────────── */}
-                    {(() => {
-                      const dsKey   = `__domainSummary_${domain.id}`;
-                      const dsValue = devAssessData[dsKey] ?? '';
-                      const loading = aiDomainLoading[domain.id] ?? false;
-                      const errMsg  = aiDomainError[domain.id] ?? '';
-                      return (
-                        <div style={{
-                          marginTop: '1.25rem',
-                          background: `${domain.color}08`,
-                          border: `1.5px solid ${domain.color}35`,
-                          borderRadius: '10px',
-                          padding: '.85rem 1.1rem',
-                        }}>
-                          {(() => {
-                            const domAvg = devAssessDomainAvg(devAssessData, domain.id);
-                            const avgLabel = domAvg === 3 ? 'ดี' : domAvg === 2 ? 'พอใช้' : domAvg === 1 ? 'ปรับปรุง' : null;
-                            const lc = levelColor(domAvg);
-                            return (
-                              <div style={{
-                                display: 'flex', alignItems: 'center',
-                                gap: '.6rem', marginBottom: '.5rem', flexWrap: 'wrap',
-                              }}>
-                                <span style={{ fontWeight: 800, fontSize: '.83rem', color: domain.color }}>
-                                  📝 สรุปพัฒนาการด้าน{domain.label}
-                                </span>
-                                {aiApiKey && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleAIDomainSummary(domain)}
-                                    disabled={loading}
-                                    style={{
-                                      padding: '.2rem .65rem', borderRadius: '6px', border: 'none',
-                                      background: domain.color, color: 'white', fontFamily: 'inherit',
-                                      fontWeight: 700, fontSize: '.75rem',
-                                      cursor: loading ? 'wait' : 'pointer',
-                                      opacity: loading ? .65 : 1, flexShrink: 0,
-                                    }}
-                                  >
-                                    {loading ? '⏳ กำลังเขียน…' : '✨ AI สรุปให้'}
-                                  </button>
-                                )}
-                                {/* เฉลี่ยด้าน + badge */}
-                                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '.5rem', flexShrink: 0 }}>
-                                  {domAvg > 0 && (
-                                    <span style={{ fontSize: '.75rem', color: '#6b7280', fontWeight: 600 }}>
-                                      เฉลี่ยด้าน
-                                    </span>
-                                  )}
-                                  {domAvg > 0 ? (
-                                    <span style={{
-                                      background: lc.bg, color: lc.color,
-                                      border: `1.5px solid ${lc.color}60`,
-                                      borderRadius: '8px', padding: '3px 14px',
-                                      fontWeight: 900, fontSize: '.88rem',
-                                      minWidth: '72px', textAlign: 'center',
-                                      display: 'inline-block',
-                                    }}>
-                                      {domAvg} — {avgLabel}
-                                    </span>
-                                  ) : (
-                                    <span style={{
-                                      border: '1.5px dashed #d1d5db', borderRadius: '8px',
-                                      padding: '3px 14px', color: '#9ca3af',
-                                      fontSize: '.78rem', minWidth: '72px', textAlign: 'center',
-                                      display: 'inline-block',
-                                    }}>
-                                      ยังไม่มีข้อมูล
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })()}
-                          {errMsg && (
-                            <div style={{ fontSize: '.78rem', color: '#dc2626', marginBottom: '.3rem' }}>
-                              ❌ {errMsg}
-                            </div>
-                          )}
-                          <textarea
-                            value={dsValue}
-                            onChange={e => saveRec({ devAssessment: { ...devAssessData, [`__domainSummary_${domain.id}`]: e.target.value } })}
-                            rows={4}
-                            placeholder={`เขียนสรุปพัฒนาการด้าน${domain.label}ของนักเรียน หรือกด ✨ AI สรุปให้`}
-                            style={{
-                              width: '100%', padding: '8px 10px',
-                              border: `1px solid ${domain.color}50`,
-                              borderRadius: '8px', fontFamily: 'inherit',
-                              fontSize: '.82rem', lineHeight: 1.75,
-                              resize: 'vertical', boxSizing: 'border-box',
-                              background: 'white',
-                            }}
-                          />
-                        </div>
-                      );
-                    })()}
+                    <DomainSummaryBox
+                      domain={domain}
+                      domAvg={devAssessDomainAvg(devAssessData, domain.id)}
+                      dsValue={devAssessData[`__domainSummary_${domain.id}`] ?? ''}
+                      aiApiKey={aiApiKey}
+                      loading={aiDomainLoading[domain.id] ?? false}
+                      error={aiDomainError[domain.id] ?? ''}
+                      onAiSummary={() => handleAIDomainSummary(domain)}
+                      onSave={val => saveRec({ devAssessment: { ...devAssessData, [`__domainSummary_${domain.id}`]: val } })}
+                    />
                   </div>
                 );
               })}
@@ -2588,168 +2321,9 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                 ผลการประเมินความพร้อมด้านพัฒนาการทั้ง 4 ด้าน ตลอดปีการศึกษา
               </div>
 
-              {/* ── Compute per-domain averages (same logic as printReport domainChartData) ── */}
-              {(() => {
-                const uiData = devDomains.map(domain => {
-                  const allInds = domain.standards.flatMap(std => std.indicators);
-                  const t1 = allInds.map(i => i.indScores?.term1).filter(v => v !== null && v !== undefined);
-                  const t2 = allInds.map(i => i.indScores?.term2).filter(v => v !== null && v !== undefined);
-                  const avg1 = t1.length ? t1.reduce((a, b) => a + b, 0) / t1.length : null;
-                  const avg2 = t2.length ? t2.reduce((a, b) => a + b, 0) / t2.length : null;
-                  const avgY = avg2 !== null ? avg2 : avg1;
-                  return { label: domain.label, emoji: domain.emoji, avg1, avg2, avgY };
-                });
+              {/* ── 4-Domain summary table + bar chart ── */}
+              <DomainSummarySection devDomains={devDomains} academicYear={academicYear} />
 
-                const vals1 = uiData.map(d => d.avg1).filter(v => v !== null);
-                const vals2 = uiData.map(d => d.avg2).filter(v => v !== null);
-                const oAvg1 = vals1.length ? vals1.reduce((a, b) => a + b, 0) / vals1.length : null;
-                const oAvg2 = vals2.length ? vals2.reduce((a, b) => a + b, 0) / vals2.length : null;
-                const oAvgY = oAvg2 !== null ? oAvg2 : oAvg1;
-
-                const toLevel = (avg) => avg === null ? 0 : avg >= 2.5 ? 3 : avg >= 1.5 ? 2 : 1;
-                const fmt = (v) => v !== null ? v.toFixed(2) : '—';
-                const scoreCellStyle = (avg) => {
-                  const lc = levelColor(toLevel(avg));
-                  return {
-                    padding: '9px 14px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 700,
-                    background: avg !== null ? lc.bg : 'white',
-                    color: avg !== null ? lc.color : '#9ca3af',
-                  };
-                };
-                const BAR_H = 130; // px — total bar column height
-                const pct = (v) => v !== null ? Math.max(3, Math.round((v / 3) * BAR_H)) : 0;
-
-                const chartGroups = [
-                  ...uiData.map((d, i) => ({ ...d, shortLabel: `${i + 1}. ด้าน${d.label}`, isOverall: false })),
-                  { label: 'สรุปเฉลี่ยรวม', emoji: '⭐', avg1: oAvg1, avg2: oAvg2, avgY: oAvgY,
-                    shortLabel: 'สรุปเฉลี่ยรวมทุกด้าน', isOverall: true },
-                ];
-
-                return (
-                  <>
-                    {/* ──── Summary table ──── */}
-                    <div style={{ marginBottom: '1.5rem', overflowX: 'auto' }}>
-                      <div style={{ fontSize: '.78rem', fontWeight: 800, color: '#6d28d9', marginBottom: '.5rem' }}>
-                        📊 สรุปความสามารถผู้เรียนทั้ง ๔ ด้าน เมื่อจบชั้นปี
-                      </div>
-                      <table style={{ borderCollapse: 'collapse', fontSize: '.84rem', width: '100%', maxWidth: '620px' }}>
-                        <thead>
-                          <tr style={{ background: '#ede9fe' }}>
-                            <th style={{ padding: '9px 16px', border: '1px solid #ddd6fe', textAlign: 'left',
-                              minWidth: '190px', color: '#5b21b6', fontWeight: 800 }}>ด้านพัฒนาการ</th>
-                            <th style={{ padding: '9px 14px', border: '1px solid #ddd6fe', textAlign: 'center',
-                              width: '110px', color: '#1d4ed8', fontWeight: 800 }}>ภาคเรียนที่ ๑</th>
-                            <th style={{ padding: '9px 14px', border: '1px solid #ddd6fe', textAlign: 'center',
-                              width: '110px', color: '#b45309', fontWeight: 800 }}>ภาคเรียนที่ ๒</th>
-                            <th style={{ padding: '9px 14px', border: '1px solid #ddd6fe', textAlign: 'center',
-                              width: '120px', color: '#374151', fontWeight: 800 }}>สรุปปี {academicYear}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {uiData.map((d, i) => (
-                            <tr key={i} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
-                              <td style={{ padding: '9px 16px', border: '1px solid #e5e7eb', fontWeight: 600 }}>
-                                {d.emoji} ด้าน{d.label}
-                              </td>
-                              <td style={scoreCellStyle(d.avg1)}>{fmt(d.avg1)}</td>
-                              <td style={scoreCellStyle(d.avg2)}>{fmt(d.avg2)}</td>
-                              <td style={scoreCellStyle(d.avgY)}>{fmt(d.avgY)}</td>
-                            </tr>
-                          ))}
-                          {/* Overall summary row */}
-                          <tr style={{ background: '#f3f4f6' }}>
-                            <td style={{ padding: '9px 16px', border: '1px solid #e5e7eb', fontWeight: 800 }}>
-                              ⭐ สรุปผลการประเมินเฉลี่ยรวมทุกด้าน
-                            </td>
-                            <td style={{ ...scoreCellStyle(oAvg1), fontWeight: 800 }}>{fmt(oAvg1)}</td>
-                            <td style={{ ...scoreCellStyle(oAvg2), fontWeight: 800 }}>{fmt(oAvg2)}</td>
-                            <td style={{ ...scoreCellStyle(oAvgY), fontWeight: 800 }}>{fmt(oAvgY)}</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                      <div style={{ marginTop: '.4rem', fontSize: '.7rem', color: '#6b7280' }}>
-                        หมายเหตุ: คะแนนเฉลี่ยจากตัวชี้วัดทั้งหมดในแต่ละด้าน (คะแนนเต็ม 3) · สรุปปีใช้ผลภาคเรียนที่ 2 เป็นหลัก
-                      </div>
-                    </div>
-
-                    {/* ──── Bar chart ──── */}
-                    <div style={{
-                      border: '1.5px solid #e5e7eb', borderRadius: '12px',
-                      padding: '1rem 1rem 1.1rem', background: '#fafafa', marginBottom: '1.5rem',
-                    }}>
-                      <div style={{ fontSize: '.78rem', fontWeight: 800, color: '#374151', marginBottom: '.85rem' }}>
-                        📈 สมรรถนะผู้เรียน
-                      </div>
-
-                      {/* Legend */}
-                      <div style={{ display: 'flex', gap: '1.1rem', marginBottom: '.9rem', flexWrap: 'wrap' }}>
-                        {[
-                          { color: '#3b82f6', label: 'ภาคเรียนที่ ๑' },
-                          { color: '#f59e0b', label: 'ภาคเรียนที่ ๒' },
-                          { color: '#9ca3af', label: 'สรุปปี' },
-                        ].map(({ color, label }) => (
-                          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '.35rem', fontSize: '.74rem' }}>
-                            <div style={{ width: 12, height: 12, borderRadius: 3, background: color, flexShrink: 0 }} />
-                            <span>{label}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Chart */}
-                      <div style={{ display: 'flex', gap: '4px', alignItems: 'flex-end', borderBottom: '2px solid #9ca3af', paddingBottom: 0 }}>
-                        {/* Y-axis ticks */}
-                        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                          height: BAR_H + 'px', paddingRight: '4px', flexShrink: 0 }}>
-                          {[3, 2, 1].map(v => (
-                            <div key={v} style={{ fontSize: '.62rem', color: '#9ca3af', lineHeight: 1 }}>{v}</div>
-                          ))}
-                        </div>
-
-                        {/* Bar groups */}
-                        {chartGroups.map((g, gi) => (
-                          <div key={gi} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0 }}>
-                            {/* 3 bars side-by-side */}
-                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '2px', height: BAR_H + 'px' }}>
-                              {[
-                                { avg: g.avg1, color: '#3b82f6' },
-                                { avg: g.avg2, color: '#f59e0b' },
-                                { avg: g.avgY, color: '#9ca3af' },
-                              ].map(({ avg, color }, bi) => (
-                                <div key={bi} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                  justifyContent: 'flex-end', height: '100%' }}>
-                                  {avg !== null && (
-                                    <div style={{ fontSize: '.58rem', color: '#374151', fontWeight: 700,
-                                      marginBottom: '1px', lineHeight: 1, whiteSpace: 'nowrap' }}>
-                                      {avg.toFixed(1)}
-                                    </div>
-                                  )}
-                                  <div style={{
-                                    width: '14px',
-                                    height: avg !== null ? pct(avg) + 'px' : 0,
-                                    background: avg !== null ? color : 'transparent',
-                                    borderRadius: '2px 2px 0 0',
-                                    minHeight: avg !== null ? '2px' : 0,
-                                  }} />
-                                </div>
-                              ))}
-                            </div>
-                            {/* Group label */}
-                            <div style={{
-                              fontSize: '.6rem', textAlign: 'center', lineHeight: 1.35,
-                              color: g.isOverall ? '#5b21b6' : '#374151',
-                              fontWeight: g.isOverall ? 800 : 500,
-                              marginTop: '5px', maxWidth: '70px', wordBreak: 'keep-all',
-                              paddingBottom: '.2rem',
-                            }}>
-                              {g.shortLabel}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                );
-              })()}
 
               {/* ── เกณฑ์สรุปผลการตัดสิน ── */}
               <div style={{
@@ -2792,114 +2366,13 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
           {/* ══════════════════════════════════════════════════════════
               SECTION 6b: จุดเด่นและความสามารถผู้เรียน (ทั้ง 2 ภาคเรียน)
           ══════════════════════════════════════════════════════════ */}
-          {activeSection === 'highlights' && (() => {
-            const d4 = devDomains[3];
-            const d4StdCount = d4?.standards?.length ?? 0;
-
-            const HL_BG   = { background: '#fefce8', border: '1.5px solid #fde68a', borderRadius: '12px', padding: '1rem 1.25rem', marginBottom: '1.5rem' };
-            const TBL_S   = { width: '100%', borderCollapse: 'collapse', fontSize: '.82rem', marginTop: '.75rem' };
-            const HDR_TD  = { padding: '8px 10px', border: '1px solid #374151', background: '#f3f4f6', fontWeight: 700, textAlign: 'center', fontSize: '.8rem' };
-            const BODY_TH = { padding: '8px', border: '1px solid #d1d5db', fontWeight: 700, fontSize: '.8rem', verticalAlign: 'top', background: '#f9fafb', whiteSpace: 'pre-wrap', width: '26%' };
-            const CELL_TEACHER = { padding: '4px 6px', border: '2px solid #ef4444', verticalAlign: 'top', background: '#fff5f5' };
-            const CELL_PARENT  = { padding: '4px 6px', border: '2px solid #3b82f6', verticalAlign: 'top', background: '#eff6ff' };
-
-            const TA = ({ rowKey, termKey, role, placeholder }) => (
-              <textarea
-                value={highlights[rowKey]?.[termKey]?.[role] ?? ''}
-                onChange={e => saveHighlight(rowKey, termKey, role, e.target.value)}
-                placeholder={placeholder}
-                rows={3}
-                style={{
-                  width: '100%', border: 'none', outline: 'none', resize: 'vertical',
-                  fontFamily: 'inherit', fontSize: '.78rem', lineHeight: 1.5,
-                  background: 'transparent', color: '#374151',
-                }}
-              />
-            );
-
-            const mainDomainRows = [
-              { num: '๑', label: DOMAIN_LABELS[0], key: 'd0' },
-              { num: '๒', label: DOMAIN_LABELS[1], key: 'd1' },
-              { num: '๓', label: DOMAIN_LABELS[2], key: 'd2' },
-            ];
-
-            return (
-              <div>
-                <div style={{ fontWeight: 800, fontSize: '.9rem', color: '#111', marginBottom: '1rem' }}>
-                  ✨ จุดเด่นและความสามารถผู้เรียน — บันทึกทั้ง 2 ภาคเรียน
-                </div>
-                <p style={{ fontSize: '.78rem', color: '#6b7280', marginBottom: '1rem' }}>
-                  ข้อมูลที่บันทึกจะปรากฏในการพิมพ์รายงาน อ.01 ส่วน "จุดเด่นและความสามารถผู้เรียน"
-                </p>
-
-                {[1, 2].map(term => {
-                  const termKey = `term${term}`;
-                  const termTh  = term === 1 ? '๑' : '๒';
-                  return (
-                    <div key={term} style={HL_BG}>
-                      <div style={{ fontWeight: 800, fontSize: '.88rem', color: '#92400e', marginBottom: '.75rem' }}>
-                        📋 ภาคเรียนที่ {termTh}
-                      </div>
-                      <table style={TBL_S}>
-                        <colgroup>
-                          <col style={{ width: '26%' }} />
-                          <col style={{ width: '42%' }} />
-                          <col style={{ width: '32%' }} />
-                        </colgroup>
-                        <thead>
-                          <tr>
-                            <th style={HDR_TD}>ความสามารถผู้เรียน</th>
-                            <th style={HDR_TD}>ความคิดเห็นครูประจำชั้น (จุดเด่น)</th>
-                            <th style={HDR_TD}>ความคิดเห็นผู้ปกครอง</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {/* domains 1–3 */}
-                          {mainDomainRows.map(r => (
-                            <tr key={r.key}>
-                              <td style={BODY_TH}>{r.num}. {r.label}</td>
-                              <td style={CELL_TEACHER}>
-                                <TA rowKey={r.key} termKey={termKey} role="teacher" placeholder="จุดเด่น..." />
-                              </td>
-                              <td style={CELL_PARENT}>
-                                <TA rowKey={r.key} termKey={termKey} role="parent" placeholder="ความเห็นผู้ปกครอง..." />
-                              </td>
-                            </tr>
-                          ))}
-
-                          {/* domain 4 header row */}
-                          <tr>
-                            <td colSpan={3} style={{ padding: '6px 8px', border: '1px solid #d1d5db', fontWeight: 800, fontSize: '.8rem', background: '#f3f4f6' }}>
-                              ๔. {DOMAIN_LABELS[3]}
-                            </td>
-                          </tr>
-
-                          {/* domain 4 sub-items */}
-                          {Array.from({ length: d4StdCount }).map((_, si) => {
-                            const subNums = ['๔.๑','๔.๒','๔.๓','๔.๔','๔.๕'];
-                            const hKey    = `d3s${si}`;
-                            return (
-                              <tr key={hKey}>
-                                <td style={{ ...BODY_TH, paddingLeft: '20px', fontWeight: 600, fontSize: '.78rem' }}>
-                                  {subNums[si] ?? `๔.${si+1}`} {D4_STD_LABELS[si] ?? ''}
-                                </td>
-                                <td style={CELL_TEACHER}>
-                                  <TA rowKey={hKey} termKey={termKey} role="teacher" placeholder="จุดเด่น..." />
-                                </td>
-                                <td style={CELL_PARENT}>
-                                  <TA rowKey={hKey} termKey={termKey} role="parent" placeholder="ความเห็นผู้ปกครอง..." />
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
+          {activeSection === 'highlights' && (
+            <HighlightsSection
+              devDomains={devDomains}
+              highlights={highlights}
+              saveHighlight={saveHighlight}
+            />
+          )}
 
           {/* ══════════════════════════════════════════════════════════
               SECTION 7: Comments (Teacher / Parent / Director)

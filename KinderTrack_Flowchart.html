@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KinderTrack — โฟลว์ชาร์ตกระบวนการทำงาน</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Noto Sans Thai', sans-serif; background: #f8fafc; color: #1e293b; }
+
+  /* ── Header ── */
+  .header { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; padding: 2rem; text-align: center; }
+  .header h1 { font-size: 1.8rem; font-weight: 800; }
+  .header p  { font-size: .95rem; opacity: .85; margin-top: .4rem; }
+  .version   { display: inline-block; background: rgba(255,255,255,.2); border-radius: 999px; padding: .2rem .8rem; font-size: .75rem; margin-top: .6rem; }
+
+  /* ── Tab nav ── */
+  .tab-nav { display: flex; gap: .5rem; padding: 1.5rem 2rem .5rem; flex-wrap: wrap; }
+  .tab-btn { padding: .55rem 1.3rem; border-radius: 999px; border: 2px solid #e2e8f0; background: white;
+             font-size: .88rem; font-weight: 700; cursor: pointer; transition: all .15s; color: #475569; }
+  .tab-btn:hover  { border-color: #6366f1; color: #4f46e5; }
+  .tab-btn.active { background: #4f46e5; border-color: #4f46e5; color: white; }
+
+  /* ── Content ── */
+  .tab-content { display: none; padding: 1rem 2rem 3rem; }
+  .tab-content.active { display: block; }
+  .section-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 1.2rem; padding-bottom: .5rem; border-bottom: 3px solid currentColor; }
+
+  /* ── Flow diagram ── */
+  .flow-wrap { overflow-x: auto; padding-bottom: 1rem; }
+  .flow { display: flex; align-items: flex-start; gap: 0; min-width: max-content; }
+  .flow-col { display: flex; flex-direction: column; align-items: center; }
+  .flow-step {
+    background: white; border-radius: 12px; padding: .75rem 1.1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,.1); border: 2px solid #e2e8f0;
+    font-size: .82rem; font-weight: 700; text-align: center; min-width: 140px; max-width: 160px;
+    position: relative; cursor: pointer; transition: all .15s;
+  }
+  .flow-step:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.15); }
+  .flow-step .icon { font-size: 1.5rem; display: block; margin-bottom: .3rem; }
+  .flow-step .sub  { font-size: .7rem; font-weight: 500; color: #64748b; margin-top: .25rem; }
+  .flow-arrow { display: flex; align-items: center; padding: 0 .3rem; color: #94a3b8; font-size: 1.5rem; font-weight: 900; align-self: center; }
+  .flow-arrow-down { color: #94a3b8; font-size: 1.5rem; text-align: center; margin: .25rem 0; }
+
+  /* Role colors */
+  .role-admin   { border-color: #6366f1; background: #eef2ff; }
+  .role-teacher { border-color: #0891b2; background: #ecfeff; }
+  .role-parent  { border-color: #16a34a; background: #f0fdf4; }
+  .role-system  { border-color: #d97706; background: #fffbeb; }
+  .role-start   { border-color: #7c3aed; background: #f5f3ff; }
+
+  /* ── Feature grid ── */
+  .feature-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .feature-card { background: white; border-radius: 12px; padding: 1rem 1.1rem; border: 2px solid #e2e8f0; }
+  .feature-card h3 { font-size: .85rem; font-weight: 800; margin-bottom: .5rem; }
+  .feature-card ul { list-style: none; }
+  .feature-card ul li { font-size: .78rem; color: #475569; padding: .2rem 0; border-bottom: 1px solid #f1f5f9; }
+  .feature-card ul li:last-child { border: none; }
+  .badge { display: inline-block; border-radius: 6px; padding: .15rem .55rem; font-size: .68rem; font-weight: 700; margin-bottom: .5rem; }
+
+  /* ── Daily flow ── */
+  .day-flow { display: grid; grid-template-columns: 100px 1fr; gap: .5rem; align-items: start; margin-bottom: .5rem; }
+  .time-label { font-size: .75rem; font-weight: 800; color: #64748b; text-align: right; padding-top: .4rem; }
+  .day-cards  { display: flex; gap: .5rem; flex-wrap: wrap; }
+  .day-card   { background: white; border-radius: 8px; padding: .4rem .8rem; border: 2px solid #e2e8f0; font-size: .78rem; font-weight: 600; }
+
+  /* ── Data flow ── */
+  .data-box { background: white; border-radius: 12px; padding: 1rem 1.2rem; border: 2px solid #e2e8f0; margin-bottom: .75rem; }
+  .data-box h3 { font-size: .88rem; font-weight: 800; margin-bottom: .5rem; }
+  .data-box p  { font-size: .78rem; color: #475569; line-height: 1.6; }
+  .arrow-right { text-align: center; font-size: 1.2rem; color: #94a3b8; padding: .25rem 0; }
+
+  /* ── Legend ── */
+  .legend { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .legend-item { display: flex; align-items: center; gap: .4rem; font-size: .78rem; font-weight: 600; }
+  .legend-dot  { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
+
+  /* ── Tooltip ── */
+  .tooltip { position: relative; }
+  .tooltip .tip { display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    background: #1e293b; color: white; border-radius: 8px; padding: .5rem .8rem; font-size: .72rem; white-space: nowrap;
+    z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,.2); }
+  .tooltip:hover .tip { display: block; }
+
+  /* role tag */
+  .rtag { font-size: .65rem; border-radius: 999px; padding: .1rem .5rem; font-weight: 700; display: inline-block; margin-bottom: .3rem; }
+
+  @media (max-width: 640px) {
+    .tab-nav { padding: 1rem; }
+    .tab-content { padding: .75rem 1rem 3rem; }
+    .flow-step { min-width: 120px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📚 ระบบบันทึกพัฒนาการเด็กปฐมวัย</h1>
+  <p>KinderTrack — โฟลว์ชาร์ตกระบวนการทำงานและคู่มือภาพรวมระบบ</p>
+  <span class="version">v0.168.0 · สร้างเมื่อ สิงหาคม 2026</span>
+</div>
+
+<!-- Tab Nav -->
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('overview')">🏠 ภาพรวมระบบ</button>
+  <button class="tab-btn" onclick="showTab('login-flow')">🔑 การล็อกอิน</button>
+  <button class="tab-btn" onclick="showTab('daily-flow')">📅 กระบวนการประจำวัน</button>
+  <button class="tab-btn" onclick="showTab('assess-flow')">📊 การประเมินพัฒนาการ</button>
+  <button class="tab-btn" onclick="showTab('report-flow')">📑 การออกรายงาน</button>
+  <button class="tab-btn" onclick="showTab('admin-flow')">🛡️ การตั้งค่าระบบ</button>
+  <button class="tab-btn" onclick="showTab('features')">🗂️ ฟีเจอร์ทั้งหมด</button>
+</div>
+
+<!-- ═══ TAB 1: ภาพรวมระบบ ═══ -->
+<div id="tab-overview" class="tab-content active">
+  <div class="section-title" style="color:#4f46e5">🏠 ภาพรวมระบบ KinderTrack</div>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#6366f1"></div> ผู้ดูแลระบบ (Admin)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#0891b2"></div> คุณครู (Teacher)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div> ผู้ปกครอง (Parent)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#d97706"></div> ระบบ (System/Firebase)</div>
+  </div>
+
+  <div class="flow-wrap">
+    <div class="flow">
+
+      <!-- START -->
+      <div class="flow-col">
+        <div class="flow-step role-start tooltip">
+          <span class="icon">🌐</span>
+          เปิดเว็บ KinderTrack
+          <span class="sub">เข้าสู่ระบบ</span>
+          <div class="tip">เปิดผ่าน Browser บน PC / Tablet / มือถือ</div>
+        </div>
+      </div>
+
+      <div class="flow-arrow">›</div>
+
+      <!-- LOGIN -->
+      <div class="flow-col">
+        <div class="flow-step role-start tooltip">
+          <span class="icon">🔑</span>
+          หน้าล็อกอิน
+          <span class="sub">เลือก Role</span>
+          <div class="tip">Admin ใช้ Username+Password · ครูใช้ PIN · ผู้ปกครองใช้ PIN</div>
+        </div>
+      </div>
+
+      <div class="flow-arrow">›</div>
+
+      <!-- 3 ROLES -->
+      <div class="flow-col" style="gap:.5rem">
+        <div class="flow-step role-admin tooltip" style="margin-bottom:.5rem">
+          <span class="rtag" style="background:#eef2ff;color:#4f46e5">🛡️ Admin</span>
+          <span class="icon">👨‍💼</span>
+          แดชบอร์ดผู้ดูแล
+          <span class="sub">เข้าถึงทุกเมนู</span>
+          <div class="tip">ตั้งค่าระบบ, จัดการนักเรียน, ครู, รายงาน</div>
+        </div>
+        <div class="flow-step role-teacher tooltip">
+          <span class="rtag" style="background:#ecfeff;color:#0891b2">👩‍🏫 ครู</span>
+          <span class="icon">🍎</span>
+          แดชบอร์ดครู
+          <span class="sub">บันทึกประจำวัน</span>
+          <div class="tip">บันทึกการมาเรียน, สุขภาพ, กิจกรรม, ประเมินพัฒนาการ</div>
+        </div>
+        <div class="flow-step role-parent tooltip" style="margin-top:.5rem">
+          <span class="rtag" style="background:#f0fdf4;color:#16a34a">👨‍👩‍👧 ผู้ปกครอง</span>
+          <span class="icon">📱</span>
+          หน้าผู้ปกครอง
+          <span class="sub">ดูข้อมูลบุตร</span>
+          <div class="tip">ดูพัฒนาการ, AI สรุป, ความเห็นผู้ปกครอง</div>
+        </div>
+      </div>
+
+      <div class="flow-arrow">›</div>
+
+      <!-- FIREBASE -->
+      <div class="flow-col">
+        <div class="flow-step role-system tooltip">
+          <span class="icon">☁️</span>
+          Firebase<br>Firestore
+          <span class="sub">Cloud Database</span>
+          <div class="tip">บันทึกข้อมูลอัตโนมัติ (Auto-sync) ทุกครั้งที่มีการเปลี่ยนแปลง</div>
+        </div>
+      </div>
+
+      <div class="flow-arrow">›</div>
+
+      <!-- OUTPUTS -->
+      <div class="flow-col" style="gap:.5rem">
+        <div class="flow-step role-system tooltip">
+          <span class="icon">📑</span>
+          รายงาน อ.01
+          <span class="sub">สมุดรายงานพัฒนาการ</span>
+          <div class="tip">พิมพ์ PDF สมุดรายงาน อ.01 รายนักเรียน</div>
+        </div>
+        <div class="flow-step role-system tooltip">
+          <span class="icon">📊</span>
+          รายงานสรุป
+          <span class="sub">ผลรวมทั้งห้อง</span>
+          <div class="tip">สรุปผลการประเมินพัฒนาการทั้งห้องเรียน</div>
+        </div>
+        <div class="flow-step role-system tooltip" style="margin-top:.5rem">
+          <span class="icon">🤖</span>
+          AI วิเคราะห์
+          <span class="sub">Claude API</span>
+          <div class="tip">สรุปพัฒนาการและข้อเสนอแนะด้วย AI</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 3 roles summary -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-top:2rem">
+
+    <div style="background:#eef2ff;border:2px solid #6366f1;border-radius:12px;padding:1rem">
+      <div style="font-weight:800;color:#4f46e5;margin-bottom:.5rem">🛡️ ผู้ดูแลระบบ (Admin)</div>
+      <div style="font-size:.8rem;color:#475569;line-height:1.7">
+        • ตั้งค่าโรงเรียน ภาคเรียน วันหยุด<br>
+        • จัดการนักเรียน ครู ห้องเรียน<br>
+        • กำหนดตัวบ่งชี้ มาตรฐานปฐมวัย<br>
+        • ดูรายงานสรุปทั้งระบบ<br>
+        • เชื่อม Firebase / ตั้ง AI API Key<br>
+        • ดูบันทึกการใช้งานระบบ (System Log)
+      </div>
+    </div>
+
+    <div style="background:#ecfeff;border:2px solid #0891b2;border-radius:12px;padding:1rem">
+      <div style="font-weight:800;color:#0891b2;margin-bottom:.5rem">👩‍🏫 คุณครู (Teacher)</div>
+      <div style="font-size:.8rem;color:#475569;line-height:1.7">
+        • บันทึกการมาเรียน เช็คชื่อประจำวัน<br>
+        • ตรวจสุขภาพ / คัดกรองอาการป่วย<br>
+        • บันทึกกิจกรรม มุมเรียนรู้<br>
+        • ประเมินพัฒนาการ 4 ด้าน<br>
+        • ออกรายงาน อ.01 รายนักเรียน<br>
+        • ดูข้อมูลผู้ปกครอง (PIN)
+      </div>
+    </div>
+
+    <div style="background:#f0fdf4;border:2px solid #16a34a;border-radius:12px;padding:1rem">
+      <div style="font-weight:800;color:#16a34a;margin-bottom:.5rem">👨‍👩‍👧 ผู้ปกครอง (Parent)</div>
+      <div style="font-size:.8rem;color:#475569;line-height:1.7">
+        • ดูพัฒนาการบุตรแบบ real-time<br>
+        • รับ AI สรุปพัฒนาการรายด้าน<br>
+        • บันทึกความเห็นผู้ปกครอง<br>
+        • ดูประกาศจากโรงเรียน<br>
+        • ดูข้อมูลครูประจำชั้น
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ TAB 2: การล็อกอิน ═══ -->
+<div id="tab-login-flow" class="tab-content">
+  <div class="section-title" style="color:#7c3aed">🔑 กระบวนการล็อกอิน</div>
+
+  <div class="flow-wrap">
+    <div style="max-width:700px">
+
+      <div class="data-box">
+        <h3>1. เปิดเว็บไซต์ KinderTrack</h3>
+        <p>เปิด Browser (Chrome / Safari / Edge) แล้วเข้าสู่ URL ของระบบ เช่น <strong>https://kinder-track.web.app</strong></p>
+      </div>
+      <div class="arrow-right">▼</div>
+
+      <div class="data-box" style="border-color:#7c3aed;background:#f5f3ff">
+        <h3>2. หน้าล็อกอิน — เลือกประเภทผู้ใช้</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-top:.75rem">
+          <div style="background:#eef2ff;border:2px solid #6366f1;border-radius:10px;padding:.75rem;text-align:center;font-size:.8rem">
+            <div style="font-size:1.4rem">🛡️</div>
+            <div style="font-weight:800;color:#4f46e5">ผู้ดูแลระบบ</div>
+            <div style="color:#475569;font-size:.72rem;margin-top:.3rem">Username + Password</div>
+          </div>
+          <div style="background:#ecfeff;border:2px solid #0891b2;border-radius:10px;padding:.75rem;text-align:center;font-size:.8rem">
+            <div style="font-size:1.4rem">👩‍🏫</div>
+            <div style="font-weight:800;color:#0891b2">ครูประจำชั้น</div>
+            <div style="color:#475569;font-size:.72rem;margin-top:.3rem">รหัส PIN 6 หลัก</div>
+          </div>
+          <div style="background:#f0fdf4;border:2px solid #16a34a;border-radius:10px;padding:.75rem;text-align:center;font-size:.8rem">
+            <div style="font-size:1.4rem">👨‍👩‍👧</div>
+            <div style="font-weight:800;color:#16a34a">ผู้ปกครอง</div>
+            <div style="color:#475569;font-size:.72rem;margin-top:.3rem">รหัส PIN ของบุตร</div>
+          </div>
+        </div>
+      </div>
+      <div class="arrow-right">▼</div>
+
+      <div class="data-box">
+        <h3>3. ตรวจสอบสิทธิ์</h3>
+        <p>ระบบตรวจสอบข้อมูลจาก Firebase Firestore (ถ้าตั้งค่า) หรือจาก localStorage (ออฟไลน์) แล้วกำหนด Role ให้ผู้ใช้</p>
+      </div>
+      <div class="arrow-right">▼</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem">
+        <div class="data-box" style="border-color:#6366f1">
+          <h3 style="color:#4f46e5">→ Admin Dashboard</h3>
+          <p>เข้าสู่แดชบอร์ดผู้ดูแลระบบ มีทุกเมนู</p>
+        </div>
+        <div class="data-box" style="border-color:#0891b2">
+          <h3 style="color:#0891b2">→ Teacher Dashboard</h3>
+          <p>เข้าสู่แดชบอร์ดครู เห็นเฉพาะห้องของตน</p>
+        </div>
+        <div class="data-box" style="border-color:#16a34a">
+          <h3 style="color:#16a34a">→ หน้าผู้ปกครอง</h3>
+          <p>ดูข้อมูลเฉพาะบุตรที่ตนดูแล</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB 3: กระบวนการประจำวัน ═══ -->
+<div id="tab-daily-flow" class="tab-content">
+  <div class="section-title" style="color:#0891b2">📅 กระบวนการประจำวัน (คุณครู)</div>
+
+  <p style="font-size:.85rem;color:#475569;margin-bottom:1.5rem">ลำดับการบันทึกข้อมูลของครูประจำชั้นในแต่ละวันทำการ</p>
+
+  <div style="max-width:700px">
+    <div class="day-flow">
+      <div class="time-label">07:30 – 08:00</div>
+      <div class="day-cards">
+        <div class="day-card" style="border-color:#0891b2;background:#ecfeff">✅ เช็คชื่อนักเรียน</div>
+        <div class="day-card" style="border-color:#0891b2;background:#ecfeff">🏥 ตรวจสุขภาพ</div>
+        <div class="day-card" style="border-color:#e11d48;background:#fff1f2">🤒 คัดกรองอาการป่วย</div>
+      </div>
+    </div>
+    <div style="border-left:2px dashed #cbd5e1;margin-left:100px;height:16px"></div>
+
+    <div class="day-flow">
+      <div class="time-label">08:00 – 09:00</div>
+      <div class="day-cards">
+        <div class="day-card" style="border-color:#f59e0b;background:#fffbeb">🥛 บันทึกการดื่มนม</div>
+        <div class="day-card" style="border-color:#6366f1;background:#eef2ff">🗓️ กิจกรรมประจำวัน</div>
+      </div>
+    </div>
+    <div style="border-left:2px dashed #cbd5e1;margin-left:100px;height:16px"></div>
+
+    <div class="day-flow">
+      <div class="time-label">ระหว่างวัน</div>
+      <div class="day-cards">
+        <div class="day-card" style="border-color:#16a34a;background:#f0fdf4">🏡 มุมประสบการณ์<br><span style="font-size:.7rem;color:#64748b">(ทุกสัปดาห์)</span></div>
+        <div class="day-card" style="border-color:#16a34a;background:#f0fdf4">🌿 แหล่งเรียนรู้นอกห้อง<br><span style="font-size:.7rem;color:#64748b">(ทุกสัปดาห์)</span></div>
+      </div>
+    </div>
+    <div style="border-left:2px dashed #cbd5e1;margin-left:100px;height:16px"></div>
+
+    <div class="day-flow">
+      <div class="time-label">11:00 – 12:00</div>
+      <div class="day-cards">
+        <div class="day-card" style="border-color:#f59e0b;background:#fffbeb">🍱 บันทึกอาหารกลางวัน</div>
+        <div class="day-card" style="border-color:#0891b2;background:#ecfeff">🪥 บันทึกการแปรงฟัน</div>
+      </div>
+    </div>
+    <div style="border-left:2px dashed #cbd5e1;margin-left:100px;height:16px"></div>
+
+    <div class="day-flow">
+      <div class="time-label">15:00 – 16:00</div>
+      <div class="day-cards">
+        <div class="day-card" style="border-color:#7c3aed;background:#f5f3ff">🚗 บันทึกการรับกลับบ้าน</div>
+      </div>
+    </div>
+    <div style="border-left:2px dashed #cbd5e1;margin-left:100px;height:16px"></div>
+
+    <div class="day-flow">
+      <div class="time-label">ตามโอกาส</div>
+      <div class="day-cards">
+        <div class="day-card" style="border-color:#d97706;background:#fffbeb">⚖️ ภาวะโภชนาการ<br><span style="font-size:.7rem;color:#64748b">(วัดน้ำหนัก/ส่วนสูง)</span></div>
+        <div class="day-card" style="border-color:#d97706;background:#fffbeb">🎉 กิจกรรมวันสำคัญ<br><span style="font-size:.7rem;color:#64748b">(ตามปฏิทิน)</span></div>
+      </div>
+    </div>
+    <div style="border-left:2px dashed #cbd5e1;margin-left:100px;height:16px"></div>
+
+    <div class="day-flow">
+      <div class="time-label" style="color:#16a34a">Auto-Save</div>
+      <div class="day-cards">
+        <div class="day-card" style="border-color:#16a34a;background:#f0fdf4;font-weight:700">☁️ บันทึกลง Firebase อัตโนมัติ<br><span style="font-size:.7rem;color:#64748b">ทุกครั้งที่มีการเปลี่ยนแปลง</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB 4: การประเมินพัฒนาการ ═══ -->
+<div id="tab-assess-flow" class="tab-content">
+  <div class="section-title" style="color:#7c3aed">📊 กระบวนการประเมินพัฒนาการ 4 ด้าน</div>
+
+  <div class="flow-wrap">
+    <div style="max-width:760px">
+
+      <div class="data-box" style="border-color:#7c3aed;background:#f5f3ff">
+        <h3>4 ด้านพัฒนาการ (ตามมาตรฐานปฐมวัย)</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.75rem">
+          <div style="background:white;border:2px solid #3b82f6;border-radius:10px;padding:.75rem;font-size:.82rem">
+            <div style="font-weight:800;color:#1d4ed8">💪 ด้านที่ 1 — ร่างกาย</div>
+            <div style="color:#475569;margin-top:.3rem">สุขภาวะทางกาย การเจริญเติบโต น้ำหนัก ส่วนสูง</div>
+          </div>
+          <div style="background:white;border:2px solid #f59e0b;border-radius:10px;padding:.75rem;font-size:.82rem">
+            <div style="font-weight:800;color:#b45309">💛 ด้านที่ 2 — อารมณ์-สังคม</div>
+            <div style="color:#475569;margin-top:.3rem">อารมณ์ จิตใจ ความสัมพันธ์กับผู้อื่น</div>
+          </div>
+          <div style="background:white;border:2px solid #10b981;border-radius:10px;padding:.75rem;font-size:.82rem">
+            <div style="font-weight:800;color:#065f46">🌏 ด้านที่ 3 — ความเป็นไทย</div>
+            <div style="color:#475569;margin-top:.3rem">ความเป็นพลเมือง วัฒนธรรม ค่านิยม</div>
+          </div>
+          <div style="background:white;border:2px solid #8b5cf6;border-radius:10px;padding:.75rem;font-size:.82rem">
+            <div style="font-weight:800;color:#6d28d9">🧠 ด้านที่ 4 — สติปัญญา</div>
+            <div style="color:#475569;margin-top:.3rem">ภาษา ความคิด การแก้ปัญหา จินตนาการ</div>
+          </div>
+        </div>
+      </div>
+      <div class="arrow-right">▼</div>
+
+      <div class="data-box">
+        <h3>ขั้นที่ 1 — เลือกนักเรียนที่จะประเมิน</h3>
+        <p>ครูเลือกนักเรียนจากรายชื่อในห้องเรียน แล้วกดปุ่ม "ประเมินพัฒนาการ" เพื่อเข้าสู่ Wizard การประเมิน</p>
+      </div>
+      <div class="arrow-right">▼</div>
+
+      <div class="data-box">
+        <h3>ขั้นที่ 2 — ให้คะแนนรายตัวบ่งชี้</h3>
+        <p>คะแนนแต่ละตัวบ่งชี้มี <strong>4 รอบ</strong> (r1–r2 ภาคเรียน 1, r3–r4 ภาคเรียน 2) ระดับคะแนน 1–3 โดย:</p>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.5rem">
+          <span style="background:#d1fae5;color:#065f46;border-radius:6px;padding:.2rem .8rem;font-weight:700;font-size:.8rem">3 — ดี</span>
+          <span style="background:#fef3c7;color:#92400e;border-radius:6px;padding:.2rem .8rem;font-weight:700;font-size:.8rem">2 — พอใช้</span>
+          <span style="background:#fee2e2;color:#991b1b;border-radius:6px;padding:.2rem .8rem;font-weight:700;font-size:.8rem">1 — ปรับปรุง</span>
+        </div>
+      </div>
+      <div class="arrow-right">▼</div>
+
+      <div class="data-box">
+        <h3>ขั้นที่ 3 — บันทึกสรุปรายด้าน + AI สรุปให้</h3>
+        <p>ครูบันทึกสรุปพัฒนาการด้วยตัวเอง หรือกด <strong>✨ AI สรุปให้</strong> ให้ Claude เขียนสรุปอัตโนมัติจากคะแนนที่ให้</p>
+      </div>
+      <div class="arrow-right">▼</div>
+
+      <div class="data-box">
+        <h3>ขั้นที่ 4 — สรุปผลการประเมินทั้ง 4 ด้าน</h3>
+        <p>ระบบแสดง Dashboard สรุปผลทั้งปีการศึกษา พร้อม bar chart เปรียบเทียบภาคเรียน 1 และ 2</p>
+      </div>
+      <div class="arrow-right">▼</div>
+
+      <div class="data-box" style="border-color:#16a34a;background:#f0fdf4">
+        <h3>ขั้นที่ 5 — บันทึกจุดเด่นและความสามารถ</h3>
+        <p>กรอก "จุดเด่นและความสามารถผู้เรียน" แยกตามด้านและภาคเรียน สำหรับใส่ในสมุดรายงาน อ.01</p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB 5: การออกรายงาน ═══ -->
+<div id="tab-report-flow" class="tab-content">
+  <div class="section-title" style="color:#16a34a">📑 กระบวนการออกรายงาน อ.01</div>
+
+  <div style="max-width:700px">
+
+    <div class="data-box">
+      <h3>สมุดรายงาน อ.01 คืออะไร?</h3>
+      <p>เป็นแบบรายงานผลการพัฒนาคุณภาพผู้เรียน สำหรับเด็กปฐมวัย (อนุบาล) ตามมาตรฐานสำนักงานคณะกรรมการการศึกษาขั้นพื้นฐาน (สพฐ.) ประกอบด้วยข้อมูลข้อมูลส่วนตัว น้ำหนัก/ส่วนสูง ผลพัฒนาการ 4 ด้าน และจุดเด่น</p>
+    </div>
+    <div class="arrow-right">▼</div>
+
+    <div class="data-box" style="border-color:#4f46e5">
+      <h3>ขั้นตอนออกรายงาน</h3>
+      <div style="counter-reset:step">
+        <div style="display:flex;gap:.75rem;align-items:flex-start;margin-bottom:.6rem">
+          <div style="background:#4f46e5;color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0">1</div>
+          <div style="font-size:.82rem"><strong>เลือกนักเรียน</strong> → คลิก "📒 สมุดรายงาน อ.01" ในแดชบอร์ด</div>
+        </div>
+        <div style="display:flex;gap:.75rem;align-items:flex-start;margin-bottom:.6rem">
+          <div style="background:#4f46e5;color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0">2</div>
+          <div style="font-size:.82rem"><strong>ตรวจสอบข้อมูล</strong> — ข้อมูลส่วนตัว, รูปถ่าย, วันเดือนปีเกิด, น้ำหนัก/ส่วนสูง</div>
+        </div>
+        <div style="display:flex;gap:.75rem;align-items:flex-start;margin-bottom:.6rem">
+          <div style="background:#4f46e5;color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0">3</div>
+          <div style="font-size:.82rem"><strong>ตรวจสอบผลประเมิน</strong> — คะแนนทั้ง 4 ด้าน ภาคเรียน 1 และ 2</div>
+        </div>
+        <div style="display:flex;gap:.75rem;align-items:flex-start;margin-bottom:.6rem">
+          <div style="background:#4f46e5;color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0">4</div>
+          <div style="font-size:.82rem"><strong>บันทึก/แก้ไขจุดเด่น</strong> — กรอกความเห็นครูและผู้ปกครอง</div>
+        </div>
+        <div style="display:flex;gap:.75rem;align-items:flex-start">
+          <div style="background:#16a34a;color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0">5</div>
+          <div style="font-size:.82rem"><strong>กด "🖨️ พิมพ์รายงาน"</strong> → เลือก Print to PDF หรือพิมพ์กระดาษ A4</div>
+        </div>
+      </div>
+    </div>
+    <div class="arrow-right">▼</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+      <div class="data-box" style="border-color:#0891b2">
+        <h3 style="color:#0891b2">📈 รายงานสรุปผล (Excel)</h3>
+        <p style="font-size:.78rem">Export ผลการประเมินทั้งห้องเป็น Excel พร้อมกราฟ และสถิติรายด้าน</p>
+      </div>
+      <div class="data-box" style="border-color:#7c3aed">
+        <h3 style="color:#7c3aed">🏛 มาตรฐานแห่งชาติ</h3>
+        <p style="font-size:.78rem">เปรียบเทียบผลกับมาตรฐานการพัฒนาเด็กปฐมวัยแห่งชาติ</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB 6: การตั้งค่า Admin ═══ -->
+<div id="tab-admin-flow" class="tab-content">
+  <div class="section-title" style="color:#6366f1">🛡️ กระบวนการตั้งค่าระบบ (Admin)</div>
+
+  <p style="font-size:.85rem;color:#475569;margin-bottom:1.2rem">ลำดับการตั้งค่าเมื่อเริ่มใช้งานระบบใหม่ หรือเปิดปีการศึกษาใหม่</p>
+
+  <div style="max-width:700px">
+
+    <div style="display:flex;gap:.75rem;flex-direction:column">
+
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <div style="background:#6366f1;color:white;border-radius:10px;padding:.5rem .8rem;font-weight:800;font-size:.8rem;flex-shrink:0;text-align:center;min-width:60px">ขั้น<br>1</div>
+        <div class="data-box" style="flex:1;margin-bottom:0;border-color:#6366f1">
+          <h3>🏛️ ตั้งค่าโรงเรียน</h3>
+          <p>กรอกชื่อโรงเรียน อัปโหลดโลโก้ กรอกที่อยู่ ชื่อผู้อำนวยการ เบอร์โทร</p>
+        </div>
+      </div>
+
+      <div style="border-left:2px dashed #cbd5e1;margin-left:44px;height:12px"></div>
+
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <div style="background:#6366f1;color:white;border-radius:10px;padding:.5rem .8rem;font-weight:800;font-size:.8rem;flex-shrink:0;text-align:center;min-width:60px">ขั้น<br>2</div>
+        <div class="data-box" style="flex:1;margin-bottom:0;border-color:#6366f1">
+          <h3>📅 ตั้งค่าภาคเรียนและวันหยุด</h3>
+          <p>กำหนดวันเริ่ม-สิ้นสุดภาคเรียน 1 และ 2 รวมถึงวันหยุดราชการตลอดปี</p>
+        </div>
+      </div>
+
+      <div style="border-left:2px dashed #cbd5e1;margin-left:44px;height:12px"></div>
+
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <div style="background:#6366f1;color:white;border-radius:10px;padding:.5rem .8rem;font-weight:800;font-size:.8rem;flex-shrink:0;text-align:center;min-width:60px">ขั้น<br>3</div>
+        <div class="data-box" style="flex:1;margin-bottom:0;border-color:#6366f1">
+          <h3>🏫 สร้างห้องเรียนและเพิ่มครู</h3>
+          <p>สร้างห้องเรียน (เช่น อ.1/1, อ.2/1) → เพิ่มครูประจำชั้นพร้อม PIN 6 หลัก</p>
+        </div>
+      </div>
+
+      <div style="border-left:2px dashed #cbd5e1;margin-left:44px;height:12px"></div>
+
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <div style="background:#6366f1;color:white;border-radius:10px;padding:.5rem .8rem;font-weight:800;font-size:.8rem;flex-shrink:0;text-align:center;min-width:60px">ขั้น<br>4</div>
+        <div class="data-box" style="flex:1;margin-bottom:0;border-color:#6366f1">
+          <h3>👶 เพิ่มนักเรียน</h3>
+          <p>เพิ่มนักเรียนรายคน หรือ import จาก Excel → จัดนักเรียนเข้าห้องเรียน → กำหนด PIN ผู้ปกครอง</p>
+        </div>
+      </div>
+
+      <div style="border-left:2px dashed #cbd5e1;margin-left:44px;height:12px"></div>
+
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <div style="background:#6366f1;color:white;border-radius:10px;padding:.5rem .8rem;font-weight:800;font-size:.8rem;flex-shrink:0;text-align:center;min-width:60px">ขั้น<br>5</div>
+        <div class="data-box" style="flex:1;margin-bottom:0;border-color:#6366f1">
+          <h3>🔬 กำหนดมาตรฐานและตัวบ่งชี้</h3>
+          <p>ตั้งค่ามาตรฐานปฐมวัย กิจกรรม และตัวบ่งชี้รายด้านที่ใช้ในการประเมิน</p>
+        </div>
+      </div>
+
+      <div style="border-left:2px dashed #cbd5e1;margin-left:44px;height:12px"></div>
+
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <div style="background:#16a34a;color:white;border-radius:10px;padding:.5rem .8rem;font-weight:800;font-size:.8rem;flex-shrink:0;text-align:center;min-width:60px">ขั้น<br>6</div>
+        <div class="data-box" style="flex:1;margin-bottom:0;border-color:#16a34a">
+          <h3>☁️ เชื่อมต่อ Firebase (แนะนำ)</h3>
+          <p>ไปที่ ⚙️ ตั้งค่า → Firebase Config → วาง config จาก Firebase Console ระบบจะ sync ข้อมูลขึ้น Cloud อัตโนมัติ</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TAB 7: ฟีเจอร์ทั้งหมด ═══ -->
+<div id="tab-features" class="tab-content">
+  <div class="section-title" style="color:#374151">🗂️ ฟีเจอร์ทั้งหมดในระบบ</div>
+
+  <div class="feature-grid">
+
+    <div class="feature-card" style="border-color:#6366f1">
+      <span class="badge" style="background:#eef2ff;color:#4f46e5">🛡️ Admin + 👩‍🏫 ครู</span>
+      <h3>📊 ภาพรวม</h3>
+      <ul>
+        <li>🏠 Dashboard ภาพรวมวันนี้</li>
+        <li>📢 ระบบประกาศ</li>
+        <li>🤖 AI ผู้ช่วย (Claude)</li>
+      </ul>
+    </div>
+
+    <div class="feature-card" style="border-color:#0891b2">
+      <span class="badge" style="background:#ecfeff;color:#0891b2">📅 บันทึกประจำวัน</span>
+      <h3>✅ การมาเรียน</h3>
+      <ul>
+        <li>✅ เช็คชื่อนักเรียน</li>
+        <li>🏥 ตรวจสุขภาพ</li>
+        <li>🤒 คัดกรองอาการป่วย</li>
+        <li>🥛 ดื่มนม</li>
+        <li>🗓️ กิจกรรมประจำวัน</li>
+        <li>🍱 อาหารกลางวัน</li>
+        <li>🪥 แปรงฟัน</li>
+        <li>🚗 รับกลับบ้าน</li>
+      </ul>
+    </div>
+
+    <div class="feature-card" style="border-color:#16a34a">
+      <span class="badge" style="background:#f0fdf4;color:#16a34a">📅 บันทึกสัปดาห์/โอกาส</span>
+      <h3>🏡 มุมเรียนรู้</h3>
+      <ul>
+        <li>🏡 มุมประสบการณ์ในห้อง</li>
+        <li>🌿 แหล่งเรียนรู้นอกห้อง</li>
+        <li>⚖️ ภาวะโภชนาการ</li>
+        <li>🎉 กิจกรรมวันสำคัญ</li>
+      </ul>
+    </div>
+
+    <div class="feature-card" style="border-color:#7c3aed">
+      <span class="badge" style="background:#f5f3ff;color:#6d28d9">📊 ประเมินพัฒนาการ</span>
+      <h3>📊 การประเมิน</h3>
+      <ul>
+        <li>📊 ประเมินพัฒนาการ 4 ด้าน</li>
+        <li>📜 ประวัติการประเมิน</li>
+        <li>📑 ผลการประเมินพัฒนาการ</li>
+        <li>📈 รายงานสรุปผล</li>
+        <li>📒 สมุดรายงาน อ.01</li>
+        <li>🏛 มาตรฐานแห่งชาติ</li>
+      </ul>
+    </div>
+
+    <div class="feature-card" style="border-color:#d97706">
+      <span class="badge" style="background:#fffbeb;color:#d97706">👥 บุคลากรและสื่อ</span>
+      <h3>👥 บุคลากร</h3>
+      <ul>
+        <li>👶 จัดการนักเรียน</li>
+        <li>🚪 จัดนักเรียนเข้าห้อง</li>
+        <li>🏫 จัดการห้องเรียน</li>
+        <li>👩‍🏫 จัดการครู</li>
+        <li>📚 ทะเบียนผลิตสื่อ</li>
+        <li>🔄 ยืม-คืนสื่อ</li>
+      </ul>
+    </div>
+
+    <div class="feature-card" style="border-color:#6366f1">
+      <span class="badge" style="background:#eef2ff;color:#4f46e5">⚙️ ตั้งค่าระบบ (Admin)</span>
+      <h3>⚙️ ตั้งค่า</h3>
+      <ul>
+        <li>🏛️ โรงเรียน</li>
+        <li>📅 ภาคเรียน</li>
+        <li>🏖️ วันหยุด</li>
+        <li>🎯 กิจกรรม</li>
+        <li>📝 หัวข้อประเมิน</li>
+        <li>🔬 ตัวบ่งชี้</li>
+        <li>🗺️ มาตรฐานปฐมวัย</li>
+        <li>📏 วัดน้ำหนัก/ส่วนสูง</li>
+        <li>📋 บันทึกการใช้งาน</li>
+      </ul>
+    </div>
+
+    <div class="feature-card" style="border-color:#16a34a">
+      <span class="badge" style="background:#f0fdf4;color:#16a34a">👨‍👩‍👧 ผู้ปกครอง</span>
+      <h3>📱 หน้าผู้ปกครอง</h3>
+      <ul>
+        <li>👶 ดูข้อมูลบุตร</li>
+        <li>📊 พัฒนาการรายด้าน</li>
+        <li>🤖 AI สรุปพัฒนาการ</li>
+        <li>💬 บันทึกความเห็น</li>
+        <li>📢 ดูประกาศโรงเรียน</li>
+      </ul>
+    </div>
+
+    <div class="feature-card" style="border-color:#0891b2">
+      <span class="badge" style="background:#ecfeff;color:#0891b2">🤖 AI Features</span>
+      <h3>🤖 ฟีเจอร์ AI</h3>
+      <ul>
+        <li>✨ AI สรุปพัฒนาการรายด้าน</li>
+        <li>✨ AI เขียนจุดเด่นนักเรียน</li>
+        <li>🤖 AI ผู้ช่วย Chat (Claude)</li>
+        <li>📊 AI วิเคราะห์ผลรวม</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- Data flow -->
+  <div style="margin-top:2rem">
+    <div style="font-weight:800;font-size:1rem;margin-bottom:.75rem;color:#374151">☁️ การจัดเก็บข้อมูล</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:600px">
+      <div class="data-box" style="border-color:#f59e0b">
+        <h3 style="color:#d97706">💾 LocalStorage (ออฟไลน์)</h3>
+        <p style="font-size:.78rem">บันทึกข้อมูลในเครื่อง ใช้ได้แม้ไม่มีอินเทอร์เน็ต แต่ข้อมูลไม่ sync ระหว่างอุปกรณ์</p>
+      </div>
+      <div class="data-box" style="border-color:#16a34a">
+        <h3 style="color:#16a34a">☁️ Firebase Firestore</h3>
+        <p style="font-size:.78rem">Cloud Database — sync อัตโนมัติทุกอุปกรณ์ Real-time update ต้องตั้งค่า Firebase ก่อน</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div style="text-align:center;padding:2rem;color:#94a3b8;font-size:.78rem;border-top:1px solid #e2e8f0;margin-top:1rem">
+  KinderTrack v0.168.0 · ระบบบันทึกพัฒนาการเด็กปฐมวัย · สร้างโดย นายเจนจบ มาเพ็ชร์<br>
+  เอกสารนี้สร้างอัตโนมัติด้วย Claude AI · สิงหาคม 2569
+</div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+</script>
+</body>
+</html>

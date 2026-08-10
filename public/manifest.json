@@ -1,0 +1,17 @@
+{
+  "name": "KinderTrack - ระบบบันทึกพัฒนาการเด็กอนุบาล",
+  "short_name": "KinderTrack",
+  "description": "ระบบบันทึกพัฒนาการเด็กอนุบาล",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366f1",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "255x234",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

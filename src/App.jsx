@@ -38,8 +38,32 @@ function AppShell() {
     isAdding, setIsAdding,
     handleSaveEvaluation, assessmentTopics, addStudent,
     autoSyncStatus, pullSyncStatus, isFirebaseConfigured,
+    syncPushToFirebase, syncPullFromFirebase,
     schools, schoolLogo,
   } = useApp();
+
+  const [manualSaveStatus, setManualSaveStatus] = useState('idle');   // idle | saving | done | error
+  const [manualPullStatus, setManualPullStatus] = useState('idle');   // idle | pulling | done | error
+
+  const handleManualSave = async () => {
+    if (manualSaveStatus === 'saving') return;
+    setManualSaveStatus('saving');
+    try {
+      const result = await syncPushToFirebase();
+      setManualSaveStatus(result?.ok ? 'done' : 'error');
+    } catch { setManualSaveStatus('error'); }
+    setTimeout(() => setManualSaveStatus('idle'), 3000);
+  };
+
+  const handleManualRefresh = async () => {
+    if (manualPullStatus === 'pulling') return;
+    setManualPullStatus('pulling');
+    try {
+      const result = await syncPullFromFirebase();
+      setManualPullStatus(result?.ok ? 'done' : 'error');
+    } catch { setManualPullStatus('error'); }
+    setTimeout(() => setManualPullStatus('idle'), 3000);
+  };
 
   const schoolName = schools?.[0]?.name ?? 'KinderTrack';
 
@@ -155,6 +179,58 @@ function AppShell() {
               {autoSyncStatus === 'done'     && !isFirebaseConfigured && <>💾 บันทึกเฉพาะในเครื่องนี้</>}
               {autoSyncStatus === 'error'    && <>❌ บันทึกไม่สำเร็จ</>}
             </div>
+          )}
+
+          {/* ── ปุ่ม บันทึก (manual save) ── */}
+          {isFirebaseConfigured && (
+            <button type="button"
+              onClick={handleManualSave}
+              disabled={manualSaveStatus === 'saving' || autoSyncStatus === 'syncing'}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '.35rem',
+                background: manualSaveStatus === 'done'  ? 'rgba(34,197,94,0.35)'
+                          : manualSaveStatus === 'error' ? 'rgba(239,68,68,0.35)'
+                          : 'rgba(255,255,255,0.2)',
+                color: 'white',
+                border: manualSaveStatus === 'done'  ? '1.5px solid rgba(34,197,94,0.6)'
+                      : manualSaveStatus === 'error' ? '1.5px solid rgba(239,68,68,0.6)'
+                      : '1.5px solid rgba(255,255,255,0.4)',
+                borderRadius: '999px', padding: '.35rem .85rem',
+                fontSize: '.8rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                transition: 'all .2s', minWidth: '80px', justifyContent: 'center',
+                opacity: manualSaveStatus === 'saving' ? 0.7 : 1,
+              }}>
+              <span style={manualSaveStatus === 'saving' ? { animation: 'spin 1s linear infinite', display: 'inline-block' } : {}}>
+                {manualSaveStatus === 'done' ? '✅' : manualSaveStatus === 'error' ? '❌' : manualSaveStatus === 'saving' ? '🔄' : '💾'}
+              </span>
+              {manualSaveStatus === 'done' ? 'บันทึกแล้ว' : manualSaveStatus === 'error' ? 'ล้มเหลว' : manualSaveStatus === 'saving' ? 'กำลังบันทึก…' : 'บันทึก'}
+            </button>
+          )}
+
+          {/* ── ปุ่ม รีเฟรช (manual pull) ── */}
+          {isFirebaseConfigured && (
+            <button type="button"
+              onClick={handleManualRefresh}
+              disabled={manualPullStatus === 'pulling' || pullSyncStatus === 'pulling'}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '.35rem',
+                background: manualPullStatus === 'done'  ? 'rgba(34,197,94,0.35)'
+                          : manualPullStatus === 'error' ? 'rgba(239,68,68,0.35)'
+                          : 'rgba(255,255,255,0.15)',
+                color: 'white',
+                border: manualPullStatus === 'done'  ? '1.5px solid rgba(34,197,94,0.6)'
+                      : manualPullStatus === 'error' ? '1.5px solid rgba(239,68,68,0.6)'
+                      : '1.5px solid rgba(255,255,255,0.3)',
+                borderRadius: '999px', padding: '.35rem .85rem',
+                fontSize: '.8rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                transition: 'all .2s', minWidth: '90px', justifyContent: 'center',
+                opacity: manualPullStatus === 'pulling' ? 0.7 : 1,
+              }}>
+              <span style={(manualPullStatus === 'pulling' || pullSyncStatus === 'pulling') ? { animation: 'spin 1s linear infinite', display: 'inline-block' } : {}}>
+                {manualPullStatus === 'done' ? '✅' : manualPullStatus === 'error' ? '❌' : '🔄'}
+              </span>
+              {manualPullStatus === 'done' ? 'อัปเดตแล้ว' : manualPullStatus === 'error' ? 'ล้มเหลว' : (manualPullStatus === 'pulling' || pullSyncStatus === 'pulling') ? 'กำลังโหลด…' : 'รีเฟรช'}
+            </button>
           )}
 
           {role === 'admin' && (

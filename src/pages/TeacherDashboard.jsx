@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, lazy, Suspense } from 'react';
+import { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react';
 import { useApp } from '../context/AppContext';
 import { todayISO, formatDateThai, isStudentActive } from '../utils/helpers';
 import { getDayRecord, hasHygieneToday } from '../utils/attendance';
@@ -329,12 +329,37 @@ function buildDraft(students, dailyRecords, date) {
 /* ── StudentList — shared between main tab and students tab ─────────────────── */
 function StudentList({ myStudents, filtered, search, setSearch, myClass, today, dailyRecords,
   setSelectedStudent, setEvaluatingStudent, setEditingStudentLocal, handleDelete }) {
+  const { handleImport } = useApp();
+  const fileInputRef = useRef(null);
+
+  const handleFileImport = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const raw = ev.target.result.replace(/^﻿/, '');
+      const r = handleImport('students', raw);
+      alert(r.ok ? `✅ นำเข้าสำเร็จ! เพิ่มนักเรียน ${r.count ?? ''} คน` : r.message);
+    };
+    reader.readAsText(file, 'utf-8');
+    e.target.value = '';
+  };
+
   return (
     <div className="glass" style={{ padding: '1.5rem' }}>
       <div className="page-header" style={{ marginBottom: '1rem' }}>
         <h3>👨‍🎓 รายชื่อนักเรียน{myClass ? ` ห้อง ${myClass}` : ''} ({filtered.length}/{myStudents.length} คน)</h3>
-        <input className="input" style={{ maxWidth: '220px' }} placeholder="🔍 ค้นหาชื่อ..."
-          value={search} onChange={e => setSearch(e.target.value)} />
+        <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center' }}>
+          <input className="input" style={{ maxWidth: '220px' }} placeholder="🔍 ค้นหาชื่อ..."
+            value={search} onChange={e => setSearch(e.target.value)} />
+          <input ref={fileInputRef} type="file" accept=".csv" style={{ display: 'none' }}
+            onChange={handleFileImport} />
+          <button type="button" className="btn"
+            style={{ background: '#f0f9ff', color: '#0369a1', fontWeight: 700, whiteSpace: 'nowrap' }}
+            onClick={() => fileInputRef.current?.click()}>
+            📥 นำเข้า
+          </button>
+        </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
         {filtered.map(s => {

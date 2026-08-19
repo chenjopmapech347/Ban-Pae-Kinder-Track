@@ -1,31 +1,11 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
-import { getQualityText } from '../utils/helpers';
-import { callClaude, buildParentSummaryPrompt } from '../utils/aiHelper';
-
-const LEVEL_EMOJI = { 3: '⭐⭐⭐', 2: '⭐⭐', 1: '⭐', 0: '—' };
-const LEVEL_COLOR = {
-  3: { bg: '#d1fae5', color: '#065f46' },
-  2: { bg: '#fef3c7', color: '#92400e' },
-  1: { bg: '#fee2e2', color: '#991b1b' },
-  0: { bg: '#f5f3ff', color: '#6b7280' },
-};
 
 export default function ParentView() {
-  const { user, students, setSelectedStudent, assessmentTopics,
-    indicators: allIndicators, activities: allActivities,
-    aiApiKey, teachers, announcements,
+  const { user, students, setSelectedStudent,
+    teachers, announcements,
     dailyRecords, syncPullFromFirebase, isFirebaseConfigured,
-    studentReportRecords, setStudentReportRecords, academicYear,
-    parentCommentDeadlines } = useApp();
-
-  const [aiText, setAiText]       = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError]     = useState('');
-
-  // ── Parent comment state ──────────────────────────────────────────────────
-  const [commentSaved, setCommentSaved] = useState(false);
-  const saveTimerRef = useRef(null);
+  } = useApp();
 
   const [refreshing, setRefreshing] = useState(false);
   const handleRefresh = useCallback(async () => {
@@ -41,21 +21,6 @@ export default function ParentView() {
     return () => clearInterval(timer);
   }, [handleRefresh, isFirebaseConfigured]);
 
-  // คำนวณคะแนนเฉลี่ยรายด้านจากโครงสร้างใหม่ (assessments.indicators)
-  // ถ้ายังไม่มีข้อมูลใหม่ ให้ fallback ไปที่ assessments.summary (โครงสร้างเก่า)
-  const topicAvg = (student, topic) => {
-    const inds = (allIndicators ?? []).filter(i => i.domainId === topic.id);
-    const scores = inds.flatMap(ind =>
-      (allActivities ?? []).filter(a => a.indicatorId === ind.id)
-        .map(act => student.assessments?.indicators?.[ind.id]?.[act.id]?.score ?? null)
-    ).filter(v => v !== null);
-    if (scores.length) {
-      return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
-    }
-    // fallback: old summary structure
-    const legacy = student.assessments?.summary?.[topic.id];
-    return legacy != null ? legacy : null;
-  };
   const student = students.find(s => s.id === user?.studentId);
   const classTeacher = teachers?.find(t => t.className === student?.className);
 
@@ -89,36 +54,6 @@ export default function ParentView() {
 
   const pct = total ? Math.round((present / total) * 100) : 0;
 
-  // ── Parent comment helpers ────────────────────────────────────────────────
-  const recKey = student ? `${student.id}__${academicYear}` : null;
-  const parentComments = useMemo(() => {
-    if (!recKey) return { term1: '', term2: '' };
-    return studentReportRecords[recKey]?.parentComments ?? { term1: '', term2: '' };
-  }, [recKey, studentReportRecords]);
-
-  const updateParentComment = useCallback((term, value) => {
-    if (!recKey) return;
-    setStudentReportRecords(prev => ({
-      ...prev,
-      [recKey]: {
-        studentId: student.id,
-        academicYear,
-        physicalRecords: {},
-        healthServices: [],
-        teacherComments:  { term1: '', term2: '' },
-        directorsComment: '',
-        ...(prev[recKey] ?? {}),
-        parentComments: {
-          ...(prev[recKey]?.parentComments ?? { term1: '', term2: '' }),
-          [term]: value,
-        },
-      },
-    }));
-    // แสดง feedback "บันทึกแล้ว" ชั่วคราว
-    setCommentSaved(false);
-    clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => setCommentSaved(true), 600);
-  }, [recKey, student, academicYear, setStudentReportRecords]);
 
   return (
     <div className="animate-fade">
@@ -279,37 +214,6 @@ export default function ParentView() {
         <div className="text-xs text-muted mt-2 text-right">{present} จาก {total} วัน</div>
       </div>
 
-      {/* Assessment — แสดงครบทุกด้านเสมอ */}
-      <div className="glass-card mb-6">
-        <h3 className="mb-4">🌱 ผลการประเมินพัฒนาการ</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-          {assessmentTopics.map(topic => {
-            const raw = topicAvg(student, topic);
-            const hasScore = raw !== null;
-            const val = hasScore ? raw : 0;
-            const lvl = hasScore ? (LEVEL_COLOR[val] ?? LEVEL_COLOR[0]) : LEVEL_COLOR[0];
-            return (
-              <div key={topic.id} style={{
-                display: 'flex', alignItems: 'center', gap: '1rem',
-                background: lvl.bg, borderRadius: '12px', padding: '0.75rem 1rem',
-              }}>
-                <span style={{ fontSize: '1.5rem' }}>{topic.emoji}</span>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.9rem', color: lvl.color }}>
-                    ด้าน{topic.label}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: lvl.color, opacity: 0.8 }}>
-                    {hasScore ? getQualityText(val) : 'รอผลประเมินจากครู'}
-                  </div>
-                </div>
-                <div style={{ fontSize: '1.1rem' }}>
-                  {hasScore ? (LEVEL_EMOJI[val] ?? '—') : '⏳'}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
 
 
       {/* Physical Info */}
@@ -327,110 +231,6 @@ export default function ParentView() {
         </div>
       </div>
 
-      {/* ── Parent Comments ── */}
-      {(() => {
-        const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-        const isLocked = (term) => {
-          const dl = parentCommentDeadlines?.[`term${term}`];
-          return dl && today > dl;
-        };
-        const formatDateTH = (iso) => {
-          if (!iso) return '';
-          const [y, m, d] = iso.split('-');
-          return `${d}/${m}/${parseInt(y) + 543}`;
-        };
-        return (
-          <div className="glass-card mb-6" style={{ border: '1.5px solid #bbf7d0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-              <h3 style={{ margin: 0, color: '#166534' }}>✍️ ความคิดเห็นของผู้ปกครอง</h3>
-              {commentSaved && (
-                <span style={{
-                  fontSize: '.75rem', fontWeight: 700, color: '#059669',
-                  background: '#d1fae5', padding: '.2rem .65rem', borderRadius: '999px',
-                }}>
-                  ✓ บันทึกแล้ว
-                </span>
-              )}
-            </div>
-            <p style={{ fontSize: '.8rem', color: '#6b7280', marginBottom: '1rem', lineHeight: 1.6 }}>
-              ความคิดเห็นของท่านจะถูกบันทึกลงในสมุดรายงานประจำตัว (อ.01) ของบุตรหลาน
-              ครูจะได้รับทราบและนำไปใช้ในการดูแลพัฒนาการต่อไป
-            </p>
-
-            {[1, 2].map(term => {
-              const locked = isLocked(term);
-              const dl = parentCommentDeadlines?.[`term${term}`];
-              const val = parentComments[`term${term}`];
-              return (
-                <div key={term} style={{ marginBottom: term === 1 ? '1rem' : 0 }}>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    marginBottom: '.4rem',
-                  }}>
-                    <span style={{ fontSize: '.8rem', fontWeight: 700, color: locked ? '#9ca3af' : '#166534' }}>
-                      ภาคเรียนที่ {term}
-                    </span>
-                    {locked ? (
-                      <span style={{
-                        fontSize: '.7rem', fontWeight: 700, color: '#b45309',
-                        background: '#fef3c7', padding: '.15rem .6rem', borderRadius: '999px',
-                      }}>
-                        🔒 ปิดรับวันที่ {formatDateTH(dl)}
-                      </span>
-                    ) : dl ? (
-                      <span style={{
-                        fontSize: '.7rem', fontWeight: 700, color: '#059669',
-                        background: '#d1fae5', padding: '.15rem .6rem', borderRadius: '999px',
-                      }}>
-                        📅 ปิดรับ {formatDateTH(dl)}
-                      </span>
-                    ) : null}
-                  </div>
-
-                  {locked ? (
-                    /* ล็อกแล้ว: แสดงข้อความที่กรอกไว้ (read-only) */
-                    <div style={{
-                      width: '100%', boxSizing: 'border-box',
-                      padding: '.65rem .85rem', borderRadius: '10px',
-                      border: '1.5px solid #e5e7eb',
-                      fontFamily: 'inherit', fontSize: '.85rem', lineHeight: 1.7,
-                      background: '#f9fafb', color: val ? '#374151' : '#9ca3af',
-                      minHeight: '4.5rem',
-                    }}>
-                      {val || '(ไม่ได้กรอกความคิดเห็น)'}
-                    </div>
-                  ) : (
-                    /* เปิดกรอกปกติ */
-                    <textarea
-                      value={val}
-                      onChange={e => updateParentComment(`term${term}`, e.target.value)}
-                      placeholder={`บันทึกความคิดเห็นของผู้ปกครอง ภาคเรียนที่ ${term}...`}
-                      rows={3}
-                      style={{
-                        width: '100%', boxSizing: 'border-box',
-                        padding: '.65rem .85rem', borderRadius: '10px',
-                        border: '1.5px solid #bbf7d0',
-                        fontFamily: 'inherit', fontSize: '.85rem', lineHeight: 1.7,
-                        background: '#f0fdf4', color: '#14532d', resize: 'vertical',
-                        outline: 'none', transition: 'border-color .15s',
-                      }}
-                      onFocus={e => { e.target.style.borderColor = '#059669'; }}
-                      onBlur={e => { e.target.style.borderColor = '#bbf7d0'; }}
-                    />
-                  )}
-                  {!locked && val && (
-                    <div style={{ textAlign: 'right', marginTop: '.2rem' }}>
-                      <span style={{ fontSize: '.7rem', color: '#9ca3af' }}>
-                        {val.length} ตัวอักษร
-                      </span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        );
-      })()}
 
       {/* CTA */}
       <button

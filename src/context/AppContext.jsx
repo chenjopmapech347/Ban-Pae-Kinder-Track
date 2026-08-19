@@ -19,7 +19,7 @@ import { buildAppSnapshot, validateSnapshot } from '../utils/appSnapshot';
 import { pullSnapshotFromCloud, pushSnapshotToCloud } from '../lib/cloudSync';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { isFirebaseConfigured, db } from '../lib/firebase';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { pushSnapshotToFirebase, pullSnapshotFromFirebase } from '../lib/firebaseSync';
 import { firebaseLogin, firebaseLogout, onFirebaseAuthChange } from '../lib/firebaseAuth';
 import {
@@ -60,6 +60,30 @@ export function AppProvider({ children }) {
         localStorage.removeItem('kt_sessionUser');
       }
     } catch { /* ignore quota errors */ }
+  }, []);
+
+  // ─── Single-session token ─────────────────────────────────────────────────
+  // เก็บ token ของ session ปัจจุบัน — ใช้เปรียบเทียบกับ Firestore
+  const sessionTokenRef = useRef(null);
+
+  // สร้าง unique key ต่อ user เพื่อใช้เป็น Firestore doc id
+  const getSessionKey = (r, u) => {
+    if (!r || !u) return null;
+    if (r === 'admin')   return 'admin';
+    if (r === 'teacher') return `teacher_${u.teacherId}`;
+    if (r === 'parent')  return `parent_${u.studentId}`;
+    return null;
+  };
+
+  // helper: เขียน session token ลง Firestore (fire-and-forget)
+  const writeSessionToken = useCallback((r, u) => {
+    if (!isFirebaseConfigured || !db) return;
+    const key = getSessionKey(r, u);
+    if (!key) return;
+    const token = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    sessionTokenRef.current = token;
+    try { localStorage.setItem('kt_sessionToken', token); } catch {}
+    setDoc(doc(db, 'sessions', key), { token, loginAt: new Date().toISOString() }).catch(() => {});
   }, []);
 
   // ฟัง Firebase Auth state
@@ -549,6 +573,7 @@ export function AppProvider({ children }) {
           return { ok: false, message: 'รหัสผ่านผู้ดูแลระบบไม่ถูกต้อง' };
         }
         persistSession('admin', { name: authConfig.admin.name });
+        writeSessionToken('admin', { name: authConfig.admin.name });
         setSystemLogs(prev => [{ id: Date.now() + Math.random(), ts: new Date().toISOString(), action: 'login', detail: 'เข้าสู่ระบบสำเร็จ', userName: 'admin (ผู้ดูแลระบบ)' }, ...prev].slice(0, 2000));
         return { ok: true };
       }
@@ -560,12 +585,14 @@ export function AppProvider({ children }) {
           const testTeacherRecord = teachers.find(
             t => String(t.id) === String(TEST_ACCOUNTS.teacher.id)
           );
-          persistSession('teacher', {
+          const testTeacherData = {
             name:      testTeacherRecord?.name      ?? TEST_ACCOUNTS.teacher.name,
             teacherId: TEST_ACCOUNTS.teacher.id,
             level:     testTeacherRecord?.level     ?? TEST_ACCOUNTS.teacher.level,
             className: testTeacherRecord?.className ?? TEST_ACCOUNTS.teacher.className,
-          });
+          };
+          persistSession('teacher', testTeacherData);
+          writeSessionToken('teacher', testTeacherData);
           return { ok: true };
         }
         // ตรวจสอบ username + PIN กับครูทุกคนในระบบ
@@ -580,12 +607,14 @@ export function AppProvider({ children }) {
         if (!matchedTeacher) {
           return { ok: false, message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' };
         }
-        persistSession('teacher', {
+        const teacherData = {
           name: matchedTeacher.name,
           teacherId: matchedTeacher.id,
           level: matchedTeacher.level,
           className: matchedTeacher.className,
-        });
+        };
+        persistSession('teacher', teacherData);
+        writeSessionToken('teacher', teacherData);
         setSystemLogs(prev => [{ id: Date.now() + Math.random(), ts: new Date().toISOString(), action: 'login', detail: `เข้าสู่ระบบสำเร็จ — ห้อง ${matchedTeacher.className ?? '-'}`, userName: `${matchedTeacher.name} (ครู)` }, ...prev].slice(0, 2000));
         return { ok: true };
       }
@@ -600,11 +629,13 @@ export function AppProvider({ children }) {
           return { ok: false, message: 'รหัส PIN ผู้ปกครองไม่ถูกต้อง' };
         }
         const guardianName = student.guardianName?.trim() || `ผู้ปกครอง ${student.name.split(' ').slice(-1)[0]}`;
-        persistSession('parent', {
+        const parentData = {
           name: guardianName,
           guardianName: student.guardianName?.trim() || '',
           studentId: student.id,
-        });
+        };
+        persistSession('parent', parentData);
+        writeSessionToken('parent', parentData);
         setSystemLogs(prev => [{ id: Date.now() + Math.random(), ts: new Date().toISOString(), action: 'login', detail: `เข้าสู่ระบบสำเร็จ — นักเรียน ${student.name}`, userName: `${guardianName} (ผู้ปกครอง)` }, ...prev].slice(0, 2000));
         return { ok: true };
       }

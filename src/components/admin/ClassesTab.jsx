@@ -26,7 +26,7 @@ export default function ClassesTab() {
       </div>
 
       <div className="grid grid-2" style={{ gap: '1rem' }}>
-        {classes.map(c => (
+        {[...classes].sort((a, b) => a.name.localeCompare(b.name, 'th')).map(c => (
           <div key={c.id} className="glass-card flex justify-between items-center">
             <div>
               <div className="font-bold">{c.name}</div>

@@ -17,7 +17,6 @@ const TermsTab               = lazy(() => import('../components/admin/TermsTab')
 const EvaluationTab          = lazy(() => import('../components/admin/EvaluationTab'));
 const ActivityLogTab         = lazy(() => import('../components/admin/ActivityLogTab'));
 const AttendanceTab          = lazy(() => import('../components/admin/AttendanceTab'));
-const PickupTab              = lazy(() => import('../components/admin/PickupTab'));
 const NationalStandardsTab   = lazy(() => import('../components/admin/NationalStandardsTab'));
 const AnnouncementsTab       = lazy(() => import('../components/admin/AnnouncementsTab'));
 const MediaTab               = lazy(() => import('../components/admin/MediaTab'));
@@ -62,7 +61,6 @@ const TAB_GROUPS = [
       { id: 'dailyroutine', label: '🗓️ กิจกรรมประจำวัน'  },
       { id: 'lunch',        label: '🍱 อาหารกลางวัน'     },
       { id: 'toothbrush',   label: '🪥 แปรงฟัน'           },
-      { id: 'pickup',       label: '🚗 รับกลับบ้าน'      },
     ],
   },
   {
@@ -155,7 +153,6 @@ export default function AdminDashboard() {
           {activeTab === 'announcements'  && <AnnouncementsTab />}
           {activeTab === 'aichat'         && <AIChatTab />}
           {activeTab === 'attendance'     && <AttendanceTab />}
-          {activeTab === 'pickup'         && <PickupTab />}
           {activeTab === 'healthcheck'    && <HealthCheckTab />}
           {activeTab === 'illnesscheck'   && <IllnessCheckTab />}
           {activeTab === 'toothbrush'     && <ToothBrushTab />}

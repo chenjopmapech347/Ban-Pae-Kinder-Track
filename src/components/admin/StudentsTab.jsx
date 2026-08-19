@@ -389,14 +389,11 @@ export default function StudentsTab() {
               <th style={{ width: '75px' }}>อายุ</th>
               <th style={{ width: '100px' }}>สถานะ</th>
               <th style={{ width: '90px' }}>PIN</th>
-              <th style={{ width: '130px' }}>สถานะประเมิน</th>
               <th style={{ position: 'sticky', right: 0, background: '#f8fafc', zIndex: 2, width: '175px', boxShadow: '-3px 0 8px rgba(0,0,0,.06)' }}>จัดการ</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map(s => {
-              const indCount = Object.keys(s.assessments?.indicators ?? {}).length;
-              const actCount = Object.values(s.assessments?.indicators ?? {}).reduce((sum, m) => sum + Object.keys(m).length, 0);
               return (
                 <tr key={s.id} className="hover-row">
                   <td>
@@ -446,13 +443,6 @@ export default function StudentsTab() {
                         : <span className="badge" style={{ background:'#f3f4f6',color:'#6b7280' }}>⛔ นอกระบบ</span>}
                   </td>
                   <td><code style={{ background: '#f5f3ff', padding: '.15rem .5rem', borderRadius: '6px', fontSize: '.8rem' }}>{s.parentPin ?? '—'}</code></td>
-                  <td>
-                    {actCount > 0
-                      ? <span className="badge badge-success" title={`${indCount} ตัวบ่งชี้ · ${actCount} กิจกรรม`}>
-                          ✅ {actCount} กิจกรรม
-                        </span>
-                      : <span className="badge badge-accent">⏳ ยังไม่ประเมิน</span>}
-                  </td>
                   <td style={{ position: 'sticky', right: 0, background: 'white', zIndex: 1, boxShadow: '-3px 0 8px rgba(0,0,0,.06)' }}>
                     <div style={{ display: 'flex', gap: '.35rem', alignItems: 'center' }}>
                       <button className="btn btn-sm" style={{ background: '#ede9fe', color: 'var(--primary)', whiteSpace: 'nowrap' }}
@@ -498,7 +488,7 @@ export default function StudentsTab() {
               );
             })}
             {!filtered.length && (
-              <tr><td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>ไม่พบข้อมูล</td></tr>
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>ไม่พบข้อมูล</td></tr>
             )}
           </tbody>
         </table>

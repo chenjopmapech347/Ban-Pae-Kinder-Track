@@ -523,9 +523,11 @@ export function AppProvider({ children }) {
     if (!result.ok) return result;
 
     const r = nextRole === 'admin' ? 'admin' : 'teacher';
-    persistSession(r, { name: result.user.displayName || email.split('@')[0], email });
+    const userData = { name: result.user.displayName || email.split('@')[0], email };
+    persistSession(r, userData);
+    writeSessionToken(r, userData);
     return { ok: true };
-  }, [persistSession]);
+  }, [persistSession, writeSessionToken]);
 
   const updateAuthConfig = useCallback(
     (patch) => {
@@ -675,6 +677,13 @@ export function AppProvider({ children }) {
   );
 
   const logout = useCallback(() => {
+    // ลบ session ออกจาก Firestore (fire-and-forget)
+    if (isFirebaseConfigured && db && role && user) {
+      const key = getSessionKey(role, user);
+      if (key) deleteDoc(doc(db, 'sessions', key)).catch(() => {});
+    }
+    sessionTokenRef.current = null;
+    try { localStorage.removeItem('kt_sessionToken'); } catch {}
     // บันทึก log ก่อน clear user
     setSystemLogs(prev => [{
       id: Date.now() + Math.random(),
@@ -687,7 +696,39 @@ export function AppProvider({ children }) {
     setSelectedStudent(null);
     setEvaluatingStudent(null);
     if (isFirebaseConfigured) firebaseLogout();
-  }, [user, setSystemLogs, persistSession]);
+  }, [user, role, setSystemLogs, persistSession]);
+
+  // ─── Single-session watcher: ถ้ามีคนอื่น login ด้วย account เดิม → kick out ────
+  useEffect(() => {
+    if (!isFirebaseConfigured || !db || !role || !user) return;
+    const key = getSessionKey(role, user);
+    if (!key) return;
+    // restore token จาก localStorage กรณี page refresh (token เดิมยังอยู่)
+    if (!sessionTokenRef.current) {
+      try {
+        const stored = localStorage.getItem('kt_sessionToken');
+        if (stored) sessionTokenRef.current = stored;
+      } catch {}
+    }
+    const unsub = onSnapshot(doc(db, 'sessions', key), (snap) => {
+      if (!snap.exists()) return;
+      const remoteToken = snap.data()?.token;
+      const localToken  = sessionTokenRef.current;
+      if (!localToken || !remoteToken) return;
+      if (remoteToken !== localToken) {
+        // มีคน login ด้วย account นี้จากที่อื่น → บังคับออก
+        unsub();
+        try {
+          localStorage.removeItem('kt_role');
+          localStorage.removeItem('kt_sessionUser');
+          localStorage.removeItem('kt_sessionToken');
+        } catch {}
+        alert('⚠️ บัญชีนี้ถูกเข้าสู่ระบบจากอุปกรณ์อื่น\nคุณถูกออกจากระบบโดยอัตโนมัติ');
+        window.location.reload();
+      }
+    });
+    return () => unsub();
+  }, [role, user?.teacherId, user?.studentId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const resetAllData = useCallback(() => {
     clearAllStorage();

@@ -181,7 +181,7 @@ function teacherName(teachers, className) {
 function realSts(students, className) {
   return (students ?? [])
     .filter(s => s.className === className && !String(s.name).startsWith('(ว่าง)'))
-    .sort((a, b) => Number(a.id) - Number(b.id));
+    .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
 }
 
 function getDOW(ce, mo, day) { return new Date(ce, mo - 1, day).getDay(); }

@@ -91,7 +91,7 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
   const classStudents = useMemo(() =>
     students
       .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
-      .sort((a, b) => Number(a.id) - Number(b.id)),
+      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
     [students, selClass]
   );
 
@@ -100,7 +100,7 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
     if (existing) return existing;
     const initStuds = students
       .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
-      .sort((a, b) => Number(a.id) - Number(b.id));
+      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
     return makeDefaultRecord(key, selClass, academicYear, selDate, initStuds);
   });
 
@@ -111,7 +111,7 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
     } else {
       const studs = students
         .filter(s => s.className === newClass && !s.name.startsWith('(ว่าง)'))
-        .sort((a, b) => Number(a.id) - Number(b.id));
+        .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
       setDraft(makeDefaultRecord(newKey, newClass, academicYear, newDate, studs));
     }
     setSaved(false);

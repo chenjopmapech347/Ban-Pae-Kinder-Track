@@ -143,7 +143,7 @@ export default function PickupTab({ defaultClass }) {
   const teacher = teachers?.find(t => t.className === filterClass);
 
   const classStudents = useMemo(
-    () => students.filter(s => s.className === filterClass && !s.name.startsWith('(ว่าง)')).sort((a, b) => Number(a.id) - Number(b.id)),
+    () => students.filter(s => s.className === filterClass && !s.name.startsWith('(ว่าง)')).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
     [students, filterClass]
   );
 

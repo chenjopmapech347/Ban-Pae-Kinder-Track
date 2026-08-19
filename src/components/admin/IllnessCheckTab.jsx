@@ -251,7 +251,7 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
   const classStudents = useMemo(() =>
     students
       .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
-      .sort((a, b) => Number(a.id) - Number(b.id)),
+      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
     [students, selClass]
   );
 

@@ -29,7 +29,7 @@ export default function StudentsTab() {
     const pages = CLASS_ORDER.map(cls => {
       const list = students
         .filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'))
-        .sort((a, b) => Number(a.id) - Number(b.id));
+        .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
       if (!list.length) return '';
       const levelLabel = cls.replace('อ.', 'อนุบาล ');
       const rows = list.map((s, i) => `
@@ -200,7 +200,7 @@ export default function StudentsTab() {
     const matchLevel = selectedLevel === 'all' || s.level === selectedLevel;
     const matchClass = selectedClass === 'all' || s.className === selectedClass;
     return matchName && matchLevel && matchClass;
-  }).sort((a, b) => (a.className || '').localeCompare(b.className || '') || Number(a.id) - Number(b.id));
+  }).sort((a, b) => (a.className || '').localeCompare(b.className || '', 'th') || (a.name ?? '').localeCompare(b.name ?? '', 'th'));
 
   return (
     <div className="glass p-6 animate-fade">

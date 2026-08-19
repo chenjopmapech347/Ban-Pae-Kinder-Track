@@ -251,7 +251,7 @@ export default function AttendanceTab({ defaultClass }) {
     if (mainView !== 'daily') return;
     const newDrafts = {};
     ALL_CLASSES.forEach(cls => {
-      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)') && isStudentActive(s, selectedDate)).sort((a, b) => Number(a.id) - Number(b.id));
+      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)') && isStudentActive(s, selectedDate)).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
       const draft = {};
       sts.forEach(s => {
         const rec = getDayRecord(dailyRecords, selectedDate, s.id);
@@ -274,7 +274,7 @@ export default function AttendanceTab({ defaultClass }) {
 
   // รีเซ็ตทั้งห้องเป็น "มา"
   function resetAllPresent(cls) {
-    const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)') && isStudentActive(s, selectedDate)).sort((a, b) => Number(a.id) - Number(b.id));
+    const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)') && isStudentActive(s, selectedDate)).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
     const draft = {};
     sts.forEach(s => { draft[s.id] = 'มา'; });
     setClassDrafts(prev => ({ ...prev, [cls]: draft }));
@@ -390,7 +390,7 @@ export default function AttendanceTab({ defaultClass }) {
     const targetClasses = filterClass === 'ทั้งหมด' ? ALL_CLASSES : [filterClass];
     return targetClasses.map(cls => {
       const teacher = teachers?.find(t => t.className === cls);
-      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)')).sort((a, b) => Number(a.id) - Number(b.id));
+      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)')).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
       const rows = sts.map(s => {
         const counts = { มา: 0, ขาด: 0, ลา: 0, ป่วย: 0 };
         const dailyAtt = {};
@@ -446,7 +446,7 @@ export default function AttendanceTab({ defaultClass }) {
   // ── ข้อมูลรายห้อง ─────────────────────────────────────────────────
   const classSections = useMemo(() => {
     return displayClasses.map(cls => {
-      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)') && isStudentActive(s, selectedDate)).sort((a, b) => Number(a.id) - Number(b.id));
+      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)') && isStudentActive(s, selectedDate)).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
       const teacher = teachers?.find(t => t.className === cls);
       const rows = sts.map(s => {
         const rec = getDayRecord(dailyRecords, selectedDate, s.id);

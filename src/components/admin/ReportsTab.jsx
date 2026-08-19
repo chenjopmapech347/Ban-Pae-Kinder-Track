@@ -495,7 +495,7 @@ function ViewStudent({ students, assessmentTopics, indicators, activities, schoo
 
   const classStudents = useMemo(() =>
     students.filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
-            .sort((a,b) => Number(a.id)-Number(b.id)),
+            .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
     [students, selClass]
   );
 
@@ -653,7 +653,7 @@ function ViewProgress({ students, assessmentTopics, indicators, activities, allC
 
   const classStudents = useMemo(() =>
     students.filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
-            .sort((a,b) => Number(a.id)-Number(b.id)),
+            .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
     [students, selClass]
   );
 

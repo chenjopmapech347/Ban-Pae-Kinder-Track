@@ -133,7 +133,7 @@ export default function NutritionTab({ teacherClassFilter = null }) {
   const classStudents = useMemo(() =>
     students
       .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
-      .sort((a, b) => Number(a.id) - Number(b.id)),
+      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
     [students, selClass]
   );
 
@@ -166,7 +166,7 @@ export default function NutritionTab({ teacherClassFilter = null }) {
     const k = recKey(cls, academicYear, date);
     const sList = students
       .filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'))
-      .sort((a, b) => Number(a.id) - Number(b.id));
+      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
     setDraft(buildDraft(nutritionRecords[k], sList, date));
     setSaved(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps

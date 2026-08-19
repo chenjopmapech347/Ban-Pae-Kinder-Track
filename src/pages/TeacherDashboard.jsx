@@ -441,7 +441,9 @@ export default function TeacherDashboard() {
   /* ── Students filtered to teacher's class ── */
   const myClass    = user?.className;
   const myStudents = useMemo(
-    () => students.filter(s => s.className === myClass && !s.name.startsWith('(ว่าง)')),
+    () => students
+      .filter(s => s.className === myClass && !s.name.startsWith('(ว่าง)'))
+      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
     [students, myClass],
   );
   const activeStudents = useMemo(

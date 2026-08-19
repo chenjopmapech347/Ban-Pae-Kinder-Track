@@ -106,14 +106,14 @@ export default function ToothBrushTab({ teacherClassFilter = null }) {
   const classStudents = useMemo(() =>
     students
       .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
-      .sort((a, b) => Number(a.id) - Number(b.id)),
+      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
     [students, selClass]
   );
 
   const [draft, setDraft] = useState(() => {
     const ex = toothBrushRecords[key];
     if (ex) return patchCurrentMonth(ex, selYear, selMonth);
-    const initStuds = students.filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)')).sort((a,b)=>Number(a.id)-Number(b.id));
+    const initStuds = students.filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)')).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
     return makeDefaultRecord(key, selClass, academicYear, selYear, selMonth, 20, initStuds);
   });
 
@@ -152,7 +152,7 @@ export default function ToothBrushTab({ teacherClassFilter = null }) {
       setDraft(patchCurrentMonth(ex, yr, mo));
       setSchoolDays(ex.schoolDays ?? 20);
     } else {
-      const studs = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)')).sort((a,b)=>Number(a.id)-Number(b.id));
+      const studs = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)')).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
       setDraft(makeDefaultRecord(k, cls, academicYear, yr, mo, 20, studs));
       setSchoolDays(20);
     }

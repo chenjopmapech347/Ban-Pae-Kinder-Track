@@ -289,8 +289,8 @@ function EventModal({ event, allClassNames, students, assessmentTopics, indicato
 
   const scopeStudents = useMemo(() => {
     const base = students.filter(s => !s.name.startsWith('(ว่าง)'));
-    if (form.scope === 'all') return base.sort((a, b) => String(a.className).localeCompare(String(b.className)) || Number(a.id) - Number(b.id));
-    return base.filter(s => s.className === form.scope).sort((a, b) => Number(a.id) - Number(b.id));
+    if (form.scope === 'all') return base.sort((a, b) => String(a.className).localeCompare(String(b.className), 'th') || (a.name ?? '').localeCompare(b.name ?? '', 'th'));
+    return base.filter(s => s.className === form.scope).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
   }, [students, form.scope]);
 
   function handleSave() {

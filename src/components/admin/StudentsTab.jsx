@@ -383,14 +383,14 @@ export default function StudentsTab() {
         <table className="table">
           <thead>
             <tr>
-              <th style={{ width: '90px' }}>รหัสประจำตัว</th>
+              <th style={{ width: '130px' }}>รหัสประจำตัว</th>
               <th>ชื่อ-นามสกุล</th>
-              <th>ชั้น</th>
-              <th>ช่วงอายุ</th>
-              <th>สถานะ</th>
-              <th>PIN ผู้ปกครอง</th>
-              <th>สถานะประเมิน</th>
-              <th>จัดการ</th>
+              <th style={{ width: '60px' }}>ชั้น</th>
+              <th style={{ width: '75px' }}>อายุ</th>
+              <th style={{ width: '100px' }}>สถานะ</th>
+              <th style={{ width: '90px' }}>PIN</th>
+              <th style={{ width: '130px' }}>สถานะประเมิน</th>
+              <th style={{ position: 'sticky', right: 0, background: '#f8fafc', zIndex: 2, width: '175px', boxShadow: '-3px 0 8px rgba(0,0,0,.06)' }}>จัดการ</th>
             </tr>
           </thead>
           <tbody>
@@ -453,7 +453,7 @@ export default function StudentsTab() {
                         </span>
                       : <span className="badge badge-accent">⏳ ยังไม่ประเมิน</span>}
                   </td>
-                  <td>
+                  <td style={{ position: 'sticky', right: 0, background: 'white', zIndex: 1, boxShadow: '-3px 0 8px rgba(0,0,0,.06)' }}>
                     <div style={{ display: 'flex', gap: '.35rem', alignItems: 'center' }}>
                       <button className="btn btn-sm" style={{ background: '#ede9fe', color: 'var(--primary)', whiteSpace: 'nowrap' }}
                         onClick={() => setSelectedStudent(s)}>📄 รายงาน</button>

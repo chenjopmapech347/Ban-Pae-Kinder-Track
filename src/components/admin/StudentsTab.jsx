@@ -2,7 +2,7 @@ import { useApp } from '../../context/AppContext';
 import StudentModal from '../StudentModal';
 import AssessmentWizard from '../AssessmentWizard';
 import { exportStudentsListExcel } from '../../utils/exportExcel';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 // wizardRef ใช้ anchor scroll fallback
 
@@ -200,7 +200,19 @@ export default function StudentsTab() {
     const matchLevel = selectedLevel === 'all' || s.level === selectedLevel;
     const matchClass = selectedClass === 'all' || s.className === selectedClass;
     return matchName && matchLevel && matchClass;
-  }).sort((a, b) => (a.className || '').localeCompare(b.className || '', 'th') || (a.name ?? '').localeCompare(b.name ?? '', 'th'));
+  }).sort((a, b) => {
+    const idA = Number(a.studentId || a.code || a.id) || 0;
+    const idB = Number(b.studentId || b.code || b.id) || 0;
+    return idA - idB;
+  });
+
+  const [openMenuId, setOpenMenuId] = useState(null);
+  useEffect(() => {
+    if (!openMenuId) return;
+    const close = () => setOpenMenuId(null);
+    document.addEventListener('click', close, { capture: true, once: true });
+    return () => document.removeEventListener('click', close, { capture: true });
+  }, [openMenuId]);
 
   return (
     <div className="glass p-6 animate-fade">
@@ -442,20 +454,44 @@ export default function StudentsTab() {
                       : <span className="badge badge-accent">⏳ ยังไม่ประเมิน</span>}
                   </td>
                   <td>
-                    <div className="row-actions">
-                      <button className="btn btn-sm" style={{ background: '#ede9fe', color: 'var(--primary)' }}
+                    <div style={{ display: 'flex', gap: '.35rem', alignItems: 'center' }}>
+                      <button className="btn btn-sm" style={{ background: '#ede9fe', color: 'var(--primary)', whiteSpace: 'nowrap' }}
                         onClick={() => setSelectedStudent(s)}>📄 รายงาน</button>
-                      <button className="btn btn-sm btn-primary"
+                      <button className="btn btn-sm btn-primary" style={{ whiteSpace: 'nowrap' }}
                         onClick={() => startAssess(s)}>✏️ ประเมิน</button>
-                      <button className="btn btn-sm"
-                        onClick={() => { setEditingItem(s); setIsModalOpen(true); }}>แก้ไข</button>
-                      <button className="btn btn-sm" style={{ color: 'var(--danger)' }}
-                        onClick={() => {
-                          if(confirm('ลบข้อมูลนักเรียน?')) {
-                            setStudents(students.filter(x => x.id !== s.id));
-                            addSystemLog?.('delete_student', `ลบนักเรียน: ${s.name} — ${s.className ?? ''}`, user?.name ?? 'admin');
-                          }
-                        }}>ลบ</button>
+                      {/* ⋮ dropdown */}
+                      <div style={{ position: 'relative' }}>
+                        <button className="btn btn-sm" style={{ padding: '.25rem .5rem', fontWeight: 900, fontSize: '1rem', lineHeight: 1 }}
+                          onClick={() => setOpenMenuId(openMenuId === s.id ? null : s.id)}>⋮</button>
+                        {openMenuId === s.id && (
+                          <div style={{
+                            position: 'absolute', top: '110%', right: 0, zIndex: 300,
+                            background: 'white', borderRadius: '10px',
+                            boxShadow: '0 4px 20px rgba(0,0,0,.15)',
+                            minWidth: '130px', padding: '.3rem 0',
+                            border: '1px solid #e5e7eb',
+                          }}
+                            onMouseLeave={() => setOpenMenuId(null)}>
+                            <button type="button"
+                              style={{ display:'flex', alignItems:'center', gap:'.6rem', width:'100%', padding:'.5rem 1rem', background:'none', border:'none', cursor:'pointer', fontSize:'.85rem', color:'#374151', fontFamily:'inherit' }}
+                              onClick={() => { setEditingItem(s); setIsModalOpen(true); setOpenMenuId(null); }}>
+                              ✏️ แก้ไขข้อมูล
+                            </button>
+                            <div style={{ height:'1px', background:'#f3f4f6', margin:'.2rem 0' }} />
+                            <button type="button"
+                              style={{ display:'flex', alignItems:'center', gap:'.6rem', width:'100%', padding:'.5rem 1rem', background:'none', border:'none', cursor:'pointer', fontSize:'.85rem', color:'#dc2626', fontFamily:'inherit' }}
+                              onClick={() => {
+                                setOpenMenuId(null);
+                                if (confirm('ลบข้อมูลนักเรียน?')) {
+                                  setStudents(students.filter(x => x.id !== s.id));
+                                  addSystemLog?.('delete_student', `ลบนักเรียน: ${s.name} — ${s.className ?? ''}`, user?.name ?? 'admin');
+                                }
+                              }}>
+                              🗑️ ลบนักเรียน
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </td>
                 </tr>

@@ -204,7 +204,7 @@ export default function StandardsMapTab() {
               <thead>
                 {/* แถว 1 — grouping header */}
                 <tr>
-                  <th rowSpan={2} style={{ background: '#374151', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '7%', verticalAlign: 'middle' }}>ด้าน</th>
+                  <th rowSpan={2} style={{ background: '#1e40af', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '7%', verticalAlign: 'middle' }}>ด้าน</th>
                   <th colSpan={3} style={{ background: '#4b5563', color: '#d1d5db', padding: '.45rem .85rem', textAlign: 'center', fontSize: '.75rem', borderBottom: '1px solid #6b7280' }}>
                     ⏮ มาตรฐานเดิม (ถูกทดแทนโดย ปี 68)
                   </th>

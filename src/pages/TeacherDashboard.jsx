@@ -329,8 +329,18 @@ function buildDraft(students, dailyRecords, date) {
 /* ── StudentList — shared between main tab and students tab ─────────────────── */
 function StudentList({ myStudents, filtered, search, setSearch, myClass, today, dailyRecords,
   setSelectedStudent, setEvaluatingStudent, setEditingStudentLocal, handleDelete }) {
-  const { handleImport } = useApp();
+  const { handleImport, setStudents } = useApp();
   const fileInputRef = useRef(null);
+  const [dropOpen, setDropOpen] = useState(false);
+  const dropRef = useRef(null);
+
+  // ปิด dropdown เมื่อคลิกนอก
+  useEffect(() => {
+    if (!dropOpen) return;
+    const handler = (e) => { if (dropRef.current && !dropRef.current.contains(e.target)) setDropOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [dropOpen]);
 
   const handleFileImport = (e) => {
     const file = e.target.files?.[0];
@@ -343,7 +353,35 @@ function StudentList({ myStudents, filtered, search, setSearch, myClass, today, 
     };
     reader.readAsText(file, 'utf-8');
     e.target.value = '';
+    setDropOpen(false);
   };
+
+  const handleDownloadTemplate = () => {
+    const headers = 'ชื่อ-นามสกุล,ชื่อเล่น,เพศ,เลขประจำตัว,เลขบัตรประชาชน,ระดับ,ห้องเรียน,วันเกิด,อายุ,น้ำหนัก,ส่วนสูง,parentPin,ชื่อบิดา,อาชีพบิดา,ชื่อมารดา,อาชีพมารดา,เบอร์ผู้ปกครอง,ที่อยู่';
+    const blob = new Blob(['﻿' + headers + '\n'], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'template_นักเรียน.csv'; a.click();
+    URL.revokeObjectURL(url);
+    setDropOpen(false);
+  };
+
+  const handleSetPinFromId = () => {
+    if (!window.confirm('ตั้ง PIN ของนักเรียนทุกคนเป็นเลขประจำตัวนักเรียน (studentId) ใช่หรือไม่?')) return;
+    setStudents(prev => prev.map(s => ({
+      ...s,
+      parentPin: String(s.studentId || s.code || s.id),
+    })));
+    alert('✅ ตั้ง PIN เสร็จแล้ว');
+    setDropOpen(false);
+  };
+
+  const menuLabel = { fontSize: '.68rem', fontWeight: 800, color: '#94a3b8',
+    textTransform: 'uppercase', letterSpacing: '.05em', padding: '.45rem .85rem .2rem' };
+  const menuItem = { display: 'flex', alignItems: 'center', gap: '.55rem',
+    padding: '.52rem .85rem', cursor: 'pointer', fontSize: '.85rem', fontWeight: 600,
+    color: '#1e293b', background: 'none', border: 'none', width: '100%', textAlign: 'left',
+    transition: 'background .12s' };
 
   return (
     <div className="glass" style={{ padding: '1.5rem' }}>
@@ -354,11 +392,49 @@ function StudentList({ myStudents, filtered, search, setSearch, myClass, today, 
             value={search} onChange={e => setSearch(e.target.value)} />
           <input ref={fileInputRef} type="file" accept=".csv" style={{ display: 'none' }}
             onChange={handleFileImport} />
-          <button type="button" className="btn"
-            style={{ background: '#f0f9ff', color: '#0369a1', fontWeight: 700, whiteSpace: 'nowrap' }}
-            onClick={() => fileInputRef.current?.click()}>
-            📥 นำเข้า
-          </button>
+
+          {/* ── Dropdown นำเข้าข้อมูล ── */}
+          <div ref={dropRef} style={{ position: 'relative' }}>
+            <button type="button" className="btn"
+              style={{ background: '#f0f9ff', color: '#0369a1', fontWeight: 700, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '.35rem' }}
+              onClick={() => setDropOpen(v => !v)}>
+              📥 นำเข้าข้อมูล
+              <span style={{ fontSize: '.7rem', opacity: .7 }}>{dropOpen ? '▲' : '▼'}</span>
+            </button>
+
+            {dropOpen && (
+              <div style={{
+                position: 'absolute', right: 0, top: 'calc(100% + 6px)', zIndex: 200,
+                background: '#fff', borderRadius: '14px', minWidth: '210px',
+                boxShadow: '0 8px 32px rgba(0,0,0,.13)', border: '1px solid #e2e8f0',
+                overflow: 'hidden',
+              }}>
+                {/* ── ไฟล์ ── */}
+                <div style={menuLabel}>ไฟล์</div>
+                <button type="button" style={menuItem}
+                  onMouseEnter={e => e.currentTarget.style.background='#f8fafc'}
+                  onMouseLeave={e => e.currentTarget.style.background='none'}
+                  onClick={handleDownloadTemplate}>
+                  📋 ดาวน์โหลด Template CSV
+                </button>
+                <button type="button" style={menuItem}
+                  onMouseEnter={e => e.currentTarget.style.background='#f8fafc'}
+                  onMouseLeave={e => e.currentTarget.style.background='none'}
+                  onClick={() => fileInputRef.current?.click()}>
+                  📂 นำเข้าจาก CSV
+                </button>
+
+                {/* ── เครื่องมือ ── */}
+                <div style={{ ...menuLabel, borderTop: '1px solid #f1f5f9', marginTop: '.25rem' }}>เครื่องมือ</div>
+                <button type="button" style={{ ...menuItem, marginBottom: '.35rem' }}
+                  onMouseEnter={e => e.currentTarget.style.background='#f8fafc'}
+                  onMouseLeave={e => e.currentTarget.style.background='none'}
+                  onClick={handleSetPinFromId}>
+                  🔑 ตั้ง PIN = รหัสประจำตัว
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '.6rem' }}>

@@ -70,7 +70,7 @@ function countFilled(entry) {
 export default function HealthCheckTab({ teacherClassFilter = null }) {
   const {
     students, classes, teachers, role, user,
-    academicYear, schoolLogo,
+    academicYear, schoolLogo, holidays,
     healthCheckRecords, setHealthCheckRecords,
     backfillHealthCheckRecords,
   } = useApp();
@@ -79,6 +79,19 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
   const myClass   = teacherClassFilter ?? (isTeacher ? user?.className : null);
 
   const todayIso = new Date().toISOString().slice(0, 10);
+
+  // ── ตรวจสอบวันหยุด ────────────────────────────────────────────────────────
+  const holidayInfo = useMemo(() => {
+    return (holidays ?? []).find(h => {
+      if (!h.date) return false;
+      if (h.date.includes('/')) {
+        const [dd, mm, bYear] = h.date.split('/');
+        return `${Number(bYear) - 543}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}` === selDate;
+      }
+      return h.date === selDate;
+    }) ?? null;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [holidays, selDate]);
 
   const [selClass, setSelClass] = useState(() => myClass ?? (classes[0]?.name ?? ''));
   const [selDate,  setSelDate]  = useState(todayIso);
@@ -285,6 +298,25 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:6px"><img src="${sch
       <div className="page-header mb-4">
         <h3>🏥 การตรวจสุขภาพประจำสัปดาห์</h3>
       </div>
+
+      {/* ── แบนเนอร์วันหยุด ── */}
+      {holidayInfo && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '.75rem',
+          background: '#fef3c7', border: '1.5px solid #f59e0b',
+          borderRadius: '12px', padding: '.75rem 1rem', marginBottom: '1rem',
+        }}>
+          <span style={{ fontSize: '1.4rem' }}>🎌</span>
+          <div>
+            <div style={{ fontWeight: 800, color: '#92400e', fontSize: '.9rem' }}>
+              วันหยุด — {holidayInfo.label}
+            </div>
+            <div style={{ fontSize: '.78rem', color: '#b45309', marginTop: '.1rem' }}>
+              วันที่เลือกเป็นวันหยุดราชการ ข้อมูลที่บันทึกจะยังคงอยู่
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Controls ── */}
       <div style={{

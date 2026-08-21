@@ -1,6 +1,7 @@
-﻿import { useState, useRef } from 'react';
+﻿import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { INDICATORS_DATA_68 } from '../../data/indicatorsData_68';
+import { INITIAL_INDICATORS, INITIAL_ACTIVITIES } from '../../data/flatIndicators';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 
 // ── helper: รายการ standard ในแต่ละ domain (ใช้ indicatorsData_68) ─────────
@@ -341,7 +342,7 @@ function IndicatorModal({ isOpen, onClose, onSave, editing, domains }) {
 
 // ── Main IndicatorsTab ────────────────────────────────────────────────────────
 export default function IndicatorsTab() {
-  const { indicators, setIndicators, activities } = useApp();
+  const { indicators, setIndicators, activities, setActivities } = useApp();
   const [activeDomain, setActiveDomain] = useState(INDICATORS_DATA_68[0]?.id ?? 'physical');
   const [isModal,      setIsModal]      = useState(false);
   const [isCsvModal,   setIsCsvModal]   = useState(false);
@@ -349,13 +350,24 @@ export default function IndicatorsTab() {
   const [search,       setSearch]       = useState('');
   const [toast,        setToast]        = useState(null);
 
+  // ── Auto-migrate: ถ้า indicators ไม่มีรูปแบบ ปี 68 (x.xข) → reset เป็น 2568 ──
+  useEffect(() => {
+    const has68 = indicators.some(i => /\d+\.\d+ข/.test(i.indicatorCode ?? ''));
+    if (!has68) {
+      setIndicators(INITIAL_INDICATORS);
+      setActivities(INITIAL_ACTIVITIES);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const domains = INDICATORS_DATA_68.map(d => ({ id: d.id, label: d.label, emoji: d.emoji, color: d.color, bg: d.bg }));
   const domain  = INDICATORS_DATA_68.find(d => d.id === activeDomain);
 
-  const domainIndicators = indicators.filter(ind =>
-    ind.domainId === activeDomain &&
-    (search === '' || ind.label.toLowerCase().includes(search.toLowerCase()) || ind.indicatorCode.includes(search))
-  );
+  const domainIndicators = indicators
+    .filter(ind =>
+      ind.domainId === activeDomain &&
+      (search === '' || ind.label.toLowerCase().includes(search.toLowerCase()) || ind.indicatorCode.includes(search))
+    )
+    .sort((a, b) => a.indicatorCode.localeCompare(b.indicatorCode, 'th', { numeric: true }));
 
   const actCountFor = (indId) => activities.filter(a => a.indicatorId === indId).length;
 

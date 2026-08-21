@@ -109,7 +109,7 @@ const TAB_GROUPS = [
     tabs: [
       { id: 'schools',           label: '🏛️ โรงเรียน'                  },  // ตั้งค่าพื้นฐาน
       { id: 'terms',             label: '📅 ภาคเรียน'                   },  // กรอบเวลา
-      { id: 'holidays',          label: '🏖️ วันหยุด'                    },  // ปฏิทิน
+      { id: 'holidays',          label: '🏖️ วันหยุดราชการ'               },  // ปฏิทิน
       { id: 'activities',        label: '🎯 กิจกรรม'                    },  // กิจกรรม
       { id: 'activityschedule',  label: '🗓️ กิจกรรมภายใน-นอกห้องเรียน' },  // ตารางกิจกรรม
       { id: 'topics',            label: '📝 หัวข้อประเมิน'             },  // กรอบการประเมิน

@@ -102,7 +102,7 @@ export default function HolidaysTab() {
   return (
     <div className="glass p-6 animate-fade">
       <div className="page-header mb-6">
-        <h3>🏖️ จัดการวันหยุดและกิจกรรมประจำปี</h3>
+        <h3>🏖️ จัดการวันหยุดราชการและกิจกรรมประจำปี</h3>
         <button type="button" className="btn btn-primary" onClick={openModal}>
           + เพิ่มวันหยุด
         </button>

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
-import { INDICATORS_DATA } from '../../data/indicatorsData';
+import { INDICATORS_DATA_68 } from '../../data/indicatorsData_68';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 
 // ── Modal เพิ่ม/แก้ไขกิจกรรม ───────────────────────────────────────────────
@@ -105,7 +105,7 @@ function ActivityModal({ isOpen, onClose, onSave, editing, indicators, presetInd
 export default function ActivitiesTab() {
   const { indicators, activities, setActivities } = useApp();
 
-  const domains = INDICATORS_DATA.map(d => ({ id: d.id, label: d.label, emoji: d.emoji, color: d.color, bg: d.bg }));
+  const domains = INDICATORS_DATA_68.map(d => ({ id: d.id, label: d.label, emoji: d.emoji, color: d.color, bg: d.bg }));
 
   const [activeDomain,    setActiveDomain]    = useState(domains[0]?.id ?? 'physical');
   const [activeIndicator, setActiveIndicator] = useState('all');

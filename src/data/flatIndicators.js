@@ -1,14 +1,16 @@
 /**
  * flatIndicators.js
- * แปลง INDICATORS_DATA (nested) → flat arrays สำหรับ CRUD
+ * แปลง INDICATORS_DATA_68 (nested, หลักสูตร 2568) → flat arrays สำหรับ CRUD
+ *
+ * ปรับเป็น ปี 68 — INDICATORS_DATA เดิม (ดย./ปวัย.2560/สมศ.) ถูกทดแทนแล้ว
  */
-import { INDICATORS_DATA } from './indicatorsData';
+import { INDICATORS_DATA_68 } from './indicatorsData_68';
 
 function buildFlat() {
   const indicators = [];
   const activities = [];
 
-  INDICATORS_DATA.forEach(domain => {
+  INDICATORS_DATA_68.forEach(domain => {
     domain.standards.forEach(std => {
       std.indicators.forEach(ind => {
         const indKey = `${domain.id}__${std.id}__${ind.id}`;
@@ -48,8 +50,8 @@ const _flat = buildFlat();
 export const INITIAL_INDICATORS = _flat.indicators;
 export const INITIAL_ACTIVITIES = _flat.activities;
 
-/** helper: รายการ standard ในแต่ละ domain */
+/** helper: รายการ standard ในแต่ละ domain (ใช้ ปี 68) */
 export function getStandardsByDomain(domainId) {
-  const dom = INDICATORS_DATA.find(d => d.id === domainId);
+  const dom = INDICATORS_DATA_68.find(d => d.id === domainId);
   return dom ? dom.standards.map(s => ({ id: s.id, title: s.title })) : [];
 }

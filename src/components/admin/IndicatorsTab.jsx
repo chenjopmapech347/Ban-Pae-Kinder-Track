@@ -1,17 +1,22 @@
 ﻿import { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
-import { INDICATORS_DATA } from '../../data/indicatorsData';
-import { getStandardsByDomain } from '../../data/flatIndicators';
+import { INDICATORS_DATA_68 } from '../../data/indicatorsData_68';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
+
+// ── helper: รายการ standard ในแต่ละ domain (ใช้ indicatorsData_68) ─────────
+function getStandardsByDomain(domainId) {
+  const dom = INDICATORS_DATA_68.find(d => d.id === domainId);
+  return dom ? dom.standards.map(s => ({ id: s.id, title: s.title })) : [];
+}
 
 // ── CSV helpers ───────────────────────────────────────────────────────────────
 
 const DOMAIN_MAP = {
-  // id → Thai label (for export)
-  physical:  'ร่างกาย',
-  emotional: 'อารมณ์-จิตใจ',
-  social:    'สังคม',
-  mental:    'สติปัญญา',
+  // id → Thai label (for export)  — หลักสูตรปฐมวัย 2568
+  physical:  'สุขภาวะทางกาย',
+  emotional: 'อารมณ์ จิตใจ และสังคม',
+  citizen:   'ความเป็นพลเมืองและความเป็นไทย',
+  cognitive: 'สติปัญญา',
 };
 const DOMAIN_ID_MAP = Object.fromEntries(
   Object.entries(DOMAIN_MAP).map(([k, v]) => [v, k])
@@ -19,9 +24,9 @@ const DOMAIN_ID_MAP = Object.fromEntries(
 
 function downloadTemplate() {
   const rows = [
-    ['ด้าน (physical/emotional/social/mental)', 'รหัสมาตรฐาน', 'ชื่อมาตรฐาน', 'รหัสตัวบ่งชี้', 'ชื่อตัวบ่งชี้'],
-    ['physical', 'qa-3', 'มาตรฐานที่ 3 ร่างกาย', '3.1', 'ตัวบ่งชี้ที่ 3.1 น้ำหนัก/ส่วนสูงตามเกณฑ์'],
-    ['mental',   'std-10', 'มาตรฐานที่ 10 ภาษา', '10.1', 'ตัวบ่งชี้ที่ 10.1 ฟัง-พูดสื่อสารได้'],
+    ['ด้าน (physical/emotional/citizen/cognitive)', 'รหัสมาตรฐาน', 'ชื่อมาตรฐาน', 'รหัสตัวบ่งชี้', 'ชื่อตัวบ่งชี้'],
+    ['physical',  'std68-physical',  'มาตรฐานที่ 1 — ด้านสุขภาวะทางกาย',  '1.1ข', 'ตัวบ่งชี้ 1.1ข น้ำหนักและส่วนสูงตามเกณฑ์'],
+    ['cognitive', 'std68-cognitive', 'มาตรฐานที่ 1 — ด้านสติปัญญา',       '1.5ข', 'ตัวบ่งชี้ 1.5ข สุขภาวะทางสติปัญญา'],
   ];
   const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -33,7 +38,7 @@ function downloadTemplate() {
 
 function exportIndicators(indicators) {
   const rows = [
-    ['ด้าน (physical/emotional/social/mental)', 'รหัสมาตรฐาน', 'ชื่อมาตรฐาน', 'รหัสตัวบ่งชี้', 'ชื่อตัวบ่งชี้'],
+    ['ด้าน (physical/emotional/citizen/cognitive)', 'รหัสมาตรฐาน', 'ชื่อมาตรฐาน', 'รหัสตัวบ่งชี้', 'ชื่อตัวบ่งชี้'],
     ...indicators.map(i => [i.domainId, i.standardId, i.standardTitle, i.indicatorCode, i.label]),
   ];
   const csv = rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
@@ -101,7 +106,7 @@ function parseCSV(text) {
     }
     const standardId    = col.standardId >= 0 ? (cells[col.standardId] ?? '') : '';
     const standardTitle = col.standardTitle >= 0 ? (cells[col.standardTitle] ?? '') : '';
-    const domInfo = INDICATORS_DATA.find(d => d.id === domainId);
+    const domInfo = INDICATORS_DATA_68.find(d => d.id === domainId);
 
     indicators.push({
       id:            `${domainId}__${standardId}__${indicatorCode}__csv_${Date.now()}_${idx}`,
@@ -337,15 +342,15 @@ function IndicatorModal({ isOpen, onClose, onSave, editing, domains }) {
 // ── Main IndicatorsTab ────────────────────────────────────────────────────────
 export default function IndicatorsTab() {
   const { indicators, setIndicators, activities } = useApp();
-  const [activeDomain, setActiveDomain] = useState(INDICATORS_DATA[0]?.id ?? 'physical');
+  const [activeDomain, setActiveDomain] = useState(INDICATORS_DATA_68[0]?.id ?? 'physical');
   const [isModal,      setIsModal]      = useState(false);
   const [isCsvModal,   setIsCsvModal]   = useState(false);
   const [editing,      setEditing]      = useState(null);
   const [search,       setSearch]       = useState('');
   const [toast,        setToast]        = useState(null);
 
-  const domains = INDICATORS_DATA.map(d => ({ id: d.id, label: d.label, emoji: d.emoji, color: d.color, bg: d.bg }));
-  const domain  = INDICATORS_DATA.find(d => d.id === activeDomain);
+  const domains = INDICATORS_DATA_68.map(d => ({ id: d.id, label: d.label, emoji: d.emoji, color: d.color, bg: d.bg }));
+  const domain  = INDICATORS_DATA_68.find(d => d.id === activeDomain);
 
   const domainIndicators = indicators.filter(ind =>
     ind.domainId === activeDomain &&
@@ -474,112 +479,40 @@ export default function IndicatorsTab() {
         </div>
       </div>
 
-      {/* Standard Sections */}
-      {domain?.standards.map(std => {
-        const stdInds = domainIndicators.filter(i => i.standardId === std.id);
-        if (stdInds.length === 0 && search) return null;
-        return (
-          <div key={std.id} style={{ marginBottom: '1.25rem' }}>
-            <div style={{
-              padding: '.5rem .85rem', marginBottom: '.6rem',
-              background: domain ? `${domain.color}12` : '#f5f3ff',
-              borderLeft: `3px solid ${domain?.color ?? '#7c3aed'}`,
-              borderRadius: '0 8px 8px 0', fontSize: '.8rem',
-              fontWeight: 700, color: domain?.color ?? '#7c3aed',
-            }}>
-              {std.title}
-            </div>
-
-            {stdInds.length === 0 ? (
-              <div style={{ fontSize: '.82rem', color: 'var(--text-muted)', padding: '.5rem 1rem' }}>
-                ยังไม่มีตัวบ่งชี้ในมาตรฐานนี้
+      {/* ตัวบ่งชี้ทั้งหมดของด้านนี้ (ไม่แบ่ง sub-standard เพราะแต่ละด้านมี 1 standard) */}
+      {domainIndicators.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem', marginBottom: '1.25rem' }}>
+          {domainIndicators.map(ind => {
+            const aCnt = actCountFor(ind.id);
+            return (
+              <div key={ind.id} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                background: 'white', border: `1.5px solid ${(domain?.color ?? '#7c3aed')}20`,
+                borderRadius: '10px', padding: '.6rem .85rem', transition: 'all .15s',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flex: 1, minWidth: 0 }}>
+                  <span style={{
+                    background: `${domain?.color ?? '#7c3aed'}20`, color: domain?.color ?? '#7c3aed',
+                    borderRadius: '6px', padding: '.1rem .45rem',
+                    fontSize: '.7rem', fontWeight: 800, flexShrink: 0,
+                  }}>{ind.indicatorCode}</span>
+                  <span style={{ fontWeight: 600, fontSize: '.85rem', color: '#374151' }}>{ind.label}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexShrink: 0 }}>
+                  <span style={{
+                    background: aCnt > 0 ? `${domain?.color ?? '#7c3aed'}15` : '#f3f4f6',
+                    color: aCnt > 0 ? domain?.color ?? '#7c3aed' : '#9ca3af',
+                    borderRadius: '999px', padding: '0 .55rem', fontSize: '.72rem', fontWeight: 700,
+                  }}>{aCnt} กิจกรรม</span>
+                  <button className="btn btn-sm" onClick={() => { setEditing(ind); setIsModal(true); }}>แก้ไข</button>
+                  <button className="btn btn-sm" style={{ color: 'var(--danger)' }}
+                    onClick={() => handleDelete(ind.id)}>ลบ</button>
+                </div>
               </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
-                {stdInds.map(ind => {
-                  const aCnt = actCountFor(ind.id);
-                  return (
-                    <div key={ind.id} style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      background: 'white', border: `1.5px solid ${(domain?.color ?? '#7c3aed')}20`,
-                      borderRadius: '10px', padding: '.6rem .85rem', transition: 'all .15s',
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flex: 1, minWidth: 0 }}>
-                        <span style={{
-                          background: `${domain?.color ?? '#7c3aed'}20`, color: domain?.color ?? '#7c3aed',
-                          borderRadius: '6px', padding: '.1rem .45rem',
-                          fontSize: '.7rem', fontWeight: 800, flexShrink: 0,
-                        }}>{ind.indicatorCode}</span>
-                        <span style={{ fontWeight: 600, fontSize: '.85rem', color: '#374151' }}>{ind.label}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexShrink: 0 }}>
-                        <span style={{
-                          background: aCnt > 0 ? `${domain?.color ?? '#7c3aed'}15` : '#f3f4f6',
-                          color: aCnt > 0 ? domain?.color ?? '#7c3aed' : '#9ca3af',
-                          borderRadius: '999px', padding: '0 .55rem', fontSize: '.72rem', fontWeight: 700,
-                        }}>{aCnt} กิจกรรม</span>
-                        <button className="btn btn-sm" onClick={() => { setEditing(ind); setIsModal(true); }}>แก้ไข</button>
-                        <button className="btn btn-sm" style={{ color: 'var(--danger)' }}
-                          onClick={() => handleDelete(ind.id)}>ลบ</button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        );
-      })}
-
-      {/* ตัวบ่งชี้ที่ไม่มี standardId (นำเข้าจาก CSV ที่ไม่ระบุมาตรฐาน) */}
-      {(() => {
-        const stdIds = domain?.standards.map(s => s.id) ?? [];
-        const orphans = domainIndicators.filter(i => !stdIds.includes(i.standardId));
-        if (!orphans.length) return null;
-        return (
-          <div style={{ marginBottom: '1.25rem' }}>
-            <div style={{
-              padding: '.5rem .85rem', marginBottom: '.6rem',
-              background: '#f9fafb', borderLeft: '3px solid #9ca3af',
-              borderRadius: '0 8px 8px 0', fontSize: '.8rem',
-              fontWeight: 700, color: '#6b7280',
-            }}>
-              📌 ตัวบ่งชี้อื่น ๆ (ไม่ระบุมาตรฐาน)
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
-              {orphans.map(ind => {
-                const aCnt = actCountFor(ind.id);
-                return (
-                  <div key={ind.id} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    background: 'white', border: '1.5px solid #e5e7eb',
-                    borderRadius: '10px', padding: '.6rem .85rem',
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flex: 1, minWidth: 0 }}>
-                      <span style={{
-                        background: '#f3f4f6', color: '#6b7280',
-                        borderRadius: '6px', padding: '.1rem .45rem',
-                        fontSize: '.7rem', fontWeight: 800, flexShrink: 0,
-                      }}>{ind.indicatorCode}</span>
-                      <span style={{ fontWeight: 600, fontSize: '.85rem', color: '#374151' }}>{ind.label}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexShrink: 0 }}>
-                      <span style={{
-                        background: aCnt > 0 ? '#f5f3ff' : '#f3f4f6',
-                        color: aCnt > 0 ? '#7c3aed' : '#9ca3af',
-                        borderRadius: '999px', padding: '0 .55rem', fontSize: '.72rem', fontWeight: 700,
-                      }}>{aCnt} กิจกรรม</span>
-                      <button className="btn btn-sm" onClick={() => { setEditing(ind); setIsModal(true); }}>แก้ไข</button>
-                      <button className="btn btn-sm" style={{ color: 'var(--danger)' }}
-                        onClick={() => handleDelete(ind.id)}>ลบ</button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })()}
+            );
+          })}
+        </div>
+      )}
 
       {domainIndicators.length === 0 && !search && (
         <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>

@@ -47,21 +47,100 @@ const DOMAIN_META = {
 // ─── มาตรฐานที่ 2 — การบริหาร (5 ตัวบ่งชี้, 22 รายการพิจารณา) ปี 68 ────
 // บันทึกโดยผู้อำนวยการ / ผู้รับผิดชอบสถานพัฒนา
 const STD2_ITEMS = [
-  { id: '2.1', label: 'อัตราส่วนบุคลากรต่อเด็กเหมาะสม ไม่เกิน 1 : 15 (กลุ่ม ข)', detail: '22 รายการพิจารณา' },
-  { id: '2.2', label: 'บุคลากรมีคุณสมบัติ คุณวุฒิ ความรู้ และทักษะตามที่กำหนด', detail: '' },
-  { id: '2.3', label: 'สภาพแวดล้อม อาคาร สถานที่ และสิ่งอำนวยความสะดวกปลอดภัยและเหมาะสมกับพัฒนาการ', detail: '' },
-  { id: '2.4', label: 'มีระบบการดูแลสุขภาพ โภชนาการ และความปลอดภัยของเด็กอย่างเป็นระบบ', detail: '' },
-  { id: '2.5', label: 'มีการมีส่วนร่วมของผู้ปกครองและชุมชนในการพัฒนาเด็กปฐมวัย', detail: '' },
+  {
+    id: '2.1', label: 'อัตราส่วนบุคลากรต่อเด็กเหมาะสม ไม่เกิน 1 : 15 (กลุ่ม ข)',
+    subItems: [
+      'มีบุคลากรผู้ดูแลเด็กในอัตราส่วนไม่เกิน 1 คนต่อ 15 คน',
+      'บุคลากรอยู่ประจำในพื้นที่ดูแลเด็กตลอดเวลาที่เด็กอยู่ในความดูแล',
+      'มีครูสำรองหรือแผนรองรับในกรณีบุคลากรขาด/ลา',
+      'จัดทำตารางเวรและบันทึกการปฏิบัติงานของบุคลากรทุกวัน',
+    ],
+  },
+  {
+    id: '2.2', label: 'บุคลากรมีคุณสมบัติ คุณวุฒิ ความรู้ และทักษะตามที่กำหนด',
+    subItems: [
+      'บุคลากรมีวุฒิการศึกษาและ/หรือใบอนุญาตที่เกี่ยวข้องกับการดูแลเด็กปฐมวัย',
+      'บุคลากรผ่านการตรวจสอบประวัติและไม่มีประวัติคดีที่เกี่ยวข้องกับเด็ก',
+      'บุคลากรได้รับการพัฒนาความรู้ด้านการดูแลเด็กปฐมวัยอย่างน้อยปีละ 1 ครั้ง',
+      'บุคลากรมีสุขภาพร่างกายและจิตใจที่เหมาะสมกับการดูแลเด็ก',
+      'มีการประเมินผลการปฏิบัติงานของบุคลากรเป็นประจำทุกปี',
+    ],
+  },
+  {
+    id: '2.3', label: 'สภาพแวดล้อม อาคาร สถานที่ และสิ่งอำนวยความสะดวกปลอดภัยและเหมาะสมกับพัฒนาการ',
+    subItems: [
+      'อาคารและห้องเรียนมีความปลอดภัย สะอาด และได้รับการดูแลรักษาสม่ำเสมอ',
+      'พื้นที่ใช้สอยต่อเด็กเป็นไปตามเกณฑ์ที่กำหนด (ไม่น้อยกว่า 2 ตร.ม. ต่อเด็ก 1 คน)',
+      'สนามเด็กเล่นและอุปกรณ์ออกกำลังกายปลอดภัยและเหมาะสมกับวัย',
+      'ห้องน้ำ-ห้องส้วมสะอาด เพียงพอ และเหมาะสมกับขนาดร่างกายของเด็ก',
+      'สื่อ อุปกรณ์ และของเล่นปลอดภัยตามมาตรฐาน และมีเพียงพอต่อจำนวนเด็ก',
+      'มีมาตรการและแผนรับมืออุบัติเหตุ อัคคีภัย และภัยพิบัติ',
+    ],
+  },
+  {
+    id: '2.4', label: 'มีระบบการดูแลสุขภาพ โภชนาการ และความปลอดภัยของเด็กอย่างเป็นระบบ',
+    subItems: [
+      'มีการคัดกรองสุขภาพเด็กทุกวัน และบันทึกผลเป็นรายบุคคล',
+      'มีสมุดบันทึกพัฒนาการและสุขภาพเด็กรายบุคคลที่อัปเดตสม่ำเสมอ',
+      'จัดอาหารที่มีคุณค่าทางโภชนาการเหมาะสมกับวัย และคำนึงถึงความต้องการพิเศษ',
+      'มีแผนปฏิบัติการฉุกเฉินและข้อมูลการติดต่อผู้ปกครอง/หน่วยบริการการแพทย์',
+    ],
+  },
+  {
+    id: '2.5', label: 'มีการมีส่วนร่วมของผู้ปกครองและชุมชนในการพัฒนาเด็กปฐมวัย',
+    subItems: [
+      'มีช่องทางการสื่อสารสองทางระหว่างสถานพัฒนาฯ กับผู้ปกครองอย่างชัดเจน',
+      'จัดกิจกรรมให้ผู้ปกครองมีส่วนร่วมในการพัฒนาเด็กอย่างน้อยภาคเรียนละ 1 ครั้ง',
+      'รับฟังความคิดเห็นและข้อเสนอแนะจากผู้ปกครองและนำไปปรับปรุงการให้บริการ',
+    ],
+  },
 ];
 
 // ─── มาตรฐานที่ 3 — การจัดประสบการณ์ (5 ตัวบ่งชี้, 17 รายการพิจารณา) ปี 68 ──
 // ครู/ผู้ดูแลเด็กประเมินตนเองรายบุคคล
 const STD3_ITEMS = [
-  { id: '3.1', label: 'วางแผนและจัดทำหลักสูตรสถานศึกษาที่สอดคล้องกับหลักสูตรการศึกษาปฐมวัย' },
-  { id: '3.2', label: 'จัดประสบการณ์บูรณาการที่ส่งเสริมพัฒนาการเด็กทุกด้านอย่างสมดุล' },
-  { id: '3.3', label: 'ส่งเสริมการเรียนรู้ผ่านการเล่นและการลงมือทำตามวัย' },
-  { id: '3.4', label: 'ประเมินพัฒนาการเด็กอย่างเป็นระบบ ต่อเนื่อง และนำผลไปปรับปรุงการจัดการเรียนรู้' },
-  { id: '3.5', label: 'สร้างความสัมพันธ์และสื่อสารพัฒนาการเด็กกับครอบครัว/ผู้ปกครองอย่างสม่ำเสมอ' },
+  {
+    id: '3.1', label: 'วางแผนและจัดทำหลักสูตรสถานศึกษาที่สอดคล้องกับหลักสูตรการศึกษาปฐมวัย',
+    subItems: [
+      'มีหลักสูตรสถานศึกษาที่สอดคล้องกับหลักสูตรการศึกษาปฐมวัย พ.ศ. 2560',
+      'จัดทำแผนการจัดประสบการณ์ประจำปีและประจำสัปดาห์อย่างเป็นระบบ',
+      'แผนการจัดประสบการณ์ครอบคลุมพัฒนาการทุกด้านอย่างสมดุล',
+      'มีการทบทวนและปรับปรุงหลักสูตรและแผนการสอนตามผลการประเมิน',
+    ],
+  },
+  {
+    id: '3.2', label: 'จัดประสบการณ์บูรณาการที่ส่งเสริมพัฒนาการเด็กทุกด้านอย่างสมดุล',
+    subItems: [
+      'จัดประสบการณ์ที่บูรณาการพัฒนาการ 4 ด้านอย่างสมดุลในแต่ละวัน',
+      'เลือกใช้สื่อและกิจกรรมที่หลากหลายและเหมาะสมกับวัยของเด็ก',
+      'จัดสภาพแวดล้อมในห้องเรียนและนอกห้องเรียนที่เอื้อต่อการเรียนรู้',
+      'ส่งเสริมและดูแลเด็กที่มีความต้องการพิเศษเป็นรายบุคคล',
+    ],
+  },
+  {
+    id: '3.3', label: 'ส่งเสริมการเรียนรู้ผ่านการเล่นและการลงมือทำตามวัย',
+    subItems: [
+      'จัดกิจกรรมการเล่นอิสระและเล่นสร้างสรรค์ให้เด็กทุกวัน',
+      'จัดมุมเล่นและวัสดุที่หลากหลายเพื่อกระตุ้นการเรียนรู้และจินตนาการ',
+      'สังเกตและบันทึกพฤติกรรมการเล่นเพื่อเข้าใจพัฒนาการเด็กรายบุคคล',
+    ],
+  },
+  {
+    id: '3.4', label: 'ประเมินพัฒนาการเด็กอย่างเป็นระบบ ต่อเนื่อง และนำผลไปปรับปรุงการจัดการเรียนรู้',
+    subItems: [
+      'ใช้วิธีการประเมินที่หลากหลาย เช่น การสังเกต บันทึกพฤติกรรม แฟ้มสะสมผลงาน',
+      'บันทึกพัฒนาการเด็กเป็นรายบุคคลอย่างสม่ำเสมอและต่อเนื่อง',
+      'นำผลการประเมินพัฒนาการไปปรับปรุงการจัดประสบการณ์ให้เหมาะสมยิ่งขึ้น',
+    ],
+  },
+  {
+    id: '3.5', label: 'สร้างความสัมพันธ์และสื่อสารพัฒนาการเด็กกับครอบครัว/ผู้ปกครองอย่างสม่ำเสมอ',
+    subItems: [
+      'รายงานพัฒนาการของเด็กให้ผู้ปกครองทราบอย่างสม่ำเสมอ อย่างน้อยภาคเรียนละ 1 ครั้ง',
+      'มีช่องทางรับ-ส่งข้อมูลที่สะดวกระหว่างครูและผู้ปกครอง (สมุด/แอป/LINE)',
+      'ให้คำแนะนำแก่ผู้ปกครองในการส่งเสริมพัฒนาการของเด็กที่บ้าน',
+    ],
+  },
 ];
 
 // ── backward compat: ชื่อเดิม STD1_ITEMS ถูกใช้ใน calcChecklistScore → map ไปที่ STD2
@@ -153,9 +232,10 @@ function DomainCard({ domain, stats }) {
   );
 }
 
-// ─── Checklist section (มาตรฐาน 1 & 2) ───────────────────────────────────────
+// ─── Checklist section (มาตรฐาน 2 & 3) ──────────────────────────────────────
 function ChecklistSection({ title, subtitle, items, ratings, onChange, colorAccent }) {
   const score = calcChecklistScore(items, ratings);
+  const [expanded, setExpanded] = useState(null); // id ของ item ที่เปิด accordion
 
   return (
     <div style={{
@@ -187,44 +267,103 @@ function ChecklistSection({ title, subtitle, items, ratings, onChange, colorAcce
       {/* Items */}
       <div style={{ padding: '.75rem 1rem', display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
         {items.map(item => {
-          const val = ratings[item.id] ?? 0;
-          const rm = ratingMeta(val);
+          const val     = ratings[item.id] ?? 0;
+          const rm      = ratingMeta(val);
+          const isOpen  = expanded === item.id;
+          const hasSubs = item.subItems && item.subItems.length > 0;
+
           return (
             <div key={item.id} style={{
-              display: 'flex', alignItems: 'center', gap: '.75rem',
-              padding: '.6rem .75rem', borderRadius: '10px',
-              background: val > 0 ? rm.bg + '80' : '#f9fafb',
+              borderRadius: '10px',
               border: `1.5px solid ${val > 0 ? rm.bg : '#e5e7eb'}`,
+              background: val > 0 ? rm.bg + '40' : '#f9fafb',
+              overflow: 'hidden',
+              transition: 'border-color .15s',
             }}>
-              {/* Code */}
+              {/* ── แถวหลัก ── */}
               <div style={{
-                minWidth: '36px', fontWeight: 900, fontSize: '.78rem',
-                color: colorAccent, flexShrink: 0,
+                display: 'flex', alignItems: 'center', gap: '.75rem',
+                padding: '.6rem .75rem',
               }}>
-                {item.id}
+                {/* Code */}
+                <div style={{
+                  minWidth: '36px', fontWeight: 900, fontSize: '.78rem',
+                  color: colorAccent, flexShrink: 0,
+                }}>
+                  {item.id}
+                </div>
+
+                {/* Label + expand toggle */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '.82rem', color: '#374151', lineHeight: 1.4 }}>
+                    {item.label}
+                  </div>
+                  {hasSubs && (
+                    <button
+                      type="button"
+                      onClick={() => setExpanded(isOpen ? null : item.id)}
+                      style={{
+                        marginTop: '.3rem', background: 'none', border: 'none', cursor: 'pointer',
+                        padding: 0, display: 'flex', alignItems: 'center', gap: '.25rem',
+                        fontSize: '.7rem', color: colorAccent, fontWeight: 700,
+                      }}
+                    >
+                      <span style={{
+                        display: 'inline-block',
+                        transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+                        transition: 'transform .2s',
+                        lineHeight: 1,
+                      }}>▶</span>
+                      {isOpen ? 'ซ่อนรายการพิจารณา' : `ดูรายการพิจารณา (${item.subItems.length} ข้อ)`}
+                    </button>
+                  )}
+                </div>
+
+                {/* Rating selector */}
+                <div style={{ display: 'flex', gap: '.3rem', flexShrink: 0 }}>
+                  {RATINGS.slice(0, 3).map(r => (
+                    <button
+                      key={r.value}
+                      type="button"
+                      onClick={() => onChange(item.id, val === r.value ? 0 : r.value)}
+                      style={{
+                        padding: '3px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                        fontWeight: 700, fontSize: '.7rem', transition: 'all .12s',
+                        background: val === r.value ? r.color : '#f3f4f6',
+                        color: val === r.value ? 'white' : '#9ca3af',
+                      }}
+                    >
+                      {r.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-              {/* Label */}
-              <div style={{ flex: 1, fontSize: '.82rem', color: '#374151', lineHeight: 1.4 }}>
-                {item.label}
-              </div>
-              {/* Rating selector */}
-              <div style={{ display: 'flex', gap: '.3rem', flexShrink: 0 }}>
-                {RATINGS.slice(0, 3).map(r => (
-                  <button
-                    key={r.value}
-                    type="button"
-                    onClick={() => onChange(item.id, val === r.value ? 0 : r.value)}
-                    style={{
-                      padding: '3px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer',
-                      fontWeight: 700, fontSize: '.7rem', transition: 'all .12s',
-                      background: val === r.value ? r.color : '#f3f4f6',
-                      color: val === r.value ? 'white' : '#9ca3af',
-                    }}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
+
+              {/* ── Sub-items accordion ── */}
+              {hasSubs && isOpen && (
+                <div style={{
+                  borderTop: `1px dashed ${colorAccent}40`,
+                  background: 'white',
+                  padding: '.5rem .75rem .65rem 3rem',
+                }}>
+                  <div style={{
+                    fontSize: '.7rem', fontWeight: 700, color: colorAccent,
+                    marginBottom: '.4rem', letterSpacing: '.02em',
+                  }}>
+                    📋 รายการพิจารณา ({item.subItems.length} ข้อ)
+                  </div>
+                  <ol style={{ margin: 0, paddingLeft: '1.1rem', display: 'flex', flexDirection: 'column', gap: '.3rem' }}>
+                    {item.subItems.map((sub, idx) => (
+                      <li key={idx} style={{
+                        fontSize: '.77rem', color: '#4b5563', lineHeight: 1.5,
+                        paddingLeft: '.25rem',
+                      }}>
+                        {sub}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
             </div>
           );
         })}

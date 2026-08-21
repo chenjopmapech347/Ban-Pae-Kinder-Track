@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-08-21T16:39:22.810Z",
+  "project": "kinder-track-57770",
+  "collections": [
+    "settings",
+    "std2_ratings",
+    "activityLogs",
+    "students",
+    "users",
+    "classrooms"
+  ],
+  "totalDocs": 0,
+  "note": "Backup ก่อน Task #3 — เพิ่ม UI รายการพิจารณา (sub-items) ปี 68"
+}

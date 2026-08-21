@@ -1,13 +1,13 @@
-// StandardsMapTab.jsx — ตารางแมปเชื่อมโยงมาตรฐานการศึกษาปฐมวัย 4 กรอบ
-// ดย. (กรมกิจการเด็กและเยาวชน) · หลักสูตรปฐมวัย พ.ศ. 2560 · สมศ. · มาตรฐานสถานพัฒนาฯ ปี 68
+// StandardsMapTab.jsx — ตารางแมปเชื่อมโยงมาตรฐานการศึกษาปฐมวัย
+// หลักสูตรปฐมวัย 2568 (ปี 68) ทดแทน ดย. (3.x–6.x) · หลักสูตรปฐมวัย 2560 · สมศ.
 import { useState } from 'react';
 
 // ── สีและ style สำหรับแต่ละกรอบ ──────────────────────────────────────────
 const FRAME = {
-  dcy:      { label: 'ดย.',       full: 'กรมกิจการเด็กและเยาวชน',              bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
-  cur:      { label: 'ปวัย.2560', full: 'หลักสูตรการศึกษาปฐมวัย พ.ศ. 2560',   bg: '#dcfce7', color: '#15803d', border: '#86efac' },
-  onesqa:   { label: 'สมศ.',      full: 'สำนักงานรับรองมาตรฐานฯ (สมศ.)',       bg: '#ffedd5', color: '#c2410c', border: '#fdba74' },
-  std68:    { label: 'ปี 68 ม.1', full: 'มาตรฐานสถานพัฒนาเด็กปฐมวัยแห่งชาติ ปี 68 (มาตรฐานที่ 1 คุณภาพเด็ก กลุ่ม ข)', bg: '#fdf4ff', color: '#7e22ce', border: '#e9d5ff' },
+  dcy:      { label: 'ดย.',       full: 'กรมกิจการเด็กและเยาวชน (มาตรฐานเดิม)',              bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
+  cur:      { label: 'ปวัย.2560', full: 'หลักสูตรการศึกษาปฐมวัย พ.ศ. 2560 (มาตรฐานเดิม)',   bg: '#dcfce7', color: '#15803d', border: '#86efac' },
+  onesqa:   { label: 'สมศ.',      full: 'สำนักงานรับรองมาตรฐานฯ สมศ. (มาตรฐานเดิม)',        bg: '#ffedd5', color: '#c2410c', border: '#fdba74' },
+  std68:    { label: 'ปี 68 ม.1', full: 'หลักสูตรปฐมวัย 2568 (ปี 68) — ทดแทนมาตรฐานเดิมทั้ง 3 กรอบข้างต้น', bg: '#fdf4ff', color: '#7e22ce', border: '#e9d5ff' },
 };
 
 function Tag({ type, text }) {
@@ -147,13 +147,31 @@ export default function StandardsMapTab() {
       </div>
 
       {/* คำอธิบาย 3 กรอบ */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px,1fr))', gap: '.75rem', marginBottom: '1.5rem' }}>
-        {Object.entries(FRAME).map(([k, f]) => (
-          <div key={k} style={{ background: f.bg, border: `1.5px solid ${f.border}`, borderRadius: '12px', padding: '.85rem 1rem' }}>
-            <div style={{ fontWeight: 800, fontSize: '.8rem', color: f.color, marginBottom: '.25rem' }}>{f.label}</div>
-            <div style={{ fontSize: '.75rem', color: '#374151', lineHeight: 1.4 }}>{f.full}</div>
+      {/* กรอบมาตรฐานเดิม (3 กรอบ) + ปี 68 (ทดแทน) */}
+      <div style={{ marginBottom: '1.25rem' }}>
+        <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#6b7280', marginBottom: '.4rem', textTransform: 'uppercase', letterSpacing: '.05em' }}>
+          ⏮ มาตรฐานเดิม (ถูกทดแทน)
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '.6rem', marginBottom: '.75rem', opacity: 0.7 }}>
+          {['dcy', 'cur', 'onesqa'].map(k => {
+            const f = FRAME[k];
+            return (
+              <div key={k} style={{ background: f.bg, border: `1.5px solid ${f.border}`, borderRadius: '10px', padding: '.7rem .9rem', position: 'relative' }}>
+                <div style={{ fontWeight: 800, fontSize: '.78rem', color: f.color, marginBottom: '.2rem', textDecoration: 'line-through', textDecorationColor: f.color }}>{f.label}</div>
+                <div style={{ fontSize: '.72rem', color: '#6b7280', lineHeight: 1.4 }}>{f.full}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#7e22ce', marginBottom: '.4rem', textTransform: 'uppercase', letterSpacing: '.05em' }}>
+          ✨ มาตรฐานใหม่ (ทดแทนทั้ง 3 กรอบข้างต้น)
+        </div>
+        {(() => { const f = FRAME.std68; return (
+          <div style={{ background: '#faf5ff', border: '2px solid #a855f7', borderRadius: '12px', padding: '.85rem 1rem' }}>
+            <div style={{ fontWeight: 800, fontSize: '.85rem', color: f.color, marginBottom: '.25rem' }}>หลักสูตรปฐมวัย 2568 (ปี 68)</div>
+            <div style={{ fontSize: '.75rem', color: '#374151', lineHeight: 1.5 }}>{f.full}</div>
           </div>
-        ))}
+        ); })()}
       </div>
 
       {/* Sub-nav */}
@@ -177,20 +195,29 @@ export default function StandardsMapTab() {
       {/* ── ตารางแมปรวม ── */}
       {activeSection === 'map' && (
         <div>
-          <div style={{ fontSize: '.78rem', color: 'var(--text-muted)', marginBottom: '1rem', background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '8px', padding: '.65rem 1rem' }}>
-            💡 <strong>วิธีใช้:</strong> หากสถานศึกษาเก็บหลักฐานตามหลักสูตร 2560 แล้ว สามารถใช้ข้อมูลชุดเดียวกันรายงานต่อทั้ง ดย. และ สมศ. ได้จากตารางนี้
+          <div style={{ fontSize: '.78rem', color: 'var(--text-muted)', marginBottom: '1rem', background: '#f5f3ff', border: '1px solid #c4b5fd', borderRadius: '8px', padding: '.65rem 1rem' }}>
+            ✨ <strong>หลักสูตรปฐมวัย 2568 (ปี 68)</strong> ใช้ทดแทนมาตรฐาน ดย. · หลักสูตรปฐมวัย 2560 · และ สมศ. — หลักฐานจากกิจกรรมเดียวกันสามารถใช้รายงานต่อมาตรฐานใหม่ ปี 68 ได้ทั้งหมด
           </div>
 
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.8rem' }}>
               <thead>
+                {/* แถว 1 — grouping header */}
                 <tr>
-                  <th style={{ background: '#1e40af', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '7%' }}>ด้าน</th>
-                  <th style={{ background: '#1e40af', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '24%' }}>มาตรฐาน ดย. (3.x–6.x)</th>
-                  <th style={{ background: '#15803d', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '28%' }}>หลักสูตรปฐมวัย 2560</th>
-                  <th style={{ background: '#c2410c', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '8%' }}>สมศ.</th>
-                  <th style={{ background: '#7e22ce', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '18%' }}>ปี 68 (ม.1 คุณภาพเด็ก)</th>
-                  <th style={{ background: '#374151', color: 'white', padding: '.6rem .85rem', textAlign: 'center' }}>หลักฐานร่วม</th>
+                  <th rowSpan={2} style={{ background: '#374151', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '7%', verticalAlign: 'middle' }}>ด้าน</th>
+                  <th colSpan={3} style={{ background: '#4b5563', color: '#d1d5db', padding: '.45rem .85rem', textAlign: 'center', fontSize: '.75rem', borderBottom: '1px solid #6b7280' }}>
+                    ⏮ มาตรฐานเดิม (ถูกทดแทนโดย ปี 68)
+                  </th>
+                  <th rowSpan={2} style={{ background: '#7e22ce', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '20%', verticalAlign: 'middle', lineHeight: 1.4 }}>
+                    ✨ หลักสูตรปฐมวัย 2568<br/><span style={{ fontSize: '.7rem', fontWeight: 400 }}>(ม.1 คุณภาพเด็ก กลุ่ม ข)</span>
+                  </th>
+                  <th rowSpan={2} style={{ background: '#374151', color: 'white', padding: '.6rem .85rem', textAlign: 'center', verticalAlign: 'middle' }}>หลักฐานร่วม</th>
+                </tr>
+                {/* แถว 2 — ชื่อคอลัมน์เดิม (strikethrough) */}
+                <tr>
+                  <th style={{ background: '#6b7280', color: '#e5e7eb', padding: '.35rem .6rem', textAlign: 'center', width: '22%', fontSize: '.72rem', textDecoration: 'line-through', textDecorationColor: '#9ca3af' }}>มาตรฐาน ดย. (3.x–6.x)</th>
+                  <th style={{ background: '#6b7280', color: '#e5e7eb', padding: '.35rem .6rem', textAlign: 'center', width: '26%', fontSize: '.72rem', textDecoration: 'line-through', textDecorationColor: '#9ca3af' }}>หลักสูตรปฐมวัย 2560</th>
+                  <th style={{ background: '#6b7280', color: '#e5e7eb', padding: '.35rem .6rem', textAlign: 'center', width: '8%',  fontSize: '.72rem', textDecoration: 'line-through', textDecorationColor: '#9ca3af' }}>สมศ.</th>
                 </tr>
               </thead>
               <tbody>

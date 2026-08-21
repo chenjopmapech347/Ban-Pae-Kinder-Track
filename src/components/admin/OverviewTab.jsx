@@ -1,15 +1,47 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { AttendanceBarChart, ClassRadarChart } from '../DevelopmentChart';
+import { exportDailyAttendanceSummaryExcel } from '../../utils/exportExcel';
 
 const ROUNDS = [1, 2, 3, 4];
 
 export default function OverviewTab() {
   const {
     students, teachers, assessmentTopics, announcements, setAnnouncements, allClassNames,
-    activities, indicators,
+    activities, indicators, dailyRecords, schoolName, academicYear,
   } = useApp();
   const ALL_CLASSES = allClassNames;
+
+  // ── สถิติการมาเรียนรายวัน ────────────────────────────────────────────────────
+  const [attDate, setAttDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const dailySummary = useMemo(() => {
+    const dayData = dailyRecords?.[attDate] ?? {};
+    return ALL_CLASSES.map(cls => {
+      const clsSt = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'));
+      const boys  = clsSt.filter(s =>  s.name.includes('ชาย'));
+      const girls = clsSt.filter(s => !s.name.includes('ชาย'));
+      const present   = id => dayData[String(id)]?.attendance === 'มา';
+      const absent    = id => ['ขาด','ลา','ป่วย'].includes(dayData[String(id)]?.attendance);
+      return {
+        cls,
+        totalBoys:   boys.length,
+        totalGirls:  girls.length,
+        presentBoys: boys.filter(s  => present(s.id)).length,
+        presentGirls:girls.filter(s => present(s.id)).length,
+        absentBoys:  boys.filter(s  => absent(s.id)).length,
+        absentGirls: girls.filter(s => absent(s.id)).length,
+      };
+    }).filter(r => r.totalBoys + r.totalGirls > 0);
+  }, [ALL_CLASSES, students, dailyRecords, attDate]);
+
+  const dailyTotal = useMemo(() => dailySummary.reduce(
+    (a, r) => ({
+      tB: a.tB + r.totalBoys,   tG: a.tG + r.totalGirls,
+      pB: a.pB + r.presentBoys, pG: a.pG + r.presentGirls,
+      aB: a.aB + r.absentBoys,  aG: a.aG + r.absentGirls,
+    }),
+    { tB:0,tG:0,pB:0,pG:0,aB:0,aG:0 }
+  ), [dailySummary]);
 
   // ── สถานะการประเมินแยกตามห้อง × ครั้ง ──────────────────────────────────────
   // นับจำนวน "ตัวบ่งชี้" ที่ประเมินแล้ว (distinct indicatorId ที่มี activity ≥ 1 ตัวได้รับคะแนน)
@@ -96,6 +128,13 @@ export default function OverviewTab() {
     })(),
   };
 
+  const thHead = {
+    background:'#166534', color:'white', padding:'.45rem .5rem',
+    textAlign:'center', border:'1px solid #fff', fontWeight:700, whiteSpace:'nowrap',
+  };
+  const tdStyle = { padding:'.4rem .6rem', border:'1px solid #e5e7eb', whiteSpace:'nowrap' };
+  const tdNum   = { ...tdStyle, textAlign:'center' };
+
   return (
     <div className="animate-fade">
 
@@ -168,6 +207,90 @@ export default function OverviewTab() {
         <div className="glass-card">
           <h4 className="mb-3">🌱 พัฒนาการเฉลี่ยแต่ละชั้น</h4>
           <ClassRadarChart students={students} topics={assessmentTopics} />
+        </div>
+      </div>
+
+      {/* ── สถิติการมาเรียนรายวัน ── */}
+      <div className="glass-card" style={{ marginBottom: '1.25rem' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:'.75rem', marginBottom:'1rem', flexWrap:'wrap' }}>
+          <h4 style={{ margin:0 }}>📅 สถิติการมาเรียนรายวัน</h4>
+          <input
+            type="date"
+            value={attDate}
+            onChange={e => setAttDate(e.target.value)}
+            style={{
+              border:'1.5px solid #e5e7eb', borderRadius:'8px', padding:'.25rem .6rem',
+              fontSize:'.82rem', fontFamily:'inherit', color:'#374151', cursor:'pointer',
+            }}
+          />
+          <button
+            onClick={() => exportDailyAttendanceSummaryExcel(dailySummary, attDate, schoolName, academicYear)}
+            disabled={!dailySummary.length}
+            style={{
+              marginLeft:'auto', background:'#16a34a', color:'white', border:'none',
+              borderRadius:'8px', padding:'.35rem .85rem', fontWeight:700, fontSize:'.8rem',
+              cursor: dailySummary.length ? 'pointer' : 'not-allowed', fontFamily:'inherit',
+              opacity: dailySummary.length ? 1 : .5, display:'flex', alignItems:'center', gap:'.35rem',
+            }}
+          >
+            📊 ดาวน์โหลด Excel
+          </button>
+        </div>
+
+        <div className="table-wrap">
+          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'.82rem' }}>
+            <thead>
+              <tr>
+                <th rowSpan={2} style={thHead}>ชั้นเรียน</th>
+                <th colSpan={3} style={{ ...thHead, background:'#1e6b2e' }}>นักเรียนเต็ม</th>
+                <th colSpan={3} style={{ ...thHead, background:'#2563eb' }}>มาเรียน</th>
+                <th colSpan={3} style={{ ...thHead, background:'#dc2626' }}>ไม่มาเรียน</th>
+              </tr>
+              <tr>
+                {['ชาย','หญิง','รวม','ชาย','หญิง','รวม','ชาย','หญิง','รวม'].map((h,i) => (
+                  <th key={i} style={{
+                    ...thHead,
+                    background: i<3 ? '#166534' : i<6 ? '#1d4ed8' : '#b91c1c',
+                    fontWeight:600, fontSize:'.75rem',
+                  }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {dailySummary.length === 0 ? (
+                <tr><td colSpan={10} style={{ textAlign:'center', padding:'1.5rem', color:'#9ca3af' }}>
+                  ยังไม่มีข้อมูลการเช็คชื่อวันนี้
+                </td></tr>
+              ) : dailySummary.map((r, idx) => (
+                <tr key={r.cls} style={{ background: idx % 2 === 0 ? '#f0fdf4' : 'white' }}>
+                  <td style={tdStyle}><strong>{r.cls}</strong></td>
+                  <td style={tdNum}>{r.totalBoys}</td>
+                  <td style={tdNum}>{r.totalGirls}</td>
+                  <td style={{ ...tdNum, fontWeight:800, color:'#166534' }}>{r.totalBoys+r.totalGirls}</td>
+                  <td style={tdNum}>{r.presentBoys}</td>
+                  <td style={tdNum}>{r.presentGirls}</td>
+                  <td style={{ ...tdNum, fontWeight:800, color:'#1d4ed8' }}>{r.presentBoys+r.presentGirls}</td>
+                  <td style={tdNum}>{r.absentBoys}</td>
+                  <td style={tdNum}>{r.absentGirls}</td>
+                  <td style={{ ...tdNum, fontWeight:800, color:'#b91c1c' }}>{r.absentBoys+r.absentGirls}</td>
+                </tr>
+              ))}
+              {dailySummary.length > 0 && (
+                <tr style={{ background:'#166534', color:'white' }}>
+                  <td style={{ ...tdStyle, color:'white', fontWeight:800 }}>รวม</td>
+                  <td style={{ ...tdNum, color:'white' }}>{dailyTotal.tB}</td>
+                  <td style={{ ...tdNum, color:'white' }}>{dailyTotal.tG}</td>
+                  <td style={{ ...tdNum, color:'white', fontWeight:900 }}>{dailyTotal.tB+dailyTotal.tG}</td>
+                  <td style={{ ...tdNum, color:'white' }}>{dailyTotal.pB}</td>
+                  <td style={{ ...tdNum, color:'white' }}>{dailyTotal.pG}</td>
+                  <td style={{ ...tdNum, color:'white', fontWeight:900 }}>{dailyTotal.pB+dailyTotal.pG}</td>
+                  <td style={{ ...tdNum, color:'white' }}>{dailyTotal.aB}</td>
+                  <td style={{ ...tdNum, color:'white' }}>{dailyTotal.aG}</td>
+                  <td style={{ ...tdNum, color:'white', fontWeight:900 }}>{dailyTotal.aB+dailyTotal.aG}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 

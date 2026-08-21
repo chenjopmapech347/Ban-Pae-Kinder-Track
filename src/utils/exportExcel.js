@@ -200,6 +200,57 @@ export function exportActivityLogExcel(activityLogs) {
   downloadWorkbook(wb, `ประวัติการประเมิน_${thaiDate()}.xlsx`);
 }
 
+/** สถิติการมาเรียนรายวันแยกห้อง — ตรงรูปแบบตัวอย่าง */
+export function exportDailyAttendanceSummaryExcel(summary, date, schoolName, academicYear) {
+  const dateObj = new Date(date + 'T00:00:00');
+  const thaiDateStr = dateObj.toLocaleDateString('th-TH', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  });
+
+  const tot = summary.reduce(
+    (a, r) => ({
+      tB: a.tB + r.totalBoys,   tG: a.tG + r.totalGirls,
+      pB: a.pB + r.presentBoys, pG: a.pG + r.presentGirls,
+      aB: a.aB + r.absentBoys,  aG: a.aG + r.absentGirls,
+    }),
+    { tB:0,tG:0,pB:0,pG:0,aB:0,aG:0 }
+  );
+
+  const data = [
+    [`สถิติการมาเรียนของนักเรียน${schoolName}`,'','','','','','','','',''],
+    [`ปีการศึกษา ${academicYear}`,'','','','','','','','',''],
+    [thaiDateStr,'','','','','','','','',''],
+    [],
+    ['ชั้นเรียน','นักเรียนเต็ม','','','มาเรียน','','','ไม่มาเรียน','',''],
+    ['','ชาย','หญิง','รวม','ชาย','หญิง','รวม','ชาย','หญิง','รวม'],
+    ...summary.map(r => [
+      r.cls,
+      r.totalBoys, r.totalGirls, r.totalBoys + r.totalGirls,
+      r.presentBoys, r.presentGirls, r.presentBoys + r.presentGirls,
+      r.absentBoys,  r.absentGirls,  r.absentBoys + r.absentGirls,
+    ]),
+    ['รวม', tot.tB, tot.tG, tot.tB+tot.tG, tot.pB, tot.pG, tot.pB+tot.pG, tot.aB, tot.aG, tot.aB+tot.aG],
+    [],
+    ['ลงชื่อ........................ผู้รายงาน', '', '', '', 'ลงชื่อ........................ผู้ตรวจสอบ'],
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [12,7,7,7,7,7,7,9,7,7].map(w => ({ wch: w }));
+  ws['!merges'] = [
+    { s:{r:0,c:0}, e:{r:0,c:9} },
+    { s:{r:1,c:0}, e:{r:1,c:9} },
+    { s:{r:2,c:0}, e:{r:2,c:9} },
+    { s:{r:4,c:0}, e:{r:5,c:0} },
+    { s:{r:4,c:1}, e:{r:4,c:3} },
+    { s:{r:4,c:4}, e:{r:4,c:6} },
+    { s:{r:4,c:7}, e:{r:4,c:9} },
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'สถิติการมาเรียน');
+  downloadWorkbook(wb, `สถิติการมาเรียน_${date}.xlsx`);
+}
+
 /** บันทึกการมาเรียนรายวัน (ทุกวันที่มีข้อมูล) */
 export function exportAttendanceLogExcel(students, dailyRecords, schoolName) {
   const dates = Object.keys(dailyRecords).sort();

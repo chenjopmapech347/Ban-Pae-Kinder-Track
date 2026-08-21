@@ -56,7 +56,7 @@ export default function ParentView() {
 
 
   return (
-    <div className="animate-fade">
+    <div className="animate-fade" style={{ maxWidth: 600, margin: '0 auto' }}>
       {/* Welcome Header */}
       <div
         className="glass mb-6"

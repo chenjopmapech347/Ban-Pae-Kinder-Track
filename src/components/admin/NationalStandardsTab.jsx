@@ -1,24 +1,33 @@
 // NationalStandardsTab.jsx
-// แสดงผลตามมาตรฐานสถานพัฒนาเด็กปฐมวัยแห่งชาติ (3 มาตรฐาน 18 ตัวบ่งชี้)
-// มาตรฐานที่ 3 → aggregate จาก activityLogs
-// มาตรฐานที่ 1   → checklist บันทึกโดยผู้อำนวยการ (kt_std1_ratings)
-// มาตรฐานที่ 2   → per-teacher self-assessment (kt_std2_ratings_<id>) — รวมภาพรวมที่นี่
+// แสดงผลตามมาตรฐานสถานพัฒนาเด็กปฐมวัยแห่งชาติ ปี 68 (กลุ่ม ข — อายุ 3 ปีขึ้นไป)
+// 3 มาตรฐาน · 17 ตัวบ่งชี้ · 59 รายการพิจารณา
+//
+// มาตรฐานที่ 1 คุณภาพเด็ก  → aggregate จาก activityLogs (7 ตัวบ่งชี้ 1.1ข–1.7ข)
+// มาตรฐานที่ 2 การบริหาร   → checklist บันทึกโดยผู้อำนวยการ (settings/std1_ratings)
+// มาตรฐานที่ 3 การจัดประสบการณ์ → per-teacher self-assessment (std2_ratings/<id>)
 import { useState, useMemo, useEffect } from 'react';
 import { doc, collection, onSnapshot, setDoc } from 'firebase/firestore';
 import { isFirebaseConfigured, db } from '../../lib/firebase';
 import { useApp } from '../../context/AppContext';
 
 // ─── แมปรหัสตัวบ่งชี้ → ด้านพัฒนาการ ──────────────────────────────────────
-// ระบบ ดย. (3.x–6.x) และ หลักสูตรปฐมวัย 2560 (1–12)
+// ระบบเก่า ดย. (3.x–6.x) + หลักสูตรปฐมวัย 2560 (1–12)
+// ระบบใหม่ ปี 68 (1.1ข–1.7ข)
 function getDomainfromCode(code) {
   if (!code) return null;
   const c = String(code).trim();
-  // ระบบ ดย. — prefix เลขมาตรฐาน
-  if (/^3\./.test(c)) return 'physical';   // ร่างกาย
-  if (/^4\./.test(c)) return 'emotional';  // อารมณ์-จิตใจ
-  if (/^5\./.test(c)) return 'social';     // สังคม
-  if (/^6\./.test(c)) return 'cognitive';  // สติปัญญา
-  // ระบบหลักสูตรปฐมวัย 2560 — มาตรฐาน 1–12
+  // ── ระบบใหม่ ปี 68 ─────────────────────────────────────────────────────
+  if (/^1\.[12]/.test(c)) return 'physical';   // 1.1ข น้ำหนัก-ส่วนสูง, 1.2ข กล้ามเนื้อ
+  if (/^1\.3/.test(c))    return 'emotional';  // 1.3ข สุขภาวะอารมณ์
+  if (/^1\.[47]/.test(c)) return 'social';     // 1.4ข สุขภาวะสังคม, 1.7ข คุณธรรม
+  if (/^1\.5/.test(c))    return 'cognitive';  // 1.5ข สุขภาวะสติปัญญา-ภาษา
+  if (/^1\.6/.test(c))    return 'physical';   // 1.6ข ความปลอดภัย → นับรวมร่างกาย
+  // ── ระบบเก่า ดย. ────────────────────────────────────────────────────────
+  if (/^3\./.test(c)) return 'physical';
+  if (/^4\./.test(c)) return 'emotional';
+  if (/^5\./.test(c)) return 'social';
+  if (/^6\./.test(c)) return 'cognitive';
+  // ── หลักสูตรปฐมวัย 2560 ─────────────────────────────────────────────────
   const n = parseInt(c, 10);
   if (n === 1 || n === 2) return 'physical';
   if (n >= 3 && n <= 5)   return 'emotional';
@@ -27,33 +36,36 @@ function getDomainfromCode(code) {
   return null;
 }
 
+// ตัวบ่งชี้มาตรฐานที่ 1 ที่แมปกับแต่ละ domain
 const DOMAIN_META = {
-  physical:  { label: '🏃 ร่างกาย',      color: '#059669', bg: '#ecfdf5', border: '#6ee7b7', nat: '3.1–3.2' },
-  emotional: { label: '❤️ อารมณ์-จิตใจ', color: '#e11d48', bg: '#fff1f2', border: '#fda4af', nat: '3.3' },
-  social:    { label: '🤝 สังคม',         color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd', nat: '3.4' },
-  cognitive: { label: '💡 สติปัญญา',      color: '#b45309', bg: '#fffbeb', border: '#fcd34d', nat: '3.5' },
+  physical:  { label: '🏃 ร่างกาย',      color: '#059669', bg: '#ecfdf5', border: '#6ee7b7', nat: '1.1ข–1.2ข, 1.6ข' },
+  emotional: { label: '❤️ อารมณ์-จิตใจ', color: '#e11d48', bg: '#fff1f2', border: '#fda4af', nat: '1.3ข' },
+  social:    { label: '🤝 สังคม-คุณธรรม',  color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd', nat: '1.4ข, 1.7ข' },
+  cognitive: { label: '💡 สติปัญญา-ภาษา', color: '#b45309', bg: '#fffbeb', border: '#fcd34d', nat: '1.5ข' },
 };
 
-// ─── ตัวบ่งชี้มาตรฐานที่ 1 (การบริหารจัดการ) ────────────────────────────
-const STD1_ITEMS = [
-  { id: '1.1', label: 'มีวิสัยทัศน์ พันธกิจ และเป้าหมายในการพัฒนาเด็กปฐมวัยอย่างชัดเจน' },
-  { id: '1.2', label: 'บุคลากรมีคุณวุฒิ ความรู้ ทักษะ และประสบการณ์ที่เหมาะสม' },
-  { id: '1.3', label: 'สภาพแวดล้อมและสิ่งอำนวยความสะดวกปลอดภัยและเอื้อต่อการเรียนรู้' },
-  { id: '1.4', label: 'มีแผนส่งเสริมสุขภาพ โภชนาการ และความปลอดภัยของเด็ก' },
-  { id: '1.5', label: 'มีการสร้างเครือข่ายกับชุมชนและผู้ปกครองอย่างเป็นระบบ' },
+// ─── มาตรฐานที่ 2 — การบริหาร (5 ตัวบ่งชี้, 22 รายการพิจารณา) ปี 68 ────
+// บันทึกโดยผู้อำนวยการ / ผู้รับผิดชอบสถานพัฒนา
+const STD2_ITEMS = [
+  { id: '2.1', label: 'อัตราส่วนบุคลากรต่อเด็กเหมาะสม ไม่เกิน 1 : 15 (กลุ่ม ข)', detail: '22 รายการพิจารณา' },
+  { id: '2.2', label: 'บุคลากรมีคุณสมบัติ คุณวุฒิ ความรู้ และทักษะตามที่กำหนด', detail: '' },
+  { id: '2.3', label: 'สภาพแวดล้อม อาคาร สถานที่ และสิ่งอำนวยความสะดวกปลอดภัยและเหมาะสมกับพัฒนาการ', detail: '' },
+  { id: '2.4', label: 'มีระบบการดูแลสุขภาพ โภชนาการ และความปลอดภัยของเด็กอย่างเป็นระบบ', detail: '' },
+  { id: '2.5', label: 'มีการมีส่วนร่วมของผู้ปกครองและชุมชนในการพัฒนาเด็กปฐมวัย', detail: '' },
 ];
 
-// ─── ตัวบ่งชี้มาตรฐานที่ 2 (ครู/ผู้ดูแล) ────────────────────────────────
-const STD2_ITEMS = [
-  { id: '2.1', label: 'วางแผนและจัดทำหลักสูตรสถานศึกษาตามหลักสูตรปฐมวัย พ.ศ. 2560' },
-  { id: '2.2', label: 'จัดประสบการณ์ส่งเสริมพัฒนาการด้านร่างกายอย่างสม่ำเสมอ' },
-  { id: '2.3', label: 'จัดประสบการณ์ส่งเสริมพัฒนาการด้านอารมณ์-จิตใจและคุณธรรม' },
-  { id: '2.4', label: 'จัดประสบการณ์ส่งเสริมพัฒนาการด้านสังคมและทักษะชีวิต' },
-  { id: '2.5', label: 'จัดประสบการณ์ส่งเสริมพัฒนาการด้านสติปัญญาและภาษา' },
-  { id: '2.6', label: 'ส่งเสริมการเรียนรู้ผ่านการเล่นและกิจกรรมบูรณาการ' },
-  { id: '2.7', label: 'ประเมินพัฒนาการเด็กอย่างเป็นระบบ ต่อเนื่อง และรายงานผู้ปกครอง' },
-  { id: '2.8', label: 'สร้างความสัมพันธ์ที่ดีกับผู้ปกครองและสื่อสารพัฒนาการเด็กสม่ำเสมอ' },
+// ─── มาตรฐานที่ 3 — การจัดประสบการณ์ (5 ตัวบ่งชี้, 17 รายการพิจารณา) ปี 68 ──
+// ครู/ผู้ดูแลเด็กประเมินตนเองรายบุคคล
+const STD3_ITEMS = [
+  { id: '3.1', label: 'วางแผนและจัดทำหลักสูตรสถานศึกษาที่สอดคล้องกับหลักสูตรการศึกษาปฐมวัย' },
+  { id: '3.2', label: 'จัดประสบการณ์บูรณาการที่ส่งเสริมพัฒนาการเด็กทุกด้านอย่างสมดุล' },
+  { id: '3.3', label: 'ส่งเสริมการเรียนรู้ผ่านการเล่นและการลงมือทำตามวัย' },
+  { id: '3.4', label: 'ประเมินพัฒนาการเด็กอย่างเป็นระบบ ต่อเนื่อง และนำผลไปปรับปรุงการจัดการเรียนรู้' },
+  { id: '3.5', label: 'สร้างความสัมพันธ์และสื่อสารพัฒนาการเด็กกับครอบครัว/ผู้ปกครองอย่างสม่ำเสมอ' },
 ];
+
+// ── backward compat: ชื่อเดิม STD1_ITEMS ถูกใช้ใน calcChecklistScore → map ไปที่ STD2
+const STD1_ITEMS = STD2_ITEMS; // มาตรฐานที่ 2 ปี 68 เก็บใน std1_ratings (admin)
 
 // ─── Rating levels สำหรับ checklist ─────────────────────────────────────────
 const RATINGS = [
@@ -270,7 +282,7 @@ export default function NationalStandardsTab() {
     return (teachers ?? []).map(t => {
       // t.id อาจเป็น number → String() เพื่อให้ตรงกับ key ที่ Firestore ส่งกลับ (d.id เป็น string เสมอ)
       const ratings = std2FirestoreData[String(t.id)] ?? {};
-      const score = calcChecklistScore(STD2_ITEMS, ratings);
+      const score = calcChecklistScore(STD3_ITEMS, ratings); // มาตรฐานที่ 3 ปี 68 (การจัดประสบการณ์)
       const name = [t.firstName, t.lastName].filter(Boolean).join(' ') || t.name || `ครู ${t.id}`;
       return { teacher: t, name, ratings, score };
     });
@@ -328,18 +340,18 @@ export default function NationalStandardsTab() {
 
   const SECTIONS = [
     { id: 'all',  label: '📊 ภาพรวม' },
-    { id: 'std3', label: '👶 มาตรฐานที่ 3 — คุณภาพเด็ก' },
-    { id: 'std2', label: '👩‍🏫 มาตรฐานที่ 2 — ครู/ผู้ดูแล' },
-    { id: 'std1', label: '🏛 มาตรฐานที่ 1 — การบริหาร' },
+    { id: 'std3', label: '👶 มาตรฐานที่ 1 — คุณภาพเด็ก' },
+    { id: 'std2', label: '👩‍🏫 มาตรฐานที่ 3 — การจัดประสบการณ์' },
+    { id: 'std1', label: '🏛 มาตรฐานที่ 2 — การบริหาร' },
   ];
 
   return (
     <div className="glass p-6 animate-fade">
       {/* Header */}
       <div className="page-header mb-4">
-        <h3>🏛 มาตรฐานสถานพัฒนาเด็กปฐมวัยแห่งชาติ</h3>
+        <h3>🏛 มาตรฐานสถานพัฒนาเด็กปฐมวัยแห่งชาติ ปี 68</h3>
         <div style={{ fontSize: '.75rem', color: 'var(--text-muted)' }}>
-          3 มาตรฐาน · 18 ตัวบ่งชี้ · กรมกิจการเด็กและเยาวชน (ดย.)
+          กลุ่ม ข (อายุ 3 ปีขึ้นไป) · 3 มาตรฐาน · 17 ตัวบ่งชี้ · 59 รายการพิจารณา
         </div>
       </div>
 
@@ -371,19 +383,19 @@ export default function NationalStandardsTab() {
           {/* Summary cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px,1fr))', gap: '.85rem', marginBottom: '1.5rem' }}>
             <SummaryBadge
-              label="มาตรฐานที่ 1 — การบริหารจัดการ"
+              label="มาตรฐานที่ 1 — คุณภาพเด็ก"
+              score={std3Score}
+              color="#059669" bg="#ecfdf5" border="#6ee7b7"
+            />
+            <SummaryBadge
+              label="มาตรฐานที่ 2 — การบริหาร"
               score={std1Score}
               color="#0891b2" bg="#f0f9ff" border="#bae6fd"
             />
             <SummaryBadge
-              label="มาตรฐานที่ 2 — ครู/ผู้ดูแลเด็ก"
+              label="มาตรฐานที่ 3 — การจัดประสบการณ์"
               score={std2Score}
               color="#7c3aed" bg="#f5f3ff" border="#ddd6fe"
-            />
-            <SummaryBadge
-              label="มาตรฐานที่ 3 — คุณภาพเด็ก"
-              score={std3Score}
-              color="#059669" bg="#ecfdf5" border="#6ee7b7"
             />
           </div>
 
@@ -393,14 +405,14 @@ export default function NationalStandardsTab() {
             borderRadius: '10px', padding: '.7rem 1rem',
             fontSize: '.78rem', color: '#92400e', marginBottom: '1.25rem',
           }}>
-            💡 <strong>มาตรฐานที่ 3</strong> คำนวณจากผลการประเมินในระบบ &nbsp;·&nbsp;
-            <strong>มาตรฐานที่ 2</strong> รวมจากการประเมินตนเองของครูแต่ละคน (TeacherDashboard) &nbsp;·&nbsp;
-            <strong>มาตรฐานที่ 1</strong> กรอก Checklist โดยผู้อำนวยการ
+            💡 <strong>มาตรฐานที่ 1 (คุณภาพเด็ก)</strong> คำนวณจากผลการประเมินพัฒนาการในระบบ &nbsp;·&nbsp;
+            <strong>มาตรฐานที่ 2 (การบริหาร)</strong> Checklist โดยผู้อำนวยการ/ผู้รับผิดชอบ &nbsp;·&nbsp;
+            <strong>มาตรฐานที่ 3 (การจัดประสบการณ์)</strong> ครูแต่ละคนประเมินตนเองจาก TeacherDashboard
           </div>
 
           {/* Domain quick view */}
           <div style={{ marginBottom: '.5rem', fontWeight: 700, fontSize: '.85rem', color: '#374151' }}>
-            มาตรฐานที่ 3 — ผลรายด้านพัฒนาการ
+            มาตรฐานที่ 1 — คุณภาพเด็ก ผลรายตัวบ่งชี้
             <span style={{ marginLeft: '.75rem' }}>
               <select
                 className="input"
@@ -465,10 +477,10 @@ export default function NationalStandardsTab() {
                   </thead>
                   <tbody>
                     {[
-                      { domain: 'physical',  nat: '3.1 น้ำหนัก-ส่วนสูง / 3.2 ร่างกาย', codes: '3.1–3.3 / มาตรฐาน 1-2' },
-                      { domain: 'emotional', nat: '3.3 อารมณ์-จิตใจ',                    codes: '4.1–4.3 / มาตรฐาน 3-5' },
-                      { domain: 'social',    nat: '3.4 สังคม',                            codes: '5.1–5.4 / มาตรฐาน 6-8' },
-                      { domain: 'cognitive', nat: '3.5 สติปัญญา-ภาษา',                   codes: '6.1–6.3 / มาตรฐาน 9-12' },
+                      { domain: 'physical',  nat: '1.1ข น้ำหนัก-ส่วนสูง / 1.2ข กล้ามเนื้อ / 1.6ข ความปลอดภัย', codes: '3.1–3.3 (ดย.) / มาตรฐาน 1-2 (ปวัย.)' },
+                      { domain: 'emotional', nat: '1.3ข สุขภาวะอารมณ์-จิตใจ',                                      codes: '4.1–4.3 (ดย.) / มาตรฐาน 3-5 (ปวัย.)' },
+                      { domain: 'social',    nat: '1.4ข สุขภาวะสังคม / 1.7ข คุณธรรม',                               codes: '5.1–5.4 (ดย.) / มาตรฐาน 6-8 (ปวัย.)' },
+                      { domain: 'cognitive', nat: '1.5ข สุขภาวะสติปัญญา-ภาษา',                                      codes: '6.1–6.3 (ดย.) / มาตรฐาน 9-12 (ปวัย.)' },
                     ].map(row => {
                       const st = domainStats[row.domain];
                       const total = st.s1 + st.s2 + st.s3;
@@ -511,7 +523,7 @@ export default function NationalStandardsTab() {
             borderRadius: '10px', padding: '.7rem 1rem',
             fontSize: '.78rem', color: '#5b21b6', marginBottom: '1.25rem',
           }}>
-            👩‍🏫 <strong>ภาพรวมมาตรฐานที่ 2</strong> — ครูแต่ละคนประเมินตนเองจาก TeacherDashboard → มาตรฐานที่ 2 &nbsp;·&nbsp; ข้อมูลอัปเดตอัตโนมัติเมื่อครูบันทึก
+            👩‍🏫 <strong>มาตรฐานที่ 3 — การจัดประสบการณ์ (ปี 68)</strong> · 5 ตัวบ่งชี้ · 17 รายการพิจารณา &nbsp;·&nbsp; ครูแต่ละคนประเมินตนเองจาก TeacherDashboard → มาตรฐานที่ 3 &nbsp;·&nbsp; ข้อมูลอัปเดตอัตโนมัติเมื่อครูบันทึก
           </div>
 
           {/* School average score card */}
@@ -556,7 +568,7 @@ export default function NationalStandardsTab() {
                     <tr style={{ background: '#f5f3ff' }}>
                       <th style={{ padding: '.5rem .75rem', textAlign: 'center', fontWeight: 700, color: '#5b21b6', borderBottom: '2px solid #ddd6fe', whiteSpace: 'nowrap' }}>ครู</th>
                       <th style={{ padding: '.5rem .75rem', textAlign: 'center', fontWeight: 700, color: '#5b21b6', borderBottom: '2px solid #ddd6fe', whiteSpace: 'nowrap' }}>ห้อง</th>
-                      {STD2_ITEMS.map(it => (
+                      {STD3_ITEMS.map(it => (
                         <th key={it.id} style={{ padding: '.5rem .4rem', textAlign: 'center', fontWeight: 700, color: '#5b21b6', borderBottom: '2px solid #ddd6fe', whiteSpace: 'nowrap', fontSize: '.7rem' }}>
                           {it.id}
                         </th>
@@ -569,7 +581,7 @@ export default function NationalStandardsTab() {
                       <tr key={row.teacher.id} style={{ borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? 'white' : '#faf5ff' }}>
                         <td style={{ padding: '.5rem .75rem', fontWeight: 600, whiteSpace: 'nowrap' }}>{row.name}</td>
                         <td style={{ padding: '.5rem .75rem', color: '#6b7280', fontSize: '.73rem' }}>{row.teacher.className ?? '—'}</td>
-                        {STD2_ITEMS.map(it => {
+                        {STD3_ITEMS.map(it => {
                           const val = row.ratings[it.id] ?? 0;
                           const meta = val > 0
                             ? RATINGS.find(r => r.value === val)
@@ -611,7 +623,7 @@ export default function NationalStandardsTab() {
                         <td colSpan={2} style={{ padding: '.5rem .75rem', fontWeight: 800, color: '#7c3aed', fontSize: '.8rem' }}>
                           ค่าเฉลี่ยสถานศึกษา
                         </td>
-                        {STD2_ITEMS.map(it => {
+                        {STD3_ITEMS.map(it => {
                           const vals = std2ByTeacher.map(r => r.ratings[it.id] ?? 0).filter(v => v > 0);
                           const avg = vals.length > 0 ? (vals.reduce((s, v) => s + v, 0) / vals.length).toFixed(1) : null;
                           return (
@@ -660,7 +672,7 @@ export default function NationalStandardsTab() {
                   </span>
                 ))}
                 <span style={{ marginLeft: 'auto' }}>
-                  ตัวบ่งชี้ {STD2_ITEMS.map(it => `${it.id}`).join(', ')}
+                  ตัวบ่งชี้ {STD3_ITEMS.map(it => `${it.id}`).join(', ')}
                 </span>
               </div>
             </>
@@ -679,9 +691,9 @@ export default function NationalStandardsTab() {
             📝 <strong>วิธีใช้:</strong> ประเมินแต่ละตัวบ่งชี้โดยเลือก ดีมาก / พอใช้ / ต้องพัฒนา ข้อมูลบันทึกอัตโนมัติ
           </div>
           <ChecklistSection
-            title="มาตรฐานที่ 1 — การบริหารจัดการสถานพัฒนาเด็กปฐมวัย"
-            subtitle="5 ตัวบ่งชี้ · สอดคล้องกับ สมศ. มาตรฐาน 2"
-            items={STD1_ITEMS}
+            title="มาตรฐานที่ 2 — การบริหารสถานพัฒนาเด็กปฐมวัย (ปี 68)"
+            subtitle="5 ตัวบ่งชี้ · 22 รายการพิจารณา · กลุ่ม ข อัตราส่วน 1:15"
+            items={STD2_ITEMS}
             ratings={std1Ratings}
             onChange={updateStd1}
             colorAccent="#0891b2"

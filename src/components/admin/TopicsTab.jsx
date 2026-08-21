@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
+import { DEFAULT_ASSESSMENT_TOPICS } from '../../data/initialData';
 
 const FRAME_STYLE = {
-  dcy:      { bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
-  curriculum: { bg: '#dcfce7', color: '#15803d', border: '#86efac' },
-  onesqa:   { bg: '#ffedd5', color: '#c2410c', border: '#fdba74' },
+  std68: { bg: '#f0fdf4', color: '#15803d', border: '#86efac' },
 };
-const FRAME_LABEL = { dcy: 'ดย.', curriculum: 'ปวัย.', onesqa: 'สมศ.' };
+const FRAME_LABEL = {
+  std68: 'มาตรฐาน ปี 68',
+};
 
 function CrossRefBadges({ crossRef }) {
   if (!crossRef) return null;
@@ -22,7 +23,7 @@ function CrossRefBadges({ crossRef }) {
             borderRadius: '999px', background: s.bg, color: s.color,
             border: `1px solid ${s.border}`, whiteSpace: 'nowrap',
           }}>
-            {FRAME_LABEL[key]} {val}
+            {FRAME_LABEL[key]}: {val}
           </span>
         );
       })}
@@ -35,6 +36,12 @@ export default function TopicsTab() {
   const [isModal, setIsModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm]       = useState({});
+
+  // Auto-migrate: ถ้ายังใช้ domain เก่า (social / mental) ให้รีเซ็ตเป็น 2568
+  useEffect(() => {
+    const hasOld = assessmentTopics.some(t => t.id === 'social' || t.id === 'mental');
+    if (hasOld) setAssessmentTopics(DEFAULT_ASSESSMENT_TOPICS);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const openNew  = () => { setEditing(null); setForm({ label:'', emoji:'✨' }); setIsModal(true); };
   const openEdit = t => { setEditing(t); setForm(t); setIsModal(true); };
@@ -54,16 +61,11 @@ export default function TopicsTab() {
       </div>
 
       {/* Legend */}
-      <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', marginBottom: '1rem', padding: '.6rem .85rem', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+      <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem', padding: '.6rem .85rem', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
         <span style={{ fontSize: '.72rem', fontWeight: 700, color: '#6b7280', marginRight: '.25rem' }}>กรอบมาตรฐาน:</span>
-        {Object.entries(FRAME_LABEL).map(([k, label]) => {
-          const s = FRAME_STYLE[k];
-          return (
-            <span key={k} style={{ fontSize: '.7rem', fontWeight: 600, padding: '2px 8px', borderRadius: '999px', background: s.bg, color: s.color, border: `1px solid ${s.border}` }}>
-              {label} = {k === 'dcy' ? 'กรมกิจการเด็กและเยาวชน' : k === 'curriculum' ? 'หลักสูตรปฐมวัย 2560' : 'สมศ.'}
-            </span>
-          );
-        })}
+        <span style={{ fontSize: '.7rem', fontWeight: 600, padding: '2px 8px', borderRadius: '999px', background: '#f0fdf4', color: '#15803d', border: '1px solid #86efac' }}>
+          มาตรฐานสถานพัฒนาเด็กปฐมวัยแห่งชาติ ปี 68
+        </span>
       </div>
 
       <div className="grid grid-2" style={{ gap:'1rem' }}>
@@ -98,7 +100,7 @@ export default function TopicsTab() {
           <div><label style={{ display:'block',marginBottom:'.35rem' }}>ชื่อด้านพัฒนาการ</label>
             <input className="input" value={form.label||''} onChange={e=>setForm({...form,label:e.target.value})} required /></div>
           <div><label style={{ display:'block',marginBottom:'.35rem' }}>อิโมจิ</label>
-            <input className="input" value={form.emoji||''} onChange={e=>setForm({...form,emoji:e.target.value})} placeholder="เช่น 🏃, ❤️, 💡" /></div>
+            <input className="input" value={form.emoji||''} onChange={e=>setForm({...form,emoji:e.target.value})} placeholder="เช่น 🏃, ❤️, 🇹🇭, 💡" /></div>
           <div className="flex gap-2 mt-2">
             <ModalCancelBtn onClick={() => setIsModal(false)} />
             <ModalConfirmBtn type="submit" label="💾 บันทึก" />

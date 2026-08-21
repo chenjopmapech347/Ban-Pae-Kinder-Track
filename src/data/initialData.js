@@ -232,16 +232,16 @@ export const INITIAL_HOLIDAYS = [
   { id: 13, date: '2026-07-31', label: 'หยุดกรณีพิเศษ (ชดเชย 15 ส.ค.)',           type: 'Holiday' },
 ];
 
-// ── หัวข้อประเมิน 4 ด้าน ──────────────────────────────────
+// ── หัวข้อประเมิน 4 ด้าน (หลักสูตรปฐมวัย 2568) ─────────────
 export const DEFAULT_ASSESSMENT_TOPICS = [
-  { id: 'physical',  label: 'ร่างกาย',      emoji: '🏃',
-    crossRef: { dcy: 'ดย.3.1–3.3', curriculum: 'ปวัย.1–2',  onesqa: 'สมศ.1.1'     } },
-  { id: 'emotional', label: 'อารมณ์-จิตใจ', emoji: '❤️',
-    crossRef: { dcy: 'ดย.4.1–4.3', curriculum: 'ปวัย.3–4',  onesqa: 'สมศ.1.4'     } },
-  { id: 'social',    label: 'สังคม',         emoji: '🤝',
-    crossRef: { dcy: 'ดย.5.1–5.4', curriculum: 'ปวัย.5–8',  onesqa: 'สมศ.1.5'     } },
-  { id: 'mental',    label: 'สติปัญญา',      emoji: '💡',
-    crossRef: { dcy: 'ดย.6.1–6.3', curriculum: 'ปวัย.9–12', onesqa: 'สมศ.1.2–1.3' } },
+  { id: 'physical',  label: 'สุขภาวะทางกาย',               emoji: '🏃',
+    crossRef: { std68: '1.1ข / 1.2ข / 1.6ข' } },
+  { id: 'emotional', label: 'อารมณ์ จิตใจ และสังคม',       emoji: '❤️',
+    crossRef: { std68: '1.3ข / 1.4ข' } },
+  { id: 'citizen',   label: 'ความเป็นพลเมืองและความเป็นไทย', emoji: '🇹🇭',
+    crossRef: { std68: '1.7ข' } },
+  { id: 'cognitive', label: 'สติปัญญา',                     emoji: '💡',
+    crossRef: { std68: '1.5ข' } },
 ];
 
 // ── ประกาศ ────────────────────────────────────────────────

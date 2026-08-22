@@ -63,10 +63,10 @@ export function getMondayOf(dateStr) {
   return d.toISOString().slice(0, 10);
 }
 
-/** ป้ายกำกับสัปดาห์ เช่น "2 มิ.ย. – 8 มิ.ย." */
+/** ป้ายกำกับสัปดาห์ จันทร์–ศุกร์ เช่น "2 มิ.ย. – 6 มิ.ย." */
 export function getWeekLabel(mondayStr) {
   const d = new Date(mondayStr);
-  const end = new Date(d); end.setDate(d.getDate() + 6);
+  const end = new Date(d); end.setDate(d.getDate() + 4); // จันทร์ + 4 = ศุกร์
   const fmt = (x) => x.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
   return `${fmt(d)} – ${fmt(end)}`;
 }

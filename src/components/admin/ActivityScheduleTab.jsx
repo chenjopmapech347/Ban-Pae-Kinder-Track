@@ -69,19 +69,20 @@ const SEED_ROOMS = [
 ];
 
 /* ── Legacy sample schedule — for restoring initial data ─────── */
+/* NOTE: Firestore does NOT support nested arrays — must use objects */
 const LEGACY_SAMPLE_DAYS = {
-  จันทร์:    [['gar','09.00','แปลงผัก']],
-  อังคาร:   [['eng','09.00','Eng (ภาษาอังกฤษ)']],
-  พุธ:      [['pe','09.30','พลศึกษา'], ['com','10.30','คอมพิวเตอร์']],
-  พฤหัสบดี: [['wst','09.00','คัดแยกขยะ'], ['ef','10.00','ห้องสื่อ EF']],
-  ศุกร์:    [['res','09.00','ห้องแหล่งเรียนรู้']],
+  จันทร์:    [{type:'gar', time:'09.00', label:'แปลงผัก'}],
+  อังคาร:   [{type:'eng', time:'09.00', label:'Eng (ภาษาอังกฤษ)'}],
+  พุธ:      [{type:'pe',  time:'09.30', label:'พลศึกษา'}, {type:'com', time:'10.30', label:'คอมพิวเตอร์'}],
+  พฤหัสบดี: [{type:'wst', time:'09.00', label:'คัดแยกขยะ'}, {type:'ef', time:'10.00', label:'ห้องสื่อ EF'}],
+  ศุกร์:    [{type:'res', time:'09.00', label:'ห้องแหล่งเรียนรู้'}],
 };
 
 /* ── Helpers ──────────────────────────────────────────────────── */
 function computeCounts(days, innerKeySet) {
   let inC = 0, outC = 0;
   DAYS.forEach(day => {
-    (days[day] ?? []).forEach(([type]) => {
+    (days[day] ?? []).forEach(({type}) => {
       if (innerKeySet.has(type)) inC++; else outC++;
     });
   });
@@ -93,7 +94,7 @@ function computeDailySummary(rooms) {
   DAYS.forEach(d => { res[d] = {}; });
   rooms.forEach(room => {
     DAYS.forEach(day => {
-      (room.days[day] ?? []).forEach(([type]) => {
+      (room.days[day] ?? []).forEach(({type}) => {
         res[day][type] = (res[day][type] ?? 0) + 1;
       });
     });
@@ -159,7 +160,7 @@ function RoomCard({ room, onEdit, getColor, getLabel, innerKeySet }) {
                            fontWeight:700, color:'#546e7a', paddingTop:'5px' }}>{day}</span>
             <div style={{ flex:1, display:'flex', flexWrap:'wrap', gap:'4px', padding:'2px 0' }}>
               {acts.length > 0
-                ? acts.map(([t,tm,lb],i) => (
+                ? acts.map(({type:t,time:tm,label:lb},i) => (
                     <Pill key={i} clr={getColor(t)} time={tm} label={lb || getLabel(t)} />
                   ))
                 : <span style={{ fontSize:'.73em', color:'#ccc', paddingTop:'6px', fontStyle:'italic' }}>
@@ -214,11 +215,11 @@ function RoomEditModal({ room, onClose, onSave, assignedInner, assignedOuter, ge
         days.forEach(day => {
           if (!DAYS.includes(day)) return;
           const existing = next[day] ?? [];
-          const alreadyHas = existing.some(([t]) => t === key);
+          const alreadyHas = existing.some(e => e.type === key);
           if (!alreadyHas) {
             const def = availableOptions.find(o => o.key === key);
             const label = def?.label ?? getLabel(key);
-            next[day] = [...existing, [key, time, label]].sort((a, b) => a[1].localeCompare(b[1]));
+            next[day] = [...existing, {type:key, time, label}].sort((a, b) => a.time.localeCompare(b.time));
           }
         });
       });
@@ -238,8 +239,8 @@ function RoomEditModal({ room, onClose, onSave, assignedInner, assignedOuter, ge
     const label = def?.label ?? getLabel(newType);
     setEditDays(prev => ({
       ...prev,
-      [activeDay]: [...(prev[activeDay] ?? []), [newType, t, label]]
-        .sort((a, b) => a[1].localeCompare(b[1])),
+      [activeDay]: [...(prev[activeDay] ?? []), {type:newType, time:t, label}]
+        .sort((a, b) => a.time.localeCompare(b.time)),
     }));
     setNewTime('');
   };
@@ -335,7 +336,7 @@ function RoomEditModal({ room, onClose, onSave, assignedInner, assignedOuter, ge
             </div>
           ) : (
             <div style={{ display:'flex', flexDirection:'column', gap:'7px', marginBottom:'16px' }}>
-              {dayActs.map(([type, time, label], idx) => {
+              {dayActs.map(({type, time, label}, idx) => {
                 const s = getColor(type);
                 return (
                   <div key={idx} style={{

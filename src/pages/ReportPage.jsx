@@ -33,7 +33,7 @@ function exportStudentCsv(student, topics, schoolName, academicYear) {
 export default function ReportPage() {
   const {
     selectedStudent: student, setSelectedStudent,
-    assessmentTopics, schoolName, academicYear,
+    assessmentTopics, schoolName, schoolLogo, academicYear,
   } = useApp();
 
   if (!student) return null;
@@ -75,6 +75,14 @@ export default function ReportPage() {
           background: 'linear-gradient(135deg,#7c3aed 0%,#a855f7 60%,#ec4899 100%)',
           borderRadius: '24px 24px 0 0', padding: '2rem', color: 'white', textAlign: 'center',
         }}>
+          {schoolLogo && (
+            <img
+              src={schoolLogo}
+              alt="โลโก้โรงเรียน"
+              style={{ height: '72px', objectFit: 'contain', marginBottom: '.5rem',
+                       filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.25))' }}
+            />
+          )}
           <div style={{ fontSize: '.8rem', opacity: .8, marginBottom: '.25rem', letterSpacing: '.05em' }}>
             สมุดรายงานประจำตัวเด็กปฐมวัย
           </div>

@@ -73,6 +73,7 @@ const TEACHER_TAB_GROUPS = [
     label: 'บันทึกตามโอกาส',
     color: '#7c3aed',
     tabs: [
+      { id: 'healthcheck',  label: '🏥 ตรวจสุขภาพ'       },  // ตรวจสุขภาพตามโอกาส
       { id: 'nutrition',    label: '⚖️ ภาวะโภชนาการ'   },  // ประเมินสุขภาพ
       { id: 'specialevent', label: '🎉 กิจกรรมวันสำคัญ' },  // กิจกรรมพิเศษ
     ],

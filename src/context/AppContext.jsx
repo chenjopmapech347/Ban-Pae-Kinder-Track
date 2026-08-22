@@ -188,6 +188,8 @@ export function AppProvider({ children }) {
     { key: 'roleplay', label: 'มุมบทบาทสมมติ' },
     { key: 'media',    label: 'มุมสื่อ' },
   ]);
+  const [classInnerCornerKeys, setClassInnerCornerKeys] = useLocalStorage(STORAGE_KEYS.classInnerCornerKeys, {});
+  const [classOuterCornerKeys, setClassOuterCornerKeys] = useLocalStorage(STORAGE_KEYS.classOuterCornerKeys, {});
   const [healthCheckRecords,  setHealthCheckRecords]  = useLocalStorage(STORAGE_KEYS.healthCheckRecords,  {});
   const [illnessCheckRecords, setIllnessCheckRecords] = useLocalStorage(STORAGE_KEYS.illnessCheckRecords, {});
   const [toothBrushRecords,   setToothBrushRecords]   = useLocalStorage(STORAGE_KEYS.toothBrushRecords,   {});
@@ -1390,6 +1392,10 @@ export function AppProvider({ children }) {
     setInnerCornerRecords,
     innerCornerDefs,
     setInnerCornerDefs,
+    classInnerCornerKeys,
+    setClassInnerCornerKeys,
+    classOuterCornerKeys,
+    setClassOuterCornerKeys,
     // Health Check
     healthCheckRecords,
     setHealthCheckRecords,

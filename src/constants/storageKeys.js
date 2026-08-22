@@ -35,6 +35,8 @@ export const STORAGE_KEYS = {
   schoolSlogan:         'kt_schoolSlogan',           // คำขวัญของสถานศึกษาในสังกัด อปท.
   cornerDefs:           'kt_cornerDefs',             // นิยามมุมแหล่งเรียนรู้นอกห้องเรียน (แก้ไขได้)
   innerCornerDefs:      'kt_innerCornerDefs',        // นิยามมุมประสบการณ์ในห้องเรียน (แก้ไขได้)
+  classInnerCornerKeys: 'kt_classInnerCornerKeys',  // กิจกรรมในห้องเรียนที่กำหนดต่อห้อง { [className]: string[] }
+  classOuterCornerKeys: 'kt_classOuterCornerKeys',  // กิจกรรมนอกห้องเรียนที่กำหนดต่อห้อง { [className]: string[] }
   aiApiKey:             'kt_aiApiKey',               // Claude API Key สำหรับฟีเจอร์ AI
   schoolLogo:           'kt_schoolLogo',              // โลโก้โรงเรียน (base64 dataURL)
   schoolDirectorName:   'kt_schoolDirectorName',      // ชื่อผู้บริหารสถานศึกษา

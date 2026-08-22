@@ -40,6 +40,8 @@ const MeasurementDatesTab    = lazy(() => import('../components/admin/Measuremen
 const ActivityScheduleTab    = lazy(() => import('../components/admin/ActivityScheduleTab'));
 const ManageInnerCornersTab  = lazy(() => import('../components/admin/ManageInnerCornersTab'));
 const ManageOuterCornersTab  = lazy(() => import('../components/admin/ManageOuterCornersTab'));
+const AssignInnerCornersTab  = lazy(() => import('../components/admin/AssignInnerCornersTab'));
+const AssignOuterCornersTab  = lazy(() => import('../components/admin/AssignOuterCornersTab'));
 const YearEndTab             = lazy(() => import('../components/admin/YearEndTab'));
 const SystemLogTab           = lazy(() => import('../components/admin/SystemLogTab'));
 const HelpTab                = lazy(() => import('../components/admin/HelpTab'));
@@ -120,6 +122,8 @@ const TAB_GROUPS = [
       { id: 'activityschedule',      label: '🗓️ กิจกรรมภายใน-นอกห้องเรียน'       },  // ตารางกิจกรรม
       { id: 'manageinnercorners',   label: '🏡 จัดการกิจกรรมภายในห้องเรียน'    },  // นิยามมุมใน
       { id: 'manageoutercorners',   label: '🌿 จัดการกิจกรรมภายนอกห้องเรียน'  },  // นิยามมุมนอก
+      { id: 'assigninnercorners',   label: '🏡 กำหนดกิจกรรมภายในห้องเรียน'     },  // กำหนดต่อห้อง
+      { id: 'assignoutercorners',   label: '🌿 กำหนดกิจกรรมภายนอกห้องเรียน'   },  // กำหนดต่อห้อง
       { id: 'topics',            label: '📝 หัวข้อประเมิน'             },  // กรอบการประเมิน
       { id: 'indicators',        label: '🔬 ตัวบ่งชี้'                  },  // ตัวบ่งชี้
       { id: 'standards',         label: '🗺️ มาตรฐานปฐมวัย'            },  // มาตรฐาน
@@ -196,6 +200,8 @@ export default function AdminDashboard() {
           {activeTab === 'activityschedule'    && <ActivityScheduleTab />}
           {activeTab === 'manageinnercorners' && <ManageInnerCornersTab />}
           {activeTab === 'manageoutercorners' && <ManageOuterCornersTab />}
+          {activeTab === 'assigninnercorners' && <AssignInnerCornersTab />}
+          {activeTab === 'assignoutercorners' && <AssignOuterCornersTab />}
           {activeTab === 'systemlog'          && <SystemLogTab />}
           {activeTab === 'help'             && <HelpTab />}
         </Suspense>

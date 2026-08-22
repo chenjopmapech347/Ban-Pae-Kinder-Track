@@ -453,9 +453,11 @@ export default function ActivityScheduleTab() {
     allClassNames        = [],
   } = useApp();
 
-  const [rooms,    setRooms]    = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [editRoom, setEditRoom] = useState(null);
+  const [rooms,        setRooms]        = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [editRoom,     setEditRoom]     = useState(null);
+  const [reseeding,    setReseeding]    = useState(false);
+  const [confirmReseed,setConfirmReseed]= useState(false);
 
   /* ── Build dynamic def maps ── */
   const innerDefMap = useMemo(() => {
@@ -577,13 +579,18 @@ export default function ActivityScheduleTab() {
   );
 
   const handleReseedSample = async () => {
-    if (!window.confirm(
-      'เติมข้อมูลตัวอย่างกิจกรรม (ภาษาอังกฤษ, EF, คอมพิวเตอร์, แปลงผัก ฯลฯ) ลงทุกห้อง?\n\nจะเขียนทับข้อมูลปัจจุบัน'
-    )) return;
-    const colRef = collection(db, 'activitySchedule');
-    await Promise.all(
-      rooms.map(r => setDoc(doc(colRef, r.id), { ...r, days: { ...LEGACY_SAMPLE_DAYS } }))
-    );
+    setReseeding(true);
+    setConfirmReseed(false);
+    try {
+      const colRef = collection(db, 'activitySchedule');
+      await Promise.all(
+        rooms.map(r => setDoc(doc(colRef, r.id), { ...r, days: { ...LEGACY_SAMPLE_DAYS } }))
+      );
+    } catch(e) {
+      console.error('reseed error:', e);
+    } finally {
+      setReseeding(false);
+    }
   };
 
   const TH = { padding:'9px 12px', border:'1px solid #cfd8dc', background:'#eceff1',
@@ -617,19 +624,56 @@ export default function ActivityScheduleTab() {
         </div>
         {totalActivities === 0 && rooms.length > 0 && (
           <div style={{ marginTop:'12px' }}>
-            <button
-              onClick={handleReseedSample}
-              style={{
-                padding:'7px 18px', borderRadius:'10px', border:'1.5px solid #7c3aed',
-                background:'#ede9fe', color:'#5b21b6', fontWeight:700, fontSize:'.85em',
-                cursor:'pointer', fontFamily:'inherit',
-              }}
-            >
-              ↺ เติมข้อมูลตัวอย่างกิจกรรม (เดิม)
-            </button>
-            <div style={{ marginTop:'6px', fontSize:'.78em', color:'#7c3aed', opacity:.8 }}>
-              ข้อมูลทุกห้องว่างเปล่า — กดเพื่อเติมตัวอย่างกิจกรรมเดิม (ภาษาอังกฤษ, EF, คอมพิวเตอร์ ฯลฯ)
-            </div>
+            {!confirmReseed ? (
+              <>
+                <button
+                  onClick={() => setConfirmReseed(true)}
+                  disabled={reseeding}
+                  style={{
+                    padding:'7px 18px', borderRadius:'10px', border:'1.5px solid #7c3aed',
+                    background:'#ede9fe', color:'#5b21b6', fontWeight:700, fontSize:'.85em',
+                    cursor:'pointer', fontFamily:'inherit',
+                  }}
+                >
+                  ↺ เติมข้อมูลตัวอย่างกิจกรรม (เดิม)
+                </button>
+                <div style={{ marginTop:'6px', fontSize:'.78em', color:'#7c3aed', opacity:.8 }}>
+                  ข้อมูลทุกห้องว่างเปล่า — กดเพื่อเติมตัวอย่างกิจกรรมเดิม (ภาษาอังกฤษ, EF, คอมพิวเตอร์ ฯลฯ)
+                </div>
+              </>
+            ) : (
+              <div style={{
+                display:'inline-flex', alignItems:'center', gap:'10px',
+                padding:'8px 14px', borderRadius:'12px',
+                background:'#faf5ff', border:'1.5px solid #a855f7',
+              }}>
+                <span style={{ fontSize:'.85em', color:'#6b21a8', fontWeight:600 }}>
+                  ยืนยันเติมข้อมูลตัวอย่างทุกห้อง?
+                </span>
+                <button
+                  onClick={handleReseedSample}
+                  disabled={reseeding}
+                  style={{
+                    padding:'5px 14px', borderRadius:'8px', border:'none',
+                    background:'#7c3aed', color:'white', fontWeight:700,
+                    fontSize:'.82em', cursor:'pointer', fontFamily:'inherit',
+                  }}
+                >
+                  {reseeding ? 'กำลังบันทึก…' : '✓ ยืนยัน'}
+                </button>
+                <button
+                  onClick={() => setConfirmReseed(false)}
+                  style={{
+                    padding:'5px 14px', borderRadius:'8px',
+                    border:'1px solid #d1d5db', background:'white',
+                    color:'#6b7280', fontWeight:600,
+                    fontSize:'.82em', cursor:'pointer', fontFamily:'inherit',
+                  }}
+                >
+                  ยกเลิก
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

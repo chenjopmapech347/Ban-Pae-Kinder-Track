@@ -579,12 +579,13 @@ export default function TeacherDashboard() {
   );
 
   /* ── Announcements visible to this teacher ── */
-  const myAnnouncements = useMemo(
+  const allMyAnnouncements = useMemo(
     () => (announcements ?? [])
-      .filter(a => !a.target || a.target === 'all' || a.target === myClass)
-      .slice(0, 1),
+      .filter(a => !a.target || a.target === 'all' || a.target === myClass),
     [announcements, myClass],
   );
+  // Banner in main tab: show latest 1 only
+  const myAnnouncements = allMyAnnouncements.slice(0, 1);
 
   const [draft,  setDraft]  = useState(() => buildDraft(activeStudents, dailyRecords, todayISO()));
   const [search, setSearch] = useState('');
@@ -855,11 +856,11 @@ export default function TeacherDashboard() {
               <div style={{ fontWeight: 700, color: '#374151', marginBottom: '.85rem', fontSize: '.88rem' }}>
                 📋 ประกาศล่าสุด (ที่เกี่ยวกับห้อง {myClass})
               </div>
-              {myAnnouncements.length === 0 ? (
+              {allMyAnnouncements.length === 0 ? (
                 <div className="text-center text-muted" style={{ padding: '2rem' }}>ยังไม่มีประกาศ</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '.7rem' }}>
-                  {myAnnouncements.map((a, idx) => (
+                  {allMyAnnouncements.map((a, idx) => (
                     <div key={a.id} style={{
                       display: 'flex', gap: '1rem', alignItems: 'flex-start',
                       padding: '1rem 1.25rem', borderRadius: '12px',

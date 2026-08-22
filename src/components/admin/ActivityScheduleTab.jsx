@@ -447,27 +447,37 @@ function RoomEditModal({ room, onClose, onSave, assignedInner, assignedOuter, ge
 
 /* ── Legacy corner defs + assignments — for one-time setup ────── */
 const LEGACY_INNER_DEFS = [
-  { key: 'eng', label: 'Eng (ภาษาอังกฤษ)' },
-  { key: 'com', label: 'คอมพิวเตอร์' },
-  { key: 'ef',  label: 'ห้องสื่อ EF' },
-  { key: 'res', label: 'ห้องแหล่งเรียนรู้' },
+  { key: 'block',    label: 'มุมบล็อก' },
+  { key: 'story',    label: 'มุมนิทาน' },
+  { key: 'lego',     label: 'มุมเลโก้' },
+  { key: 'creative', label: 'มุมสร้างสรรค์' },
+  { key: 'roleplay', label: 'มุมบทบาทสมมติ' },
+  { key: 'media',    label: 'มุมสื่อ' },
 ];
 const LEGACY_OUTER_DEFS = [
-  { key: 'gar', label: 'แปลงผัก' },
-  { key: 'pe',  label: 'พลศึกษา' },
-  { key: 'wst', label: 'คัดแยกขยะ' },
+  { key: 'wasteSort',    label: 'คัดแยกขยะ' },
+  { key: 'organicWaste', label: 'ขยะอินทรีย์' },
+  { key: 'garden',       label: 'แปลงปลูกผัก' },
+  { key: 'learningRoom', label: 'ห้องแหล่งเรียนรู้' },
+  { key: 'computerRoom', label: 'ห้องคอมพิวเตอร์' },
+  { key: 'trafficSign',  label: 'เครื่องหมายจราจร' },
 ];
 // {key, days, time}[] — format ที่ AssignInnerCornersTab / AssignOuterCornersTab ใช้
 const LEGACY_INNER_ASSIGN = [
-  { key: 'eng', days: ['อังคาร'],   time: '09.00' },
-  { key: 'com', days: ['พุธ'],      time: '10.30' },
-  { key: 'ef',  days: ['พฤหัสบดี'], time: '10.00' },
-  { key: 'res', days: ['ศุกร์'],    time: '09.00' },
+  { key: 'block',    days: ['จันทร์'],   time: '09.00' },
+  { key: 'story',    days: ['อังคาร'],   time: '09.00' },
+  { key: 'creative', days: ['พุธ'],      time: '09.30' },
+  { key: 'media',    days: ['พฤหัสบดี'], time: '10.00' },
+  { key: 'lego',     days: ['ศุกร์'],    time: '09.30' },
+  { key: 'roleplay', days: ['จันทร์'],   time: '10.30' },
 ];
 const LEGACY_OUTER_ASSIGN = [
-  { key: 'gar', days: ['จันทร์'],   time: '09.00' },
-  { key: 'pe',  days: ['พุธ'],      time: '09.30' },
-  { key: 'wst', days: ['พฤหัสบดี'], time: '09.00' },
+  { key: 'garden',       days: ['จันทร์'],   time: '09.00' },
+  { key: 'organicWaste', days: ['อังคาร'],   time: '10.00' },
+  { key: 'computerRoom', days: ['พุธ'],      time: '10.30' },
+  { key: 'wasteSort',    days: ['พฤหัสบดี'], time: '09.00' },
+  { key: 'learningRoom', days: ['ศุกร์'],    time: '09.00' },
+  { key: 'trafficSign',  days: ['อังคาร'],   time: '11.00' },
 ];
 
 /* ── Main component ───────────────────────────────────────────── */
@@ -496,9 +506,10 @@ export default function ActivityScheduleTab() {
   const [confirmSeedDefs,  setConfirmSeedDefs]  = useState(false);
   const [seedDefsMsg,      setSeedDefsMsg]      = useState(null);
 
-  const hasLegacyInnerKeys = innerCornerDefs.some(d => LEGACY_INNER_DEFS.some(l => l.key === d.key));
-  const hasLegacyOuterKeys = cornerDefs.some(d => LEGACY_OUTER_DEFS.some(l => l.key === d.key));
-  const showSeedDefsBtn = !hasLegacyInnerKeys || !hasLegacyOuterKeys;
+  // แสดงปุ่มคืนค่าเมื่อ defs ว่างเปล่าหรือยังไม่มีค่าเริ่มต้นครบ 6 กิจกรรม
+  const innerComplete = LEGACY_INNER_DEFS.every(d => innerCornerDefs.some(x => x.key === d.key));
+  const outerComplete = LEGACY_OUTER_DEFS.every(d => cornerDefs.some(x => x.key === d.key));
+  const showSeedDefsBtn = !innerComplete || !outerComplete;
 
   const handleSeedCornerDefs = () => {
     setConfirmSeedDefs(false);
@@ -767,10 +778,11 @@ export default function ActivityScheduleTab() {
                     cursor:'pointer', fontFamily:'inherit',
                   }}
                 >
-                  🔧 สร้างกำหนดกิจกรรมภายใน-นอกห้องเรียน (เดิม)
+                  🔧 คืนค่ากิจกรรม 6 ใน + 6 นอก ห้องเรียน
                 </button>
                 <div style={{ marginTop:'4px', fontSize:'.78em', color:'#0369a1', opacity:.8 }}>
-                  ตั้งค่า 4 กิจกรรมในห้อง + 3 กิจกรรมนอกห้อง พร้อมวัน/เวลา ให้ทุกห้องเรียน
+                  กู้คืนกิจกรรมภายใน 6 มุม (มุมบล็อก นิทาน เลโก้ สร้างสรรค์ บทบาทสมมติ มุมสื่อ)
+                  + ภายนอก 6 กิจกรรม (คัดแยกขยะ ขยะอินทรีย์ แปลงปลูกผัก ห้องแหล่งเรียนรู้ ห้องคอม เครื่องหมายจราจร)
                 </div>
               </>
             ) : (
@@ -780,7 +792,7 @@ export default function ActivityScheduleTab() {
                 background:'#f0f9ff', border:'1.5px solid #38bdf8',
               }}>
                 <span style={{ fontSize:'.85em', color:'#0c4a6e', fontWeight:600 }}>
-                  ยืนยันสร้างกำหนดกิจกรรมให้ทุกห้อง?
+                  ยืนยันคืนค่ากิจกรรม 6+6 ให้ทุกห้อง?
                 </span>
                 <button
                   onClick={handleSeedCornerDefs}

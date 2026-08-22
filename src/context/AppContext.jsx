@@ -465,6 +465,14 @@ export function AppProvider({ children }) {
               }
             } else {
               // Firebase เก่ากว่าหรือเท่ากับ local → ข้ามป้องกัน rollback
+              // แต่ถ้า cloud มี activities มากกว่า local (admin เพิ่งเพิ่มจากเครื่องอื่น) → restore เฉพาะ activities
+              const cloudActs = check.snapshot.activities;
+              const localActs = activities ?? [];
+              if (Array.isArray(cloudActs) && cloudActs.length > localActs.length) {
+                setActivities(cloudActs);
+                if (Array.isArray(check.snapshot.activityLogs)) setActivityLogs(check.snapshot.activityLogs);
+                console.info(`[KinderTrack] Partial pull — activities restored (cloud:${cloudActs.length} > local:${localActs.length})`);
+              }
               console.info(`[KinderTrack] Pull skipped (local is up-to-date): cloud=${new Date(cloudTime).toLocaleString('th-TH')}`);
               setPullSyncStatus('done');
             }
@@ -507,7 +515,11 @@ export function AppProvider({ children }) {
     autoSyncTimer.current = setTimeout(async () => {
       setAutoSyncStatus('syncing');
       try {
-        const payload = buildAppSnapshot(getSnapshotData());
+        const snapData = getSnapshotData();
+        // ถ้า activities ว่างเปล่าในเครื่องนี้ → ไม่ส่ง field นี้ เพื่อป้องกันทับข้อมูล activities จากเครื่องอื่น
+        // (firebaseSync ใช้ merge:true ดังนั้น field ที่ไม่ส่งจะคงอยู่ใน Firestore)
+        if (!snapData.activities?.length) delete snapData.activities;
+        const payload = buildAppSnapshot(snapData);
         const result  = await pushSnapshotToFirebase(payload);
         if (result.ok) localStorage.setItem('kt_lastPushAt', Date.now().toString());
         setAutoSyncStatus(result.ok ? 'done' : 'error');

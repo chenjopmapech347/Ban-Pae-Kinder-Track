@@ -24,7 +24,8 @@ export async function pushSnapshotToFirebase(payload) {
   }
   try {
     const data = { ...payload, updatedAt: serverTimestamp() };
-    await setDoc(snapshotRef(), data);
+    // merge: true — field ที่ไม่ได้ส่ง (เช่น activities ว่างเปล่า) จะคงอยู่ใน Firestore ไม่ถูกลบ
+    await setDoc(snapshotRef(), data, { merge: true });
 
     // สำรองรายวัน — non-blocking เพื่อไม่ให้ backup failure ทำให้ sync แสดงเป็น error
     const dateKey = new Date().toISOString().slice(0, 10);

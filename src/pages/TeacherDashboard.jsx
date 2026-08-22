@@ -455,8 +455,12 @@ function StudentList({ myStudents, filtered, search, setSearch, myClass, today, 
                 style={{
                   background: isInactive ? '#f3f4f6' : (isBoy ? '#dbeafe' : '#fce7f3'),
                   color: isInactive ? '#9ca3af' : (isBoy ? '#1e40af' : '#9d174d'),
+                  overflow: 'hidden',
                 }}>
-                {isInactive ? '⛔' : (isBoy ? '👦' : '👧')}
+                {isInactive ? '⛔'
+                  : s.photo
+                    ? <img src={s.photo} alt={s.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
+                    : (isBoy ? '👦' : '👧')}
               </div>
               <div style={{ flex: 1, minWidth: '130px' }}>
                 <div className="font-bold" style={{ fontSize: '.92rem' }}>{s.name}</div>

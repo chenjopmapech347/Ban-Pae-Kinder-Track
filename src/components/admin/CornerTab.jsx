@@ -1,12 +1,12 @@
 // CornerTab.jsx — แบบบันทึกการใช้แหล่งเรียนรู้นอกห้องเรียนรายสัปดาห์
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { getMondayOf, getWeekLabel, genUniqueKey } from '../../utils/helpers';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 
 // ── พิมพ์แบบบันทึก ───────────────────────────────────────────────────────────
-function printCornerSheet(rows, CORNERS, weekNo, weekDate, className, schoolName, teacher, academicYear, schoolLogo) {
+function printCornerSheet(rows, CORNERS, weekNo, weekDate, className, schoolName, teacher, academicYear, schoolLogo, topic = '') {
   const css = `
     @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap');
     *{box-sizing:border-box}
@@ -36,7 +36,7 @@ function printCornerSheet(rows, CORNERS, weekNo, weekDate, className, schoolName
       <h2>แบบบันทึกการใช้แหล่งเรียนรู้นอกห้องเรียนรายสัปดาห์</h2>
       ${schoolName  ? `<div class="sub">${schoolName}${academicYear ? ` ปีการศึกษา ${academicYear}` : ''}</div>` : ''}
       ${teacherLine ? `<div class="sub">${teacherLine}  ห้อง ${className}</div>` : `<div class="sub">ห้อง ${className}</div>`}
-      <div class="sub">สัปดาห์ที่ ${weekNo ?? '___'}  ${weekLabel}</div>
+      <div class="sub">สัปดาห์ที่ ${weekNo ?? '___'}  ${weekLabel}${topic ? `  ·  หน่วย/กิจกรรม: ${topic}` : ''}</div>
       <div class="hint">คำชี้แจง : ให้ทำเครื่องหมาย ✓ บันทึกข้อมูลการใช้แหล่งเรียนรู้นอกห้องเรียน เพื่อประเมินการใช้พื้นที่/มุมประสบการณ์ และนำข้อมูลไปพัฒนาต่อไป</div>
       <table>
         <thead>
@@ -154,6 +154,7 @@ export default function CornerTab({ teacherClassFilter = null }) {
   const [selDate,  setSelDate]      = useState(today);
   const isLocked = useIsTermLocked(selDate);
   const [weekNo,   setWeekNo]       = useState('');
+  const [topic,    setTopic]        = useState('');
   const [showMgmt, setShowMgmt]     = useState(false);
 
   const classList = useMemo(() => {
@@ -178,6 +179,23 @@ export default function CornerTab({ teacherClassFilter = null }) {
   const weekData = cornerRecords[weekKey] ?? {};
   const CORNERS  = cornerDefs ?? [];
   const emptyRec = Object.fromEntries(CORNERS.map(c => [c.key, false]));
+
+  // sync weekNo & topic from stored _meta whenever week/class changes
+  useEffect(() => {
+    const meta = (cornerRecords[weekKey] ?? {})._meta ?? {};
+    setWeekNo(meta.weekNo ?? '');
+    setTopic(meta.topic  ?? '');
+  }, [weekKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function saveMeta(field, value) {
+    setCornerRecords(prev => ({
+      ...prev,
+      [weekKey]: {
+        ...(prev[weekKey] ?? {}),
+        _meta: { ...(prev[weekKey]?._meta ?? {}), [field]: value },
+      },
+    }));
+  }
 
   function toggleCorner(studentId, cornerKey) {
     if (isLocked) return; // ล็อกภาคเรียน — ห้ามแก้ไข
@@ -232,14 +250,19 @@ export default function CornerTab({ teacherClassFilter = null }) {
           )}
           <input type="date" value={selDate} onChange={e => setSelDate(e.target.value)}
             style={{ padding:'.35rem .6rem', borderRadius:'8px', border:'none', fontSize:'.82rem', fontFamily:'inherit', background:'rgba(255,255,255,.2)', color:'white' }} />
-          <input type="number" min="1" max="52" value={weekNo} onChange={e => setWeekNo(e.target.value)}
+          <input type="number" min="1" max="52" value={weekNo}
+            onChange={e => { setWeekNo(e.target.value); saveMeta('weekNo', e.target.value); }}
             placeholder="สัปดาห์ที่"
             style={{ width:'90px', padding:'.35rem .6rem', borderRadius:'8px', border:'none', fontSize:'.82rem', fontFamily:'inherit', background:'rgba(255,255,255,.2)', color:'white' }} />
+          <input type="text" value={topic}
+            onChange={e => { setTopic(e.target.value); saveMeta('topic', e.target.value); }}
+            placeholder="หน่วย/กิจกรรมการเรียน"
+            style={{ width:'160px', padding:'.35rem .6rem', borderRadius:'8px', border:'none', fontSize:'.82rem', fontFamily:'inherit', background:'rgba(255,255,255,.2)', color:'white' }} />
           <button type="button" onClick={() => setShowMgmt(true)}
             style={{ padding:'.4rem .9rem', borderRadius:'8px', border:'1.5px solid rgba(255,255,255,.5)', background:'rgba(255,255,255,.15)', color:'white', fontFamily:'inherit', fontWeight:600, fontSize:'.82rem', cursor:'pointer' }}>
             ⚙️ จัดการมุม
           </button>
-          <button type="button" onClick={() => printCornerSheet(printRows, CORNERS, weekNo, monday, cn, schoolName, classTeacher, academicYear, schoolLogo)}
+          <button type="button" onClick={() => printCornerSheet(printRows, CORNERS, weekNo, monday, cn, schoolName, classTeacher, academicYear, schoolLogo, topic)}
             style={{ padding:'.4rem .9rem', borderRadius:'8px', border:'1.5px solid rgba(255,255,255,.5)', background:'rgba(255,255,255,.15)', color:'white', fontFamily:'inherit', fontWeight:600, fontSize:'.82rem', cursor:'pointer' }}>
             🖨️ พิมพ์
           </button>
@@ -253,6 +276,7 @@ export default function CornerTab({ teacherClassFilter = null }) {
       {/* ── สัปดาห์ info ── */}
       <div style={{ background:'#f0f9ff', borderRadius:'10px', padding:'.55rem 1rem', marginBottom:'1rem', fontSize:'.83rem', color:'#0369a1', fontWeight:600 }}>
         📅 สัปดาห์ที่ {weekNo || '—'}  ({getWeekLabel(monday)})  ·  ห้อง {cn}  ·  นักเรียน {classStudents.length} คน
+        {topic && <span style={{ marginLeft:'.75rem', fontWeight:400, color:'#0c4a6e' }}>·  📖 {topic}</span>}
       </div>
 
       {/* ── ตาราง ── */}

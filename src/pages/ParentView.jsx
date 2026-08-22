@@ -74,7 +74,9 @@ export default function ParentView() {
             fontSize: '2rem', flexShrink: 0,
             border: '3px solid rgba(255,255,255,0.5)',
           }}>
-            {isBoy ? '👦' : '👧'}
+            {student.photo
+              ? <img src={student.photo} alt={student.name} style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+              : (isBoy ? '👦' : '👧')}
           </div>
           <div>
             {student.guardianName ? (

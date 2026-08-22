@@ -100,7 +100,9 @@ export default function ReportPage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.5rem',
               border: '3px solid ' + (isBoy ? '#93c5fd' : '#f9a8d4'),
             }}>
-              {isBoy ? '👦' : '👧'}
+              {student.photo
+                ? <img src={student.photo} alt={student.name} style={{ width:'100%', height:'100%', objectFit:'cover', borderRadius:'50%' }} />
+                : (isBoy ? '👦' : '👧')}
             </div>
             <div style={{ flex: 1 }}>
               <h2 style={{ fontSize: '1.2rem', marginBottom: '.5rem' }}>{student.name}</h2>

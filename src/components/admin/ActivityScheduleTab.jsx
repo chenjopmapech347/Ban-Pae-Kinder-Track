@@ -68,14 +68,16 @@ const SEED_ROOMS = [
   { id:'3_3', levelKey:'3', name:'ห้อง อ.3/3', days:{ จันทร์:[], อังคาร:[], พุธ:[], พฤหัสบดี:[], ศุกร์:[] } },
 ];
 
-/* ── Legacy sample schedule — for restoring initial data ─────── */
+/* ── Sample schedule — ใช้ keys จากเมนูจัดการกิจกรรมเป็นหลัก ─────── */
 /* NOTE: Firestore does NOT support nested arrays — must use objects */
+/* inner keys: block,story,lego,creative,roleplay,media              */
+/* outer keys: wasteSort,organicWaste,garden,learningRoom,computerRoom,trafficSign */
 const LEGACY_SAMPLE_DAYS = {
-  จันทร์:    [{type:'gar', time:'09.00', label:'แปลงผัก'}],
-  อังคาร:   [{type:'eng', time:'09.00', label:'Eng (ภาษาอังกฤษ)'}],
-  พุธ:      [{type:'pe',  time:'09.30', label:'พลศึกษา'}, {type:'com', time:'10.30', label:'คอมพิวเตอร์'}],
-  พฤหัสบดี: [{type:'wst', time:'09.00', label:'คัดแยกขยะ'}, {type:'ef', time:'10.00', label:'ห้องสื่อ EF'}],
-  ศุกร์:    [{type:'res', time:'09.00', label:'ห้องแหล่งเรียนรู้'}],
+  จันทร์:    [{type:'garden',      time:'09.00', label:'แปลงปลูกผัก'}],
+  อังคาร:   [{type:'story',       time:'09.00', label:'มุมนิทาน'}],
+  พุธ:      [{type:'creative',    time:'09.30', label:'มุมสร้างสรรค์'}, {type:'computerRoom', time:'10.30', label:'ห้องคอมพิวเตอร์'}],
+  พฤหัสบดี: [{type:'wasteSort',   time:'09.00', label:'คัดแยกขยะ'},    {type:'media',        time:'10.00', label:'มุมสื่อ'}],
+  ศุกร์:    [{type:'learningRoom', time:'09.00', label:'ห้องแหล่งเรียนรู้'}],
 };
 
 /* ── Helpers ──────────────────────────────────────────────────── */
@@ -161,7 +163,7 @@ function RoomCard({ room, onEdit, getColor, getLabel, innerKeySet }) {
             <div style={{ flex:1, display:'flex', flexWrap:'wrap', gap:'4px', padding:'2px 0' }}>
               {acts.length > 0
                 ? acts.map(({type:t,time:tm,label:lb},i) => (
-                    <Pill key={i} clr={getColor(t)} time={tm} label={lb || getLabel(t)} />
+                    <Pill key={i} clr={getColor(t)} time={tm} label={getLabel(t) || lb} />
                   ))
                 : <span style={{ fontSize:'.73em', color:'#ccc', paddingTop:'6px', fontStyle:'italic' }}>
                     ไม่มีกิจกรรมพิเศษ
@@ -346,7 +348,7 @@ function RoomEditModal({ room, onClose, onSave, assignedInner, assignedOuter, ge
                   }}>
                     <span style={{ fontSize:'.74em', color:s.color, opacity:.7, width:'38px', flexShrink:0 }}>{time}</span>
                     <span style={{ color:s.color, fontWeight:600, fontSize:'.88em', flex:1 }}>
-                      {label || getLabel(type)}
+                      {getLabel(type) || label}
                     </span>
                     <button
                       onClick={() => removeAct(idx)}
@@ -686,7 +688,7 @@ export default function ActivityScheduleTab() {
         <div style={{ color:'#546e7a', marginTop:'4px', fontSize:'.9em' }}>
           แสดงเฉพาะกิจกรรมที่กำหนดไว้ในแต่ละห้องเรียน · ระดับอนุบาล ๑–๓
         </div>
-        {totalActivities === 0 && rooms.length > 0 && (
+        {rooms.length > 0 && (
           <div style={{ marginTop:'12px' }}>
             {!confirmReseed ? (
               <>
@@ -699,10 +701,10 @@ export default function ActivityScheduleTab() {
                     cursor:'pointer', fontFamily:'inherit',
                   }}
                 >
-                  ↺ เติมข้อมูลตัวอย่างกิจกรรม (เดิม)
+                  🔄 อัปเดตชื่อกิจกรรมตัวอย่างทุกห้อง
                 </button>
                 <div style={{ marginTop:'6px', fontSize:'.78em', color:'#7c3aed', opacity:.8 }}>
-                  ข้อมูลทุกห้องว่างเปล่า — กดเพื่อเติมตัวอย่างกิจกรรมเดิม (ภาษาอังกฤษ, EF, คอมพิวเตอร์ ฯลฯ)
+                  เติม/อัปเดตข้อมูลตัวอย่างกิจกรรมทุกห้องให้ตรงกับชื่อปัจจุบัน (แปลงปลูกผัก, มุมนิทาน, มุมสร้างสรรค์ ฯลฯ)
                 </div>
               </>
             ) : (
@@ -712,7 +714,7 @@ export default function ActivityScheduleTab() {
                 background:'#faf5ff', border:'1.5px solid #a855f7',
               }}>
                 <span style={{ fontSize:'.85em', color:'#6b21a8', fontWeight:600 }}>
-                  ยืนยันเติมข้อมูลตัวอย่างทุกห้อง?
+                  ยืนยันอัปเดตกิจกรรมตัวอย่างทุกห้อง?
                 </span>
                 <button
                   onClick={handleReseedSample}

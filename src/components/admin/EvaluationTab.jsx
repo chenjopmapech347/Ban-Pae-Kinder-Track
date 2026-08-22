@@ -798,11 +798,24 @@ export default function EvaluationTab() {
       }),
     [indicators, selTopic]
   );
-  // split by ระบบ prefix: qa- = ระบบที่ 1 (ดย.), std- = ระบบที่ 2 (หลักสูตร)
+  // split by ระบบ prefix: qa- = ระบบที่ 1 (ดย.), std-/std68- = ระบบที่ 2 (หลักสูตร)
   const hasQA  = allTopicIndicators.some(i => String(i.standardId ?? '').startsWith('qa-'));
-  const hasSTD = allTopicIndicators.some(i => String(i.standardId ?? '').startsWith('std-'));
+  const hasSTD = allTopicIndicators.some(i => {
+    const sid = String(i.standardId ?? '');
+    return sid.startsWith('std-') || sid.startsWith('std68-');
+  });
+  // auto-switch: ถ้า tab ปัจจุบันไม่มีข้อมูล ให้สลับไปยัง tab ที่มี
+  useEffect(() => {
+    if (systemTab === 'qa' && !hasQA && hasSTD) setSystemTab('std');
+    if (systemTab === 'std' && !hasSTD && hasQA) setSystemTab('qa');
+  }, [systemTab, hasQA, hasSTD]);
   const topicIndicators = useMemo(
-    () => allTopicIndicators.filter(i => String(i.standardId ?? '').startsWith(systemTab + '-')),
+    () => allTopicIndicators.filter(i => {
+      const sid = String(i.standardId ?? '');
+      if (systemTab === 'qa')  return sid.startsWith('qa-');
+      if (systemTab === 'std') return sid.startsWith('std-') || sid.startsWith('std68-');
+      return false;
+    }),
     [allTopicIndicators, systemTab]
   );
   const indActivities = useMemo(

@@ -80,7 +80,11 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
 
   const todayIso = new Date().toISOString().slice(0, 10);
 
+  const [selClass, setSelClass] = useState(() => myClass ?? (classes[0]?.name ?? ''));
+  const [selDate,  setSelDate]  = useState(todayIso);
+
   // ── ตรวจสอบวันหยุด ────────────────────────────────────────────────────────
+  // ต้อง declare หลัง selDate เพื่อป้องกัน TDZ (selDate ถูก minify เป็น N ใน production build)
   const holidayInfo = useMemo(() => {
     return (holidays ?? []).find(h => {
       if (!h.date) return false;
@@ -90,11 +94,7 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
       }
       return h.date === selDate;
     }) ?? null;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [holidays, selDate]);
-
-  const [selClass, setSelClass] = useState(() => myClass ?? (classes[0]?.name ?? ''));
-  const [selDate,  setSelDate]  = useState(todayIso);
   const [saved,         setSaved]         = useState(false);
   const [backfillMsg,   setBackfillMsg]   = useState('');
   const isLocked = useIsTermLocked(selDate);

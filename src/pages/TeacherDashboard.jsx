@@ -5,6 +5,8 @@ import { getDayRecord, hasHygieneToday } from '../utils/attendance';
 import StudentModal from '../components/StudentModal';
 import DashboardSidebar from '../components/ui/DashboardSidebar';
 import ErrorBoundary from '../components/ui/ErrorBoundary';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../lib/firebase';
 
 const EvaluationTab          = lazy(() => import('../components/admin/EvaluationTab'));
 const ReportsTab             = lazy(() => import('../components/admin/ReportsTab'));
@@ -536,8 +538,27 @@ export default function TeacherDashboard() {
 
   /* ── Profile edit ── */
   const myTeacher  = teachers?.find(t => t.id === (user?.teacherId ?? user?.id));
-  const [profileForm,  setProfileForm]  = useState(null);
-  const [profileSaved, setProfileSaved] = useState(false);
+  const [profileForm,    setProfileForm]    = useState(null);
+  const [profileSaved,   setProfileSaved]   = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+
+  async function handlePhotoUpload(file) {
+    if (!file || !storage) return;
+    setPhotoUploading(true);
+    try {
+      const ext  = file.name.split('.').pop();
+      const path = `teacher-photos/${myTeacher?.id ?? 'unknown'}.${ext}`;
+      const sRef = ref(storage, path);
+      await uploadBytes(sRef, file);
+      const url  = await getDownloadURL(sRef);
+      setTeachers(ts => ts.map(t => t.id === myTeacher?.id ? { ...t, photoURL: url } : t));
+      setProfileForm(f => f ? { ...f, photoURL: url } : f);
+    } catch (err) {
+      console.error('upload photo error:', err);
+    } finally {
+      setPhotoUploading(false);
+    }
+  }
 
   /* ── Teacher announce state ── */
   const [annTitle, setAnnTitle] = useState('');
@@ -909,6 +930,31 @@ export default function TeacherDashboard() {
               {profileSaved && <div className="alert alert-success mb-4">✅ บันทึกข้อมูลเรียบร้อยแล้ว</div>}
               {!profileForm ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '520px' }}>
+                  {/* ── รูปโปรไฟล์ (view) ── */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '.5rem' }}>
+                    <div style={{
+                      width: 88, height: 88, borderRadius: '50%',
+                      background: 'linear-gradient(135deg,#7c3aed,#a855f7)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      overflow: 'hidden', flexShrink: 0,
+                      border: '3px solid #ede9fe', boxShadow: '0 2px 8px rgba(124,58,237,.15)',
+                    }}>
+                      {myTeacher?.photoURL
+                        ? <img src={myTeacher.photoURL} alt="profile"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : <span style={{ fontSize: '2.2rem' }}>👩‍🏫</span>
+                      }
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: '1.05rem', color: '#1e293b' }}>
+                        {myTeacher?.name ?? '—'}
+                      </div>
+                      <div style={{ fontSize: '.82rem', color: '#7c3aed', fontWeight: 600 }}>
+                        {myTeacher?.className ?? ''}
+                      </div>
+                    </div>
+                  </div>
+
                   <div style={{
                     display: 'flex', gap: '1rem', alignItems: 'center',
                     padding: '.6rem .85rem', borderRadius: '10px',
@@ -949,6 +995,44 @@ export default function TeacherDashboard() {
                   setProfileForm(null);
                   setProfileSaved(true);
                 }} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '520px' }}>
+
+                  {/* ── รูปโปรไฟล์ (edit) ── */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                    <div style={{
+                      width: 80, height: 80, borderRadius: '50%',
+                      background: 'linear-gradient(135deg,#7c3aed,#a855f7)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      overflow: 'hidden', flexShrink: 0,
+                      border: '3px solid #ede9fe',
+                    }}>
+                      {(profileForm?.photoURL ?? myTeacher?.photoURL)
+                        ? <img src={profileForm?.photoURL ?? myTeacher?.photoURL} alt="profile"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : <span style={{ fontSize: '2rem' }}>👩‍🏫</span>
+                      }
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontWeight: 600, fontSize: '.85rem', marginBottom: '.4rem' }}>
+                        📷 รูปโปรไฟล์
+                      </label>
+                      <label style={{
+                        display: 'inline-block', cursor: photoUploading ? 'not-allowed' : 'pointer',
+                        background: '#7c3aed', color: 'white',
+                        padding: '.35rem .85rem', borderRadius: '8px',
+                        fontSize: '.8rem', fontWeight: 700,
+                        opacity: photoUploading ? .6 : 1,
+                      }}>
+                        {photoUploading ? '⏳ กำลังอัปโหลด...' : '📁 เลือกรูป'}
+                        <input type="file" accept="image/*" style={{ display: 'none' }}
+                          disabled={photoUploading}
+                          onChange={e => { if (e.target.files?.[0]) handlePhotoUpload(e.target.files[0]); }} />
+                      </label>
+                      <div style={{ fontSize: '.72rem', color: '#9ca3af', marginTop: '.3rem' }}>
+                        JPG / PNG / WEBP · ไม่เกิน 5MB
+                      </div>
+                    </div>
+                  </div>
+
                   <div>
                     <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600, fontSize: '.85rem' }}>ชื่อ-นามสกุล *</label>
                     <input className="input" required value={profileForm.name ?? ''}

@@ -68,6 +68,15 @@ const SEED_ROOMS = [
   { id:'3_3', levelKey:'3', name:'ห้อง อ.3/3', days:{ จันทร์:[], อังคาร:[], พุธ:[], พฤหัสบดี:[], ศุกร์:[] } },
 ];
 
+/* ── Legacy sample schedule — for restoring initial data ─────── */
+const LEGACY_SAMPLE_DAYS = {
+  จันทร์:    [['gar','09.00','แปลงผัก']],
+  อังคาร:   [['eng','09.00','Eng (ภาษาอังกฤษ)']],
+  พุธ:      [['pe','09.30','พลศึกษา'], ['com','10.30','คอมพิวเตอร์']],
+  พฤหัสบดี: [['wst','09.00','คัดแยกขยะ'], ['ef','10.00','ห้องสื่อ EF']],
+  ศุกร์:    [['res','09.00','ห้องแหล่งเรียนรู้']],
+};
+
 /* ── Helpers ──────────────────────────────────────────────────── */
 function computeCounts(days, innerKeySet) {
   let inC = 0, outC = 0;
@@ -560,6 +569,23 @@ export default function ActivityScheduleTab() {
     setEditRoom(null);
   };
 
+  /* ── Reseed with legacy sample data ── */
+  const totalActivities = useMemo(
+    () => rooms.reduce((sum, r) =>
+      sum + DAYS.reduce((s2, d) => s2 + (r.days[d]?.length ?? 0), 0), 0),
+    [rooms],
+  );
+
+  const handleReseedSample = async () => {
+    if (!window.confirm(
+      'เติมข้อมูลตัวอย่างกิจกรรม (ภาษาอังกฤษ, EF, คอมพิวเตอร์, แปลงผัก ฯลฯ) ลงทุกห้อง?\n\nจะเขียนทับข้อมูลปัจจุบัน'
+    )) return;
+    const colRef = collection(db, 'activitySchedule');
+    await Promise.all(
+      rooms.map(r => setDoc(doc(colRef, r.id), { ...r, days: { ...LEGACY_SAMPLE_DAYS } }))
+    );
+  };
+
   const TH = { padding:'9px 12px', border:'1px solid #cfd8dc', background:'#eceff1',
                 color:'#546e7a', fontWeight:700, textAlign:'center' };
   const TD = { padding:'9px 12px', border:'1px solid #e4e8ec', verticalAlign:'middle' };
@@ -589,6 +615,23 @@ export default function ActivityScheduleTab() {
         <div style={{ color:'#546e7a', marginTop:'4px', fontSize:'.9em' }}>
           แสดงเฉพาะกิจกรรมที่กำหนดไว้ในแต่ละห้องเรียน · ระดับอนุบาล ๑–๓
         </div>
+        {totalActivities === 0 && rooms.length > 0 && (
+          <div style={{ marginTop:'12px' }}>
+            <button
+              onClick={handleReseedSample}
+              style={{
+                padding:'7px 18px', borderRadius:'10px', border:'1.5px solid #7c3aed',
+                background:'#ede9fe', color:'#5b21b6', fontWeight:700, fontSize:'.85em',
+                cursor:'pointer', fontFamily:'inherit',
+              }}
+            >
+              ↺ เติมข้อมูลตัวอย่างกิจกรรม (เดิม)
+            </button>
+            <div style={{ marginTop:'6px', fontSize:'.78em', color:'#7c3aed', opacity:.8 }}>
+              ข้อมูลทุกห้องว่างเปล่า — กดเพื่อเติมตัวอย่างกิจกรรมเดิม (ภาษาอังกฤษ, EF, คอมพิวเตอร์ ฯลฯ)
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Notice when no defs configured ── */}

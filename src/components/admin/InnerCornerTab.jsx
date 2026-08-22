@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { getMondayOf, getWeekLabel, genUniqueKey } from '../../utils/helpers';
+import { getDayRecord } from '../../utils/attendance';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 
@@ -149,6 +150,7 @@ export default function InnerCornerTab({ teacherClassFilter = null }) {
     innerCornerRecords, setInnerCornerRecords,
     innerCornerDefs, setInnerCornerDefs,
     students, teachers, classes, schoolName, schoolLogo, academicYear,
+    dailyRecords,
   } = useApp();
 
   const today = new Date().toISOString().slice(0, 10);
@@ -291,7 +293,10 @@ export default function InnerCornerTab({ teacherClassFilter = null }) {
               {classStudents.map((s, i) => {
                 const sid      = String(s.id);
                 const rec      = weekData[sid] ?? {};
-                const isAbsent = !!rec.__absent;
+                const attRec   = getDayRecord(dailyRecords, selDate, s.id);
+                const isAbsent = attRec?.attendance
+                  ? attRec.attendance !== 'มา'   // ขาด / ลา / ป่วย = ไม่มาเรียน
+                  : !!rec.__absent;              // fallback: ค่าเก่าที่บันทึกไว้
                 const count    = CORNERS.filter(c => rec[c.key]).length;
                 return (
                   <tr key={s.id} style={{ background: isAbsent ? '#fff5f5' : i % 2 === 0 ? 'white' : '#f0fdf4', verticalAlign:'middle' }}>

@@ -11,7 +11,7 @@ export default function StudentsTab() {
     students, setStudents, assessmentTopics,
     handleImport, setSelectedStudent,
     schoolName, schoolLogo, academicYear, allClassNames, classMap,
-    addSystemLog, user,
+    addSystemLog, user, deleteStudentAndSync,
   } = useApp();
 
   // ── ฟังก์ชันพิมพ์รายชื่อนักเรียน (รูปแบบแบบสำรวจ) ──
@@ -492,8 +492,8 @@ export default function StudentsTab() {
                               onClick={() => {
                                 setOpenMenuId(null);
                                 if (confirm('ลบข้อมูลนักเรียน?')) {
-                                  setStudents(students.filter(x => x.id !== s.id));
                                   addSystemLog?.('delete_student', `ลบนักเรียน: ${s.name} — ${s.className ?? ''}`, user?.name ?? 'admin');
+                                  deleteStudentAndSync?.(s.id);
                                 }
                               }}>
                               🗑️ ลบนักเรียน

@@ -402,6 +402,17 @@ export function AppProvider({ children }) {
     return result;
   }, [getSnapshotData]);
 
+  // ลบนักเรียนแล้ว push ทันที (ไม่รอ debounce) — ป้องกันนักเรียนกลับมาถ้าปิด browser ก่อน 4 วินาที
+  const deleteStudentAndSync = useCallback(async (studentId) => {
+    const newStudents = students.filter(s => String(s.id) !== String(studentId));
+    setStudents(newStudents);
+    // Build snapshot ด้วย newStudents โดยตรง ไม่รอ React state update
+    const payload = buildAppSnapshot({ ...getSnapshotData(), students: newStudents });
+    const result  = await pushSnapshotToFirebase(payload);
+    if (result.ok) localStorage.setItem('kt_lastPushAt', Date.now().toString());
+    return result;
+  }, [students, setStudents, getSnapshotData]);
+
   const syncPullFromFirebase = useCallback(async () => {
     const result = await pullSnapshotFromFirebase();
     if (!result.ok) return result;
@@ -1362,6 +1373,7 @@ export function AppProvider({ children }) {
     loginWithFirebase,
     syncPushToFirebase,
     syncPullFromFirebase,
+    deleteStudentAndSync,
     autoSyncStatus,
     pullSyncStatus,
     // Activity Log (evaluation-specific)

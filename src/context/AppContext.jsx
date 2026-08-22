@@ -233,6 +233,8 @@ export function AppProvider({ children }) {
       indicators,
       activities,
       activityLogs,
+      mediaRecords,
+      mediaBorrowRecords,
     }),
     [
       students,
@@ -251,6 +253,8 @@ export function AppProvider({ children }) {
       indicators,
       activities,
       activityLogs,
+      mediaRecords,
+      mediaBorrowRecords,
     ],
   );
 
@@ -271,6 +275,8 @@ export function AppProvider({ children }) {
     if (payload.indicators) setIndicators(payload.indicators);
     if (payload.activities) setActivities(payload.activities);
     if (payload.activityLogs) setActivityLogs(payload.activityLogs);
+    if (payload.mediaRecords) setMediaRecords(payload.mediaRecords);
+    if (payload.mediaBorrowRecords) setMediaBorrowRecords(payload.mediaBorrowRecords);
   }, [
     setStudents,
     setTeachers,
@@ -288,6 +294,8 @@ export function AppProvider({ children }) {
     setIndicators,
     setActivities,
     setActivityLogs,
+    setMediaRecords,
+    setMediaBorrowRecords,
   ]);
 
   const importStudentAssessmentExcel = useCallback(

@@ -6,5 +6,15 @@ service cloud.firestore {
     match /schools/{schoolId}/snapshots/{snapshotId} {
       allow read, write: if true;
     }
+
+    // ตารางกิจกรรมภายใน-นอกห้องเรียน
+    match /activitySchedule/{docId} {
+      allow read, write: if true;
+    }
+
+    // กำหนดกิจกรรมมุมในห้อง / นอกห้อง (ถ้ามีในอนาคต)
+    match /cornerAssignments/{docId} {
+      allow read, write: if true;
+    }
   }
 }

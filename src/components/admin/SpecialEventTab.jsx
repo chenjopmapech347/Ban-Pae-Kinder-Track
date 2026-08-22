@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../../context/AppContext';
+import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 
 // ── Event type definitions ────────────────────────────────────────────────────
 const EVENT_TYPES = {
@@ -311,131 +312,113 @@ function EventModal({ event, allClassNames, students, assessmentTopics, indicato
   const typeMeta = EVENT_TYPES[form.type];
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, background: 'rgba(15,23,42,.45)', backdropFilter: 'blur(3px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', zIndex: 300,
-    }} onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div style={{
-        background: 'white', borderRadius: '18px', boxShadow: '0 20px 60px rgba(0,0,0,.2)',
-        width: '100%', maxWidth: '680px', maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
-      }}>
-        {/* Header */}
-        <div style={{ padding: '1rem 1.4rem', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: '#1e293b' }}>
-            {event ? '✏️ แก้ไขกิจกรรม' : '➕ เพิ่มกิจกรรมวันสำคัญ'}
-          </h3>
-          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', color: '#9ca3af' }}>×</button>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title={event ? '✏️ แก้ไขกิจกรรม' : '➕ เพิ่มกิจกรรมวันสำคัญ'}
+      size="lg"
+      footer={
+        <>
+          <ModalCancelBtn onClick={onClose} />
+          <ModalConfirmBtn onClick={handleSave} label="💾 บันทึก" color="#7c3aed" />
+        </>
+      }
+    >
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {/* Row 1: name + date */}
+        <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap' }}>
+          <div style={{ flex: '2 1 220px' }}>
+            <label style={{ fontSize: '.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '.3rem' }}>ชื่อกิจกรรม *</label>
+            <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+              placeholder="เช่น วันไหว้ครู 2569"
+              style={{ width: '100%', padding: '.42rem .65rem', borderRadius: '8px', border: '1.5px solid #d1d5db', fontFamily: 'inherit', fontSize: '.88rem', boxSizing: 'border-box' }} />
+          </div>
+          <div style={{ flex: '1 1 150px' }}>
+            <label style={{ fontSize: '.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '.3rem' }}>วันที่จัดกิจกรรม *</label>
+            <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
+              style={{ width: '100%', padding: '.42rem .65rem', borderRadius: '8px', border: '1.5px solid #d1d5db', fontFamily: 'inherit', fontSize: '.88rem', boxSizing: 'border-box' }} />
+          </div>
         </div>
 
-        {/* Body */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '1.2rem 1.4rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {/* Row 1: name + date */}
-          <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap' }}>
-            <div style={{ flex: '2 1 220px' }}>
-              <label style={{ fontSize: '.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '.3rem' }}>ชื่อกิจกรรม *</label>
-              <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                placeholder="เช่น วันไหว้ครู 2569"
-                style={{ width: '100%', padding: '.42rem .65rem', borderRadius: '8px', border: '1.5px solid #d1d5db', fontFamily: 'inherit', fontSize: '.88rem', boxSizing: 'border-box' }} />
-            </div>
-            <div style={{ flex: '1 1 150px' }}>
-              <label style={{ fontSize: '.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '.3rem' }}>วันที่จัดกิจกรรม *</label>
-              <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
-                style={{ width: '100%', padding: '.42rem .65rem', borderRadius: '8px', border: '1.5px solid #d1d5db', fontFamily: 'inherit', fontSize: '.88rem', boxSizing: 'border-box' }} />
-            </div>
-          </div>
-
-          {/* Row 2: type + scope */}
-          <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap' }}>
-            <div style={{ flex: '1 1 200px' }}>
-              <label style={{ fontSize: '.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '.3rem' }}>ประเภทกิจกรรม</label>
-              <div style={{ display: 'flex', gap: '.35rem', flexWrap: 'wrap' }}>
-                {Object.entries(EVENT_TYPES).map(([k, meta]) => (
-                  <button key={k} type="button" onClick={() => setForm(p => ({
-                    ...p,
-                    type: k,
-                    // Auto-swap defaults when creating new event (not editing)
-                    activityIds: event ? p.activityIds : (EVENT_TYPE_DEFAULT_ACTIVITIES[k] ?? []),
-                  }))} style={{
-                    padding: '.25rem .7rem', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit',
-                    border: `2px solid ${form.type === k ? meta.color : '#e5e7eb'}`,
-                    background: form.type === k ? meta.bg : 'white',
-                    color: form.type === k ? meta.color : '#6b7280',
-                    fontWeight: 700, fontSize: '.78rem',
-                  }}>{meta.label}</button>
-                ))}
-              </div>
-            </div>
-            <div style={{ flex: '1 1 180px' }}>
-              <label style={{ fontSize: '.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '.3rem' }}>ห้องที่เข้าร่วม</label>
-              <select value={form.scope} onChange={e => setForm(p => ({ ...p, scope: e.target.value }))}
-                style={{ padding: '.4rem .6rem', borderRadius: '8px', border: '1.5px solid #d1d5db', fontFamily: 'inherit', fontSize: '.85rem', width: '100%' }}>
-                <option value="all">ทุกห้องเรียน</option>
-                {allClassNames.map(cn => <option key={cn} value={cn}>{cn}</option>)}
-              </select>
+        {/* Row 2: type + scope */}
+        <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 200px' }}>
+            <label style={{ fontSize: '.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '.3rem' }}>ประเภทกิจกรรม</label>
+            <div style={{ display: 'flex', gap: '.35rem', flexWrap: 'wrap' }}>
+              {Object.entries(EVENT_TYPES).map(([k, meta]) => (
+                <button key={k} type="button" onClick={() => setForm(p => ({
+                  ...p,
+                  type: k,
+                  // Auto-swap defaults when creating new event (not editing)
+                  activityIds: event ? p.activityIds : (EVENT_TYPE_DEFAULT_ACTIVITIES[k] ?? []),
+                }))} style={{
+                  padding: '.25rem .7rem', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit',
+                  border: `2px solid ${form.type === k ? meta.color : '#e5e7eb'}`,
+                  background: form.type === k ? meta.bg : 'white',
+                  color: form.type === k ? meta.color : '#6b7280',
+                  fontWeight: 700, fontSize: '.78rem',
+                }}>{meta.label}</button>
+              ))}
             </div>
           </div>
-
-          {/* Description */}
-          <div>
-            <label style={{ fontSize: '.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '.3rem' }}>รายละเอียด (ไม่บังคับ)</label>
-            <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-              rows={2} placeholder="อธิบายกิจกรรม วัตถุประสงค์ ฯลฯ"
-              style={{ width: '100%', padding: '.4rem .65rem', borderRadius: '8px', border: '1.5px solid #d1d5db', fontFamily: 'inherit', fontSize: '.85rem', resize: 'vertical', boxSizing: 'border-box' }} />
+          <div style={{ flex: '1 1 180px' }}>
+            <label style={{ fontSize: '.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '.3rem' }}>ห้องที่เข้าร่วม</label>
+            <select value={form.scope} onChange={e => setForm(p => ({ ...p, scope: e.target.value }))}
+              style={{ padding: '.4rem .6rem', borderRadius: '8px', border: '1.5px solid #d1d5db', fontFamily: 'inherit', fontSize: '.85rem', width: '100%' }}>
+              <option value="all">ทุกห้องเรียน</option>
+              {allClassNames.map(cn => <option key={cn} value={cn}>{cn}</option>)}
+            </select>
           </div>
+        </div>
 
-          {/* Indicator linking */}
-          <div style={{ background: '#faf5ff', border: '1.5px solid #e9d5ff', borderRadius: '12px', padding: '.8rem 1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.5rem' }}>
-              <span style={{ fontSize: '.78rem', fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '.04em' }}>
-                🔗 เชื่อมโยงตัวบ่งชี้พัฒนาการ
-              </span>
-              {!event && (
-                <span style={{
-                  fontSize: '.68rem', fontWeight: 700, color: '#6d28d9',
-                  background: '#ede9fe', border: '1px solid #c4b5fd',
-                  borderRadius: '6px', padding: '.1rem .45rem',
-                }}>✨ เติมอัตโนมัติตามประเภท</span>
-              )}
-            </div>
-            <IndicatorSelector
-              assessmentTopics={assessmentTopics}
-              indicators={indicators}
-              activities={activities}
-              linked={form.activityIds}
-              onChange={ids => setForm(p => ({ ...p, activityIds: ids }))}
-            />
-            {form.activityIds.length === 0 && (
-              <p style={{ fontSize: '.75rem', color: '#9ca3af', margin: '.4rem 0 0' }}>เลือกตัวบ่งชี้เพื่อให้ระบบเสนอคะแนนอัตโนมัติในหน้าประเมิน</p>
+        {/* Description */}
+        <div>
+          <label style={{ fontSize: '.78rem', fontWeight: 700, color: '#374151', display: 'block', marginBottom: '.3rem' }}>รายละเอียด (ไม่บังคับ)</label>
+          <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+            rows={2} placeholder="อธิบายกิจกรรม วัตถุประสงค์ ฯลฯ"
+            style={{ width: '100%', padding: '.4rem .65rem', borderRadius: '8px', border: '1.5px solid #d1d5db', fontFamily: 'inherit', fontSize: '.85rem', resize: 'vertical', boxSizing: 'border-box' }} />
+        </div>
+
+        {/* Indicator linking */}
+        <div style={{ background: '#faf5ff', border: '1.5px solid #e9d5ff', borderRadius: '12px', padding: '.8rem 1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.5rem' }}>
+            <span style={{ fontSize: '.78rem', fontWeight: 800, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+              🔗 เชื่อมโยงตัวบ่งชี้พัฒนาการ
+            </span>
+            {!event && (
+              <span style={{
+                fontSize: '.68rem', fontWeight: 700, color: '#6d28d9',
+                background: '#ede9fe', border: '1px solid #c4b5fd',
+                borderRadius: '6px', padding: '.1rem .45rem',
+              }}>✨ เติมอัตโนมัติตามประเภท</span>
             )}
           </div>
-
-          {/* Participation */}
-          <div style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0', borderRadius: '12px', padding: '.8rem 1rem' }}>
-            <div style={{ fontSize: '.78rem', fontWeight: 800, color: '#065f46', marginBottom: '.6rem', textTransform: 'uppercase', letterSpacing: '.04em' }}>
-              👤 รายชื่อผู้เข้าร่วมกิจกรรม
-            </div>
-            <ParticipationGrid
-              scopeStudents={scopeStudents}
-              participants={participants}
-              onToggle={toggleParticipant}
-              onToggleAll={toggleAll}
-            />
-          </div>
+          <IndicatorSelector
+            assessmentTopics={assessmentTopics}
+            indicators={indicators}
+            activities={activities}
+            linked={form.activityIds}
+            onChange={ids => setForm(p => ({ ...p, activityIds: ids }))}
+          />
+          {form.activityIds.length === 0 && (
+            <p style={{ fontSize: '.75rem', color: '#9ca3af', margin: '.4rem 0 0' }}>เลือกตัวบ่งชี้เพื่อให้ระบบเสนอคะแนนอัตโนมัติในหน้าประเมิน</p>
+          )}
         </div>
 
-        {/* Footer */}
-        <div style={{ padding: '.85rem 1.4rem', borderTop: '1px solid #f1f5f9', display: 'flex', gap: '.6rem', justifyContent: 'flex-end' }}>
-          <button type="button" onClick={onClose} style={{
-            padding: '.42rem 1.1rem', borderRadius: '9px', border: '1.5px solid #d1d5db',
-            background: 'white', color: '#374151', fontFamily: 'inherit', fontWeight: 700, fontSize: '.88rem', cursor: 'pointer',
-          }}>ยกเลิก</button>
-          <button type="button" onClick={handleSave} style={{
-            padding: '.42rem 1.4rem', borderRadius: '9px', border: 'none',
-            background: '#7c3aed', color: 'white', fontFamily: 'inherit', fontWeight: 800, fontSize: '.88rem', cursor: 'pointer',
-          }}>💾 บันทึก</button>
+        {/* Participation */}
+        <div style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0', borderRadius: '12px', padding: '.8rem 1rem' }}>
+          <div style={{ fontSize: '.78rem', fontWeight: 800, color: '#065f46', marginBottom: '.6rem', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+            👤 รายชื่อผู้เข้าร่วมกิจกรรม
+          </div>
+          <ParticipationGrid
+            scopeStudents={scopeStudents}
+            participants={participants}
+            onToggle={toggleParticipant}
+            onToggleAll={toggleAll}
+          />
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 

@@ -41,6 +41,8 @@ function recKey(className, academicYear, year, month) {
 }
 
 function nextSym(cur) {
+  // กด X → √ ตรงๆ (ข้าม '' ว่าง) เพราะครูต้องการเช็คแปรงฟันได้ทันที
+  if (cur === 'X') return '√';
   const i = CYCLE.indexOf(cur ?? '');
   return CYCLE[(i + 1) % CYCLE.length];
 }

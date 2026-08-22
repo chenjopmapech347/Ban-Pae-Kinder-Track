@@ -36,7 +36,14 @@ export default function TeacherOverviewTab({ onTabChange }) {
   // ── คีย์ที่ใช้สำหรับ record ต่างๆ ────────────────────────────────────────
   const dayKey   = today;                                          // YYYY-MM-DD
   const hxKey    = `${myClass}__${academicYear}__${today}`;       // healthcheck/illnesscheck/etc.
-  const monthKey = `${myClass}__${academicYear}__${today.slice(0, 7)}`; // YYYY-MM
+  const monthKey = `${myClass}__${academicYear}__${today.slice(0, 7)}`; // YYYY-MM (Gregorian — for records that use CE year)
+
+  // แปรงฟัน / นม ใช้ปีพุทธศักราชในคีย์ (เหมือน ToothBrushTab / MilkTab)
+  const _td      = new Date(today);
+  const _thaiYr  = _td.getFullYear() + 543;
+  const _mo      = String(_td.getMonth() + 1).padStart(2, '0');
+  const tbMilkKey = `${myClass}__${academicYear}__${_thaiYr}-${_mo}`; // e.g. ห้อง1__2568__2568-08
+
   const weekKey  = `${myClass}||${getMondayOf(today)}`;            // corner / innerCorner
 
   // วันในสัปดาห์ (0=อาทิตย์ ข้ามได้ในระบบโรงเรียน)
@@ -52,7 +59,7 @@ export default function TeacherOverviewTab({ onTabChange }) {
     const hasPickup = Object.keys(pickupRecords[dayKey] ?? {}).length > 0;
     const hasHealthCheck  = !!healthCheckRecords[hxKey];
     const hasIllnessCheck = !!illnessCheckRecords[hxKey];
-    const hasToothBrush   = !!toothBrushRecords[hxKey];
+    const hasToothBrush   = !!toothBrushRecords[tbMilkKey]; // monthly, Thai-year key
     const hasLunch        = !!lunchRecords[hxKey];
 
     // ประจำสัปดาห์
@@ -60,7 +67,7 @@ export default function TeacherOverviewTab({ onTabChange }) {
     const hasInnerCorner = !!innerCornerRecords[weekKey];
 
     // ประจำเดือน
-    const hasMilk        = !!milkRecords[monthKey];
+    const hasMilk        = !!milkRecords[tbMilkKey]; // monthly, Thai-year key
     const hasDailyRoutine = !!dailyRoutineRecords[monthKey];
 
     // ตามโอกาส / ประจำปี
@@ -79,7 +86,7 @@ export default function TeacherOverviewTab({ onTabChange }) {
     healthCheckRecords, illnessCheckRecords, toothBrushRecords, lunchRecords,
     cornerRecords, innerCornerRecords, milkRecords, dailyRoutineRecords,
     nutritionRecords, specialEvents,
-    dayKey, hxKey, weekKey, monthKey,
+    dayKey, hxKey, weekKey, monthKey, tbMilkKey,
   ]);
 
   // สรุปสถานะรวม

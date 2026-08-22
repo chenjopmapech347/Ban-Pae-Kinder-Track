@@ -205,6 +205,8 @@ function RoomEditModal({ room, onClose, onSave, assignedInner, assignedOuter, ge
   const [newTime, setNewTime] = useState('');
 
   // Auto-fill from assignment schedule
+  // Both old {key,days[],time} and new {key,dayTimes} formats are already normalised
+  // to [{key, days:[day], time}] per-day entries by extractInfo — filter just confirms shape.
   const allSchedule = useMemo(
     () => [...innerSchedule, ...outerSchedule].filter(e => e.days?.length > 0 && e.time),
     [innerSchedule, outerSchedule],
@@ -567,7 +569,7 @@ export default function ActivityScheduleTab() {
     return allClassNames.find(cn => cn === roomName || cn === stripped) ?? null;
   }
 
-  /* ── Get assigned defs for a given room (handles old string[] + new {key,days,time}[]) ── */
+  /* ── Get assigned defs for a given room (handles all formats) ── */
   function getAssignedDefs(roomName) {
     const className = getRoomClassName(roomName);
 
@@ -575,14 +577,23 @@ export default function ActivityScheduleTab() {
       // not stored → use all, no schedule
       if (!stored || stored.length === 0) return { keys: null, schedule: [] };
       if (typeof stored[0] === 'string') {
-        // old format: keys only, no day/time
+        // very old format: keys only, no day/time
         return { keys: stored, schedule: [] };
       }
-      // new format: {key, days, time}[]
-      return {
-        keys:     stored.map(e => e.key),
-        schedule: stored.filter(e => e.days?.length > 0 && e.time),
-      };
+      // Flatten both formats into unified [{key, days:[day], time}] per-day entries
+      const schedule = [];
+      stored.forEach(e => {
+        if (e.dayTimes && Object.keys(e.dayTimes).length > 0) {
+          // New format: {key, dayTimes: {day: time}}
+          Object.entries(e.dayTimes).forEach(([day, time]) => {
+            if (time) schedule.push({ key: e.key, days: [day], time });
+          });
+        } else if (e.days?.length > 0 && e.time) {
+          // Old format: {key, days: string[], time: string}
+          schedule.push({ key: e.key, days: e.days, time: e.time });
+        }
+      });
+      return { keys: stored.map(e => e.key), schedule };
     }
 
     const innerStored = className ? classInnerCornerKeys[className] : null;
@@ -598,7 +609,7 @@ export default function ActivityScheduleTab() {
       assignedOuter: outerKeysRaw
         ? cornerDefs.filter(d => outerKeysRaw.includes(d.key))
         : cornerDefs,
-      innerSchedule, // [{key, days, time}] for auto-fill
+      innerSchedule, // [{key, days:[day], time}] — one entry per day, for auto-fill
       outerSchedule,
     };
   }

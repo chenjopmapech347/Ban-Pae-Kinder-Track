@@ -1,5 +1,5 @@
 // AssignInnerCornersTab.jsx — กำหนดกิจกรรมภายในห้องเรียนของแต่ละห้องเรียน
-// รองรับการกำหนดวันและเวลาสำหรับแต่ละกิจกรรม
+// แต่ละกิจกรรมเลือกได้หลายวัน และแต่ละวันกำหนดเวลาต่างกันได้
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 
@@ -11,12 +11,21 @@ const DAYS = [
   { key: 'ศุกร์',    label: 'ศ.' },
 ];
 
-// Backward compat: old format was string[], new is {key, days, time}[]
+// Backward compat: string[] → old {key,days,time} → new {key,dayTimes}
 function normalizeEntries(stored) {
   if (!stored || stored.length === 0) return stored ?? [];
+  // Very old format: string[]
   if (typeof stored[0] === 'string') {
-    return stored.map(key => ({ key, days: [], time: '' }));
+    return stored.map(key => ({ key, dayTimes: {} }));
   }
+  // Old format: {key, days, time} — convert to per-day times
+  if (stored[0].days !== undefined && stored[0].dayTimes === undefined) {
+    return stored.map(e => ({
+      key: e.key,
+      dayTimes: Object.fromEntries((e.days ?? []).map(d => [d, e.time ?? ''])),
+    }));
+  }
+  // New format: {key, dayTimes}
   return stored;
 }
 
@@ -39,8 +48,7 @@ export default function AssignInnerCornersTab() {
     if (!cls) return [];
     const stored = classInnerCornerKeys[cls];
     if (!stored) {
-      // default: all activities selected, no days/time configured yet
-      return innerCornerDefs.map(d => ({ key: d.key, days: [], time: '' }));
+      return innerCornerDefs.map(d => ({ key: d.key, dayTimes: {} }));
     }
     return normalizeEntries(stored);
   }
@@ -54,30 +62,33 @@ export default function AssignInnerCornersTab() {
   function toggle(key) {
     if (!selectedClass) return;
     const entries = getEntriesForClass(selectedClass);
-    const exists = entries.some(e => e.key === key);
-    const next = exists
+    const exists  = entries.some(e => e.key === key);
+    const next    = exists
       ? entries.filter(e => e.key !== key)
-      : [...entries, { key, days: [], time: '' }];
+      : [...entries, { key, dayTimes: {} }];
     setClassInnerCornerKeys(prev => ({ ...prev, [selectedClass]: next }));
   }
 
-  function updateDays(key, day) {
+  function toggleDay(key, day) {
     if (!selectedClass) return;
     const entries = getEntriesForClass(selectedClass);
     const next = entries.map(e => {
       if (e.key !== key) return e;
-      const days = (e.days ?? []).includes(day)
-        ? e.days.filter(d => d !== day)
-        : [...(e.days ?? []), day];
-      return { ...e, days };
+      const dt = { ...(e.dayTimes ?? {}) };
+      if (day in dt) { delete dt[day]; }
+      else           { dt[day] = '';   }
+      return { ...e, dayTimes: dt };
     });
     setClassInnerCornerKeys(prev => ({ ...prev, [selectedClass]: next }));
   }
 
-  function updateTime(key, time) {
+  function updateDayTime(key, day, time) {
     if (!selectedClass) return;
     const entries = getEntriesForClass(selectedClass);
-    const next = entries.map(e => e.key === key ? { ...e, time } : e);
+    const next = entries.map(e => {
+      if (e.key !== key) return e;
+      return { ...e, dayTimes: { ...(e.dayTimes ?? {}), [day]: time } };
+    });
     setClassInnerCornerKeys(prev => ({ ...prev, [selectedClass]: next }));
   }
 
@@ -86,7 +97,7 @@ export default function AssignInnerCornersTab() {
     const existing = getEntriesForClass(selectedClass);
     const next = innerCornerDefs.map(d => {
       const found = existing.find(e => e.key === d.key);
-      return found ?? { key: d.key, days: [], time: '' };
+      return found ?? { key: d.key, dayTimes: {} };
     });
     setClassInnerCornerKeys(prev => ({ ...prev, [selectedClass]: next }));
   }
@@ -106,12 +117,12 @@ export default function AssignInnerCornersTab() {
     });
   }
 
-  const selectedCount = currentEntries.length;
-  const totalCount    = innerCornerDefs.length;
-  const isDefault     = !classInnerCornerKeys[selectedClass];
-
-  // Count entries that have both days + time configured
-  const scheduledCount = currentEntries.filter(e => e.days?.length > 0 && e.time).length;
+  const selectedCount   = currentEntries.length;
+  const totalCount      = innerCornerDefs.length;
+  const isDefault       = !classInnerCornerKeys[selectedClass];
+  const scheduledCount  = currentEntries.filter(e =>
+    Object.values(e.dayTimes ?? {}).some(t => t)
+  ).length;
 
   return (
     <div className="glass p-6 animate-fade">
@@ -120,7 +131,7 @@ export default function AssignInnerCornersTab() {
         <div>
           <h3>🏡 กำหนดกิจกรรมภายในห้องเรียน</h3>
           <p className="text-xs text-muted" style={{ marginTop: '.25rem' }}>
-            เลือกกิจกรรม พร้อมกำหนด<strong>วัน</strong>และ<strong>เวลา</strong>สำหรับแต่ละห้องเรียน
+            เลือกกิจกรรม กำหนด<strong>วันที่ใช้</strong>และ<strong>เวลา</strong>แยกแต่ละวัน — กิจกรรมเดียวกันเรียนได้หลายวัน เวลาต่างกันได้
           </p>
         </div>
         {selectedClass && (
@@ -156,7 +167,9 @@ export default function AssignInnerCornersTab() {
                 const stored  = classInnerCornerKeys[cls];
                 const entries = stored ? normalizeEntries(stored) : null;
                 const count   = entries ? entries.length : innerCornerDefs.length;
-                const sched   = entries ? entries.filter(e => e.days?.length > 0 && e.time).length : 0;
+                const sched   = entries
+                  ? entries.filter(e => Object.values(e.dayTimes ?? {}).some(t => t)).length
+                  : 0;
                 const isActive = cls === selectedClass;
                 return (
                   <button
@@ -214,26 +227,26 @@ export default function AssignInnerCornersTab() {
                   🏡 {selectedClass}
                 </span>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: '.4rem' }}>
-                  <button
-                    onClick={selectAll}
+                  <button onClick={selectAll}
                     style={{ padding: '.3rem .75rem', borderRadius: '8px', border: 'none',
                              cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700,
-                             fontSize: '.78rem', background: '#dcfce7', color: '#15803d' }}
-                  >เลือกทั้งหมด</button>
-                  <button
-                    onClick={selectNone}
+                             fontSize: '.78rem', background: '#dcfce7', color: '#15803d' }}>
+                    เลือกทั้งหมด
+                  </button>
+                  <button onClick={selectNone}
                     style={{ padding: '.3rem .75rem', borderRadius: '8px', border: 'none',
                              cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700,
-                             fontSize: '.78rem', background: '#fee2e2', color: '#991b1b' }}
-                  >ล้างทั้งหมด</button>
+                             fontSize: '.78rem', background: '#fee2e2', color: '#991b1b' }}>
+                    ล้างทั้งหมด
+                  </button>
                   {!isDefault && (
-                    <button
-                      onClick={resetToDefault}
+                    <button onClick={resetToDefault}
                       style={{ padding: '.3rem .75rem', borderRadius: '8px',
                                border: '1px solid #e5e7eb', cursor: 'pointer',
                                fontFamily: 'inherit', fontWeight: 700,
-                               fontSize: '.78rem', background: 'white', color: '#6b7280' }}
-                    >↺ รีเซ็ต</button>
+                               fontSize: '.78rem', background: 'white', color: '#6b7280' }}>
+                      ↺ รีเซ็ต
+                    </button>
                   )}
                 </div>
               </div>
@@ -245,19 +258,21 @@ export default function AssignInnerCornersTab() {
               ) : (
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
-                  gap: '.5rem',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                  gap: '.6rem',
                 }}>
                   {innerCornerDefs.map(def => {
-                    const checked   = isChecked(def.key);
-                    const entry     = currentEntries.find(e => e.key === def.key);
-                    const entryDays = entry?.days ?? [];
-                    const entryTime = entry?.time ?? '';
+                    const checked      = isChecked(def.key);
+                    const entry        = currentEntries.find(e => e.key === def.key);
+                    const entryDayTimes = entry?.dayTimes ?? {};
+                    const activeDays   = DAYS.filter(d => d.key in entryDayTimes);
+                    const hasSchedule  = activeDays.some(d => entryDayTimes[d.key]);
+
                     return (
                       <div
                         key={def.key}
                         style={{
-                          borderRadius: '10px', padding: '.6rem .8rem',
+                          borderRadius: '12px', padding: '.7rem .85rem',
                           background: checked ? '#f0fdf4' : 'white',
                           border: `1.5px solid ${checked ? '#4ade80' : '#e5e7eb'}`,
                           transition: 'all .12s',
@@ -265,7 +280,7 @@ export default function AssignInnerCornersTab() {
                       >
                         {/* Checkbox row */}
                         <label style={{ display: 'flex', alignItems: 'center',
-                                        gap: '.6rem', cursor: 'pointer' }}>
+                                        gap: '.6rem', cursor: 'pointer', marginBottom: checked ? '.55rem' : 0 }}>
                           <input
                             type="checkbox"
                             checked={checked}
@@ -279,7 +294,7 @@ export default function AssignInnerCornersTab() {
                           }}>
                             {def.label}
                           </span>
-                          {checked && entryDays.length > 0 && entryTime && (
+                          {hasSchedule && (
                             <span style={{
                               marginLeft: 'auto', fontSize: '.68rem', fontWeight: 700,
                               background: '#dcfce7', color: '#15803d',
@@ -290,10 +305,10 @@ export default function AssignInnerCornersTab() {
                           )}
                         </label>
 
-                        {/* Day + time — shown when checked */}
+                        {/* Day/time panel — shown when checked */}
                         {checked && (
                           <div style={{
-                            marginTop: '.6rem', paddingTop: '.55rem',
+                            paddingTop: '.55rem',
                             borderTop: '1px solid #bbf7d0',
                           }}>
                             {/* Day toggles */}
@@ -301,16 +316,16 @@ export default function AssignInnerCornersTab() {
                               fontSize: '.7rem', color: '#6b7280',
                               fontWeight: 700, marginBottom: '.3rem',
                             }}>
-                              📅 วันที่ใช้งาน
+                              📅 วันที่ใช้งาน (เลือกได้หลายวัน)
                             </div>
                             <div style={{ display: 'flex', gap: '.25rem',
                                           flexWrap: 'wrap', marginBottom: '.5rem' }}>
                               {DAYS.map(d => {
-                                const active = entryDays.includes(d.key);
+                                const active = d.key in entryDayTimes;
                                 return (
                                   <button
                                     key={d.key}
-                                    onClick={() => updateDays(def.key, d.key)}
+                                    onClick={() => toggleDay(def.key, d.key)}
                                     style={{
                                       padding: '3px 9px', borderRadius: '20px',
                                       border: 'none', cursor: 'pointer',
@@ -326,27 +341,42 @@ export default function AssignInnerCornersTab() {
                               })}
                             </div>
 
-                            {/* Time input */}
-                            <div style={{
-                              fontSize: '.7rem', color: '#6b7280',
-                              fontWeight: 700, marginBottom: '.25rem',
-                            }}>
-                              ⏰ เวลาเริ่ม
-                            </div>
-                            <input
-                              type="text"
-                              value={entryTime}
-                              onChange={e => updateTime(def.key, e.target.value)}
-                              placeholder="เช่น 09.00"
-                              style={{
-                                width: '100%', padding: '5px 9px',
-                                borderRadius: '7px',
-                                border: `1.5px solid ${entryTime ? '#4ade80' : '#bbf7d0'}`,
-                                fontSize: '.82em', fontFamily: 'inherit',
-                                outline: 'none', boxSizing: 'border-box',
-                                background: 'white', color: '#15803d',
-                              }}
-                            />
+                            {/* Per-day time inputs */}
+                            {activeDays.length > 0 && (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '.3rem' }}>
+                                <div style={{
+                                  fontSize: '.7rem', color: '#6b7280',
+                                  fontWeight: 700, marginBottom: '.1rem',
+                                }}>
+                                  ⏰ เวลาเริ่มแต่ละวัน
+                                </div>
+                                {activeDays.map(d => (
+                                  <div key={d.key} style={{
+                                    display: 'flex', alignItems: 'center', gap: '.4rem',
+                                  }}>
+                                    <span style={{
+                                      fontSize: '.75rem', fontWeight: 700,
+                                      color: '#15803d', width: '30px', flexShrink: 0,
+                                    }}>
+                                      {d.label}
+                                    </span>
+                                    <input
+                                      type="text"
+                                      value={entryDayTimes[d.key] ?? ''}
+                                      onChange={ev => updateDayTime(def.key, d.key, ev.target.value)}
+                                      placeholder="09.00"
+                                      style={{
+                                        flex: 1, padding: '4px 8px',
+                                        borderRadius: '7px',
+                                        border: `1.5px solid ${entryDayTimes[d.key] ? '#4ade80' : '#bbf7d0'}`,
+                                        fontSize: '.82em', fontFamily: 'inherit',
+                                        outline: 'none', background: 'white', color: '#15803d',
+                                      }}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

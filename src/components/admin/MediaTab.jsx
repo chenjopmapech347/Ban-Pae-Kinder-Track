@@ -49,8 +49,8 @@ function printMediaList(records, cn, schoolName, teacher, academicYear, schoolLo
     .tc{text-align:center}
     .tl{text-align:left}
     .ctx{font-size:8.5pt;line-height:1.6;vertical-align:top}
-    .img-cell{text-align:center;padding:3px}
-    .img-cell img{width:60px;height:45px;object-fit:cover;border-radius:4px;border:1px solid #ccc}
+    .img-cell{text-align:center;padding:3px;width:5cm;height:6cm;vertical-align:middle}
+    .img-cell img{width:4cm;height:5cm;object-fit:cover;border-radius:4px;border:1px solid #ccc}
     .no-img{color:#aaa;font-size:8pt}
     @media print{@page{size:A4 portrait;margin:1in}body{margin:0}}
   `;
@@ -81,7 +81,7 @@ function printMediaList(records, cn, schoolName, teacher, academicYear, schoolLo
         <thead>
           <tr>
             <th rowspan="2" style="width:26px">ที่</th>
-            <th rowspan="2" style="width:70px">รูปภาพ</th>
+            <th rowspan="2" style="width:5cm">รูปภาพ</th>
             <th rowspan="2" style="min-width:150px" class="tl">รายการสื่อ/นวัตกรรม</th>
             <th rowspan="2" style="min-width:120px" class="tl">ประกอบการสอนหน่วย</th>
             <th rowspan="2" style="width:52px">สื่อ<br/>ทำมือ</th>
@@ -430,7 +430,7 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
             <thead>
               <tr style={{ background: '#f0f9ff' }}>
                 <th style={{ ...cell, width: '36px' }}>ที่</th>
-                <th style={{ ...cell, width: '70px' }}>รูปภาพ</th>
+                <th style={{ ...cell, width: '190px' }}>รูปภาพ</th>
                 <th style={{ ...cell, textAlign: 'center', minWidth: '180px' }}>รายการสื่อ / นวัตกรรม</th>
                 <th style={{ ...cell, textAlign: 'center', minWidth: '120px' }}>ห้อง / ผู้ผลิต</th>
                 <th style={{ ...cell, textAlign: 'center', minWidth: '180px' }}>ประกอบการสอนหน่วย</th>
@@ -455,7 +455,7 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
                     <td style={{ ...cell, textAlign: 'center', padding: '.3rem' }}>
                       {r.imageUrl ? (
                         <img src={r.imageUrl} alt={r.item}
-                          style={{ width: '56px', height: '42px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #bae6fd', cursor: 'pointer' }}
+                          style={{ width: '151px', height: '189px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #bae6fd', cursor: 'pointer' }}
                           onClick={() => window.open(r.imageUrl, '_blank')} />
                       ) : (
                         <span style={{ color: '#d1d5db', fontSize: '.75rem' }}>—</span>

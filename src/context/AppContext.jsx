@@ -115,6 +115,7 @@ export function AppProvider({ children }) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [schools, setSchools] = useLocalStorage(STORAGE_KEYS.schools, INITIAL_SCHOOLS);
   const [holidays, setHolidays] = useLocalStorage(STORAGE_KEYS.holidays, INITIAL_HOLIDAYS);
+  const [specialHolidays, setSpecialHolidays] = useLocalStorage(STORAGE_KEYS.specialHolidays, []);
 
   // ── ตารางกิจกรรม (Firestore-backed) ──────────────────────────────────────
   const [activitySchedule, setActivitySchedule] = useState([]);
@@ -513,7 +514,7 @@ export function AppProvider({ children }) {
     pickupRecords, mediaRecords, cornerRecords, innerCornerRecords,
     healthCheckRecords, illnessCheckRecords, toothBrushRecords,
     lunchRecords, milkRecords, nutritionRecords, dailyRoutineRecords, studentReportRecords,
-    specialEvents,
+    specialEvents, specialHolidays,
     cornerDefs, innerCornerDefs,
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1414,6 +1415,9 @@ export function AppProvider({ children }) {
     // Special Events (กิจกรรมวันสำคัญ)
     specialEvents,
     setSpecialEvents,
+    // Special Holidays (วันหยุดพิเศษ + วันเรียนทดแทน)
+    specialHolidays,
+    setSpecialHolidays,
     // Student Report Book (อ.01)
     studentReportRecords,
     setStudentReportRecords,

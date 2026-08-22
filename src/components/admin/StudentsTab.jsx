@@ -181,6 +181,7 @@ export default function StudentsTab() {
   const [search, setSearch]           = useState('');
   const [selectedLevel, setLevel]     = useState('all');
   const [selectedClass, setClass]     = useState('all');
+  const [showAll, setShowAll]         = useState(false); // false = กำลังเรียนเท่านั้น
 
   const LEVEL_META = [
     { level: 'all', label: 'ทั้งหมด',   emoji: '📚', color: '#7c3aed', bg: '#f5f3ff' },
@@ -196,10 +197,11 @@ export default function StudentsTab() {
   };
 
   const filtered = students.filter(s => {
-    const matchName  = s.name.includes(search.trim());
-    const matchLevel = selectedLevel === 'all' || s.level === selectedLevel;
-    const matchClass = selectedClass === 'all' || s.className === selectedClass;
-    return matchName && matchLevel && matchClass;
+    const matchName   = s.name.includes(search.trim());
+    const matchLevel  = selectedLevel === 'all' || s.level === selectedLevel;
+    const matchClass  = selectedClass === 'all' || s.className === selectedClass;
+    const matchStatus = showAll || !s.status || s.status === 'กำลังเรียน';
+    return matchName && matchLevel && matchClass && matchStatus;
   }).sort((a, b) => {
     const idA = Number(a.studentId || a.code || a.id) || 0;
     const idB = Number(b.studentId || b.code || b.id) || 0;
@@ -223,6 +225,21 @@ export default function StudentsTab() {
           {/* ── ค้นหา ── */}
           <input className="input" style={{ maxWidth: '180px' }} placeholder="🔍 ค้นหา..."
             value={search} onChange={e => setSearch(e.target.value)} />
+
+          {/* ── สถานะ toggle ── */}
+          <button
+            type="button"
+            onClick={() => setShowAll(v => !v)}
+            style={{
+              padding: '.38rem .8rem', borderRadius: '8px', cursor: 'pointer',
+              fontFamily: 'inherit', fontWeight: 700, fontSize: '.8rem', border: 'none',
+              background: showAll ? '#fef3c7' : '#f0fdf4',
+              color: showAll ? '#92400e' : '#15803d',
+            }}
+            title={showAll ? 'แสดงทุกสถานะ' : 'แสดงเฉพาะกำลังเรียน'}
+          >
+            {showAll ? '📋 ทุกสถานะ' : '✅ กำลังเรียน'}
+          </button>
 
           {/* ── ส่งออก dropdown ── */}
           <div style={{ position: 'relative' }}>
@@ -434,13 +451,15 @@ export default function StudentsTab() {
                     </span>
                   </td>
                   <td>
-                    {(s.status ?? 'ปกติ') === 'ปกติ'
-                      ? <span className="badge" style={{ background:'#d1fae5',color:'#065f46' }}>✅ ปกติ</span>
-                      : (s.status === 'ลาออก')
-                        ? <span className="badge" style={{ background:'#fef3c7',color:'#92400e' }}>
-                            🚪 ลาออก{s.withdrawDate ? ` ${s.withdrawDate}` : ''}
-                          </span>
-                        : <span className="badge" style={{ background:'#f3f4f6',color:'#6b7280' }}>⛔ นอกระบบ</span>}
+                    {(!s.status || s.status === 'กำลังเรียน' || s.status === 'ปกติ')
+                      ? <span className="badge" style={{ background:'#d1fae5',color:'#065f46' }}>✅ เรียนอยู่</span>
+                      : s.status === 'จบการศึกษา'
+                        ? <span className="badge" style={{ background:'#dbeafe',color:'#1e40af' }}>🎓 จบแล้ว</span>
+                        : s.status === 'ลาออก'
+                          ? <span className="badge" style={{ background:'#fee2e2',color:'#991b1b' }}>📤 ลาออก</span>
+                          : s.status === 'พักการเรียน'
+                            ? <span className="badge" style={{ background:'#fef3c7',color:'#92400e' }}>⏸️ พัก</span>
+                            : <span className="badge" style={{ background:'#f3f4f6',color:'#6b7280' }}>{s.status}</span>}
                   </td>
                   <td><code style={{ background: '#f5f3ff', padding: '.15rem .5rem', borderRadius: '6px', fontSize: '.8rem' }}>{s.parentPin ?? '—'}</code></td>
                   <td style={{ position: 'sticky', right: 0, background: 'white', zIndex: 1, boxShadow: '-3px 0 8px rgba(0,0,0,.06)' }}>

@@ -7,6 +7,7 @@ const StudentsTab            = lazy(() => import('../components/admin/StudentsTa
 const TeachersTab            = lazy(() => import('../components/admin/TeachersTab'));
 const ClassesTab             = lazy(() => import('../components/admin/ClassesTab'));
 const HolidaysTab            = lazy(() => import('../components/admin/HolidaysTab'));
+const SpecialHolidaysTab     = lazy(() => import('../components/admin/SpecialHolidaysTab'));
 const TopicsTab              = lazy(() => import('../components/admin/TopicsTab'));
 const SchoolsTab             = lazy(() => import('../components/admin/SchoolsTab'));
 const ReportsTab             = lazy(() => import('../components/admin/ReportsTab'));
@@ -37,6 +38,9 @@ const AIChatTab              = lazy(() => import('../components/AIChatTab'));
 const ClassAssignTab         = lazy(() => import('../components/admin/ClassAssignTab'));
 const MeasurementDatesTab    = lazy(() => import('../components/admin/MeasurementDatesTab'));
 const ActivityScheduleTab    = lazy(() => import('../components/admin/ActivityScheduleTab'));
+const ManageInnerCornersTab  = lazy(() => import('../components/admin/ManageInnerCornersTab'));
+const ManageOuterCornersTab  = lazy(() => import('../components/admin/ManageOuterCornersTab'));
+const YearEndTab             = lazy(() => import('../components/admin/YearEndTab'));
 const SystemLogTab           = lazy(() => import('../components/admin/SystemLogTab'));
 const HelpTab                = lazy(() => import('../components/admin/HelpTab'));
 
@@ -97,6 +101,7 @@ const TAB_GROUPS = [
     tabs: [
       { id: 'students',    label: '👶 นักเรียน'              },
       { id: 'classassign', label: '🚪 จัดนักเรียนเข้าห้อง'  },
+      { id: 'yearend',     label: '🎓 จัดการสิ้นปีการศึกษา'  },
       { id: 'classes',     label: '🏫 ห้องเรียน'             },
       { id: 'teachers',    label: '👩‍🏫 ครู'                  },
       { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ'       },
@@ -110,8 +115,11 @@ const TAB_GROUPS = [
       { id: 'schools',           label: '🏛️ โรงเรียน'                  },  // ตั้งค่าพื้นฐาน
       { id: 'terms',             label: '📅 ภาคเรียน'                   },  // กรอบเวลา
       { id: 'holidays',          label: '🏖️ วันหยุดราชการ'               },  // ปฏิทิน
+      { id: 'specialholidays',   label: '📵 วันหยุดพิเศษ'                },  // หยุดพิเศษ+ทดแทน
       { id: 'activities',        label: '🎯 กิจกรรม'                    },  // กิจกรรม
-      { id: 'activityschedule',  label: '🗓️ กิจกรรมภายใน-นอกห้องเรียน' },  // ตารางกิจกรรม
+      { id: 'activityschedule',      label: '🗓️ กิจกรรมภายใน-นอกห้องเรียน'       },  // ตารางกิจกรรม
+      { id: 'manageinnercorners',   label: '🏡 จัดการกิจกรรมภายในห้องเรียน'    },  // นิยามมุมใน
+      { id: 'manageoutercorners',   label: '🌿 จัดการกิจกรรมภายนอกห้องเรียน'  },  // นิยามมุมนอก
       { id: 'topics',            label: '📝 หัวข้อประเมิน'             },  // กรอบการประเมิน
       { id: 'indicators',        label: '🔬 ตัวบ่งชี้'                  },  // ตัวบ่งชี้
       { id: 'standards',         label: '🗺️ มาตรฐานปฐมวัย'            },  // มาตรฐาน
@@ -168,6 +176,7 @@ export default function AdminDashboard() {
           {activeTab === 'nationalstd'    && <NationalStandardsTab />}
           {activeTab === 'students'       && <StudentsTab />}
           {activeTab === 'classassign'    && <ClassAssignTab />}
+          {activeTab === 'yearend'        && <YearEndTab />}
           {activeTab === 'teachers'       && <TeachersTab />}
           {activeTab === 'classes'        && <ClassesTab />}
           {activeTab === 'media'          && <MediaTab viewMode="entry" />}
@@ -180,11 +189,14 @@ export default function AdminDashboard() {
           {activeTab === 'indicators'     && <IndicatorsTab />}
           {activeTab === 'activities'     && <ActivitiesTab />}
           {activeTab === 'terms'          && <TermsTab />}
-          {activeTab === 'holidays'       && <HolidaysTab />}
+          {activeTab === 'holidays'         && <HolidaysTab />}
+          {activeTab === 'specialholidays' && <SpecialHolidaysTab />}
           {activeTab === 'standards'        && <StandardsMapTab />}
           {activeTab === 'measurementdates'  && <MeasurementDatesTab />}
-          {activeTab === 'activityschedule' && <ActivityScheduleTab />}
-          {activeTab === 'systemlog'        && <SystemLogTab />}
+          {activeTab === 'activityschedule'    && <ActivityScheduleTab />}
+          {activeTab === 'manageinnercorners' && <ManageInnerCornersTab />}
+          {activeTab === 'manageoutercorners' && <ManageOuterCornersTab />}
+          {activeTab === 'systemlog'          && <SystemLogTab />}
           {activeTab === 'help'             && <HelpTab />}
         </Suspense>
         </ErrorBoundary>

@@ -1,14 +1,26 @@
 /* ─────────────────────────────────────────────────────────────
-   ActivityScheduleTab.jsx  (Firestore-backed + editable)
+   ActivityScheduleTab.jsx  (Firestore-backed + dynamic corner defs)
+   แสดงเฉพาะกิจกรรมที่กำหนดไว้ต่อห้องเรียน ผ่าน classInnerCornerKeys / classOuterCornerKeys
    ───────────────────────────────────────────────────────────── */
 import { useState, useEffect, useMemo } from 'react';
 import { db } from '../../lib/firebase';
 import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { useApp } from '../../context/AppContext';
 
-/* ── Constants ──────────────────────────────────────────────── */
+/* ── Static constants ─────────────────────────────────────────── */
 const DAYS = ['จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์'];
+const DAY_CLR = {
+  จันทร์:'#1565C0', อังคาร:'#6A1B9A',
+  พุธ:'#2E7D32', พฤหัสบดี:'#B71C1C', ศุกร์:'#E65100',
+};
+const LEVEL_META = {
+  '1': { label:'อนุบาล ๑', hd:'linear-gradient(90deg,#1565C0,#1976D2)' },
+  '2': { label:'อนุบาล ๒', hd:'linear-gradient(90deg,#2E7D32,#388E3C)' },
+  '3': { label:'อนุบาล ๓', hd:'linear-gradient(90deg,#6A1B9A,#7B1FA2)' },
+};
 
-const PS = {
+/* ── Legacy colors / labels — backward-compat for old Firestore records ── */
+const LEGACY_PS = {
   eng: { bg:'#FFFDE7', color:'#E65100', border:'#FFE082' },
   ef:  { bg:'#E3F2FD', color:'#0D47A1', border:'#90CAF9' },
   com: { bg:'#E0F7FA', color:'#006064', border:'#80DEEA' },
@@ -17,58 +29,51 @@ const PS = {
   wst: { bg:'#FFF3E0', color:'#BF360C', border:'#FFAB91' },
   pe:  { bg:'#FCE4EC', color:'#880E4F', border:'#F48FB1' },
 };
-
-const ACT_LABEL = {
+const LEGACY_LABEL = {
   eng:'Eng (ภาษาอังกฤษ)', ef:'ห้องสื่อ EF', com:'คอมพิวเตอร์',
   res:'ห้องแหล่งเรียนรู้', gar:'แปลงผัก', wst:'คัดแยกขยะ', pe:'พลศึกษา',
 };
-const ACT_SHORT = {
-  eng:'Eng', ef:'ห้องสื่อ EF', com:'คอมพิวเตอร์',
-  res:'ห้องแหล่งเรียนรู้', gar:'แปลงผัก', wst:'คัดแยกขยะ', pe:'พลศึกษา',
-};
-const IN_SET  = new Set(['eng','ef','com','res']);
-const OUT_SET = new Set(['gar','wst','pe']);
-const DAY_CLR = {
-  จันทร์:'#1565C0', อังคาร:'#6A1B9A',
-  พุธ:'#2E7D32', พฤหัสบดี:'#B71C1C', ศุกร์:'#E65100',
-};
+// legacy inner keys (for backward-compat in/out counting)
+const LEGACY_IN_KEYS = new Set(['eng','ef','com','res']);
 
-/* ── Level header metadata ──────────────────────────────────── */
-const LEVEL_META = {
-  '1': { label:'อนุบาล ๑', hd:'linear-gradient(90deg,#1565C0,#1976D2)' },
-  '2': { label:'อนุบาล ๒', hd:'linear-gradient(90deg,#2E7D32,#388E3C)' },
-  '3': { label:'อนุบาล ๓', hd:'linear-gradient(90deg,#6A1B9A,#7B1FA2)' },
-};
+/* ── Color palettes for dynamic defs ─────────────────────────── */
+const INNER_PALETTE = [
+  { bg:'#FFFDE7', color:'#E65100', border:'#FFE082' },
+  { bg:'#E3F2FD', color:'#0D47A1', border:'#90CAF9' },
+  { bg:'#E0F7FA', color:'#006064', border:'#80DEEA' },
+  { bg:'#F3E5F5', color:'#6A1B9A', border:'#CE93D8' },
+  { bg:'#E8EAF6', color:'#283593', border:'#9FA8DA' },
+  { bg:'#FBE9E7', color:'#BF360C', border:'#FFAB91' },
+  { bg:'#FFF8E1', color:'#F57F17', border:'#FFE57F' },
+  { bg:'#F9FBE7', color:'#558B2F', border:'#DCEDC8' },
+];
+const OUTER_PALETTE = [
+  { bg:'#E8F5E9', color:'#1B5E20', border:'#A5D6A7' },
+  { bg:'#F1F8E9', color:'#33691E', border:'#C5E1A5' },
+  { bg:'#FCE4EC', color:'#880E4F', border:'#F48FB1' },
+  { bg:'#FFF3E0', color:'#BF360C', border:'#FFAB91' },
+  { bg:'#E0F2F1', color:'#004D40', border:'#80CBC4' },
+  { bg:'#EFEBE9', color:'#3E2723', border:'#D7CCC8' },
+];
+const DEFAULT_CLR = { bg:'#F5F5F5', color:'#616161', border:'#E0E0E0' };
 
-/* ── Seed data (used only when Firestore collection is empty) ── */
+/* ── Seed data — empty activities, rooms only ─────────────────── */
 const SEED_ROOMS = [
-  { id:'1_1', levelKey:'1', name:'ห้อง อ.1/1', days:{ จันทร์:[['ef','08.30','ห้องสื่อ EF'],['com','09.30','คอมพิวเตอร์'],['eng','13.30','Eng']], อังคาร:[['res','08.30','ห้องแหล่งเรียนรู้'],['eng','13.30','Eng']], พุธ:[['gar','09.30','แปลงผัก'],['eng','13.30','Eng']], พฤหัสบดี:[['pe','08.30','พลศึกษา'],['wst','09.30','คัดแยกขยะ'],['eng','13.30','Eng']], ศุกร์:[['eng','13.30','Eng']] }},
-  { id:'1_2', levelKey:'1', name:'ห้อง อ.1/2', days:{ จันทร์:[['com','08.30','คอมพิวเตอร์'],['ef','09.30','ห้องสื่อ EF'],['eng','14.30','Eng']], อังคาร:[['res','09.30','ห้องแหล่งเรียนรู้'],['gar','13.30','แปลงผัก'],['eng','14.30','Eng']], พุธ:[['eng','14.30','Eng']], พฤหัสบดี:[['pe','08.30','พลศึกษา'],['wst','09.30','คัดแยกขยะ'],['eng','14.30','Eng']], ศุกร์:[['eng','14.30','Eng']] }},
-  { id:'2_1', levelKey:'2', name:'ห้อง อ.2/1', days:{ จันทร์:[['eng','08.30','Eng'],['ef','13.30','ห้องสื่อ EF'],['com','14.30','คอมพิวเตอร์']], อังคาร:[['gar','09.30','แปลงผัก'],['res','13.30','ห้องแหล่งเรียนรู้']], พุธ:[['eng','08.30','Eng']], พฤหัสบดี:[['wst','08.30','คัดแยกขยะ'],['pe','09.30','พลศึกษา']], ศุกร์:[['eng','08.30','Eng']] }},
-  { id:'2_2', levelKey:'2', name:'ห้อง อ.2/2', days:{ จันทร์:[['eng','09.30','Eng'],['com','13.30','คอมพิวเตอร์'],['ef','14.30','ห้องสื่อ EF']], อังคาร:[['gar','08.30','แปลงผัก'],['res','14.30','ห้องแหล่งเรียนรู้']], พุธ:[['eng','09.30','Eng']], พฤหัสบดี:[['wst','08.30','คัดแยกขยะ'],['pe','09.30','พลศึกษา']], ศุกร์:[['eng','09.30','Eng']] }},
-  { id:'3_1', levelKey:'3', name:'ห้อง อ.3/1', days:{ จันทร์:[['gar','08.30','แปลงผัก']], อังคาร:[['eng','08.30','Eng'],['ef','09.30','ห้องสื่อ EF'],['com','13.00','คอมพิวเตอร์']], พุธ:[['res','08.30','ห้องแหล่งเรียนรู้']], พฤหัสบดี:[['eng','08.30','Eng'],['wst','09.30','คัดแยกขยะ'],['pe','10.30','พลศึกษา']], ศุกร์:[] }},
-  { id:'3_2', levelKey:'3', name:'ห้อง อ.3/2', days:{ จันทร์:[['gar','09.30','แปลงผัก']], อังคาร:[['eng','09.30','Eng'],['ef','10.30','ห้องสื่อ EF'],['res','12.00','ห้องแหล่งเรียนรู้']], พุธ:[['com','10.30','คอมพิวเตอร์']], พฤหัสบดี:[['wst','08.30','คัดแยกขยะ'],['eng','09.30','Eng'],['pe','10.30','พลศึกษา']], ศุกร์:[] }},
-  { id:'3_3', levelKey:'3', name:'ห้อง อ.3/3', days:{ จันทร์:[['gar','10.30','แปลงผัก']], อังคาร:[['ef','08.30','ห้องสื่อ EF']], พุธ:[['res','09.30','ห้องแหล่งเรียนรู้'],['com','10.30','คอมพิวเตอร์']], พฤหัสบดี:[['wst','08.30','คัดแยกขยะ'],['eng','10.30','Eng'],['pe','12.00','พลศึกษา']], ศุกร์:[] }},
+  { id:'1_1', levelKey:'1', name:'ห้อง อ.1/1', days:{ จันทร์:[], อังคาร:[], พุธ:[], พฤหัสบดี:[], ศุกร์:[] } },
+  { id:'1_2', levelKey:'1', name:'ห้อง อ.1/2', days:{ จันทร์:[], อังคาร:[], พุธ:[], พฤหัสบดี:[], ศุกร์:[] } },
+  { id:'2_1', levelKey:'2', name:'ห้อง อ.2/1', days:{ จันทร์:[], อังคาร:[], พุธ:[], พฤหัสบดี:[], ศุกร์:[] } },
+  { id:'2_2', levelKey:'2', name:'ห้อง อ.2/2', days:{ จันทร์:[], อังคาร:[], พุธ:[], พฤหัสบดี:[], ศุกร์:[] } },
+  { id:'3_1', levelKey:'3', name:'ห้อง อ.3/1', days:{ จันทร์:[], อังคาร:[], พุธ:[], พฤหัสบดี:[], ศุกร์:[] } },
+  { id:'3_2', levelKey:'3', name:'ห้อง อ.3/2', days:{ จันทร์:[], อังคาร:[], พุธ:[], พฤหัสบดี:[], ศุกร์:[] } },
+  { id:'3_3', levelKey:'3', name:'ห้อง อ.3/3', days:{ จันทร์:[], อังคาร:[], พุธ:[], พฤหัสบดี:[], ศุกร์:[] } },
 ];
 
-/* ── Static match table rows ────────────────────────────────── */
-const MATCH_ROWS = [
-  { act:'Eng (ภาษาอังกฤษ)', type:'eng', defined:'ห้องเรียนประจำ', actual:'สอนในห้องเรียนประจำ', src:'ในห้องเรียน', srcStyle:{bg:'#FFFDE7',color:'#E65100'} },
-  { act:'ห้องสื่อ EF',       type:'ef',  defined:'ห้องสื่อ EF (ห้องพิเศษ)', actual:'ใช้ห้องสื่อ EF ในอาคาร', src:'ในอาคาร', srcStyle:{bg:'#E3F2FD',color:'#0D47A1'} },
-  { act:'คอมพิวเตอร์',       type:'com', defined:'ห้องคอมพิวเตอร์', actual:'ใช้ห้องคอมพิวเตอร์ในอาคาร', src:'ในอาคาร', srcStyle:{bg:'#E3F2FD',color:'#0D47A1'} },
-  { act:'ห้องแหล่งเรียนรู้', type:'res', defined:'ห้องแหล่งเรียนรู้', actual:'ใช้ห้องแหล่งเรียนรู้ในอาคาร', src:'ในอาคาร', srcStyle:{bg:'#E3F2FD',color:'#0D47A1'} },
-  { act:'แปลงผัก',           type:'gar', defined:'แปลงเกษตร (นอกอาคาร)', actual:'ออกไปทำกิจกรรมที่แปลงผัก', src:'นอกอาคาร', srcStyle:{bg:'#E8F5E9',color:'#1B5E20'} },
-  { act:'คัดแยกขยะ',         type:'wst', defined:'จุดคัดแยกขยะ (นอกอาคาร)', actual:'ออกไปทำกิจกรรมนอกอาคาร', src:'นอกอาคาร', srcStyle:{bg:'#E8F5E9',color:'#1B5E20'} },
-  { act:'พลศึกษา (พละ)',     type:'pe',  defined:'สนาม/ลานอเนกประสงค์', actual:'ออกไปทำกิจกรรมที่สนามกีฬา', src:'นอกอาคาร', srcStyle:{bg:'#E8F5E9',color:'#1B5E20'} },
-];
-
-/* ── Helper functions ───────────────────────────────────────── */
-function computeCounts(days) {
+/* ── Helpers ──────────────────────────────────────────────────── */
+function computeCounts(days, innerKeySet) {
   let inC = 0, outC = 0;
   DAYS.forEach(day => {
     (days[day] ?? []).forEach(([type]) => {
-      if (IN_SET.has(type)) inC++;
-      else if (OUT_SET.has(type)) outC++;
+      if (innerKeySet.has(type)) inC++; else outC++;
     });
   });
   return { inC, outC };
@@ -87,9 +92,9 @@ function computeDailySummary(rooms) {
   return res;
 }
 
-/* ── Pill ───────────────────────────────────────────────────── */
-function Pill({ type, time, label }) {
-  const s = PS[type] ?? PS.eng;
+/* ── Pill ─────────────────────────────────────────────────────── */
+function Pill({ clr, time, label }) {
+  const s = clr ?? DEFAULT_CLR;
   return (
     <span style={{
       display:'inline-flex', alignItems:'center', gap:'4px',
@@ -103,9 +108,9 @@ function Pill({ type, time, label }) {
   );
 }
 
-/* ── RoomCard ───────────────────────────────────────────────── */
-function RoomCard({ room, onEdit }) {
-  const { inC, outC } = computeCounts(room.days);
+/* ── RoomCard ─────────────────────────────────────────────────── */
+function RoomCard({ room, onEdit, getColor, getLabel, innerKeySet }) {
+  const { inC, outC } = computeCounts(room.days, innerKeySet);
   const total = inC + outC;
   const pct   = total > 0 ? Math.round((inC / total) * 100) : 0;
 
@@ -122,7 +127,6 @@ function RoomCard({ room, onEdit }) {
                          background:'#E8F5E9', color:'#1B5E20' }}>🌿 นอก {outC}</span>
           <button
             onClick={onEdit}
-            title="แก้ไขตาราง"
             style={{
               marginLeft:'4px', padding:'3px 8px', borderRadius:'8px', border:'1px solid #d1d5db',
               background:'white', cursor:'pointer', fontSize:'.75em', color:'#6b7280',
@@ -146,7 +150,9 @@ function RoomCard({ room, onEdit }) {
                            fontWeight:700, color:'#546e7a', paddingTop:'5px' }}>{day}</span>
             <div style={{ flex:1, display:'flex', flexWrap:'wrap', gap:'4px', padding:'2px 0' }}>
               {acts.length > 0
-                ? acts.map(([t,tm,lb],i) => <Pill key={i} type={t} time={tm} label={lb} />)
+                ? acts.map(([t,tm,lb],i) => (
+                    <Pill key={i} clr={getColor(t)} time={tm} label={lb || getLabel(t)} />
+                  ))
                 : <span style={{ fontSize:'.73em', color:'#ccc', paddingTop:'6px', fontStyle:'italic' }}>
                     ไม่มีกิจกรรมพิเศษ
                   </span>
@@ -169,15 +175,22 @@ function RoomCard({ room, onEdit }) {
   );
 }
 
-/* ── RoomEditModal ──────────────────────────────────────────── */
-function RoomEditModal({ room, onClose, onSave }) {
+/* ── RoomEditModal ────────────────────────────────────────────── */
+function RoomEditModal({ room, onClose, onSave, assignedInner, assignedOuter, getColor, getLabel }) {
   const [activeDay, setActiveDay] = useState(DAYS[0]);
   const [editDays, setEditDays]   = useState(
     Object.fromEntries(DAYS.map(d => [d, [...(room.days[d] ?? [])]]))
   );
-  const [newType,  setNewType]  = useState('eng');
-  const [newTime,  setNewTime]  = useState('');
-  const [saving,   setSaving]   = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Combined available activity options for this room
+  const availableOptions = useMemo(() => [
+    ...assignedInner.map(def => ({ ...def, isInner: true })),
+    ...assignedOuter.map(def => ({ ...def, isInner: false })),
+  ], [assignedInner, assignedOuter]);
+
+  const [newType, setNewType] = useState(() => availableOptions[0]?.key ?? '');
+  const [newTime, setNewTime] = useState('');
 
   const dayActs = editDays[activeDay] ?? [];
 
@@ -185,9 +198,10 @@ function RoomEditModal({ room, onClose, onSave }) {
     setEditDays(prev => ({ ...prev, [activeDay]: prev[activeDay].filter((_,i) => i !== idx) }));
 
   const addAct = () => {
+    if (!newType || !newTime.trim()) return;
     const t = newTime.trim().replace(':','.');
-    if (!t) return;
-    const label = ACT_SHORT[newType];
+    const def = availableOptions.find(o => o.key === newType);
+    const label = def?.label ?? getLabel(newType);
     setEditDays(prev => ({
       ...prev,
       [activeDay]: [...(prev[activeDay] ?? []), [newType, t, label]]
@@ -224,7 +238,12 @@ function RoomEditModal({ room, onClose, onSave }) {
                       display:'flex', justifyContent:'space-between', alignItems:'center', flexShrink:0 }}>
           <div>
             <div style={{ fontWeight:700, fontSize:'1em', color:'#1a237e' }}>✏️ แก้ไขตาราง {room.name}</div>
-            <div style={{ fontSize:'.76em', color:'#9ca3af', marginTop:'2px' }}>คลิกวันที่ต้องการแก้ไข แล้วเพิ่ม/ลบกิจกรรม</div>
+            <div style={{ fontSize:'.76em', color:'#9ca3af', marginTop:'2px' }}>
+              {availableOptions.length > 0
+                ? `กิจกรรมที่กำหนด: 🏡 ในห้อง ${assignedInner.length} · 🌿 นอกห้อง ${assignedOuter.length}`
+                : '⚠️ ยังไม่มีกิจกรรมที่กำหนด — ตั้งค่าใน "กำหนดกิจกรรม" ก่อน'
+              }
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -262,7 +281,6 @@ function RoomEditModal({ room, onClose, onSave }) {
 
         {/* ── Activity list ── */}
         <div style={{ flex:1, overflowY:'auto', padding:'16px 20px' }}>
-
           {dayActs.length === 0 ? (
             <div style={{ textAlign:'center', color:'#d1d5db', padding:'24px 0',
                           fontStyle:'italic', fontSize:'.88em' }}>
@@ -271,7 +289,7 @@ function RoomEditModal({ room, onClose, onSave }) {
           ) : (
             <div style={{ display:'flex', flexDirection:'column', gap:'7px', marginBottom:'16px' }}>
               {dayActs.map(([type, time, label], idx) => {
-                const s = PS[type] ?? PS.eng;
+                const s = getColor(type);
                 return (
                   <div key={idx} style={{
                     display:'flex', alignItems:'center', gap:'10px',
@@ -279,7 +297,9 @@ function RoomEditModal({ room, onClose, onSave }) {
                     background:s.bg, border:`1.5px solid ${s.border}`,
                   }}>
                     <span style={{ fontSize:'.74em', color:s.color, opacity:.7, width:'38px', flexShrink:0 }}>{time}</span>
-                    <span style={{ color:s.color, fontWeight:600, fontSize:'.88em', flex:1 }}>{label}</span>
+                    <span style={{ color:s.color, fontWeight:600, fontSize:'.88em', flex:1 }}>
+                      {label || getLabel(type)}
+                    </span>
                     <button
                       onClick={() => removeAct(idx)}
                       style={{ background:'none', border:'none', cursor:'pointer',
@@ -300,35 +320,55 @@ function RoomEditModal({ room, onClose, onSave }) {
             <div style={{ fontSize:'.78em', fontWeight:700, color:'#6b7280', marginBottom:'10px' }}>
               ➕ เพิ่มกิจกรรมในวัน{activeDay}
             </div>
-            <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap' }}>
-              <select
-                value={newType}
-                onChange={e => setNewType(e.target.value)}
-                style={{ ...INP, flex:'1 1 180px', cursor:'pointer' }}
-              >
-                {Object.entries(ACT_LABEL).map(([k,v]) => (
-                  <option key={k} value={k}>{v}</option>
-                ))}
-              </select>
-              <input
-                type="text"
-                value={newTime}
-                onChange={e => setNewTime(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addAct()}
-                placeholder="เวลา เช่น 08.30"
-                style={{ ...INP, width:'130px', flexShrink:0 }}
-              />
-              <button
-                onClick={addAct}
-                disabled={!newTime.trim()}
-                style={{
-                  padding:'7px 16px', borderRadius:'8px', border:'none', cursor:'pointer',
-                  background: newTime.trim() ? '#1565C0' : '#e5e7eb',
-                  color: newTime.trim() ? 'white' : '#9ca3af',
-                  fontWeight:600, fontSize:'.85em', transition:'all .15s',
-                }}
-              >เพิ่ม</button>
-            </div>
+
+            {availableOptions.length === 0 ? (
+              <div style={{ fontSize:'.83em', color:'#9ca3af', fontStyle:'italic', lineHeight:1.6 }}>
+                ยังไม่มีกิจกรรมที่กำหนดสำหรับห้องนี้<br />
+                กรุณาเพิ่มกิจกรรมและกำหนดให้ห้องเรียน<br />
+                ใน <strong>กำหนดกิจกรรมภายใน/นอกห้องเรียน</strong> ก่อน
+              </div>
+            ) : (
+              <div style={{ display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap' }}>
+                <select
+                  value={newType}
+                  onChange={e => setNewType(e.target.value)}
+                  style={{ ...INP, flex:'1 1 180px', cursor:'pointer' }}
+                >
+                  {assignedInner.length > 0 && (
+                    <optgroup label="🏡 กิจกรรมภายในห้องเรียน">
+                      {assignedInner.map(def => (
+                        <option key={def.key} value={def.key}>{def.label}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {assignedOuter.length > 0 && (
+                    <optgroup label="🌿 กิจกรรมภายนอกห้องเรียน">
+                      {assignedOuter.map(def => (
+                        <option key={def.key} value={def.key}>{def.label}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+                <input
+                  type="text"
+                  value={newTime}
+                  onChange={e => setNewTime(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addAct()}
+                  placeholder="เวลา เช่น 08.30"
+                  style={{ ...INP, width:'130px', flexShrink:0 }}
+                />
+                <button
+                  onClick={addAct}
+                  disabled={!newType || !newTime.trim()}
+                  style={{
+                    padding:'7px 16px', borderRadius:'8px', border:'none', cursor:'pointer',
+                    background: (newType && newTime.trim()) ? '#1565C0' : '#e5e7eb',
+                    color: (newType && newTime.trim()) ? 'white' : '#9ca3af',
+                    fontWeight:600, fontSize:'.85em', transition:'all .15s',
+                  }}
+                >เพิ่ม</button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -355,18 +395,80 @@ function RoomEditModal({ room, onClose, onSave }) {
   );
 }
 
-/* ── Main component ─────────────────────────────────────────── */
+/* ── Main component ───────────────────────────────────────────── */
 export default function ActivityScheduleTab() {
+  /* context */
+  const {
+    innerCornerDefs      = [],
+    cornerDefs           = [],
+    classInnerCornerKeys = {},
+    classOuterCornerKeys = {},
+    allClassNames        = [],
+  } = useApp();
+
   const [rooms,    setRooms]    = useState([]);
   const [loading,  setLoading]  = useState(true);
   const [editRoom, setEditRoom] = useState(null);
+
+  /* ── Build dynamic def maps ── */
+  const innerDefMap = useMemo(() => {
+    const map = {};
+    innerCornerDefs.forEach((def, idx) => {
+      map[def.key] = { ...def, color: INNER_PALETTE[idx % INNER_PALETTE.length] };
+    });
+    return map;
+  }, [innerCornerDefs]);
+
+  const outerDefMap = useMemo(() => {
+    const map = {};
+    cornerDefs.forEach((def, idx) => {
+      map[def.key] = { ...def, color: OUTER_PALETTE[idx % OUTER_PALETTE.length] };
+    });
+    return map;
+  }, [cornerDefs]);
+
+  const allDefMap = useMemo(() => ({ ...innerDefMap, ...outerDefMap }), [innerDefMap, outerDefMap]);
+
+  /* ── Inner key set: dynamic + legacy keys for backward compat ── */
+  const innerKeySet = useMemo(
+    () => new Set([...LEGACY_IN_KEYS, ...innerCornerDefs.map(d => d.key)]),
+    [innerCornerDefs],
+  );
+
+  /* ── Color / label helpers (dynamic → legacy → default) ── */
+  const getColor = (key) => allDefMap[key]?.color ?? LEGACY_PS[key] ?? DEFAULT_CLR;
+  const getLabel = (key) => allDefMap[key]?.label  ?? LEGACY_LABEL[key] ?? key;
+
+  /* ── Map room name → className ── */
+  function getRoomClassName(roomName) {
+    if (!roomName) return null;
+    const stripped = roomName.replace(/^ห้อง\s+/, '').trim();
+    return allClassNames.find(cn => cn === roomName || cn === stripped) ?? null;
+  }
+
+  /* ── Get assigned defs for a given room ── */
+  function getAssignedDefs(roomName) {
+    const className = getRoomClassName(roomName);
+
+    const innerKeys = (className && classInnerCornerKeys[className])
+      ? classInnerCornerKeys[className]
+      : innerCornerDefs.map(d => d.key);
+
+    const outerKeys = (className && classOuterCornerKeys[className])
+      ? classOuterCornerKeys[className]
+      : cornerDefs.map(d => d.key);
+
+    return {
+      assignedInner: innerCornerDefs.filter(d => innerKeys.includes(d.key)),
+      assignedOuter: cornerDefs.filter(d => outerKeys.includes(d.key)),
+    };
+  }
 
   /* ── Firestore: seed once + live-listen ── */
   useEffect(() => {
     const colRef = collection(db, 'activitySchedule');
     const unsub  = onSnapshot(colRef, async (snap) => {
       if (snap.empty) {
-        // Seed initial data
         await Promise.all(SEED_ROOMS.map(r => setDoc(doc(colRef, r.id), r)));
         return; // will re-fire after seed
       }
@@ -376,7 +478,6 @@ export default function ActivityScheduleTab() {
       setLoading(false);
     }, (err) => {
       console.error('activitySchedule onSnapshot error:', err);
-      // Fallback to seed data (read-only)
       setRooms(SEED_ROOMS);
       setLoading(false);
     });
@@ -394,7 +495,7 @@ export default function ActivityScheduleTab() {
     return Object.entries(map).sort(([a],[b]) => a.localeCompare(b));
   }, [rooms]);
 
-  /* ── Daily summary (reactive) ── */
+  /* ── Daily summary ── */
   const dailySummary = useMemo(() => computeDailySummary(rooms), [rooms]);
 
   /* ── Save handler ── */
@@ -403,7 +504,6 @@ export default function ActivityScheduleTab() {
     setEditRoom(null);
   };
 
-  /* ── Table cell styles ── */
   const TH = { padding:'9px 12px', border:'1px solid #cfd8dc', background:'#eceff1',
                 color:'#546e7a', fontWeight:700, textAlign:'center' };
   const TD = { padding:'9px 12px', border:'1px solid #e4e8ec', verticalAlign:'middle' };
@@ -413,6 +513,11 @@ export default function ActivityScheduleTab() {
       กำลังโหลดข้อมูลตาราง…
     </div>
   );
+
+  const allDefs = [
+    ...innerCornerDefs.map(d => ({ ...d, isInner: true })),
+    ...cornerDefs.map(d => ({ ...d, isInner: false })),
+  ];
 
   return (
     <div className="animate-fade" style={{ fontSize:'15px' }}>
@@ -426,44 +531,65 @@ export default function ActivityScheduleTab() {
           ตารางกิจกรรมภายใน-นอกห้องเรียนประจำวัน
         </div>
         <div style={{ color:'#546e7a', marginTop:'4px', fontSize:'.9em' }}>
-          เปรียบเทียบกิจกรรมกับแหล่งเรียนรู้ในและนอกห้องเรียน · ระดับอนุบาล ๑–๓
+          แสดงเฉพาะกิจกรรมที่กำหนดไว้ในแต่ละห้องเรียน · ระดับอนุบาล ๑–๓
         </div>
       </div>
 
-      {/* ── Legend ── */}
-      <div className="glass-card mb-4">
-        <div style={{ display:'flex', flexWrap:'wrap', gap:'6px 0', alignItems:'center' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:'6px 12px', flexWrap:'wrap',
-                        padding:'4px 14px', borderRight:'1px solid #e0e0e0' }}>
-            <span style={{ fontSize:'.76em', fontWeight:700, color:'#90a4ae', textTransform:'uppercase', letterSpacing:'.05em' }}>📖 ในห้องเรียน</span>
-            {[['eng','Eng (ภาษาอังกฤษ)']].map(([t,lb]) => (
-              <span key={t} style={{ display:'inline-flex', alignItems:'center', gap:'5px', fontSize:'.84em' }}>
-                <span style={{ width:'12px', height:'12px', borderRadius:'50%', background:PS[t].bg, border:`1.5px solid ${PS[t].border}` }} />
-                {lb}
-              </span>
-            ))}
-          </div>
-          <div style={{ display:'flex', alignItems:'center', gap:'6px 12px', flexWrap:'wrap',
-                        padding:'4px 14px', borderRight:'1px solid #e0e0e0' }}>
-            <span style={{ fontSize:'.76em', fontWeight:700, color:'#90a4ae', textTransform:'uppercase', letterSpacing:'.05em' }}>🏫 แหล่งเรียนรู้ในอาคาร</span>
-            {[['ef','ห้องสื่อ EF'],['com','คอมพิวเตอร์'],['res','ห้องแหล่งเรียนรู้']].map(([t,lb]) => (
-              <span key={t} style={{ display:'inline-flex', alignItems:'center', gap:'5px', fontSize:'.84em' }}>
-                <span style={{ width:'12px', height:'12px', borderRadius:'50%', background:PS[t].bg, border:`1.5px solid ${PS[t].border}` }} />
-                {lb}
-              </span>
-            ))}
-          </div>
-          <div style={{ display:'flex', alignItems:'center', gap:'6px 12px', flexWrap:'wrap', padding:'4px 14px' }}>
-            <span style={{ fontSize:'.76em', fontWeight:700, color:'#90a4ae', textTransform:'uppercase', letterSpacing:'.05em' }}>🌿 แหล่งเรียนรู้นอกอาคาร</span>
-            {[['gar','แปลงผัก'],['wst','คัดแยกขยะ'],['pe','พลศึกษา']].map(([t,lb]) => (
-              <span key={t} style={{ display:'inline-flex', alignItems:'center', gap:'5px', fontSize:'.84em' }}>
-                <span style={{ width:'12px', height:'12px', borderRadius:'50%', background:PS[t].bg, border:`1.5px solid ${PS[t].border}` }} />
-                {lb}
-              </span>
-            ))}
+      {/* ── Notice when no defs configured ── */}
+      {innerCornerDefs.length === 0 && cornerDefs.length === 0 && (
+        <div className="glass-card mb-4" style={{
+          background:'#FFF3E0', border:'1.5px solid #FFB74D',
+          padding:'14px 18px', display:'flex', alignItems:'flex-start', gap:'10px',
+        }}>
+          <span style={{ fontSize:'1.3em', flexShrink:0 }}>⚠️</span>
+          <div style={{ fontSize:'.88em', color:'#BF360C', lineHeight:1.6 }}>
+            <strong>ยังไม่มีกิจกรรมที่กำหนด</strong><br />
+            กรุณาเพิ่มกิจกรรมใน <strong>จัดการกิจกรรมภายในห้องเรียน</strong> และ <strong>จัดการกิจกรรมภายนอกห้องเรียน</strong>
+            จากนั้นกำหนดให้แต่ละห้องเรียนใน <strong>กำหนดกิจกรรมภายในห้องเรียน</strong> และ <strong>กำหนดกิจกรรมภายนอกห้องเรียน</strong>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* ── Dynamic legend ── */}
+      {allDefs.length > 0 && (
+        <div className="glass-card mb-4">
+          <div style={{ display:'flex', flexWrap:'wrap', gap:'6px 0', alignItems:'center' }}>
+            {innerCornerDefs.length > 0 && (
+              <div style={{ display:'flex', alignItems:'center', gap:'6px 12px', flexWrap:'wrap',
+                            padding:'4px 14px', borderRight:'1px solid #e0e0e0' }}>
+                <span style={{ fontSize:'.76em', fontWeight:700, color:'#90a4ae', textTransform:'uppercase', letterSpacing:'.05em' }}>
+                  🏡 ในห้องเรียน
+                </span>
+                {innerCornerDefs.map(def => {
+                  const clr = getColor(def.key);
+                  return (
+                    <span key={def.key} style={{ display:'inline-flex', alignItems:'center', gap:'5px', fontSize:'.84em' }}>
+                      <span style={{ width:'12px', height:'12px', borderRadius:'50%', background:clr.bg, border:`1.5px solid ${clr.border}` }} />
+                      {def.label}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+            {cornerDefs.length > 0 && (
+              <div style={{ display:'flex', alignItems:'center', gap:'6px 12px', flexWrap:'wrap', padding:'4px 14px' }}>
+                <span style={{ fontSize:'.76em', fontWeight:700, color:'#90a4ae', textTransform:'uppercase', letterSpacing:'.05em' }}>
+                  🌿 นอกห้องเรียน
+                </span>
+                {cornerDefs.map(def => {
+                  const clr = getColor(def.key);
+                  return (
+                    <span key={def.key} style={{ display:'inline-flex', alignItems:'center', gap:'5px', fontSize:'.84em' }}>
+                      <span style={{ width:'12px', height:'12px', borderRadius:'50%', background:clr.bg, border:`1.5px solid ${clr.border}` }} />
+                      {def.label}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── Schedule by level ── */}
       {grouped.map(([lk, lvRooms]) => {
@@ -475,7 +601,14 @@ export default function ActivityScheduleTab() {
             </div>
             <div style={{ display:'flex', flexWrap:'wrap', gap:'1px', background:'#dde3ea' }}>
               {lvRooms.map(r => (
-                <RoomCard key={r.id} room={r} onEdit={() => setEditRoom(r)} />
+                <RoomCard
+                  key={r.id}
+                  room={r}
+                  onEdit={() => setEditRoom(r)}
+                  getColor={getColor}
+                  getLabel={getLabel}
+                  innerKeySet={innerKeySet}
+                />
               ))}
             </div>
           </div>
@@ -492,8 +625,8 @@ export default function ActivityScheduleTab() {
           {DAYS.map(day => {
             const acts   = dailySummary[day];
             const types  = Object.keys(acts);
-            const inCnt  = types.filter(t => IN_SET.has(t)).reduce((s,t) => s + acts[t], 0);
-            const outCnt = types.filter(t => OUT_SET.has(t)).reduce((s,t) => s + acts[t], 0);
+            const inCnt  = types.filter(t => innerKeySet.has(t)).reduce((s,t) => s + acts[t], 0);
+            const outCnt = types.filter(t => !innerKeySet.has(t)).reduce((s,t) => s + acts[t], 0);
             const total  = inCnt + outCnt;
             const pct    = total > 0 ? Math.round((inCnt / total) * 100) : 0;
             return (
@@ -515,7 +648,9 @@ export default function ActivityScheduleTab() {
                   ) : (
                     <>
                       {types.map(type => {
-                        const s = PS[type] ?? PS.eng;
+                        const s    = getColor(type);
+                        const lbl  = getLabel(type);
+                        const isIn = innerKeySet.has(type);
                         return (
                           <span key={type} style={{
                             display:'inline-flex', alignItems:'center', gap:'5px',
@@ -523,11 +658,11 @@ export default function ActivityScheduleTab() {
                             fontSize:'.82em', fontWeight:600,
                             background:s.bg, color:s.color, border:`1.5px solid ${s.border}`,
                           }}>
-                            {ACT_SHORT[type]}
+                            {lbl}
                             <span style={{
                               minWidth:'20px', textAlign:'center',
-                              background: OUT_SET.has(type) ? '#A5D6A7' : '#B3C4E8',
-                              color: OUT_SET.has(type) ? '#1B5E20' : '#0D47A1',
+                              background: isIn ? '#B3C4E8' : '#A5D6A7',
+                              color: isIn ? '#0D47A1' : '#1B5E20',
                               borderRadius:'12px', fontSize:'.82em', fontWeight:700, padding:'1px 6px',
                             }}>
                               {acts[type]} ห้อง
@@ -550,48 +685,35 @@ export default function ActivityScheduleTab() {
         </div>
       </div>
 
-      {/* ── Match table ── */}
-      <div className="glass-card mb-4">
-        <div style={{ fontWeight:700, fontSize:'1em', marginBottom:'12px',
-                      paddingBottom:'9px', borderBottom:'2px solid #eceff1',
-                      display:'flex', alignItems:'center', gap:'8px' }}>
-          ✅ ตรวจสอบความสอดคล้องของกิจกรรมกับแหล่งเรียนรู้
-          <span style={{ fontSize:'.73em', padding:'2px 10px', borderRadius:'20px',
-                         fontWeight:600, background:'#E8F5E9', color:'#1B5E20' }}>ตรงทุกรายการ</span>
+      {/* ── Dynamic activity list for this school ── */}
+      {allDefs.length > 0 && (
+        <div className="glass-card mb-4">
+          <div style={{ fontWeight:700, fontSize:'1em', marginBottom:'12px',
+                        paddingBottom:'9px', borderBottom:'2px solid #eceff1' }}>
+            📋 กิจกรรมทั้งหมดในโรงเรียนนี้
+            <span style={{ fontSize:'.73em', marginLeft:'8px', padding:'2px 10px', borderRadius:'20px',
+                           fontWeight:600, background:'#E8F5E9', color:'#1B5E20' }}>
+              🏡 ใน {innerCornerDefs.length} · 🌿 นอก {cornerDefs.length}
+            </span>
+          </div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:'8px' }}>
+            {allDefs.map(def => {
+              const clr = getColor(def.key);
+              return (
+                <span key={def.key} style={{
+                  display:'inline-flex', alignItems:'center', gap:'5px',
+                  padding:'5px 12px', borderRadius:'20px', fontWeight:600, fontSize:'.85em',
+                  background:clr.bg, color:clr.color, border:`1.5px solid ${clr.border}`,
+                }}>
+                  {def.isInner ? '🏡' : '🌿'} {def.label}
+                </span>
+              );
+            })}
+          </div>
         </div>
-        <div style={{ overflowX:'auto' }}>
-          <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'.86em' }}>
-            <thead>
-              <tr>
-                <th style={TH}>กิจกรรม</th>
-                <th style={TH}>แหล่งเรียนรู้ที่กำหนด</th>
-                <th style={TH}>ตำแหน่งที่ใช้จริงในตาราง</th>
-                <th style={TH}>ประเภท</th>
-                <th style={{ ...TH, width:'70px' }}>สอดคล้อง</th>
-              </tr>
-            </thead>
-            <tbody>
-              {MATCH_ROWS.map((r,i) => (
-                <tr key={r.type} style={{ background: i%2===1 ? '#fafbfc' : 'white' }}>
-                  <td style={TD}><Pill type={r.type} time="" label={r.act} /></td>
-                  <td style={TD}>{r.defined}</td>
-                  <td style={TD}>{r.actual}</td>
-                  <td style={TD}>
-                    <span style={{ display:'inline-block', padding:'2px 10px', borderRadius:'12px',
-                                   fontSize:'.83em', fontWeight:600,
-                                   background:r.srcStyle.bg, color:r.srcStyle.color }}>
-                      {r.src}
-                    </span>
-                  </td>
-                  <td style={{ ...TD, textAlign:'center', color:'#1B5E20', fontWeight:700, fontSize:'1.1em' }}>✔</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      )}
 
-      {/* ── Ratio table (computed from live data) ── */}
+      {/* ── Ratio table ── */}
       <div className="glass-card mb-4">
         <div style={{ fontWeight:700, fontSize:'1em', marginBottom:'12px',
                       paddingBottom:'9px', borderBottom:'2px solid #eceff1' }}>
@@ -611,9 +733,10 @@ export default function ActivityScheduleTab() {
             </thead>
             <tbody>
               {rooms.map((r,i) => {
-                const { inC, outC } = computeCounts(r.days);
+                const { inC, outC } = computeCounts(r.days, innerKeySet);
                 const total = inC + outC;
                 const pct   = total > 0 ? Math.round((inC / total) * 100) : 0;
+                const balanced = total > 0 && pct >= 30 && pct <= 70;
                 return (
                   <tr key={r.id} style={{ background: i%2===1 ? '#fafbfc' : 'white' }}>
                     <td style={{ ...TD, fontWeight:700 }}>{r.name?.replace('ห้อง ','') ?? r.id}</td>
@@ -631,7 +754,12 @@ export default function ActivityScheduleTab() {
                         </span>
                       </div>
                     </td>
-                    <td style={{ ...TD, textAlign:'center', color:'#1B5E20', fontWeight:600 }}>✔ เหมาะสม</td>
+                    <td style={{
+                      ...TD, textAlign:'center', fontWeight:600,
+                      color: total === 0 ? '#9ca3af' : balanced ? '#1B5E20' : '#E65100',
+                    }}>
+                      {total === 0 ? '—' : balanced ? '✔ เหมาะสม' : '⚠ ควรปรับ'}
+                    </td>
                   </tr>
                 );
               })}
@@ -646,6 +774,10 @@ export default function ActivityScheduleTab() {
           room={editRoom}
           onClose={() => setEditRoom(null)}
           onSave={handleSave}
+          assignedInner={getAssignedDefs(editRoom.name).assignedInner}
+          assignedOuter={getAssignedDefs(editRoom.name).assignedOuter}
+          getColor={getColor}
+          getLabel={getLabel}
         />
       )}
 

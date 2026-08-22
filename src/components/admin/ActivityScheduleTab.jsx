@@ -458,6 +458,7 @@ export default function ActivityScheduleTab() {
   const [editRoom,     setEditRoom]     = useState(null);
   const [reseeding,    setReseeding]    = useState(false);
   const [confirmReseed,setConfirmReseed]= useState(false);
+  const [reseedMsg,    setReseedMsg]    = useState(null); // {ok:bool, text:string}
 
   /* ── Build dynamic def maps ── */
   const innerDefMap = useMemo(() => {
@@ -581,13 +582,18 @@ export default function ActivityScheduleTab() {
   const handleReseedSample = async () => {
     setReseeding(true);
     setConfirmReseed(false);
+    setReseedMsg(null);
     try {
       const colRef = collection(db, 'activitySchedule');
+      // ใช้ merge:true เหมือน handleSave เขียนแค่ field days
       await Promise.all(
-        rooms.map(r => setDoc(doc(colRef, r.id), { ...r, days: { ...LEGACY_SAMPLE_DAYS } }))
+        rooms.map(r =>
+          setDoc(doc(colRef, r.id), { days: LEGACY_SAMPLE_DAYS }, { merge: true })
+        )
       );
+      setReseedMsg({ ok: true, text: `✅ เติมข้อมูลตัวอย่างสำเร็จ ${rooms.length} ห้อง` });
     } catch(e) {
-      console.error('reseed error:', e);
+      setReseedMsg({ ok: false, text: `❌ เกิดข้อผิดพลาด: ${e?.message ?? e}` });
     } finally {
       setReseeding(false);
     }
@@ -672,6 +678,17 @@ export default function ActivityScheduleTab() {
                 >
                   ยกเลิก
                 </button>
+              </div>
+            )}
+            {reseedMsg && (
+              <div style={{
+                marginTop:'8px', padding:'7px 14px', borderRadius:'10px',
+                fontSize:'.82em', fontWeight:600,
+                background: reseedMsg.ok ? '#f0fdf4' : '#fef2f2',
+                color:      reseedMsg.ok ? '#15803d' : '#991b1b',
+                border: `1.5px solid ${reseedMsg.ok ? '#86efac' : '#fca5a5'}`,
+              }}>
+                {reseedMsg.text}
               </div>
             )}
           </div>

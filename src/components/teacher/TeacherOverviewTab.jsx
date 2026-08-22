@@ -58,9 +58,9 @@ export default function TeacherOverviewTab({ onTabChange }) {
     );
     const hasPickup = Object.keys(pickupRecords[dayKey] ?? {}).length > 0;
     const hasHealthCheck  = !!healthCheckRecords[hxKey];
-    const hasIllnessCheck = !!illnessCheckRecords[hxKey];
-    const hasToothBrush   = !!toothBrushRecords[tbMilkKey]; // monthly, Thai-year key
-    const hasLunch        = !!lunchRecords[hxKey];
+    const hasIllnessCheck = !!illnessCheckRecords[tbMilkKey]; // monthly, Thai-year key
+    const hasToothBrush   = !!toothBrushRecords[tbMilkKey];  // monthly, Thai-year key
+    const hasLunch        = !!lunchRecords[tbMilkKey];        // monthly, Thai-year key
 
     // ประจำสัปดาห์
     const hasCorner      = !!cornerRecords[weekKey];
@@ -68,7 +68,7 @@ export default function TeacherOverviewTab({ onTabChange }) {
 
     // ประจำเดือน
     const hasMilk        = !!milkRecords[tbMilkKey]; // monthly, Thai-year key
-    const hasDailyRoutine = !!dailyRoutineRecords[monthKey];
+    const hasDailyRoutine = !!dailyRoutineRecords[tbMilkKey]; // monthly, Thai-year key
 
     // ตามโอกาส / ประจำปี
     const hasNutrition  = Object.keys(nutritionRecords ?? {}).length > 0;

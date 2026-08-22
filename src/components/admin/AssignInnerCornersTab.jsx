@@ -1,7 +1,24 @@
 // AssignInnerCornersTab.jsx — กำหนดกิจกรรมภายในห้องเรียนของแต่ละห้องเรียน
-// ใช้เลือกว่าห้องเรียนไหนใช้มุมประสบการณ์ไหนบ้าง
+// รองรับการกำหนดวันและเวลาสำหรับแต่ละกิจกรรม
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+
+const DAYS = [
+  { key: 'จันทร์',    label: 'จ.' },
+  { key: 'อังคาร',   label: 'อ.' },
+  { key: 'พุธ',      label: 'พ.' },
+  { key: 'พฤหัสบดี', label: 'พฤ.' },
+  { key: 'ศุกร์',    label: 'ศ.' },
+];
+
+// Backward compat: old format was string[], new is {key, days, time}[]
+function normalizeEntries(stored) {
+  if (!stored || stored.length === 0) return stored ?? [];
+  if (typeof stored[0] === 'string') {
+    return stored.map(key => ({ key, days: [], time: '' }));
+  }
+  return stored;
+}
 
 export default function AssignInnerCornersTab() {
   const {
@@ -18,35 +35,60 @@ export default function AssignInnerCornersTab() {
 
   const [selectedClass, setSelectedClass] = useState('');
 
-  // กำหนดค่า default: ถ้าห้องไม่มีการตั้งค่า = เลือกทั้งหมด (null/undefined → all)
-  function getKeysForClass(cls) {
+  function getEntriesForClass(cls) {
     if (!cls) return [];
     const stored = classInnerCornerKeys[cls];
-    if (!stored) return innerCornerDefs.map(d => d.key); // default = ทั้งหมด
-    return stored;
+    if (!stored) {
+      // default: all activities selected, no days/time configured yet
+      return innerCornerDefs.map(d => ({ key: d.key, days: [], time: '' }));
+    }
+    return normalizeEntries(stored);
   }
 
-  const currentKeys = selectedClass ? getKeysForClass(selectedClass) : [];
+  const currentEntries = selectedClass ? getEntriesForClass(selectedClass) : [];
 
   function isChecked(key) {
-    return currentKeys.includes(key);
+    return currentEntries.some(e => e.key === key);
   }
 
   function toggle(key) {
     if (!selectedClass) return;
-    const current = getKeysForClass(selectedClass);
-    const next = current.includes(key)
-      ? current.filter(k => k !== key)
-      : [...current, key];
+    const entries = getEntriesForClass(selectedClass);
+    const exists = entries.some(e => e.key === key);
+    const next = exists
+      ? entries.filter(e => e.key !== key)
+      : [...entries, { key, days: [], time: '' }];
+    setClassInnerCornerKeys(prev => ({ ...prev, [selectedClass]: next }));
+  }
+
+  function updateDays(key, day) {
+    if (!selectedClass) return;
+    const entries = getEntriesForClass(selectedClass);
+    const next = entries.map(e => {
+      if (e.key !== key) return e;
+      const days = (e.days ?? []).includes(day)
+        ? e.days.filter(d => d !== day)
+        : [...(e.days ?? []), day];
+      return { ...e, days };
+    });
+    setClassInnerCornerKeys(prev => ({ ...prev, [selectedClass]: next }));
+  }
+
+  function updateTime(key, time) {
+    if (!selectedClass) return;
+    const entries = getEntriesForClass(selectedClass);
+    const next = entries.map(e => e.key === key ? { ...e, time } : e);
     setClassInnerCornerKeys(prev => ({ ...prev, [selectedClass]: next }));
   }
 
   function selectAll() {
     if (!selectedClass) return;
-    setClassInnerCornerKeys(prev => ({
-      ...prev,
-      [selectedClass]: innerCornerDefs.map(d => d.key),
-    }));
+    const existing = getEntriesForClass(selectedClass);
+    const next = innerCornerDefs.map(d => {
+      const found = existing.find(e => e.key === d.key);
+      return found ?? { key: d.key, days: [], time: '' };
+    });
+    setClassInnerCornerKeys(prev => ({ ...prev, [selectedClass]: next }));
   }
 
   function selectNone() {
@@ -64,9 +106,12 @@ export default function AssignInnerCornersTab() {
     });
   }
 
-  const selectedCount = currentKeys.length;
-  const totalCount = innerCornerDefs.length;
-  const isDefault = !classInnerCornerKeys[selectedClass];
+  const selectedCount = currentEntries.length;
+  const totalCount    = innerCornerDefs.length;
+  const isDefault     = !classInnerCornerKeys[selectedClass];
+
+  // Count entries that have both days + time configured
+  const scheduledCount = currentEntries.filter(e => e.days?.length > 0 && e.time).length;
 
   return (
     <div className="glass p-6 animate-fade">
@@ -75,7 +120,7 @@ export default function AssignInnerCornersTab() {
         <div>
           <h3>🏡 กำหนดกิจกรรมภายในห้องเรียน</h3>
           <p className="text-xs text-muted" style={{ marginTop: '.25rem' }}>
-            เลือกว่าแต่ละห้องเรียนจะใช้มุมประสบการณ์ไหนบ้าง — จะแสดงเฉพาะมุมที่เลือกในแบบบันทึก
+            เลือกกิจกรรม พร้อมกำหนด<strong>วัน</strong>และ<strong>เวลา</strong>สำหรับแต่ละห้องเรียน
           </p>
         </div>
         {selectedClass && (
@@ -83,17 +128,24 @@ export default function AssignInnerCornersTab() {
             background: '#f0fdf4', border: '1.5px solid #86efac',
             borderRadius: '10px', padding: '.4rem .85rem',
             color: '#15803d', fontWeight: 700, fontSize: '.85rem',
+            display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '.15rem',
           }}>
-            {selectedCount} / {totalCount} มุม
+            <span>{selectedCount} / {totalCount} มุม</span>
+            {scheduledCount > 0 && (
+              <span style={{ fontSize: '.75rem', color: '#15803d', fontWeight: 600 }}>
+                📅 กำหนดตาราง {scheduledCount} กิจกรรม
+              </span>
+            )}
           </div>
         )}
       </div>
 
       <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
 
-        {/* ── ซ้าย: เลือกห้องเรียน ── */}
+        {/* ── Left: class list ── */}
         <div style={{ minWidth: '180px', flexShrink: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: '.82rem', color: '#6b7280', marginBottom: '.5rem', textTransform: 'uppercase' }}>
+          <div style={{ fontWeight: 700, fontSize: '.82rem', color: '#6b7280',
+                        marginBottom: '.5rem', textTransform: 'uppercase' }}>
             ห้องเรียน
           </div>
           {classNames.length === 0 ? (
@@ -101,8 +153,10 @@ export default function AssignInnerCornersTab() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '.3rem' }}>
               {classNames.map(cls => {
-                const stored = classInnerCornerKeys[cls];
-                const count  = stored ? stored.length : innerCornerDefs.length;
+                const stored  = classInnerCornerKeys[cls];
+                const entries = stored ? normalizeEntries(stored) : null;
+                const count   = entries ? entries.length : innerCornerDefs.length;
+                const sched   = entries ? entries.filter(e => e.days?.length > 0 && e.time).length : 0;
                 const isActive = cls === selectedClass;
                 return (
                   <button
@@ -111,16 +165,24 @@ export default function AssignInnerCornersTab() {
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       padding: '.5rem .75rem', borderRadius: '10px', cursor: 'pointer',
-                      fontFamily: 'inherit', fontSize: '.88rem', fontWeight: isActive ? 700 : 500,
+                      fontFamily: 'inherit', fontSize: '.88rem',
+                      fontWeight: isActive ? 700 : 500,
                       border: `1.5px solid ${isActive ? '#4ade80' : '#e5e7eb'}`,
                       background: isActive ? '#f0fdf4' : 'white',
                       color: isActive ? '#15803d' : '#374151',
                       textAlign: 'left',
                     }}
                   >
-                    <span>{cls}</span>
+                    <div>
+                      <div>{cls}</div>
+                      {sched > 0 && (
+                        <div style={{ fontSize: '.68rem', color: isActive ? '#15803d' : '#9ca3af', fontWeight: 600 }}>
+                          📅 {sched} ตาราง
+                        </div>
+                      )}
+                    </div>
                     <span style={{
-                      fontSize: '.72rem', fontWeight: 700,
+                      fontSize: '.72rem', fontWeight: 700, flexShrink: 0, marginLeft: '.35rem',
                       background: isActive ? '#4ade80' : '#f3f4f6',
                       color: isActive ? '#14532d' : '#6b7280',
                       borderRadius: '999px', padding: '0 .45rem',
@@ -134,7 +196,7 @@ export default function AssignInnerCornersTab() {
           )}
         </div>
 
-        {/* ── ขวา: กำหนดมุมประสบการณ์ ── */}
+        {/* ── Right: activity grid ── */}
         <div style={{ flex: 1, minWidth: 0 }}>
           {!selectedClass ? (
             <div style={{
@@ -146,62 +208,155 @@ export default function AssignInnerCornersTab() {
           ) : (
             <>
               {/* Toolbar */}
-              <div style={{ display: 'flex', gap: '.5rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '.5rem', marginBottom: '1rem',
+                            flexWrap: 'wrap', alignItems: 'center' }}>
                 <span style={{ fontWeight: 700, fontSize: '.95rem', color: '#15803d' }}>
                   🏡 {selectedClass}
                 </span>
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: '.4rem' }}>
                   <button
                     onClick={selectAll}
-                    style={{ padding: '.3rem .75rem', borderRadius: '8px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: '.78rem', background: '#dcfce7', color: '#15803d' }}
+                    style={{ padding: '.3rem .75rem', borderRadius: '8px', border: 'none',
+                             cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700,
+                             fontSize: '.78rem', background: '#dcfce7', color: '#15803d' }}
                   >เลือกทั้งหมด</button>
                   <button
                     onClick={selectNone}
-                    style={{ padding: '.3rem .75rem', borderRadius: '8px', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: '.78rem', background: '#fee2e2', color: '#991b1b' }}
+                    style={{ padding: '.3rem .75rem', borderRadius: '8px', border: 'none',
+                             cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700,
+                             fontSize: '.78rem', background: '#fee2e2', color: '#991b1b' }}
                   >ล้างทั้งหมด</button>
                   {!isDefault && (
                     <button
                       onClick={resetToDefault}
-                      style={{ padding: '.3rem .75rem', borderRadius: '8px', border: '1px solid #e5e7eb', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: '.78rem', background: 'white', color: '#6b7280' }}
+                      style={{ padding: '.3rem .75rem', borderRadius: '8px',
+                               border: '1px solid #e5e7eb', cursor: 'pointer',
+                               fontFamily: 'inherit', fontWeight: 700,
+                               fontSize: '.78rem', background: 'white', color: '#6b7280' }}
                     >↺ รีเซ็ต</button>
                   )}
                 </div>
               </div>
 
               {innerCornerDefs.length === 0 ? (
-                <p className="text-muted text-sm">ยังไม่มีมุมประสบการณ์ — กรุณาเพิ่มใน "จัดการกิจกรรมภายในห้องเรียน" ก่อน</p>
+                <p className="text-muted text-sm">
+                  ยังไม่มีมุมประสบการณ์ — กรุณาเพิ่มใน "จัดการกิจกรรมภายในห้องเรียน" ก่อน
+                </p>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '.5rem' }}>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
+                  gap: '.5rem',
+                }}>
                   {innerCornerDefs.map(def => {
-                    const checked = isChecked(def.key);
+                    const checked   = isChecked(def.key);
+                    const entry     = currentEntries.find(e => e.key === def.key);
+                    const entryDays = entry?.days ?? [];
+                    const entryTime = entry?.time ?? '';
                     return (
-                      <label
+                      <div
                         key={def.key}
                         style={{
-                          display: 'flex', alignItems: 'center', gap: '.6rem',
-                          padding: '.55rem .8rem', borderRadius: '10px', cursor: 'pointer',
+                          borderRadius: '10px', padding: '.6rem .8rem',
                           background: checked ? '#f0fdf4' : 'white',
                           border: `1.5px solid ${checked ? '#4ade80' : '#e5e7eb'}`,
                           transition: 'all .12s',
                         }}
                       >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggle(def.key)}
-                          style={{ width: '16px', height: '16px', accentColor: '#16a34a', cursor: 'pointer' }}
-                        />
-                        <span style={{ fontWeight: checked ? 700 : 500, fontSize: '.88rem', color: checked ? '#15803d' : '#374151' }}>
-                          {def.label}
-                        </span>
-                      </label>
+                        {/* Checkbox row */}
+                        <label style={{ display: 'flex', alignItems: 'center',
+                                        gap: '.6rem', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggle(def.key)}
+                            style={{ width: '16px', height: '16px',
+                                     accentColor: '#16a34a', cursor: 'pointer', flexShrink: 0 }}
+                          />
+                          <span style={{
+                            fontWeight: checked ? 700 : 500, fontSize: '.88rem',
+                            color: checked ? '#15803d' : '#374151',
+                          }}>
+                            {def.label}
+                          </span>
+                          {checked && entryDays.length > 0 && entryTime && (
+                            <span style={{
+                              marginLeft: 'auto', fontSize: '.68rem', fontWeight: 700,
+                              background: '#dcfce7', color: '#15803d',
+                              borderRadius: '99px', padding: '1px 7px', flexShrink: 0,
+                            }}>
+                              ✔ มีตาราง
+                            </span>
+                          )}
+                        </label>
+
+                        {/* Day + time — shown when checked */}
+                        {checked && (
+                          <div style={{
+                            marginTop: '.6rem', paddingTop: '.55rem',
+                            borderTop: '1px solid #bbf7d0',
+                          }}>
+                            {/* Day toggles */}
+                            <div style={{
+                              fontSize: '.7rem', color: '#6b7280',
+                              fontWeight: 700, marginBottom: '.3rem',
+                            }}>
+                              📅 วันที่ใช้งาน
+                            </div>
+                            <div style={{ display: 'flex', gap: '.25rem',
+                                          flexWrap: 'wrap', marginBottom: '.5rem' }}>
+                              {DAYS.map(d => {
+                                const active = entryDays.includes(d.key);
+                                return (
+                                  <button
+                                    key={d.key}
+                                    onClick={() => updateDays(def.key, d.key)}
+                                    style={{
+                                      padding: '3px 9px', borderRadius: '20px',
+                                      border: 'none', cursor: 'pointer',
+                                      fontSize: '.74em', fontWeight: 700,
+                                      background: active ? '#16a34a' : '#dcfce7',
+                                      color: active ? 'white' : '#15803d',
+                                      transition: 'all .12s',
+                                    }}
+                                  >
+                                    {d.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {/* Time input */}
+                            <div style={{
+                              fontSize: '.7rem', color: '#6b7280',
+                              fontWeight: 700, marginBottom: '.25rem',
+                            }}>
+                              ⏰ เวลาเริ่ม
+                            </div>
+                            <input
+                              type="text"
+                              value={entryTime}
+                              onChange={e => updateTime(def.key, e.target.value)}
+                              placeholder="เช่น 09.00"
+                              style={{
+                                width: '100%', padding: '5px 9px',
+                                borderRadius: '7px',
+                                border: `1.5px solid ${entryTime ? '#4ade80' : '#bbf7d0'}`,
+                                fontSize: '.82em', fontFamily: 'inherit',
+                                outline: 'none', boxSizing: 'border-box',
+                                background: 'white', color: '#15803d',
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
               )}
 
               <p className="text-xs text-muted" style={{ marginTop: '.85rem' }}>
-                💡 การเปลี่ยนแปลงบันทึกทันที — ห้องเรียนที่ไม่กำหนด จะแสดงทุกมุม (ค่าเริ่มต้น)
+                💡 ข้อมูลบันทึกทันที — วัน/เวลาที่กำหนดจะใช้ใน "เติมตารางอัตโนมัติ" ในหน้าตารางกิจกรรม
               </p>
             </>
           )}

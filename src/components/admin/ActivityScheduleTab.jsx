@@ -176,7 +176,7 @@ function RoomCard({ room, onEdit, getColor, getLabel, innerKeySet }) {
 }
 
 /* ── RoomEditModal ────────────────────────────────────────────── */
-function RoomEditModal({ room, onClose, onSave, assignedInner, assignedOuter, getColor, getLabel }) {
+function RoomEditModal({ room, onClose, onSave, assignedInner, assignedOuter, getColor, getLabel, innerSchedule = [], outerSchedule = [] }) {
   const [activeDay, setActiveDay] = useState(DAYS[0]);
   const [editDays, setEditDays]   = useState(
     Object.fromEntries(DAYS.map(d => [d, [...(room.days[d] ?? [])]]))
@@ -191,6 +191,31 @@ function RoomEditModal({ room, onClose, onSave, assignedInner, assignedOuter, ge
 
   const [newType, setNewType] = useState(() => availableOptions[0]?.key ?? '');
   const [newTime, setNewTime] = useState('');
+
+  // Auto-fill from assignment schedule
+  const allSchedule = useMemo(
+    () => [...innerSchedule, ...outerSchedule].filter(e => e.days?.length > 0 && e.time),
+    [innerSchedule, outerSchedule],
+  );
+
+  function autoFill() {
+    setEditDays(prev => {
+      const next = Object.fromEntries(Object.entries(prev).map(([d, acts]) => [d, [...acts]]));
+      allSchedule.forEach(({ key, days, time }) => {
+        days.forEach(day => {
+          if (!DAYS.includes(day)) return;
+          const existing = next[day] ?? [];
+          const alreadyHas = existing.some(([t]) => t === key);
+          if (!alreadyHas) {
+            const def = availableOptions.find(o => o.key === key);
+            const label = def?.label ?? getLabel(key);
+            next[day] = [...existing, [key, time, label]].sort((a, b) => a[1].localeCompare(b[1]));
+          }
+        });
+      });
+      return next;
+    });
+  }
 
   const dayActs = editDays[activeDay] ?? [];
 
@@ -244,6 +269,19 @@ function RoomEditModal({ room, onClose, onSave, assignedInner, assignedOuter, ge
                 : '⚠️ ยังไม่มีกิจกรรมที่กำหนด — ตั้งค่าใน "กำหนดกิจกรรม" ก่อน'
               }
             </div>
+            {allSchedule.length > 0 && (
+              <button
+                onClick={autoFill}
+                style={{
+                  marginTop:'6px', padding:'4px 12px', borderRadius:'8px',
+                  border:'1.5px solid #1565C0', background:'#E3F2FD',
+                  color:'#1565C0', fontWeight:700, fontSize:'.76em',
+                  cursor:'pointer', fontFamily:'inherit',
+                }}
+              >
+                📅 เติมตารางจากการกำหนด ({allSchedule.length} กิจกรรม)
+              </button>
+            )}
           </div>
           <button
             onClick={onClose}
@@ -446,21 +484,39 @@ export default function ActivityScheduleTab() {
     return allClassNames.find(cn => cn === roomName || cn === stripped) ?? null;
   }
 
-  /* ── Get assigned defs for a given room ── */
+  /* ── Get assigned defs for a given room (handles old string[] + new {key,days,time}[]) ── */
   function getAssignedDefs(roomName) {
     const className = getRoomClassName(roomName);
 
-    const innerKeys = (className && classInnerCornerKeys[className])
-      ? classInnerCornerKeys[className]
-      : innerCornerDefs.map(d => d.key);
+    function extractInfo(stored) {
+      // not stored → use all, no schedule
+      if (!stored || stored.length === 0) return { keys: null, schedule: [] };
+      if (typeof stored[0] === 'string') {
+        // old format: keys only, no day/time
+        return { keys: stored, schedule: [] };
+      }
+      // new format: {key, days, time}[]
+      return {
+        keys:     stored.map(e => e.key),
+        schedule: stored.filter(e => e.days?.length > 0 && e.time),
+      };
+    }
 
-    const outerKeys = (className && classOuterCornerKeys[className])
-      ? classOuterCornerKeys[className]
-      : cornerDefs.map(d => d.key);
+    const innerStored = className ? classInnerCornerKeys[className] : null;
+    const { keys: innerKeysRaw, schedule: innerSchedule } = extractInfo(innerStored);
+
+    const outerStored = className ? classOuterCornerKeys[className] : null;
+    const { keys: outerKeysRaw, schedule: outerSchedule } = extractInfo(outerStored);
 
     return {
-      assignedInner: innerCornerDefs.filter(d => innerKeys.includes(d.key)),
-      assignedOuter: cornerDefs.filter(d => outerKeys.includes(d.key)),
+      assignedInner: innerKeysRaw
+        ? innerCornerDefs.filter(d => innerKeysRaw.includes(d.key))
+        : innerCornerDefs,
+      assignedOuter: outerKeysRaw
+        ? cornerDefs.filter(d => outerKeysRaw.includes(d.key))
+        : cornerDefs,
+      innerSchedule, // [{key, days, time}] for auto-fill
+      outerSchedule,
     };
   }
 
@@ -769,17 +825,22 @@ export default function ActivityScheduleTab() {
       </div>
 
       {/* ── Edit modal ── */}
-      {editRoom && (
-        <RoomEditModal
-          room={editRoom}
-          onClose={() => setEditRoom(null)}
-          onSave={handleSave}
-          assignedInner={getAssignedDefs(editRoom.name).assignedInner}
-          assignedOuter={getAssignedDefs(editRoom.name).assignedOuter}
-          getColor={getColor}
-          getLabel={getLabel}
-        />
-      )}
+      {editRoom && (() => {
+        const { assignedInner, assignedOuter, innerSchedule, outerSchedule } = getAssignedDefs(editRoom.name);
+        return (
+          <RoomEditModal
+            room={editRoom}
+            onClose={() => setEditRoom(null)}
+            onSave={handleSave}
+            assignedInner={assignedInner}
+            assignedOuter={assignedOuter}
+            innerSchedule={innerSchedule}
+            outerSchedule={outerSchedule}
+            getColor={getColor}
+            getLabel={getLabel}
+          />
+        );
+      })()}
 
     </div>
   );

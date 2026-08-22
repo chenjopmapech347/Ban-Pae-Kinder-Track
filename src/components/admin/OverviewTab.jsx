@@ -46,6 +46,22 @@ export default function OverviewTab() {
   // ── สถานะการประเมินแยกตามห้อง × ครั้ง ──────────────────────────────────────
   // นับจำนวน "ตัวบ่งชี้" ที่ประเมินแล้ว (distinct indicatorId ที่มี activity ≥ 1 ตัวได้รับคะแนน)
   // เทียบกับจำนวนตัวบ่งชี้ทั้งหมดในระบบ (50)
+  // ตรวจว่า actMap value มีคะแนนหรือไม่ — รองรับ 2 format:
+  // 1) EvaluationTab:    actMap[actId] = { r1: score, r2: score, ... }
+  // 2) AssessmentWizard: actMap[actNo] = score (number)
+  function hasScoreInRound(scores, rKey) {
+    if (scores == null) return false;
+    if (typeof scores === 'number') return scores > 0;          // Wizard flat format
+    if (typeof scores === 'object') return scores[rKey] != null; // EvaluationTab format
+    return false;
+  }
+  function hasScoreAnyRound(scores) {
+    if (scores == null) return false;
+    if (typeof scores === 'number') return scores > 0;           // Wizard flat format
+    if (typeof scores === 'object') return ROUNDS.some(r => scores[`r${r}`] != null);
+    return false;
+  }
+
   const pendingMatrix = useMemo(() => {
     const totalInds = indicators.length;
     return ALL_CLASSES.map(cls => {
@@ -57,7 +73,8 @@ export default function OverviewTab() {
         const doneInds = new Set();
         sts.forEach(s => {
           Object.entries(s.assessments?.indicators ?? {}).forEach(([indId, actMap]) => {
-            const hasScore = Object.values(actMap).some(scores => scores?.[rKey] != null);
+            if (!actMap || typeof actMap !== 'object') return;
+            const hasScore = Object.values(actMap).some(scores => hasScoreInRound(scores, rKey));
             if (hasScore) doneInds.add(indId);
           });
         });
@@ -72,9 +89,8 @@ export default function OverviewTab() {
     const evaluated = new Set();
     students.forEach(s => {
       Object.entries(s.assessments?.indicators ?? {}).forEach(([indId, actMap]) => {
-        const hasAnyScore = Object.values(actMap).some(scores =>
-          scores && ROUNDS.some(r => scores[`r${r}`] != null)
-        );
+        if (!actMap || typeof actMap !== 'object') return;
+        const hasAnyScore = Object.values(actMap).some(scores => hasScoreAnyRound(scores));
         if (hasAnyScore) evaluated.add(indId);
       });
     });

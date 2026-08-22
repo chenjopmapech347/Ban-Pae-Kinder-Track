@@ -443,6 +443,31 @@ function RoomEditModal({ room, onClose, onSave, assignedInner, assignedOuter, ge
   );
 }
 
+/* ── Legacy corner defs + assignments — for one-time setup ────── */
+const LEGACY_INNER_DEFS = [
+  { key: 'eng', label: 'Eng (ภาษาอังกฤษ)' },
+  { key: 'com', label: 'คอมพิวเตอร์' },
+  { key: 'ef',  label: 'ห้องสื่อ EF' },
+  { key: 'res', label: 'ห้องแหล่งเรียนรู้' },
+];
+const LEGACY_OUTER_DEFS = [
+  { key: 'gar', label: 'แปลงผัก' },
+  { key: 'pe',  label: 'พลศึกษา' },
+  { key: 'wst', label: 'คัดแยกขยะ' },
+];
+// {key, days, time}[] — format ที่ AssignInnerCornersTab / AssignOuterCornersTab ใช้
+const LEGACY_INNER_ASSIGN = [
+  { key: 'eng', days: ['อังคาร'],   time: '09.00' },
+  { key: 'com', days: ['พุธ'],      time: '10.30' },
+  { key: 'ef',  days: ['พฤหัสบดี'], time: '10.00' },
+  { key: 'res', days: ['ศุกร์'],    time: '09.00' },
+];
+const LEGACY_OUTER_ASSIGN = [
+  { key: 'gar', days: ['จันทร์'],   time: '09.00' },
+  { key: 'pe',  days: ['พุธ'],      time: '09.30' },
+  { key: 'wst', days: ['พฤหัสบดี'], time: '09.00' },
+];
+
 /* ── Main component ───────────────────────────────────────────── */
 export default function ActivityScheduleTab() {
   /* context */
@@ -452,6 +477,10 @@ export default function ActivityScheduleTab() {
     classInnerCornerKeys = {},
     classOuterCornerKeys = {},
     allClassNames        = [],
+    setInnerCornerDefs,
+    setCornerDefs,
+    setClassInnerCornerKeys,
+    setClassOuterCornerKeys,
   } = useApp();
 
   const [rooms,        setRooms]        = useState([]);
@@ -460,6 +489,34 @@ export default function ActivityScheduleTab() {
   const [reseeding,    setReseeding]    = useState(false);
   const [confirmReseed,setConfirmReseed]= useState(false);
   const [reseedMsg,    setReseedMsg]    = useState(null); // {ok:bool, text:string}
+
+  /* ── Seed corner defs + assignments ── */
+  const [confirmSeedDefs,  setConfirmSeedDefs]  = useState(false);
+  const [seedDefsMsg,      setSeedDefsMsg]      = useState(null);
+
+  const hasLegacyInnerKeys = innerCornerDefs.some(d => LEGACY_INNER_DEFS.some(l => l.key === d.key));
+  const hasLegacyOuterKeys = cornerDefs.some(d => LEGACY_OUTER_DEFS.some(l => l.key === d.key));
+  const showSeedDefsBtn = !hasLegacyInnerKeys || !hasLegacyOuterKeys;
+
+  const handleSeedCornerDefs = () => {
+    setConfirmSeedDefs(false);
+    setSeedDefsMsg(null);
+    try {
+      // 1. ตั้ง definitions
+      setInnerCornerDefs(LEGACY_INNER_DEFS);
+      setCornerDefs(LEGACY_OUTER_DEFS);
+      // 2. กำหนด assignment ให้ทุกห้อง
+      const classMap = {};
+      (allClassNames ?? []).forEach(cn => { classMap[cn] = LEGACY_INNER_ASSIGN; });
+      setClassInnerCornerKeys(classMap);
+      const outerMap = {};
+      (allClassNames ?? []).forEach(cn => { outerMap[cn] = LEGACY_OUTER_ASSIGN; });
+      setClassOuterCornerKeys(outerMap);
+      setSeedDefsMsg({ ok: true, text: `✅ สร้างกำหนดกิจกรรมสำเร็จ ${(allClassNames ?? []).length} ห้อง` });
+    } catch(e) {
+      setSeedDefsMsg({ ok: false, text: `❌ เกิดข้อผิดพลาด: ${e?.message ?? e}` });
+    }
+  };
 
   /* ── Build dynamic def maps ── */
   const innerDefMap = useMemo(() => {
@@ -690,6 +747,67 @@ export default function ActivityScheduleTab() {
                 border: `1.5px solid ${reseedMsg.ok ? '#86efac' : '#fca5a5'}`,
               }}>
                 {reseedMsg.text}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── สร้างกำหนดกิจกรรม (corner defs + assignments) ── */}
+        {showSeedDefsBtn && rooms.length > 0 && (
+          <div style={{ marginTop: totalActivities === 0 ? '6px' : '12px' }}>
+            {!confirmSeedDefs ? (
+              <>
+                <button
+                  onClick={() => setConfirmSeedDefs(true)}
+                  style={{
+                    padding:'7px 18px', borderRadius:'10px', border:'1.5px solid #0369a1',
+                    background:'#e0f2fe', color:'#0c4a6e', fontWeight:700, fontSize:'.85em',
+                    cursor:'pointer', fontFamily:'inherit',
+                  }}
+                >
+                  🔧 สร้างกำหนดกิจกรรมภายใน-นอกห้องเรียน (เดิม)
+                </button>
+                <div style={{ marginTop:'4px', fontSize:'.78em', color:'#0369a1', opacity:.8 }}>
+                  ตั้งค่า 4 กิจกรรมในห้อง + 3 กิจกรรมนอกห้อง พร้อมวัน/เวลา ให้ทุกห้องเรียน
+                </div>
+              </>
+            ) : (
+              <div style={{
+                display:'inline-flex', alignItems:'center', gap:'10px',
+                padding:'8px 14px', borderRadius:'12px',
+                background:'#f0f9ff', border:'1.5px solid #38bdf8',
+              }}>
+                <span style={{ fontSize:'.85em', color:'#0c4a6e', fontWeight:600 }}>
+                  ยืนยันสร้างกำหนดกิจกรรมให้ทุกห้อง?
+                </span>
+                <button
+                  onClick={handleSeedCornerDefs}
+                  style={{
+                    padding:'5px 14px', borderRadius:'8px', border:'none',
+                    background:'#0369a1', color:'white', fontWeight:700,
+                    fontSize:'.82em', cursor:'pointer', fontFamily:'inherit',
+                  }}
+                >✓ ยืนยัน</button>
+                <button
+                  onClick={() => setConfirmSeedDefs(false)}
+                  style={{
+                    padding:'5px 14px', borderRadius:'8px',
+                    border:'1px solid #d1d5db', background:'white',
+                    color:'#6b7280', fontWeight:600,
+                    fontSize:'.82em', cursor:'pointer', fontFamily:'inherit',
+                  }}
+                >ยกเลิก</button>
+              </div>
+            )}
+            {seedDefsMsg && (
+              <div style={{
+                marginTop:'8px', padding:'7px 14px', borderRadius:'10px',
+                fontSize:'.82em', fontWeight:600,
+                background: seedDefsMsg.ok ? '#f0fdf4' : '#fef2f2',
+                color:      seedDefsMsg.ok ? '#15803d' : '#991b1b',
+                border: `1.5px solid ${seedDefsMsg.ok ? '#86efac' : '#fca5a5'}`,
+              }}>
+                {seedDefsMsg.text}
               </div>
             )}
           </div>

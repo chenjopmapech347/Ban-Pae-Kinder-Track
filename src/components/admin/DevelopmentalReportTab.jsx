@@ -378,10 +378,10 @@ function IndicatorTable({ students, indActivities }) {
           <tr>
             {indActivities.map(a => (
               <>
-                {[['ค1','#e0f2fe','#0369a1'],['ค2','#e0f2fe','#0369a1'],['สรุป','#bae6fd','#0c4a6e']].map(([lbl, bg, color]) => (
+                {[['1','#e0f2fe','#0369a1'],['2','#e0f2fe','#0369a1'],['สรุป','#bae6fd','#0c4a6e']].map(([lbl, bg, color]) => (
                   <th key={`${a.id}-t1-${lbl}`} style={{ border: '1px solid #d1d5db', padding: '2px 3px', background: bg, color, fontSize: '.63rem', fontWeight: 700, minWidth: '28px' }}>{lbl}</th>
                 ))}
-                {[['ค1','#fce7f3','#9d174d'],['ค2','#fce7f3','#9d174d'],['สรุป','#fbcfe8','#831843']].map(([lbl, bg, color]) => (
+                {[['1','#fce7f3','#9d174d'],['2','#fce7f3','#9d174d'],['สรุป','#fbcfe8','#831843']].map(([lbl, bg, color]) => (
                   <th key={`${a.id}-t2-${lbl}`} style={{ border: '1px solid #d1d5db', padding: '2px 3px', background: bg, color, fontSize: '.63rem', fontWeight: 700, minWidth: '28px' }}>{lbl}</th>
                 ))}
               </>
@@ -698,7 +698,7 @@ function DetailView({ students, indicators, activities, className, schoolName, a
       hdr1 += `<th colspan="${cols}" class="hd">${ind.label}</th>`;
       acts.forEach((_, i) => { hdr2 += `<th colspan="3" class="hd2">ภาคเรียน 1<br/>กิจกรรมที่ ${i+1}</th><th colspan="3" class="hd3">ภาคเรียน 2<br/>กิจกรรมที่ ${i+1}</th>`; });
       hdr2 += `<th colspan="2" class="hd">สรุปตัวบ่งชี้</th>`;
-      acts.forEach(() => { hdr3 += `<th>ค1</th><th>ค2</th><th>สรุป</th><th>ค1</th><th>ค2</th><th>สรุป</th>`; });
+      acts.forEach(() => { hdr3 += `<th>1</th><th>2</th><th>สรุป</th><th>1</th><th>2</th><th>สรุป</th>`; });
       hdr3 += `<th>ภาค1</th><th>ภาค2</th>`;
     });
 
@@ -951,7 +951,7 @@ export default function DevelopmentalReportTab({ teacherClassFilter = null }) {
           </span>
         ))}
         <span style={{ color: '#9ca3af', alignSelf: 'center', marginLeft: '.25rem' }}>
-          ค1 = ครั้งที่ 1 · ค2 = ครั้งที่ 2 · สรุป = ค่าสรุปภาคเรียน
+          1 = ครั้งที่ 1 · 2 = ครั้งที่ 2 · สรุป = ค่าสรุปภาคเรียน
         </span>
       </div>
 

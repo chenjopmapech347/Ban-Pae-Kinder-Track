@@ -399,43 +399,51 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       </tr>`;
     }).join('');
 
-  const devAssessHtml = DEV_ASSESS_DOMAINS.map((domain, di) => {
-    let domainRows;
-    if (domain.subDomains) {
-      let idxOffset = 0;
-      const subRows = domain.subDomains.map(sub => {
-        const subHeader = `<tr style="background:${domain.color}10">
-          <td colspan="6" style="padding:4px 12px;border:1px solid #d1d5db;font-weight:700;font-size:.8rem;color:${domain.color}">
-            ${sub.label}
+  const devAssessHtml = (() => {
+    const allRows = DEV_ASSESS_DOMAINS.map(domain => {
+      let domainRows;
+      if (domain.subDomains) {
+        let idxOffset = 0;
+        const subRows = domain.subDomains.map(sub => {
+          const subHeader = `<tr style="background:${domain.color}10">
+            <td colspan="6" style="padding:4px 12px;border:1px solid #d1d5db;font-weight:700;font-size:.8rem;color:${domain.color}">
+              ${sub.label}
+            </td>
+          </tr>`;
+          const rows = renderDevCompRows(sub.components, domain, idxOffset);
+          idxOffset += sub.components.length;
+          return subHeader + rows;
+        }).join('');
+        const dsSummary = da[`__domainSummary_${domain.id}`];
+        const dsSummaryRow = dsSummary
+          ? `<tr><td colspan="6" style="${tdDA};background:${domain.color}08;padding:8px 12px">
+              <strong style="color:${domain.color}">📝 สรุปพัฒนาการด้าน${domain.label}</strong><br/>
+              <span style="white-space:pre-line;line-height:1.7">${dsSummary}</span>
+             </td></tr>`
+          : '';
+        domainRows = subRows + dsSummaryRow;
+      } else {
+        const dsSummary = da[`__domainSummary_${domain.id}`];
+        const dsSummaryRow = dsSummary
+          ? `<tr><td colspan="6" style="${tdDA};background:${domain.color}08;padding:8px 12px">
+              <strong style="color:${domain.color}">📝 สรุปพัฒนาการด้าน${domain.label}</strong><br/>
+              <span style="white-space:pre-line;line-height:1.7">${dsSummary}</span>
+             </td></tr>`
+          : '';
+        domainRows = renderDevCompRows(domain.components, domain) + dsSummaryRow;
+      }
+      return `
+        <tr style="background:${domain.color}20">
+          <td colspan="6" style="padding:6px 10px;border:1px solid #d1d5db;font-weight:900;font-size:.85rem;color:${domain.color}">
+            ${domain.emoji} พัฒนาการ${domain.label}
           </td>
-        </tr>`;
-        const rows = renderDevCompRows(sub.components, domain, idxOffset);
-        idxOffset += sub.components.length;
-        return subHeader + rows;
-      }).join('');
-      const dsSummary = da[`__domainSummary_${domain.id}`];
-      const dsSummaryRow = dsSummary
-        ? `<tr><td colspan="6" style="${tdDA};background:${domain.color}08;padding:8px 12px">
-            <strong style="color:${domain.color}">📝 สรุปพัฒนาการด้าน${domain.label}</strong><br/>
-            <span style="white-space:pre-line;line-height:1.7">${dsSummary}</span>
-           </td></tr>`
-        : '';
-      domainRows = subRows + dsSummaryRow;
-    } else {
-      const dsSummary = da[`__domainSummary_${domain.id}`];
-      const dsSummaryRow = dsSummary
-        ? `<tr><td colspan="6" style="${tdDA};background:${domain.color}08;padding:8px 12px">
-            <strong style="color:${domain.color}">📝 สรุปพัฒนาการด้าน${domain.label}</strong><br/>
-            <span style="white-space:pre-line;line-height:1.7">${dsSummary}</span>
-           </td></tr>`
-        : '';
-      domainRows = renderDevCompRows(domain.components, domain) + dsSummaryRow;
-    }
-    return `<div style="${di > 0 ? 'page-break-before:always;break-before:page;' : ''}">
-      ${di === 0
-        ? `<h2 style="font-size:.95rem;margin:14px 0 4px;background:#f3f4f6;padding:4px 8px;border-radius:4px">4. บันทึกผลการประเมินพัฒนาการ — ความสามารถผู้เรียนเมื่อจบชั้นปี</h2>
-           <p style="font-size:.78rem;color:#555;margin-bottom:6px">อนุบาลปีที่ 2 (อายุ 4–5 ปี) · ระดับ 3 = ดี · ระดับ 2 = พอใช้ · ระดับ 1 = ปรับปรุง</p>`
-        : `<h2 style="font-size:.95rem;margin:14px 0 4px;background:#f3f4f6;padding:4px 8px;border-radius:4px">4. บันทึกผลการประเมินพัฒนาการ (ต่อ)</h2>`}
+        </tr>
+        ${domainRows}`;
+    }).join('');
+
+    return `<div>
+      <h2 style="font-size:.95rem;margin:14px 0 4px;background:#f3f4f6;padding:4px 8px;border-radius:4px">3. บันทึกผลการประเมินพัฒนาการ — ความสามารถผู้เรียนเมื่อจบชั้นปี</h2>
+      <p style="font-size:.78rem;color:#555;margin-bottom:6px">อนุบาลปีที่ 2 (อายุ 4–5 ปี) · ระดับ 3 = ดี · ระดับ 2 = พอใช้ · ระดับ 1 = ปรับปรุง</p>
       <table>
         <tr>
           <th style="${thDA};width:48px">รหัส</th>
@@ -445,15 +453,10 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
           <th style="${thDA};width:52px">ภาค 2</th>
           <th style="${thDA};width:52px">สรุป</th>
         </tr>
-        <tr style="background:${domain.color}20">
-          <td colspan="6" style="padding:6px 10px;border:1px solid #d1d5db;font-weight:900;font-size:.85rem;color:${domain.color}">
-            ${domain.emoji} พัฒนาการ${domain.label}
-          </td>
-        </tr>
-        ${domainRows}
+        ${allRows}
       </table>
     </div>`;
-  }).join('');
+  })();
 
   const attRows = [1, 2].map(t => {
     const a = attendanceSummary[`term${t}`] ?? {};

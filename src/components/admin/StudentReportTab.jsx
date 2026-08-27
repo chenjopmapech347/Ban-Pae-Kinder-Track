@@ -770,19 +770,9 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
     <h2 style="margin-top:14px">บันทึกการเจริญเติบโตของร่างกาย</h2>
     ${growthHtml}
 
-    <!-- ══ รวมหน้า: บริการสุขภาพ + เวลามาเรียน ══ -->
+    <!-- ══ เวลามาเรียน ══ -->
     <div class="page-break">
-      <h2>2. บันทึกการบริการทางสุขภาพ (การให้ภูมิคุ้มกัน)</h2>
-      <table style="font-size:.8rem">
-        <tr>
-          <th style="padding:4px 6px;border:1px solid #374151;background:#f3f4f6;font-weight:700">วัน/เดือน/ปี</th>
-          <th style="padding:4px 6px;border:1px solid #374151;background:#f3f4f6;font-weight:700">การให้ภูมิคุ้มกัน</th>
-          <th style="padding:4px 6px;border:1px solid #374151;background:#f3f4f6;font-weight:700">หมายเหตุ</th>
-        </tr>
-        ${hsRows}
-      </table>
-
-      <h2 style="margin-top:14px">3. เวลามาเรียน (คิดเป็นวัน)</h2>
+      <h2>2. เวลามาเรียน (คิดเป็นวัน)</h2>
       <table style="font-size:.8rem">
         <tr>
           <th colspan="2" style="padding:4px 6px;border:1px solid #374151;background:#f3f4f6;font-weight:700">ภาคเรียน</th>
@@ -1652,8 +1642,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
   // ── section tabs ──────────────────────────────────────────────────────────
   const SECTIONS = [
     { id: 'physical',    label: '⚖️ ร่างกาย'              },
-    { id: 'health',      label: '💉 บริการสุขภาพ'          },  // อ.01: ส่วนที่ 2
-    { id: 'attendance',  label: '📅 เวลาเรียน'             },  // อ.01: ส่วนที่ 3
+    { id: 'attendance',  label: '📅 เวลาเรียน'             },  // อ.01: ส่วนที่ 2
     { id: 'devreport',   label: '📋 พัฒนาการ'              },
     { id: 'summary',     label: '📊 สรุป 12 มาตรฐาน'      },
     { id: 'domain4',     label: '🎯 สรุปพัฒนาการ 4 ด้าน'  },
@@ -2008,93 +1997,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
           )}
 
           {/* ══════════════════════════════════════════════════════════
-              SECTION 3: Health Services
-          ══════════════════════════════════════════════════════════ */}
-          {activeSection === 'health' && (
-            <div>
-              <div style={{ fontWeight: 800, fontSize: '.9rem', color: '#111', marginBottom: '1rem' }}>
-                บันทึกการบริการทางสุขภาพ (การให้ภูมิคุ้มกัน)
-              </div>
-
-              {/* Add row */}
-              <div style={{
-                background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px',
-                padding: '.75rem 1rem', marginBottom: '1rem',
-                display: 'flex', gap: '.5rem', flexWrap: 'wrap', alignItems: 'flex-end',
-              }}>
-                <div>
-                  <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#6b7280', marginBottom: '.2rem' }}>วัน/เดือน/ปี</div>
-                  <input type="date" value={newHs.date}
-                    onChange={e => setNewHs(p => ({ ...p, date: e.target.value }))}
-                    style={{ padding: '5px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.82rem' }} />
-                </div>
-                <div style={{ flex: 1, minWidth: '200px' }}>
-                  <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#6b7280', marginBottom: '.2rem' }}>การให้ภูมิคุ้มกัน / บริการสุขภาพ</div>
-                  <input type="text" value={newHs.service} placeholder="เช่น วัคซีน MMR, ตรวจสุขภาพ..."
-                    onChange={e => setNewHs(p => ({ ...p, service: e.target.value }))}
-                    style={{ width: '100%', padding: '5px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.82rem', boxSizing: 'border-box' }} />
-                </div>
-                <div style={{ flex: 1, minWidth: '150px' }}>
-                  <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#6b7280', marginBottom: '.2rem' }}>หมายเหตุ</div>
-                  <input type="text" value={newHs.note} placeholder="หมายเหตุ (ถ้ามี)"
-                    onChange={e => setNewHs(p => ({ ...p, note: e.target.value }))}
-                    style={{ width: '100%', padding: '5px 8px', border: '1px solid #d1d5db', borderRadius: '6px', fontFamily: 'inherit', fontSize: '.82rem', boxSizing: 'border-box' }} />
-                </div>
-                <button type="button"
-                  disabled={!newHs.service.trim()}
-                  onClick={() => {
-                    if (!newHs.service.trim()) return;
-                    const newEntry = { id: Date.now(), ...newHs };
-                    saveRec({ healthServices: [...healthServices, newEntry] });
-                    setNewHs({ date: todayISO(), service: '', note: '' });
-                  }}
-                  style={{
-                    padding: '.42rem 1rem', borderRadius: '8px', border: 'none',
-                    background: '#059669', color: 'white', fontFamily: 'inherit', fontWeight: 700,
-                    fontSize: '.82rem', cursor: 'pointer', opacity: newHs.service.trim() ? 1 : 0.5,
-                  }}>
-                  + เพิ่ม
-                </button>
-              </div>
-
-              {/* Table */}
-              {healthServices.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af', fontSize: '.85rem' }}>
-                  ยังไม่มีบันทึก — กรอกข้อมูลด้านบนเพื่อเพิ่ม
-                </div>
-              ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.82rem' }}>
-                  <thead>
-                    <tr style={{ background: '#f3f4f6' }}>
-                      <th style={{ padding: '8px 10px', border: '1px solid #e5e7eb', textAlign: 'center', width: '130px' }}>วัน/เดือน/ปี</th>
-                      <th style={{ padding: '8px 10px', border: '1px solid #e5e7eb', textAlign: 'center' }}>การให้ภูมิคุ้มกัน / บริการสุขภาพ</th>
-                      <th style={{ padding: '8px 10px', border: '1px solid #e5e7eb', textAlign: 'center' }}>หมายเหตุ</th>
-                      <th style={{ padding: '8px 10px', border: '1px solid #e5e7eb', textAlign: 'center', width: '60px' }}>ลบ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {healthServices.map((h, idx) => (
-                      <tr key={h.id ?? idx} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
-                        <td style={{ padding: '7px 10px', border: '1px solid #e5e7eb' }}>{isoToThai(h.date)}</td>
-                        <td style={{ padding: '7px 10px', border: '1px solid #e5e7eb' }}>{h.service}</td>
-                        <td style={{ padding: '7px 10px', border: '1px solid #e5e7eb', color: '#6b7280' }}>{h.note}</td>
-                        <td style={{ padding: '7px 10px', border: '1px solid #e5e7eb', textAlign: 'center' }}>
-                          <button type="button"
-                            onClick={() => saveRec({ healthServices: healthServices.filter((_, i) => i !== idx) })}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: '.9rem' }}>
-                            🗑️
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
-
-          {/* ══════════════════════════════════════════════════════════
-              SECTION 4: Dev Assessment — 4 Domains (อ.01 form)
+              SECTION 3: Dev Assessment — 4 Domains (อ.01 form)
           ══════════════════════════════════════════════════════════ */}
           {activeSection === 'devreport' && (
             <div>

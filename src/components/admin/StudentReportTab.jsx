@@ -696,7 +696,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
         ตารางแสดงการเจริญเติบโตของเพศชายและหญิง อายุ 3–6 ปี
       </h2>
       <p style="text-align:center;font-size:.72rem;color:#666;margin-bottom:4px">
-        กองโภชนาการ กรมอนามัย กระทรวงสาธารณสุข พ.ศ. 2543 · ต่ำแหน่ง = –2SD · บนสุด = +2SD
+        กองโภชนาการ กรมอนามัย กระทรวงสาธารณสุข พ.ศ. 2543 · ตั้งแต่ = –2SD · จนถึง = +2SD
       </p>
       <table style="font-size:.72rem">
         <thead>
@@ -713,7 +713,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
             <th colspan="2" style="padding:3px 6px;border:1px solid #374151;text-align:center">หญิง</th>
           </tr>
           <tr style="background:#2d4a6e;color:#e5e7eb;font-size:.65rem">
-            ${['ต่ำแหน่ง','บนสุด','ต่ำแหน่ง','บนสุด','ต่ำแหน่ง','บนสุด','ต่ำแหน่ง','บนสุด'].map(l => `<th style="padding:2px 5px;border:1px solid #374151;text-align:center">${l}</th>`).join('')}
+            ${['ตั้งแต่','จนถึง','ตั้งแต่','จนถึง','ตั้งแต่','จนถึง','ตั้งแต่','จนถึง'].map(l => `<th style="padding:2px 5px;border:1px solid #374151;text-align:center">${l}</th>`).join('')}
           </tr>
         </thead>
         <tbody>
@@ -2245,7 +2245,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                 ตารางแสดงการเจริญเติบโตของเพศชายและหญิง อายุ 3–6 ปี
               </div>
               <div style={{ fontSize: '.72rem', color: '#6b7280', marginBottom: '.75rem' }}>
-                กองโภชนาการ กรมอนามัย กระทรวงสาธารณสุข พ.ศ. 2543 · ต่ำแหน่ง = –2SD · บนสุด = +2SD
+                กองโภชนาการ กรมอนามัย กระทรวงสาธารณสุข พ.ศ. 2543 · ตั้งแต่ = –2SD · จนถึง = +2SD
               </div>
 
               <div style={{ overflowX: 'auto' }}>
@@ -2264,7 +2264,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                       <th colSpan={2} style={{ padding: '4px 8px', border: '1px solid #374151', textAlign: 'center' }}>หญิง</th>
                     </tr>
                     <tr style={{ background: '#2d4a6e', color: '#e5e7eb', fontSize: '.7rem' }}>
-                      {['ต่ำแหน่ง','บนสุด','ต่ำแหน่ง','บนสุด','ต่ำแหน่ง','บนสุด','ต่ำแหน่ง','บนสุด'].map((l,i) => (
+                      {['ตั้งแต่','จนถึง','ตั้งแต่','จนถึง','ตั้งแต่','จนถึง','ตั้งแต่','จนถึง'].map((l,i) => (
                         <th key={i} style={{ padding: '3px 6px', border: '1px solid #374151', textAlign: 'center', fontWeight: 500 }}>{l}</th>
                       ))}
                     </tr>

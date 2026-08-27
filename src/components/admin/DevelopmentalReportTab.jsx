@@ -30,11 +30,21 @@ const KHAM_CHIAENG = [
     ],
   },
   {
+    no: 4,
+    bold: 'โครงสร้างมาตรฐานการศึกษาปฐมวัย พ.ศ. 2568 — 4 มาตรฐาน 4 ด้าน',
+    list: [
+      'มาตรฐานที่ 1 สุขภาวะทางกาย (ด้านร่างกาย) — พัฒนาการด้านกล้ามเนื้อ การเคลื่อนไหว สุขนิสัย และความปลอดภัย',
+      'มาตรฐานที่ 2 อารมณ์ จิตใจ และสังคม — การแสดงออกทางอารมณ์ การปรับตัว การเล่น และการอยู่ร่วมกับผู้อื่น',
+      'มาตรฐานที่ 3 ความเป็นพลเมืองและความเป็นไทย — คุณธรรม จริยธรรม วินัย ความรับผิดชอบ และอัตลักษณ์ความเป็นไทย',
+      'มาตรฐานที่ 4 สติปัญญา — การคิด ภาษา การสื่อสาร ความคิดสร้างสรรค์ และการใช้เทคโนโลยี',
+    ],
+  },
+  {
     no: 5,
     bold: 'ระดับพัฒนาการของการสรุปผลการประเมินพัฒนาการ',
     levels: [
       { label: 'ระดับ 3 = ดี', desc: 'สามารถปฏิบัติได้อย่างถูกต้อง คล่องแคล่ว มั่นคง แม่นยำ/ชัดเจนตามเกณฑ์มาตรฐาน' },
-      { label: 'ระดับ 2 = พอใช้', desc: 'สามารถปฏิบัติได้อย่างถูกต้อง แต่บางครั้งไม่คล่องแคล่วหรือไม่มั่นคง หรือไม่ชัดเจน น้ำหนัก: ส่วนสูง : ค่อนข้างสูง หรือ ค่อนข้างน้อยกว่า เกณฑ์มาตรฐาน' },
+      { label: 'ระดับ 2 = พอใช้', desc: 'สามารถปฏิบัติได้อย่างถูกต้อง แต่บางครั้งไม่คล่องแคล่วหรือไม่มั่นคง หรือไม่ชัดเจนตามเกณฑ์มาตรฐาน' },
       { label: 'ระดับ 1 = ปรับปรุง', desc: 'สามารถปฏิบัติได้บ้างแต่ต้องได้รับความช่วยเหลือหรือแนะนำ' },
     ],
   },
@@ -533,7 +543,8 @@ function SummaryView({ students, indicators, activities, className, schoolName, 
 </style></head><body>
 ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
 <h3>สรุปผลการประเมินพัฒนาการ เด็กปฐมวัย อายุ ${ageRange}</h3>
-<h3>ห้อง ${className} &nbsp; โรงเรียน${schoolName} &nbsp; ปีการศึกษา ${academicYear}</h3><br/>
+<h3>ห้อง ${className} &nbsp; โรงเรียน${schoolName} &nbsp; ปีการศึกษา ${academicYear}</h3>
+<p style="text-align:center;font-size:9pt;color:#555;margin:2px 0 6px">หลักสูตรการศึกษาปฐมวัย พ.ศ. 2568 (มาตรฐานที่ 1–4)</p><br/>
 <table>
 <tr>
   <th rowspan="2" class="hd">เลขที่</th>
@@ -707,8 +718,9 @@ function DetailView({ students, indicators, activities, className, schoolName, a
   .hd3{background:#fce7f3}
 </style></head><body>
 ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
-<h3>${stdDef.title}</h3>
-<h3>ห้อง ${className} &nbsp; อายุ ${ageRange} &nbsp; โรงเรียน${schoolName} &nbsp; ปีการศึกษา ${academicYear}</h3><br/>
+<h3>แบบบันทึกผลการประเมินพัฒนาการ — ${stdDef.title}</h3>
+<h3>ห้อง ${className} &nbsp; อายุ ${ageRange} &nbsp; โรงเรียน${schoolName} &nbsp; ปีการศึกษา ${academicYear}</h3>
+<p style="text-align:center;font-size:8pt;color:#555;margin:2px 0 6px">หลักสูตรการศึกษาปฐมวัย พ.ศ. 2568</p><br/>
 <table>
 <tr><th rowspan="3" class="hd">เลขที่</th><th rowspan="3" class="hd">ชื่อ-สกุล</th>${hdr1}<th colspan="2" rowspan="2" class="hd">สรุปมาตรฐาน</th><th rowspan="3" class="hd">หมายเหตุ</th></tr>
 <tr>${hdr2}</tr>
@@ -873,6 +885,9 @@ export default function DevelopmentalReportTab({ teacherClassFilter = null }) {
     <div className="glass p-6 animate-fade">
       <div className="page-header mb-4">
         <h3>📋 รายงานสรุปผลการประเมินพัฒนาการ</h3>
+        <p style={{ fontSize: '.75rem', color: '#6b7280', marginTop: '.2rem' }}>
+          หลักสูตรการศึกษาปฐมวัย พ.ศ. 2568 · 4 มาตรฐาน 4 ด้าน
+        </p>
       </div>
 
       {/* คำชี้แจง */}

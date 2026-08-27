@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { INDICATORS_DATA } from '../../data/indicatorsData';
+import { INDICATORS_DATA_68 } from '../../data/indicatorsData_68';
 import { callClaude, buildTeacherCommentPrompt, buildDomainSummaryPrompt } from '../../utils/aiHelper';
 import CompCard from './report/CompCard';
 import SubDomainSummaryBox from './report/SubDomainSummaryBox';
@@ -241,11 +242,7 @@ const DOMAIN_LABELS = [
   'ด้านสติปัญญา',
 ];
 const D4_STD_LABELS = [
-  'ภาษาและการรู้หนังสือ',
-  'การคิดรวบยอดและการคิดคำนวณ',
-  'การคิดแก้ปัญหาและตัดสินใจ',
-  'การแสวงหาความรู้',
-  'จินตนาการและความคิดสร้างสรรค์',
+  'สุขภาวะทางสติปัญญาและภาษา (1.5ข) — ภาษา การคิด และความคิดสร้างสรรค์',
 ];
 
 // ── print helper ──────────────────────────────────────────────────────────────
@@ -584,7 +581,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
           เด็กปฐมวัย
         </div>
         <div style="font-size:.82rem;color:#6b7280;margin-top:6px">
-          (ตามหลักสูตรการศึกษาปฐมวัย พุทธศักราช 2560)
+          (ตามหลักสูตรการศึกษาปฐมวัย พุทธศักราช 2568)
         </div>
       </div>
 
@@ -683,10 +680,10 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
     <!-- ══ หน้า 3: จุดมุ่งหมายของหลักสูตร ══ -->
     <div class="page-break">
       <div style="border:2px solid #333;padding:8px 16px;text-align:center;font-size:1rem;font-weight:800;margin-bottom:20px;display:inline-block">
-        จุดมุ่งหมายของหลักสูตรการศึกษาปฐมวัย พุทธศักราช 2560
+        จุดมุ่งหมายของหลักสูตรการศึกษาปฐมวัย พุทธศักราช 2568
       </div>
       <p style="font-size:.85rem;line-height:1.9;text-align:justify;margin-bottom:20px;text-indent:1cm">
-        หลักสูตรการศึกษาปฐมวัย พุทธศักราช 2560 มุ่งให้เด็กอายุตั้งแต่แรกเกิดจนถึง 6 ปีบริบูรณ์ ได้รับการพัฒนาทุกด้านอย่างสมดุลและต่อเนื่อง โดยมีจุดมุ่งหมายให้เด็กมีคุณลักษณะที่พึงประสงค์ ดังนี้
+        หลักสูตรการศึกษาปฐมวัย พุทธศักราช 2568 มุ่งให้เด็กอายุตั้งแต่แรกเกิดจนถึง 6 ปีบริบูรณ์ ได้รับการพัฒนาทุกด้านอย่างสมดุลและต่อเนื่อง โดยมีจุดมุ่งหมายให้เด็กมีคุณลักษณะที่พึงประสงค์ ดังนี้
       </p>
       <ol style="font-size:.87rem;line-height:2.2;padding-left:1cm;margin:0">
         ${AIMS.map(a => `<li style="margin-bottom:4px;text-align:justify">${a}</li>`).join('')}
@@ -788,9 +785,9 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
 
     ${devHtml}
 
-    <!-- ══ ข้อ 5 สรุป 12 มาตรฐาน ══ -->
+    <!-- ══ ข้อ 5 สรุป 4 มาตรฐาน (หลักสูตรปฐมวัย พ.ศ. 2568) ══ -->
     <div style="page-break-before:always;break-before:page">
-    <h2>5. สรุปผลการประเมินพัฒนาการตามมาตรฐานคุณลักษณะที่พึงประสงค์</h2>
+    <h2>5. สรุปผลการประเมินพัฒนาการตามมาตรฐาน (หลักสูตรการศึกษาปฐมวัย พ.ศ. 2568)</h2>
     <table style="font-size:.73rem">
       <tr>
         <th style="width:36px;padding:3px 5px;border:1px solid #d1d5db;background:#f3f4f6">ลำดับ</th>
@@ -1043,282 +1040,160 @@ const GROWTH_ROWS = Object.entries(GROWTH_TABLE)
   .sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
 
 // ── ความสามารถผู้เรียน 4 ด้าน (อ.01) ────────────────────────────────────────
-// อ้างอิงตัวบ่งชี้ตรงกับ ประเมินผลพัฒนาการ (INDICATORS_DATA)
-// หลักสูตรการศึกษาปฐมวัย พ.ศ. 2560 — ครบ 41 ตัวบ่งชี้ (8+9+12+12)
-// ทุกด้านใช้ subDomains จัดกลุ่มตามมาตรฐาน / domainId+standardId+indicatorId ใช้ lookup คะแนน
+// อ้างอิงตัวบ่งชี้ตรงกับ ประเมินผลพัฒนาการ (INDICATORS_DATA_68)
+// หลักสูตรการศึกษาปฐมวัย พ.ศ. 2568 — 4 ด้าน 4 มาตรฐาน (20 รายการ)
+// domainId+standardId+indicatorId ใช้ lookup คะแนนจาก student.assessments
 const DEV_ASSESS_DOMAINS = [
 
-  // ─── D1: ด้านร่างกาย (8 ตัวบ่งชี้) ─────────────────────────────────────────
+  // ─── ด้านสุขภาวะทางกาย (physical) ──────────────────────────────────────────
   {
-    id: 'd1', label: 'ด้านร่างกาย', emoji: '🏃',
+    id: 'physical', label: 'สุขภาวะทางกาย', emoji: '🏃',
     color: '#059669', bg: '#ecfdf5',
     subDomains: [
       {
-        key: 'qa3', label: 'ระบบที่ 1 — มาตรฐาน ดย. ตัวบ่งชี้ 3.1–3.3',
+        key: 'std68_physical_1_1k',
+        label: 'ตัวบ่งชี้ 1.1ข น้ำหนักและส่วนสูงตามเกณฑ์มาตรฐาน',
         components: [
-          { code: '3.1', key: 'd1_qa3_3_1',
-            label: 'น้ำหนักและส่วนสูงตามเกณฑ์มาตรฐานของกรมอนามัย',
-            descriptor: 'น้ำหนักตามเกณฑ์มาตรฐาน / ส่วนสูงตามเกณฑ์มาตรฐาน',
-            domainId: 'physical', standardId: 'qa-3', indicatorId: '3.1' },
-          { code: '3.2', key: 'd1_qa3_3_2',
-            label: 'มีสุขภาพอนามัยที่ดีและมีสุขนิสัยที่ดี',
-            descriptor: 'สุขอนามัยส่วนตัว / ความปลอดภัยในชีวิตประจำวัน',
-            domainId: 'physical', standardId: 'qa-3', indicatorId: '3.2' },
-          { code: '3.3', key: 'd1_qa3_3_3',
-            label: 'มีทักษะการเคลื่อนไหวตามวัย',
-            descriptor: 'กล้ามเนื้อมัดใหญ่ (Gross Motor) / กล้ามเนื้อมัดเล็ก (Fine Motor)',
-            domainId: 'physical', standardId: 'qa-3', indicatorId: '3.3' },
+          { code: '1.1ข.1', key: 'physical_1_1k_1',
+            label: 'น้ำหนักตามเกณฑ์มาตรฐานกรมอนามัย',
+            descriptor: 'ชั่งน้ำหนักและบันทึกเปรียบเทียบเกณฑ์กรมอนามัย',
+            domainId: 'physical', standardId: 'std68-physical', indicatorId: '1.1ข' },
+          { code: '1.1ข.2', key: 'physical_1_1k_2',
+            label: 'ส่วนสูงตามเกณฑ์มาตรฐานกรมอนามัย',
+            descriptor: 'วัดส่วนสูงและบันทึกเปรียบเทียบเกณฑ์กรมอนามัย',
+            domainId: 'physical', standardId: 'std68-physical', indicatorId: '1.1ข' },
+          { code: '1.1ข.3', key: 'physical_1_1k_3',
+            label: 'มีสุขนิสัยการกินและดูแลสุขภาพที่ดี',
+            descriptor: 'เลือกรับประทานอาหาร 5 หมู่ / แปรงฟันถูกวิธี',
+            domainId: 'physical', standardId: 'std68-physical', indicatorId: '1.1ข' },
         ],
       },
       {
-        key: 'std1', label: 'มาตรฐานที่ 1 ร่างกายเจริญเติบโตตามวัยและมีสุขนิสัยที่ดี',
+        key: 'std68_physical_1_2k',
+        label: 'ตัวบ่งชี้ 1.2ข กล้ามเนื้อมัดใหญ่และมัดเล็กแข็งแรงและคล่องแคล่ว',
         components: [
-          { code: '1.1', key: 'd1_std1_1_1',
-            label: 'น้ำหนักและส่วนสูงตามเกณฑ์ของกรมอนามัย',
-            descriptor: 'ชั่งน้ำหนัก วัดส่วนสูง บันทึกและติดตามพัฒนาการตามเกณฑ์มาตรฐาน',
-            domainId: 'physical', standardId: 'std-1', indicatorId: '1.1' },
-          { code: '1.2', key: 'd1_std1_1_2',
-            label: 'มีสุขภาพอนามัยและสุขนิสัยที่ดี',
-            descriptor: 'รับประทานอาหารที่มีประโยชน์ ล้างมือ แปรงฟัน นอนพักผ่อนเป็นเวลา',
-            domainId: 'physical', standardId: 'std-1', indicatorId: '1.2' },
-          { code: '1.3', key: 'd1_std1_1_3',
-            label: 'รักษาความปลอดภัยของตนเองและผู้อื่น',
-            descriptor: 'เล่นและทำกิจกรรมต่างๆ อย่างปลอดภัยด้วยตนเอง ระมัดระวังอันตรายจากสิ่งแวดล้อม',
-            domainId: 'physical', standardId: 'std-1', indicatorId: '1.3' },
+          { code: '1.2ข.1', key: 'physical_1_2k_1',
+            label: 'กล้ามเนื้อมัดใหญ่ (Gross Motor)',
+            descriptor: 'ยืนขาเดียว กระโดด วิ่งเปลี่ยนทิศทาง รับ-โยนลูกบอล เดินขึ้น-ลงบันได',
+            domainId: 'physical', standardId: 'std68-physical', indicatorId: '1.2ข' },
+          { code: '1.2ข.2', key: 'physical_1_2k_2',
+            label: 'กล้ามเนื้อมัดเล็ก (Fine Motor)',
+            descriptor: 'จับดินสอถูกต้อง ตัดกระดาษ ร้อยลูกปัด วาดรูปคนตามวัย',
+            domainId: 'physical', standardId: 'std68-physical', indicatorId: '1.2ข' },
+          { code: '1.2ข.3', key: 'physical_1_2k_3',
+            label: 'การทรงตัวและการประสานงานของร่างกาย',
+            descriptor: 'เดินบนเส้นตรง ทรงตัวบนคานได้ / ประสานงานร่างกายตามดนตรี',
+            domainId: 'physical', standardId: 'std68-physical', indicatorId: '1.2ข' },
         ],
       },
       {
-        key: 'std2', label: 'มาตรฐานที่ 2 กล้ามเนื้อใหญ่และกล้ามเนื้อเล็กแข็งแรงใช้ได้อย่างคล่องแคล่ว',
+        key: 'std68_physical_1_6k',
+        label: 'ตัวบ่งชี้ 1.6ข รู้จักและปฏิบัติตนเพื่อความปลอดภัยในชีวิตประจำวัน',
         components: [
-          { code: '2.1', key: 'd1_std2_2_1',
-            label: 'เคลื่อนไหวร่างกายอย่างคล่องแคล่วและทรงตัวได้',
-            descriptor: 'เดินต่อเท้า กระโดดสองขา วิ่งแล้วหยุด รับและโยนลูกบอล ยืนขาเดียว กระโดดขาเดียว',
-            domainId: 'physical', standardId: 'std-2', indicatorId: '2.1' },
-          { code: '2.2', key: 'd1_std2_2_2',
-            label: 'ใช้มือ-ตาประสานสัมพันธ์กัน',
-            descriptor: 'จับดินสอถูกต้อง ตัดกระดาษเส้นตรง วาดรูปคน ปั้นดินน้ำมัน ร้อยวัสดุ ประกอบชิ้นส่วน',
-            domainId: 'physical', standardId: 'std-2', indicatorId: '2.2' },
+          { code: '1.6ข.1', key: 'physical_1_6k_1',
+            label: 'รู้จักอันตรายและสิ่งที่ควรหลีกเลี่ยง',
+            descriptor: 'จำแนกสิ่งที่ปลอดภัย/ไม่ปลอดภัย / ซ้อมหนีไฟและอพยพหนีภัย',
+            domainId: 'physical', standardId: 'std68-physical', indicatorId: '1.6ข' },
+          { code: '1.6ข.2', key: 'physical_1_6k_2',
+            label: 'ปฏิบัติตนเพื่อความปลอดภัยในชีวิตประจำวัน',
+            descriptor: 'สวมหมวกนิรภัย คาดเข็มขัด ใช้ทางม้าลาย / ไม่คุยกับคนแปลกหน้า',
+            domainId: 'physical', standardId: 'std68-physical', indicatorId: '1.6ข' },
         ],
       },
     ],
   },
 
-  // ─── D2: ด้านอารมณ์-จิตใจ (9 ตัวบ่งชี้) ──────────────────────────────────
+  // ─── ด้านอารมณ์ จิตใจ และสังคม (emotional) ──────────────────────────────────
   {
-    id: 'd2', label: 'ด้านอารมณ์-จิตใจ', emoji: '❤️',
+    id: 'emotional', label: 'อารมณ์ จิตใจ และสังคม', emoji: '❤️',
     color: '#e11d48', bg: '#fff1f2',
     subDomains: [
       {
-        key: 'qa4', label: 'ระบบที่ 1 — มาตรฐาน ดย. ตัวบ่งชี้ 4.1–4.3',
+        key: 'std68_emotional_1_3k',
+        label: 'ตัวบ่งชี้ 1.3ข มีสุขภาวะทางอารมณ์และจิตใจที่ดี',
         components: [
-          { code: '4.1', key: 'd2_qa4_4_1',
-            label: 'มีสุขภาพจิตดี มีความสุข ร่าเริงแจ่มใส',
-            descriptor: 'แสดงออกทางอารมณ์ได้เหมาะสม / ความเชื่อมั่นและภาคภูมิใจในตนเอง',
-            domainId: 'emotional', standardId: 'qa-4', indicatorId: '4.1' },
-          { code: '4.2', key: 'd2_qa4_4_2',
-            label: 'มีคุณธรรม จริยธรรม และจิตใจที่ดีงาม',
-            descriptor: 'ซื่อสัตย์สุจริต / เมตตากรุณา น้ำใจ / ความรับผิดชอบ',
-            domainId: 'emotional', standardId: 'qa-4', indicatorId: '4.2' },
-          { code: '4.3', key: 'd2_qa4_4_3',
-            label: 'สนใจ มีความสุขและแสดงออกผ่านงานศิลปะ ดนตรี และการเคลื่อนไหว',
-            descriptor: 'ศิลปะ ดนตรี และการเคลื่อนไหวสร้างสรรค์',
-            domainId: 'emotional', standardId: 'qa-4', indicatorId: '4.3' },
+          { code: '1.3ข.1', key: 'emotional_1_3k_1',
+            label: 'มีความมั่นใจในตนเองและกล้าแสดงออกอย่างเหมาะสม',
+            descriptor: 'นำเสนอหน้าชั้นเรียนด้วยความมั่นใจ / แสดงออกทางศิลปะและดนตรีอย่างอิสระ',
+            domainId: 'emotional', standardId: 'std68-emotional', indicatorId: '1.3ข' },
+          { code: '1.3ข.2', key: 'emotional_1_3k_2',
+            label: 'รับรู้และแสดงออกทางอารมณ์ได้อย่างเหมาะสมกับสถานการณ์',
+            descriptor: 'เรียนรู้ชื่ออารมณ์และวิธีจัดการอารมณ์ / เล่านิทานเกี่ยวกับการจัดการอารมณ์',
+            domainId: 'emotional', standardId: 'std68-emotional', indicatorId: '1.3ข' },
+          { code: '1.3ข.3', key: 'emotional_1_3k_3',
+            label: 'มีความสุขและสนุกสนานในการเรียนรู้และการเล่น',
+            descriptor: 'สังเกตการมีส่วนร่วมและความสุข / เรียนรู้ผ่านการทดลองที่สนุกสนาน',
+            domainId: 'emotional', standardId: 'std68-emotional', indicatorId: '1.3ข' },
         ],
       },
       {
-        key: 'std3', label: 'มาตรฐานที่ 3 มีสุขภาพจิตดีและมีความสุข',
+        key: 'std68_emotional_1_4k',
+        label: 'ตัวบ่งชี้ 1.4ข มีสุขภาวะทางสังคมที่ดี สามารถอยู่ร่วมกับผู้อื่นได้',
         components: [
-          { code: '3.1', key: 'd2_std3_3_1',
-            label: 'แสดงออกทางอารมณ์ได้อย่างเหมาะสม',
-            descriptor: 'แสดงอารมณ์ความรู้สึก (ดีใจ เสียใจ โกรธ กลัว) ได้เหมาะสมกับสถานการณ์ ควบคุมอารมณ์ตนเองได้',
-            domainId: 'emotional', standardId: 'std-3', indicatorId: '3.1' },
-          { code: '3.2', key: 'd2_std3_3_2',
-            label: 'มีความรู้สึกที่ดีต่อตนเองและผู้อื่น',
-            descriptor: 'พูดถึงตนเองในทางบวก มีความภาคภูมิใจในผลงาน ชื่นชมและให้กำลังใจเพื่อน',
-            domainId: 'emotional', standardId: 'std-3', indicatorId: '3.2' },
-        ],
-      },
-      {
-        key: 'std4', label: 'มาตรฐานที่ 4 ชื่นชมสุนทรียภาพ ดนตรี การเคลื่อนไหว และศิลปะ',
-        components: [
-          { code: '4.1', key: 'd2_std4_4_1',
-            label: 'สนใจ มีความสุขและแสดงออกผ่านงานศิลปะ ดนตรีและการเคลื่อนไหว',
-            descriptor: 'วาดภาพระบายสี ร้องเพลง ทำงานประดิษฐ์ศิลปะ เล่นเครื่องดนตรี ตามจินตนาการ',
-            domainId: 'emotional', standardId: 'std-4', indicatorId: '4.1' },
-        ],
-      },
-      {
-        key: 'std5', label: 'มาตรฐานที่ 5 มีคุณธรรม จริยธรรมและมีจิตใจที่ดีงาม',
-        components: [
-          { code: '5.1', key: 'd2_std5_5_1',
-            label: 'ซื่อสัตย์สุจริต',
-            descriptor: 'พูดความจริง ไม่หยิบของผู้อื่นโดยไม่ได้รับอนุญาต สารภาพและรับผิดชอบเมื่อทำผิดพลาด',
-            domainId: 'emotional', standardId: 'std-5', indicatorId: '5.1' },
-          { code: '5.2', key: 'd2_std5_5_2',
-            label: 'มีความเมตตากรุณา มีน้ำใจและช่วยเหลือแบ่งปัน',
-            descriptor: 'ช่วยเหลือเพื่อนเมื่อต้องการ แบ่งปันสิ่งของและของเล่นให้ผู้อื่นด้วยความเต็มใจ',
-            domainId: 'emotional', standardId: 'std-5', indicatorId: '5.2' },
-          { code: '5.3', key: 'd2_std5_5_3',
-            label: 'มีความรับผิดชอบ',
-            descriptor: 'ทำงานที่ได้รับมอบหมายจนสำเร็จด้วยตนเอง รับผิดชอบดูแลรักษาทรัพย์สินส่วนรวมของห้องเรียน',
-            domainId: 'emotional', standardId: 'std-5', indicatorId: '5.3' },
+          { code: '1.4ข.1', key: 'emotional_1_4k_1',
+            label: 'มีทักษะทางสังคมและเข้ากับผู้อื่นได้ดี',
+            descriptor: 'ทำงานร่วมกัน รอคอย เคารพ และยอมรับความแตกต่างของผู้อื่น',
+            domainId: 'emotional', standardId: 'std68-emotional', indicatorId: '1.4ข' },
+          { code: '1.4ข.2', key: 'emotional_1_4k_2',
+            label: 'ช่วยเหลือตนเองในกิจวัตรประจำวันได้ตามวัย',
+            descriptor: 'แต่งตัว รับประทานอาหาร ล้างมือ ด้วยตนเอง / ดูแลพื้นที่ส่วนรวม',
+            domainId: 'emotional', standardId: 'std68-emotional', indicatorId: '1.4ข' },
+          { code: '1.4ข.3', key: 'emotional_1_4k_3',
+            label: 'ร่วมมือในกิจกรรมกลุ่มและแสดงน้ำใจต่อผู้อื่น',
+            descriptor: 'รอคอย แบ่งปัน และช่วยเหลือเพื่อน / ช่วยเหลืองานในห้องเรียนและโรงเรียน',
+            domainId: 'emotional', standardId: 'std68-emotional', indicatorId: '1.4ข' },
         ],
       },
     ],
   },
 
-  // ─── D3: ด้านสังคม (12 ตัวบ่งชี้) ──────────────────────────────────────────
+  // ─── ด้านความเป็นพลเมืองและความเป็นไทย (citizen) ──────────────────────────
   {
-    id: 'd3', label: 'ด้านสังคม', emoji: '🤝',
-    color: '#7c3aed', bg: '#f5f3ff',
+    id: 'citizen', label: 'ความเป็นพลเมืองและความเป็นไทย', emoji: '🇹🇭',
+    color: '#1d4ed8', bg: '#eff6ff',
     subDomains: [
       {
-        key: 'qa5', label: 'ระบบที่ 1 — มาตรฐาน ดย. ตัวบ่งชี้ 5.1–5.4',
+        key: 'std68_citizen_1_7k',
+        label: 'ตัวบ่งชี้ 1.7ข มีคุณธรรม จริยธรรม จิตสำนึกสาธารณะ และความภูมิใจในความเป็นไทย',
         components: [
-          { code: '5.1', key: 'd3_qa5_5_1',
-            label: 'ช่วยเหลือตนเองในการปฏิบัติกิจวัตรประจำวัน',
-            descriptor: 'ดูแลตนเองและกิจวัตรประจำวัน — แต่งตัว รับประทานอาหาร เก็บของเล่นของใช้เข้าที่',
-            domainId: 'social', standardId: 'qa-5', indicatorId: '5.1' },
-          { code: '5.2', key: 'd3_qa5_5_2',
-            label: 'มีวินัย รับผิดชอบ เคารพกฎกติกา',
-            descriptor: 'วินัยและกฎกติกาของห้องเรียน / มารยาทและวัฒนธรรมไทย — ไหว้ทักทาย กล่าวขอบคุณและขอโทษ',
-            domainId: 'social', standardId: 'qa-5', indicatorId: '5.2' },
-          { code: '5.3', key: 'd3_qa5_5_3',
-            label: 'ยอมรับความเหมือนและความแตกต่างระหว่างบุคคล',
-            descriptor: 'ยอมรับและเคารพความแตกต่างของผู้อื่น เล่นและทำงานร่วมกับเพื่อนที่แตกต่างจากตน',
-            domainId: 'social', standardId: 'qa-5', indicatorId: '5.3' },
-          { code: '5.4', key: 'd3_qa5_5_4',
-            label: 'ทำงานร่วมกับผู้อื่น เล่นและทำกิจกรรมร่วมกันได้',
-            descriptor: 'ปฏิสัมพันธ์และการทำงานเป็นทีม — เล่นร่วมกัน รอคอยตามลำดับ ผลัดกัน',
-            domainId: 'social', standardId: 'qa-5', indicatorId: '5.4' },
-        ],
-      },
-      {
-        key: 'std6', label: 'มาตรฐานที่ 6 มีทักษะชีวิตและปฏิบัติตนตามหลักปรัชญาเศรษฐกิจพอเพียง',
-        components: [
-          { code: '6.1', key: 'd3_std6_6_1',
-            label: 'ช่วยเหลือตนเองในการปฏิบัติกิจวัตรประจำวัน',
-            descriptor: 'แต่งตัวด้วยตนเอง (ใส่เสื้อผ้า ติดกระดุม ผูกเชือกรองเท้า) รับประทานอาหารด้วยตนเองและมีมารยาท',
-            domainId: 'social', standardId: 'std-6', indicatorId: '6.1' },
-          { code: '6.2', key: 'd3_std6_6_2',
-            label: 'มีวินัยในตนเอง',
-            descriptor: 'เก็บของเล่นของใช้เข้าที่เรียบร้อย เข้าแถวตามลำดับก่อนหลัง ปฏิบัติตามกฎกติกาของห้องเรียนและโรงเรียน',
-            domainId: 'social', standardId: 'std-6', indicatorId: '6.2' },
-          { code: '6.3', key: 'd3_std6_6_3',
-            label: 'ประหยัดและพอเพียง',
-            descriptor: 'ใช้สิ่งของเครื่องใช้อย่างประหยัดและรู้จักพอเพียง ไม่ทิ้งอาหาร รับประทานแต่พอดีไม่เหลือทิ้ง',
-            domainId: 'social', standardId: 'std-6', indicatorId: '6.3' },
-        ],
-      },
-      {
-        key: 'std7', label: 'มาตรฐานที่ 7 รักธรรมชาติ สิ่งแวดล้อม วัฒนธรรม และความเป็นไทย',
-        components: [
-          { code: '7.1', key: 'd3_std7_7_1',
-            label: 'ดูแลรักษาธรรมชาติและสิ่งแวดล้อม',
-            descriptor: 'ทิ้งขยะได้ถูกที่และแยกขยะเบื้องต้น ดูแลรดน้ำต้นไม้ ไม่ทำลายทรัพยากรธรรมชาติและสิ่งแวดล้อม',
-            domainId: 'social', standardId: 'std-7', indicatorId: '7.1' },
-          { code: '7.2', key: 'd3_std7_7_2',
-            label: 'มีมารยาทตามวัฒนธรรมไทยและรักความเป็นไทย',
-            descriptor: 'ไหว้ทักทายและกล่าวขอบคุณ-ขอโทษตามกาลเทศะ ยืนตรงเมื่อได้ยินเพลงชาติ เข้าร่วมกิจกรรมวัฒนธรรมไทย',
-            domainId: 'social', standardId: 'std-7', indicatorId: '7.2' },
-        ],
-      },
-      {
-        key: 'std8', label: 'มาตรฐานที่ 8 อยู่ร่วมกับผู้อื่นได้อย่างมีความสุขและปฏิบัติตนเป็นสมาชิกที่ดีของสังคม',
-        components: [
-          { code: '8.1', key: 'd3_std8_8_1',
-            label: 'ยอมรับความเหมือนและความแตกต่างระหว่างบุคคล',
-            descriptor: 'เล่นและทำกิจกรรมร่วมกับเด็กที่มีความแตกต่าง เคารพสิทธิ์และรับฟังความคิดเห็นของผู้อื่น',
-            domainId: 'social', standardId: 'std-8', indicatorId: '8.1' },
-          { code: '8.2', key: 'd3_std8_8_2',
-            label: 'มีปฏิสัมพันธ์ที่ดีกับผู้อื่น',
-            descriptor: 'เล่นและทำงานร่วมกับเพื่อนได้อย่างมีความสุข รู้จักรอคิวและผลัดกันพูดในกลุ่ม',
-            domainId: 'social', standardId: 'std-8', indicatorId: '8.2' },
-          { code: '8.3', key: 'd3_std8_8_3',
-            label: 'ปฏิบัติตนเบื้องต้นในการเป็นสมาชิกที่ดีของสังคม',
-            descriptor: 'ปฏิบัติตนเป็นผู้นำและผู้ตามได้เหมาะสมกับสถานการณ์ ช่วยเหลืองานส่วนรวมของห้องเรียนและโรงเรียน',
-            domainId: 'social', standardId: 'std-8', indicatorId: '8.3' },
+          { code: '1.7ข.1', key: 'citizen_1_7k_1',
+            label: 'มีความซื่อสัตย์ รับผิดชอบ มีวินัย และปฏิบัติตามหลักปรัชญาเศรษฐกิจพอเพียง',
+            descriptor: 'ปฏิบัติตามข้อตกลงของห้องเรียน / รับผิดชอบภาระงานที่ได้รับมอบหมาย',
+            domainId: 'citizen', standardId: 'std68-citizen', indicatorId: '1.7ข' },
+          { code: '1.7ข.2', key: 'citizen_1_7k_2',
+            label: 'มีจิตสาธารณะ รักและภูมิใจในความเป็นไทย ดูแลสิ่งแวดล้อม',
+            descriptor: 'รักษาความสะอาดและดูแลสิ่งแวดล้อม / มารยาทไทย วัฒนธรรมไทย ภาคภูมิใจในชาติ',
+            domainId: 'citizen', standardId: 'std68-citizen', indicatorId: '1.7ข' },
         ],
       },
     ],
   },
 
-  // ─── D4: ด้านสติปัญญา (12 ตัวบ่งชี้) ────────────────────────────────────────
+  // ─── ด้านสติปัญญา (cognitive) ────────────────────────────────────────────────
   {
-    id: 'd4', label: 'ด้านสติปัญญา', emoji: '💡',
+    id: 'cognitive', label: 'สติปัญญา', emoji: '💡',
     color: '#b45309', bg: '#fffbeb',
     subDomains: [
       {
-        key: 'qa6', label: 'ระบบที่ 1 — มาตรฐาน ดย. ตัวบ่งชี้ 6.1–6.3',
+        key: 'std68_cognitive_1_5k',
+        label: 'ตัวบ่งชี้ 1.5ข มีสุขภาวะทางสติปัญญาและภาษาที่เหมาะสมกับวัย',
         components: [
-          { code: '6.1', key: 'd4_qa6_6_1',
-            label: 'ใช้ภาษาสื่อสารได้เหมาะสมกับวัย',
-            descriptor: 'ทักษะการฟังและพูด / ทักษะการอ่านและเขียนเบื้องต้น',
-            domainId: 'mental', standardId: 'qa-6', indicatorId: '6.1' },
-          { code: '6.2', key: 'd4_qa6_6_2',
+          { code: '1.5ข.1', key: 'cognitive_1_5k_1',
+            label: 'ใช้ภาษาพูดและการฟังในการสื่อสารได้เหมาะสมกับวัย',
+            descriptor: 'เล่าเรื่องตามลำดับเหตุการณ์ / สนทนาโต้ตอบกับครูและเพื่อนอย่างมีความหมาย',
+            domainId: 'cognitive', standardId: 'std68-cognitive', indicatorId: '1.5ข' },
+          { code: '1.5ข.2', key: 'cognitive_1_5k_2',
+            label: 'มีทักษะพื้นฐานการอ่านและการเขียนตามวัย',
+            descriptor: 'จำแนกตัวอักษรและอ่านคำง่ายๆ / ขีดเขียนสัญลักษณ์และชื่อตนเองได้',
+            domainId: 'cognitive', standardId: 'std68-cognitive', indicatorId: '1.5ข' },
+          { code: '1.5ข.3', key: 'cognitive_1_5k_3',
             label: 'มีความสามารถในการคิดและแก้ปัญหาเบื้องต้น',
-            descriptor: 'ทักษะการสังเกต จำแนก และเปรียบเทียบ / ทักษะการคิดและการแก้ปัญหา',
-            domainId: 'mental', standardId: 'qa-6', indicatorId: '6.2' },
-          { code: '6.3', key: 'd4_qa6_6_3',
+            descriptor: 'จัดกลุ่ม เปรียบเทียบ เรียงลำดับ / สังเกต ตั้งคำถาม ทดลอง สรุปผล',
+            domainId: 'cognitive', standardId: 'std68-cognitive', indicatorId: '1.5ข' },
+          { code: '1.5ข.4', key: 'cognitive_1_5k_4',
             label: 'มีจินตนาการและความคิดสร้างสรรค์',
-            descriptor: 'จินตนาการและการสร้างสรรค์ผลงาน — สร้างผลงานตามความคิดและจินตนาการของตนเอง',
-            domainId: 'mental', standardId: 'qa-6', indicatorId: '6.3' },
-        ],
-      },
-      {
-        key: 'std9', label: 'มาตรฐานที่ 9 ใช้ภาษาสื่อสารได้เหมาะสมกับวัย',
-        components: [
-          { code: '9.1', key: 'd4_std9_9_1',
-            label: 'รับรู้และเข้าใจความหมายของภาษา',
-            descriptor: 'สนทนาโต้ตอบ เล่าเรื่องราว ฟังนิทานและตอบคำถาม ปฏิบัติตามคำสั่งต่อเนื่อง 2–3 ขั้นตอน',
-            domainId: 'mental', standardId: 'std-9', indicatorId: '9.1' },
-          { code: '9.2', key: 'd4_std9_9_2',
-            label: 'แสดงออกและสื่อสารความคิด ความรู้สึก',
-            descriptor: 'อ่านภาพและสัญลักษณ์ง่ายๆ เขียนชื่อตนเองตามแบบ เล่าเรื่องราวจากภาพหรือประสบการณ์',
-            domainId: 'mental', standardId: 'std-9', indicatorId: '9.2' },
-        ],
-      },
-      {
-        key: 'std10', label: 'มาตรฐานที่ 10 มีความสามารถในการคิดที่เป็นพื้นฐานในการเรียนรู้',
-        components: [
-          { code: '10.1', key: 'd4_std10_10_1',
-            label: 'มีความสามารถในการคิดรวบยอด',
-            descriptor: 'บอกลักษณะสิ่งต่างๆ จับคู่ เปรียบเทียบ จำแนกหมวดหมู่ เรียงลำดับสิ่งของอย่างน้อย 5 ลำดับ',
-            domainId: 'mental', standardId: 'std-10', indicatorId: '10.1' },
-          { code: '10.2', key: 'd4_std10_10_2',
-            label: 'มีความสามารถในการคิดเชิงเหตุผล',
-            descriptor: 'ระบุสาเหตุหรือผลที่เกิดขึ้นในเหตุการณ์ต่างๆ คาดเดาหรือคาดคะเนสิ่งที่จะเกิดขึ้นต่อไปได้',
-            domainId: 'mental', standardId: 'std-10', indicatorId: '10.2' },
-          { code: '10.3', key: 'd4_std10_10_3',
-            label: 'มีความสามารถในการคิดแก้ปัญหาและตัดสินใจ',
-            descriptor: 'ตัดสินใจในเรื่องง่ายๆ และรับผิดชอบต่อผลที่เกิดขึ้น แก้ปัญหาเบื้องต้นในชีวิตประจำวันด้วยตนเอง',
-            domainId: 'mental', standardId: 'std-10', indicatorId: '10.3' },
-        ],
-      },
-      {
-        key: 'std11', label: 'มาตรฐานที่ 11 มีจินตนาการและความคิดสร้างสรรค์',
-        components: [
-          { code: '11.1', key: 'd4_std11_11_1',
-            label: 'สร้างผลงานตามจินตนาการและความคิดสร้างสรรค์',
-            descriptor: 'สร้างผลงานศิลปะเพื่อสื่อสารความคิดและความรู้สึก ต่อก้อนไม้หรือบล็อกสร้างสิ่งต่างๆ ตามจินตนาการ',
-            domainId: 'mental', standardId: 'std-11', indicatorId: '11.1' },
-          { code: '11.2', key: 'd4_std11_11_2',
-            label: 'แสดงท่าทาง/เคลื่อนไหวตามจินตนาการ',
-            descriptor: 'เคลื่อนไหวท่าทางเพื่อสื่อสารความคิดและความรู้สึกของตนเอง แสดงบทบาทสมมติตามจินตนาการและประสบการณ์',
-            domainId: 'mental', standardId: 'std-11', indicatorId: '11.2' },
-        ],
-      },
-      {
-        key: 'std12', label: 'มาตรฐานที่ 12 มีเจตคติที่ดีต่อการเรียนรู้และมีทักษะในการแสวงหาความรู้',
-        components: [
-          { code: '12.1', key: 'd4_std12_12_1',
-            label: 'มีเจตคติที่ดีต่อการเรียนรู้',
-            descriptor: 'สนใจซักถามเกี่ยวกับสัญลักษณ์หรือตัวหนังสือที่พบเห็น กระตือรือร้นและมีความสุขในการเรียนรู้',
-            domainId: 'mental', standardId: 'std-12', indicatorId: '12.1' },
-          { code: '12.2', key: 'd4_std12_12_2',
-            label: 'มีทักษะในการแสวงหาความรู้',
-            descriptor: 'ค้นหาคำตอบของข้อสงสัยต่างๆ ด้วยตนเอง ใช้คำถาม "ทำไม" "อย่างไร" "เมื่อไหร่" ในการค้นหาความรู้',
-            domainId: 'mental', standardId: 'std-12', indicatorId: '12.2' },
+            descriptor: 'วาด ปั้น ฉีก-ปะ ไม่มีแบบตายตัว / เล่นสมมติ ละครสร้างสรรค์ แก้ปัญหาผ่านการเล่น',
+            domainId: 'cognitive', standardId: 'std68-cognitive', indicatorId: '1.5ข' },
         ],
       },
     ],
@@ -1374,7 +1249,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
 
   const [selStudentId, setSelStudentId] = useState(initialStudentId ? String(initialStudentId) : null);
   const [activeSection, setActiveSection] = useState('physical');
-  const [devAssessTab, setDevAssessTab] = useState('d1');
+  const [devAssessTab, setDevAssessTab] = useState('physical');
   const [newHs, setNewHs] = useState({ date: todayISO(), service: '', note: '' });
 
   // ── filtered students ─────────────────────────────────────────────────────
@@ -1604,7 +1479,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
   // ── developmental domains (from indicators + student.assessments) ─────────
   const devDomains = useMemo(() => {
     if (!student) return [];
-    return INDICATORS_DATA.map(domain => ({
+    return INDICATORS_DATA_68.map(domain => ({
       ...domain,
       standards: domain.standards.map(std => ({
         ...std,
@@ -1644,7 +1519,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
     { id: 'physical',    label: '⚖️ ร่างกาย'              },
     { id: 'attendance',  label: '📅 เวลาเรียน'             },  // อ.01: ส่วนที่ 2
     { id: 'devreport',   label: '📋 พัฒนาการ'              },
-    { id: 'summary',     label: '📊 สรุป 12 มาตรฐาน'      },
+    { id: 'summary',     label: '📊 สรุป 4 มาตรฐาน'       },
     { id: 'domain4',     label: '🎯 สรุปพัฒนาการ 4 ด้าน'  },
     { id: 'highlights',  label: '✨ จุดเด่น/ความสามารถ'   },
     { id: 'comments',    label: '💬 ความคิดเห็น'           },
@@ -2469,7 +2344,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
               </div>
 
               <div style={{ marginTop: '.75rem', fontSize: '.72rem', color: '#9ca3af', textAlign: 'center' }}>
-                ตามหลักสูตรการศึกษาปฐมวัย พุทธศักราช 2560
+                ตามหลักสูตรการศึกษาปฐมวัย พุทธศักราช 2568
               </div>
             </div>
           )}

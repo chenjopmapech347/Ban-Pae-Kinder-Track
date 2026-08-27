@@ -542,8 +542,9 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       th { background:#f3f4f6; padding:5px 8px; border:1px solid #d1d5db; font-weight:700; font-size:.8rem; }
       .page-break { page-break-after:always; break-after:page; margin-bottom:20px; }
       @page { size:A4 portrait; margin:15mm 18mm; }
+      body { margin:15mm 18mm; }
       @media print {
-        body { margin:0; padding:0; }
+        body { margin:15mm 18mm; padding:0; }
         .page-break { page-break-after:always; break-after:page; }
       }
     </style>

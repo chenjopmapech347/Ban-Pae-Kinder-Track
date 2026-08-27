@@ -132,7 +132,7 @@ function printKhamChiaeng() {
     <style>${css}</style></head>
     <body>
       <h1>คำชี้แจงการประเมินพัฒนาการเด็กปฐมวัย</h1>
-      <div class="sub">หลักสูตรการศึกษาปฐมวัย พ.ศ. 2560</div>
+      <div class="sub">หลักสูตรการศึกษาปฐมวัย พ.ศ. 2568</div>
       ${items}${formula}
     </body></html>`;
 
@@ -156,7 +156,7 @@ function KhamChiaeng() {
           padding: '.65rem 1.1rem', background: '#fffbeb', border: 'none', cursor: 'pointer',
           fontFamily: 'inherit', fontWeight: 700, fontSize: '.85rem', color: '#92400e',
         }}>
-        <span>📋 คำชี้แจงการประเมินพัฒนาการเด็กปฐมวัย (หลักสูตรปฐมวัย พ.ศ. 2560)</span>
+        <span>📋 คำชี้แจงการประเมินพัฒนาการเด็กปฐมวัย (หลักสูตรปฐมวัย พ.ศ. 2568)</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
           <span
             role="button" tabIndex={0}
@@ -242,27 +242,20 @@ function KhamChiaeng() {
   );
 }
 
-// ── มาตรฐาน 1-12 (หลักสูตรปฐมวัย พ.ศ. 2560) ─────────────────────────────────
+// ── มาตรฐาน (หลักสูตรปฐมวัย พ.ศ. 2568) ────────────────────────────────────────
+// หลักสูตรการศึกษาปฐมวัย พ.ศ. 2568 — 4 มาตรฐาน 4 ด้าน
 const STANDARD_DEFS = [
-  { id: 'std-1',  no: 1,  domain: 'physical',     title: 'มาตรฐานที่ 1 ร่างกายเจริญเติบโตตามวัยและมีสุขนิสัยที่ดี' },
-  { id: 'std-2',  no: 2,  domain: 'physical',     title: 'มาตรฐานที่ 2 กล้ามเนื้อใหญ่และกล้ามเนื้อเล็กแข็งแรง' },
-  { id: 'std-3',  no: 3,  domain: 'emotional',    title: 'มาตรฐานที่ 3 มีสุขภาพจิตดีและมีความสุข' },
-  { id: 'std-4',  no: 4,  domain: 'emotional',    title: 'มาตรฐานที่ 4 ชื่นชมและแสดงออกทางศิลปะ ดนตรี และการเคลื่อนไหว' },
-  { id: 'std-5',  no: 5,  domain: 'emotional',    title: 'มาตรฐานที่ 5 มีคุณธรรม จริยธรรม และมีจิตใจที่ดีงาม' },
-  { id: 'std-6',  no: 6,  domain: 'social',       title: 'มาตรฐานที่ 6 มีทักษะชีวิตและปฏิบัติตามหลักปรัชญาของเศรษฐกิจพอเพียง' },
-  { id: 'std-7',  no: 7,  domain: 'social',       title: 'มาตรฐานที่ 7 รักธรรมชาติ สิ่งแวดล้อม วัฒนธรรม และความเป็นไทย' },
-  { id: 'std-8',  no: 8,  domain: 'social',       title: 'มาตรฐานที่ 8 อยู่ร่วมกับผู้อื่นได้อย่างมีความสุข' },
-  { id: 'std-9',  no: 9,  domain: 'intellectual', title: 'มาตรฐานที่ 9 ใช้ภาษาสื่อสารได้เหมาะสมกับวัย' },
-  { id: 'std-10', no: 10, domain: 'intellectual', title: 'มาตรฐานที่ 10 มีความสามารถในการคิดที่เป็นพื้นฐานในการเรียนรู้' },
-  { id: 'std-11', no: 11, domain: 'intellectual', title: 'มาตรฐานที่ 11 มีจินตนาการและความคิดสร้างสรรค์' },
-  { id: 'std-12', no: 12, domain: 'intellectual', title: 'มาตรฐานที่ 12 มีเจตคติที่ดีต่อการเรียนรู้ และมีความสามารถในการแสวงหาความรู้' },
+  { id: 'std68-physical',  no: 1, domain: 'physical',  title: 'มาตรฐานที่ 1 สุขภาวะทางกาย' },
+  { id: 'std68-emotional', no: 2, domain: 'emotional', title: 'มาตรฐานที่ 2 อารมณ์ จิตใจ และสังคม' },
+  { id: 'std68-citizen',   no: 3, domain: 'citizen',   title: 'มาตรฐานที่ 3 ความเป็นพลเมืองและความเป็นไทย' },
+  { id: 'std68-cognitive', no: 4, domain: 'cognitive', title: 'มาตรฐานที่ 4 สติปัญญา' },
 ];
 
 const DOMAIN_DEFS = [
-  { id: 'physical',     label: 'ด้านร่างกาย',       emoji: '🏃', color: '#059669', bg: '#ecfdf5', border: '#6ee7b7', stds: [1,2] },
-  { id: 'emotional',    label: 'ด้านอารมณ์-จิตใจ',  emoji: '❤️', color: '#e11d48', bg: '#fff1f2', border: '#fda4af', stds: [3,4,5] },
-  { id: 'social',       label: 'ด้านสังคม',          emoji: '🤝', color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd', stds: [6,7,8] },
-  { id: 'intellectual', label: 'ด้านสติปัญญา',       emoji: '🧠', color: '#0891b2', bg: '#f0f9ff', border: '#7dd3fc', stds: [9,10,11,12] },
+  { id: 'physical',  label: 'ด้านสุขภาวะทางกาย',                  emoji: '🏃', color: '#059669', bg: '#ecfdf5', border: '#6ee7b7', stds: ['std68-physical'] },
+  { id: 'emotional', label: 'ด้านอารมณ์ จิตใจ และสังคม',         emoji: '❤️', color: '#e11d48', bg: '#fff1f2', border: '#fda4af', stds: ['std68-emotional'] },
+  { id: 'citizen',   label: 'ด้านความเป็นพลเมืองและความเป็นไทย', emoji: '🇹🇭', color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd', stds: ['std68-citizen'] },
+  { id: 'cognitive', label: 'ด้านสติปัญญา',                       emoji: '🧠', color: '#0891b2', bg: '#f0f9ff', border: '#7dd3fc', stds: ['std68-cognitive'] },
 ];
 
 const LEVEL_AGE = { K1: '3-4 ปี', K2: '4-5 ปี', K3: '5-6 ปี' };
@@ -510,8 +503,8 @@ function SummaryView({ students, indicators, activities, className, schoolName, 
     });
     const domains = {};
     DOMAIN_DEFS.forEach(dom => {
-      const t1 = avg(dom.stds.map(n => stds[`std-${n}`]?.t1 ?? 0).filter(v => v > 0));
-      const t2 = avg(dom.stds.map(n => stds[`std-${n}`]?.t2 ?? 0).filter(v => v > 0));
+      const t1 = avg(dom.stds.map(sid => stds[sid]?.t1 ?? 0).filter(v => v > 0));
+      const t2 = avg(dom.stds.map(sid => stds[sid]?.t2 ?? 0).filter(v => v > 0));
       domains[dom.id] = { t1, t2 };
     });
     return { s, stds, domains };
@@ -550,7 +543,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
 </tr>
 <tr>
   ${DOMAIN_DEFS.map(dom=>[
-    ...dom.stds.map(n=>`<th colspan="2" class="hd">มาตรฐาน ${n}<br/><small>ภาค1 / ภาค2</small></th>`),
+    ...dom.stds.map(sid=>{ const sd=STANDARD_DEFS.find(s=>s.id===sid); return `<th colspan="2" class="hd">มาตรฐาน ${sd?.no??sid}<br/><small>ภาค1 / ภาค2</small></th>`; }),
     `<th colspan="2" class="hd">สรุป${dom.label}<br/><small>ภาค1 / ภาค2</small></th>`
   ].join('')).join('')}
 </tr>
@@ -581,9 +574,10 @@ ${rows}
             <tr>
               {DOMAIN_DEFS.map(dom => (
                 <>
-                  {dom.stds.map(n => (
-                    <th key={n} colSpan={2} style={hdCell({ background: '#f1f5f9', fontSize: '.65rem' })}>มาตรฐาน {n}</th>
-                  ))}
+                  {dom.stds.map(sid => {
+                    const sd = STANDARD_DEFS.find(s => s.id === sid);
+                    return <th key={sid} colSpan={2} style={hdCell({ background: '#f1f5f9', fontSize: '.65rem' })}>มาตรฐาน {sd?.no}</th>;
+                  })}
                   <th colSpan={2} style={hdCell({ background: dom.bg, color: dom.color, fontSize: '.65rem', fontWeight: 800 })}>สรุปด้าน</th>
                 </>
               ))}
@@ -591,10 +585,10 @@ ${rows}
             <tr>
               {DOMAIN_DEFS.map(dom => (
                 <>
-                  {dom.stds.map(n => (
+                  {dom.stds.map(sid => (
                     <>
-                      <th key={`${n}t1`} style={hdCell({ background: '#e0f2fe', color: '#0369a1', fontSize: '.62rem' })}>ภาค1</th>
-                      <th key={`${n}t2`} style={hdCell({ background: '#fce7f3', color: '#9d174d', fontSize: '.62rem' })}>ภาค2</th>
+                      <th key={`${sid}t1`} style={hdCell({ background: '#e0f2fe', color: '#0369a1', fontSize: '.62rem' })}>ภาค1</th>
+                      <th key={`${sid}t2`} style={hdCell({ background: '#fce7f3', color: '#9d174d', fontSize: '.62rem' })}>ภาค2</th>
                     </>
                   ))}
                   <th style={hdCell({ background: dom.bg, color: dom.color, fontSize: '.62rem' })}>ภาค1</th>
@@ -610,10 +604,10 @@ ${rows}
                 <td style={{ border: '1px solid #e5e7eb', padding: '3px 6px', whiteSpace: 'nowrap' }}>{d.s.name}</td>
                 {DOMAIN_DEFS.map(dom => (
                   <>
-                    {dom.stds.map(n => (
+                    {dom.stds.map(sid => (
                       <>
-                        <ScoreCell key={`${n}t1`} v={d.stds[`std-${n}`].t1} />
-                        <ScoreCell key={`${n}t2`} v={d.stds[`std-${n}`].t2} />
+                        <ScoreCell key={`${sid}t1`} v={d.stds[sid]?.t1 ?? 0} />
+                        <ScoreCell key={`${sid}t2`} v={d.stds[sid]?.t2 ?? 0} />
                       </>
                     ))}
                     <ScoreCell v={d.domains[dom.id].t1} avg />
@@ -637,7 +631,7 @@ function hdCell(extra = {}) {
 // ── Detail View — ทีละตัวบ่งชี้ ──────────────────────────────────────────────
 function DetailView({ students, indicators, activities, className, schoolName, academicYear }) {
   const [selDomain, setSelDomain] = useState('physical');
-  const [selStdId, setSelStdId]   = useState('std-1');
+  const [selStdId, setSelStdId]   = useState('std68-physical');
   const [selIndIdx, setSelIndIdx] = useState(0);
 
   const domDef  = DOMAIN_DEFS.find(d => d.id === selDomain);
@@ -649,7 +643,7 @@ function DetailView({ students, indicators, activities, className, schoolName, a
   function handleDomainChange(domId) {
     setSelDomain(domId);
     const domDef2 = DOMAIN_DEFS.find(d => d.id === domId);
-    const firstStd = `std-${domDef2.stds[0]}`;
+    const firstStd = domDef2.stds[0];
     setSelStdId(firstStd);
     setSelIndIdx(0);
   }
@@ -745,11 +739,11 @@ ${allRows}
       {/* Standard tabs within domain */}
       {domDef && (
         <div style={{ display: 'flex', gap: '.35rem', flexWrap: 'wrap', marginBottom: '1rem', paddingLeft: '.5rem', borderLeft: `3px solid ${domDef.color}` }}>
-          {domDef.stds.map(n => {
-            const sd = STANDARD_DEFS.find(s => s.no === n);
-            const active = selStdId === sd.id;
+          {domDef.stds.map(sid => {
+            const sd = STANDARD_DEFS.find(s => s.id === sid);
+            const active = selStdId === sid;
             return (
-              <button key={sd.id} type="button" onClick={() => handleStdChange(sd.id)}
+              <button key={sid} type="button" onClick={() => handleStdChange(sid)}
                 style={{
                   padding: '.28rem .75rem', borderRadius: '8px', fontFamily: 'inherit', cursor: 'pointer',
                   fontSize: '.78rem', fontWeight: active ? 700 : 500,
@@ -757,7 +751,7 @@ ${allRows}
                   color: active ? domDef.color : '#6b7280',
                   border: `1.5px solid ${active ? domDef.color : '#e5e7eb'}`,
                 }}>
-                มาตรฐาน {n}
+                มาตรฐาน {sd?.no}
               </button>
             );
           })}

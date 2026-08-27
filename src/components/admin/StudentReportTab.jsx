@@ -842,46 +842,25 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
     <!-- ══ หน้า: จุดเด่นและความสามารถผู้เรียน (ภาคเรียนที่ 1 และ 2) ══ -->
     ${[1, 2].map(term => {
       const termTh = term === 1 ? '๑' : '๒';
-      // domain 4 sub-items from INDICATORS_DATA (index 3)
-      const d4 = devDomains[3];
-      const d4Subs = d4 ? d4.standards.map((std, si) => {
-        const subNums = ['๔.๑','๔.๒','๔.๓','๔.๔','๔.๕'];
-        const hKey = `d3s${si}`;
-        const teacherTxt = highlights[hKey]?.[`term${term}`]?.teacher || '&nbsp;';
-        const parentTxt  = highlights[hKey]?.[`term${term}`]?.parent  || '&nbsp;';
-        return `<tr>
-          <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top">
-            <span style="font-weight:600">${subNums[si] ?? `๔.${si+1}`}</span> ${D4_STD_LABELS[si] ?? ''}
-          </td>
-          <td style="padding:6px 8px;border:1px solid #374151;min-height:50px;font-size:.78rem;vertical-align:top;white-space:pre-wrap">${teacherTxt}</td>
-          <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top;white-space:pre-wrap">${parentTxt}</td>
-        </tr>`;
-      }).join('') : '';
+      const combinedTxt = highlights['combined']?.[`term${term}`]?.teacher || '&nbsp;';
 
-      const mainRowsData = [
-        { num:'๑', name: DOMAIN_LABELS[0], key: 'd0' },
-        { num:'๒', name: DOMAIN_LABELS[1], key: 'd1' },
-        { num:'๓', name: DOMAIN_LABELS[2], key: 'd2' },
+      const domainRows = [
+        `๑. ${DOMAIN_LABELS[0]}`,
+        `๒. ${DOMAIN_LABELS[1]}`,
+        `๓. ${DOMAIN_LABELS[2]}`,
+        `๔. ${DOMAIN_LABELS[3]}`,
       ];
-      const mainRows = mainRowsData.map(r => {
-        const teacherTxt = highlights[r.key]?.[`term${term}`]?.teacher || '&nbsp;';
-        const parentTxt  = highlights[r.key]?.[`term${term}`]?.parent  || '&nbsp;';
-        return `<tr>
-        <td style="padding:8px;border:1px solid #374151;font-weight:600;font-size:.8rem;vertical-align:top">
-          ${r.num}. ${r.name}
-        </td>
-        <td style="padding:6px 8px;border:1px solid #374151;min-height:60px;font-size:.78rem;vertical-align:top;white-space:pre-wrap">${teacherTxt}</td>
-        <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top;white-space:pre-wrap">${parentTxt}</td>
-      </tr>`;
-      }).join('');
 
-      const d4Header = `<tr>
-        <td style="padding:8px;border:1px solid #374151;font-weight:600;font-size:.8rem;vertical-align:top;background:#f9fafb">
-          ๔. ${DOMAIN_LABELS[3]}
-        </td>
-        <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top;background:#f9fafb"> </td>
-        <td style="padding:6px 8px;border:1px solid #374151;font-size:.78rem;vertical-align:top;background:#f9fafb"> </td>
-      </tr>`;
+      const leftRows = domainRows.map((label, i) =>
+        i === 0
+          ? `<tr>
+              <td style="padding:8px;border:1px solid #374151;font-size:.8rem;font-weight:600;vertical-align:middle;background:#f9fafb">${label}</td>
+              <td rowspan="4" style="padding:8px;border:1px solid #374151;font-size:.82rem;vertical-align:top;white-space:pre-wrap;min-height:120px">${combinedTxt}</td>
+            </tr>`
+          : `<tr>
+              <td style="padding:8px;border:1px solid #374151;font-size:.8rem;font-weight:600;vertical-align:middle;background:#f9fafb">${label}</td>
+            </tr>`
+      ).join('');
 
       return `
       <div class="page-break" style="page-break-before:always;break-before:page">
@@ -890,30 +869,20 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
         </div>
         <table style="width:100%;border-collapse:collapse;font-size:.82rem">
           <colgroup>
-            <col style="width:28%">
-            <col style="width:52%">
-            <col style="width:20%">
+            <col style="width:30%">
+            <col style="width:70%">
           </colgroup>
           <thead>
             <tr>
               <th style="padding:8px;border:1px solid #374151;background:#f3f4f6;text-align:center">ความสามารถผู้เรียน</th>
-              <th style="padding:8px;border:1px solid #374151;background:#f3f4f6;text-align:center" colspan="1">
-                ภาคเรียนที่ ${termTh}<br>
-                <span style="font-weight:400;font-size:.75rem">ความคิดเห็นครูประจำชั้น (จุดเด่น)</span><br>
-                <span style="font-weight:400;font-size:.72rem">ลงชื่อ ............................................</span><br>
-                <span style="font-weight:400;font-size:.72rem">(ครูประจำชั้น)</span>
-              </th>
               <th style="padding:8px;border:1px solid #374151;background:#f3f4f6;text-align:center">
-                ความคิดเห็นผู้ปกครอง<br>
-                <span style="font-weight:400;font-size:.72rem">ลงชื่อ ..........................</span><br>
-                <span style="font-weight:400;font-size:.72rem">(ผู้ปกครอง)</span>
+                ภาคเรียนที่ ${termTh} — ความคิดเห็นครูประจำชั้น (จุดเด่น)<br>
+                <span style="font-weight:400;font-size:.72rem">ลงชื่อ .............................................(ครูประจำชั้น)</span>
               </th>
             </tr>
           </thead>
           <tbody>
-            ${mainRows}
-            ${d4Header}
-            ${d4Subs}
+            ${leftRows}
           </tbody>
         </table>
       </div>`;

@@ -541,9 +541,9 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       table { width:100%; border-collapse:collapse; margin-bottom:12px; }
       th { background:#f3f4f6; padding:5px 8px; border:1px solid #d1d5db; font-weight:700; font-size:.8rem; }
       .page-break { page-break-after:always; break-after:page; margin-bottom:20px; }
-      @page { size:A4 portrait; margin:1in; }
+      @page { size:A4 portrait; margin:15mm 18mm; }
       @media print {
-        body { margin:0; }
+        body { margin:0; padding:0; }
         .page-break { page-break-after:always; break-after:page; }
       }
     </style>
@@ -649,7 +649,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
     <div class="page-break">
       <h1 style="margin-bottom:16px">สมุดรายงานประจำตัวเด็กปฐมวัย</h1>
       <p style="text-align:center;margin-bottom:20px;font-size:.85rem;color:#555">
-        โรงเรียน${schoolName} · ปีการศึกษา ${academicYear}
+        ${schoolName.startsWith('โรงเรียน') ? schoolName : 'โรงเรียน' + schoolName} · ปีการศึกษา ${academicYear}
       </p>
       <p style="font-size:.9rem;font-weight:700;margin-bottom:12px">เรียน ท่านผู้ปกครอง</p>
       ${INTRO_LETTER.split('\n').filter(l => l.trim()).map(line =>
@@ -737,7 +737,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
     <!-- ══ หน้า 4+: ข้อมูลนักเรียน ══ -->
     <h1>สมุดรายงานประจำตัวเด็กปฐมวัย</h1>
     <div style="text-align:center;margin-bottom:12px;font-size:.85rem;color:#6b7280">
-      ปีการศึกษา ${academicYear} · โรงเรียน${schoolName}
+      ปีการศึกษา ${academicYear} · ${schoolName.startsWith('โรงเรียน') ? schoolName : 'โรงเรียน' + schoolName}
     </div>
     <table style="margin-bottom:12px">
       <tr>

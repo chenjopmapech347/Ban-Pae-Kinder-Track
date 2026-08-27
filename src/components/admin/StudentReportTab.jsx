@@ -1490,7 +1490,6 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
     { id: 'devreport',   label: '📋 พัฒนาการ'              },
     { id: 'summary',     label: '📊 สรุป 4 มาตรฐาน'       },
     { id: 'domain4',     label: '🎯 สรุปพัฒนาการ 4 ด้าน'  },
-    { id: 'highlights',  label: '✨ จุดเด่น/ความสามารถ'   },
     { id: 'comments',    label: '💬 ความคิดเห็น'           },
     { id: 'philosophy',  label: '📖 ปรัชญา/วิสัยทัศน์'    },
     { id: 'growthtable', label: '📏 เกณฑ์การเจริญเติบโต'  },
@@ -2194,90 +2193,9 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                 })}
               </div>
 
-              {/* Parent Comments — read-only for teachers; editable via ParentView */}
-              <div style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0', borderRadius: '12px', padding: '1rem 1.25rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '1rem' }}>
-                  <div style={{ fontWeight: 800, fontSize: '.88rem', color: '#15803d' }}>
-                    👨‍👩‍👧 ความคิดเห็นของผู้ปกครอง
-                  </div>
-                  <span style={{
-                    fontSize: '.7rem', fontWeight: 700, padding: '.1rem .55rem',
-                    borderRadius: '99px', background: '#dcfce7', color: '#15803d',
-                    border: '1px solid #86efac',
-                  }}>
-                    ผู้ปกครองกรอกเอง
-                  </span>
-                </div>
-                {[1, 2].map(t => (
-                  <div key={t} style={{ marginBottom: '1rem' }}>
-                    <div style={{ fontWeight: 700, fontSize: '.8rem', color: '#374151', marginBottom: '.35rem' }}>
-                      ภาคเรียนที่ {t}
-                    </div>
-                    <div style={{
-                      minHeight: '68px', padding: '8px 10px',
-                      border: '1px solid #86efac', borderRadius: '8px',
-                      fontSize: '.82rem', lineHeight: '1.6', background: '#f7fdf9',
-                      color: parentComments[`term${t}`] ? '#111827' : '#9ca3af',
-                      fontStyle: parentComments[`term${t}`] ? 'normal' : 'italic',
-                      whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                    }}>
-                      {parentComments[`term${t}`] || `(ยังไม่มีความคิดเห็น — ผู้ปกครองจะกรอกผ่านหน้า Parent View)`}
-                    </div>
-                    <div style={{ marginTop: '.5rem', fontSize: '.75rem', color: '#6b7280' }}>
-                      ลงชื่อ _________________________ (ผู้ปกครอง)
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {/* Parent Comments — removed input; data stored via ParentView */}
 
-              {/* Director's Comment — editable by Admin, read-only for others */}
-              <div style={{ background: '#fdf4ff', border: '1.5px solid #e9d5ff', borderRadius: '12px', padding: '1rem 1.25rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.75rem' }}>
-                  <div style={{ fontWeight: 800, fontSize: '.88rem', color: '#7e22ce' }}>
-                    🏛️ ความคิดเห็นของผู้อำนวยการสถานศึกษา (ตลอดปีการศึกษา)
-                  </div>
-                  <span style={{
-                    fontSize: '.7rem', fontWeight: 700, padding: '.1rem .55rem',
-                    borderRadius: '99px', background: '#f3e8ff', color: '#7e22ce',
-                    border: '1px solid #d8b4fe',
-                  }}>
-                    {role === 'admin' ? '✏️ แก้ไขได้' : 'ผู้อำนวยการกรอกเอง'}
-                  </span>
-                </div>
-                {role === 'admin' ? (
-                  <textarea
-                    value={directorsComment}
-                    onChange={e => saveRec({ directorsComment: e.target.value })}
-                    placeholder="กรอกความคิดเห็นของผู้อำนวยการสถานศึกษา..."
-                    rows={4}
-                    style={{
-                      width: '100%', boxSizing: 'border-box',
-                      padding: '8px 10px', border: '1.5px solid #d8b4fe',
-                      borderRadius: '8px', fontFamily: 'inherit',
-                      fontSize: '.82rem', lineHeight: '1.6',
-                      background: '#fdf8ff', color: '#111827',
-                      resize: 'vertical', outline: 'none',
-                      transition: 'border-color .15s',
-                    }}
-                    onFocus={e => { e.target.style.borderColor = '#7e22ce'; }}
-                    onBlur={e => { e.target.style.borderColor = '#d8b4fe'; }}
-                  />
-                ) : (
-                  <div style={{
-                    minHeight: '68px', padding: '8px 10px',
-                    border: '1px solid #d8b4fe', borderRadius: '8px',
-                    fontSize: '.82rem', lineHeight: '1.6', background: '#fdf8ff',
-                    color: directorsComment ? '#111827' : '#9ca3af',
-                    fontStyle: directorsComment ? 'normal' : 'italic',
-                    whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-                  }}>
-                    {directorsComment || '(ยังไม่มีความคิดเห็น — ผู้อำนวยการจะกรอกในส่วนของ Admin)'}
-                  </div>
-                )}
-                <div style={{ marginTop: '.5rem', fontSize: '.75rem', color: '#6b7280' }}>
-                  ลงชื่อ _________________________ (ผู้อำนวยการสถานศึกษา)
-                </div>
-              </div>
+              {/* Director's Comment — removed input; data stored via Admin panel */}
             </div>
           )}
 

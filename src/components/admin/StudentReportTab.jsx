@@ -538,16 +538,15 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
     <title>สมุดรายงานประจำตัว — ${student?.name ?? ''}</title>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap');
-      body { font-family:'Sarabun',sans-serif; font-size:13px; margin:20px; color:#111; }
+      body { font-family:'Sarabun',sans-serif; font-size:13px; margin:1in; color:#111; }
       h1 { text-align:center; font-size:1.1rem; margin-bottom:4px; }
       h2 { font-size:.95rem; margin:14px 0 4px; background:#f3f4f6; padding:4px 8px; border-radius:4px; }
       table { width:100%; border-collapse:collapse; margin-bottom:12px; }
       th { background:#f3f4f6; padding:5px 8px; border:1px solid #d1d5db; font-weight:700; font-size:.8rem; }
       .page-break { page-break-after:always; break-after:page; margin-bottom:20px; }
-      @page { size:A4 portrait; margin:15mm 18mm; }
-      body { margin:15mm 18mm; }
+      @page { size:A4 portrait; margin:1in; }
       @media print {
-        body { margin:15mm 18mm; padding:0; }
+        body { margin:1in; padding:0; }
         .page-break { page-break-after:always; break-after:page; }
       }
     </style>

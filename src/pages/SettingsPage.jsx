@@ -20,6 +20,7 @@ export default function SettingsPage({ onBack }) {
     syncPushToFirebase, syncPullFromFirebase, isFirebaseConfigured,
     students, dailyRecords,
     aiApiKey, setAiApiKey,
+    imgbbApiKey, setImgbbApiKey,
     parentCommentDeadlines, setParentCommentDeadlines,
   } = useApp();
 
@@ -456,6 +457,41 @@ export default function SettingsPage({ onBack }) {
           </div>
           <div className="text-xs text-muted mt-3">
             🔒 Key เก็บในเครื่องของคุณเท่านั้น ไม่ส่งออกไปไหน · ใช้ claude-haiku (ประหยัด ~$0.001/ครั้ง)
+          </div>
+        </div>
+
+        {/* ─── ImgBB ─── */}
+        <div className="glass p-6" style={{ border: '1.5px solid #bfdbfe' }}>
+          <h3 className="mb-2">🖼️ ตั้งค่า ImgBB (อัปโหลดรูปนักเรียน)</h3>
+          <p className="text-sm text-muted mb-4">
+            ใส่ API Key จาก{' '}
+            <a href="https://api.imgbb.com/" target="_blank" rel="noreferrer"
+              style={{ color: '#2563eb' }}>api.imgbb.com</a>
+            {' '}เพื่ออัปโหลดรูปภาพนักเรียนไปเก็บที่ ImgBB แทนการเก็บใน Firestore
+          </p>
+          <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <input
+              className="input"
+              type="password"
+              value={imgbbApiKey}
+              onChange={e => setImgbbApiKey(e.target.value)}
+              placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              style={{ flex: 1, minWidth: '260px', fontFamily: 'monospace', fontSize: '.85rem' }}
+            />
+            <button type="button" className="btn btn-primary"
+              style={{ background: '#2563eb' }}
+              onClick={() => alert(imgbbApiKey ? '✅ บันทึก ImgBB API Key แล้ว' : '⚠️ กรุณาใส่ API Key')}>
+              💾 บันทึก
+            </button>
+            {imgbbApiKey && (
+              <span style={{
+                background: '#dbeafe', color: '#1e40af', borderRadius: '999px',
+                padding: '.25rem .75rem', fontSize: '.78rem', fontWeight: 700,
+              }}>✅ พร้อมใช้งาน</span>
+            )}
+          </div>
+          <div className="text-xs text-muted mt-3">
+            🔒 Key เก็บในเครื่องของคุณเท่านั้น · รูปที่อัปโหลดจะได้ URL ถาวรจาก ImgBB (ฟรี)
           </div>
         </div>
 

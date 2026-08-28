@@ -93,7 +93,7 @@ const emptyStudent = {
 const set = (fd, key, val) => ({ ...fd, [key]: val });
 
 export default function StudentModal({ isOpen, onClose, onSave, editingStudent }) {
-  const { allClassNames } = useApp();
+  const { allClassNames, imgbbApiKey } = useApp();
   const ALL_CLASSES = allClassNames;
   const [activeSubTab, setActiveSubTab] = useState('personal');
   const [formData, setFormData] = useState(() => ({ ...emptyStudent, ...(editingStudent ?? {}) }));
@@ -116,28 +116,54 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
   }, [editingStudent]);
 
   const photoInputRef = useRef(null);
+  const [photoUploading, setPhotoUploading] = useState(false);
 
-  const handlePhotoChange = (e) => {
+  const handlePhotoChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // ย่อรูปก่อนบันทึก — รักษาคุณภาพพอดูได้แต่ขนาดเล็ก ≤ ~15KB
-    // เพื่อไม่ให้ snapshot เกิน 1MB limit ของ Firestore
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const img = new Image();
-      img.onload = () => {
-        const MAX = 200; // px — พอสำหรับ avatar
-        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-        const canvas = document.createElement('canvas');
-        canvas.width  = Math.round(img.width  * scale);
-        canvas.height = Math.round(img.height * scale);
-        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-        const compressed = canvas.toDataURL('image/jpeg', 0.75);
-        setFormData(fd => ({ ...fd, photo: compressed }));
+
+    // ถ้าไม่มี ImgBB API Key → fallback เป็น base64 เล็กๆ เหมือนเดิม
+    if (!imgbbApiKey) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.onload = () => {
+          const MAX = 200;
+          const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+          const canvas = document.createElement('canvas');
+          canvas.width  = Math.round(img.width  * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          setFormData(fd => ({ ...fd, photo: canvas.toDataURL('image/jpeg', 0.75) }));
+        };
+        img.src = ev.target.result;
       };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    // อัปโหลดไป ImgBB
+    setPhotoUploading(true);
+    try {
+      const b64 = await new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload = ev => res(ev.target.result.split(',')[1]); // strip data:...;base64,
+        reader.onerror = rej;
+        reader.readAsDataURL(file);
+      });
+      const form = new FormData();
+      form.append('key', imgbbApiKey);
+      form.append('image', b64);
+      const resp = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form });
+      const json = await resp.json();
+      if (!json.success) throw new Error(json.error?.message ?? 'ImgBB upload failed');
+      const url = json.data.display_url; // URL ถาวร
+      setFormData(fd => ({ ...fd, photo: url }));
+    } catch (err) {
+      alert(`❌ อัปโหลดรูปไม่สำเร็จ: ${err.message}`);
+    } finally {
+      setPhotoUploading(false);
+    }
   };
 
   const handleBirthChange = (part, val) => {
@@ -208,7 +234,12 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
                 onMouseEnter={e => e.currentTarget.style.borderColor = '#7c3aed'}
                 onMouseLeave={e => e.currentTarget.style.borderColor = '#a78bfa'}
               >
-                {formData.photo ? (
+                {photoUploading ? (
+                  <div style={{ textAlign: 'center', pointerEvents: 'none' }}>
+                    <div style={{ fontSize: '1.4rem', lineHeight: 1 }}>⏳</div>
+                    <div style={{ fontSize: '.6rem', color: '#7c3aed', marginTop: '.2rem', fontWeight: 600 }}>กำลังอัปโหลด</div>
+                  </div>
+                ) : formData.photo ? (
                   <img
                     src={formData.photo}
                     alt="รูปนักเรียน"

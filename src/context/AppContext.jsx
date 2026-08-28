@@ -165,6 +165,7 @@ export function AppProvider({ children }) {
   const [lockedTerms, setLockedTerms] = useLocalStorage(STORAGE_KEYS.lockedTerms, {});
   const [currentTerm, setCurrentTerm] = useLocalStorage(STORAGE_KEYS.currentTerm, '1');
   const [aiApiKey, setAiApiKey] = useLocalStorage(STORAGE_KEYS.aiApiKey, '');
+  const [imgbbApiKey, setImgbbApiKey] = useLocalStorage(STORAGE_KEYS.imgbbApiKey, '');
   const [activityLogs, setActivityLogs] = useLocalStorage(STORAGE_KEYS.activityLogs, []);
   const [systemLogs, setSystemLogs]     = useLocalStorage(STORAGE_KEYS.systemLogs, []);
   const [pickupRecords, setPickupRecords] = useLocalStorage(STORAGE_KEYS.pickupRecords, {});
@@ -1406,6 +1407,8 @@ export function AppProvider({ children }) {
     // AI
     aiApiKey,
     setAiApiKey,
+    imgbbApiKey,
+    setImgbbApiKey,
     // Pickup
     pickupRecords,
     setPickupRecords,

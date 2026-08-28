@@ -844,55 +844,6 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
     <p style="font-size:.7rem;color:#666">หมายเหตุ: สรุปตลอดปีการศึกษา นำผลการประเมินภาคเรียนที่ 2 มารวมกัน แล้วหารด้วยจำนวนมาตรฐานในด้านพัฒนาการนั้น</p>
     </div>
 
-    <!-- ══ หน้า: จุดเด่นและความสามารถผู้เรียน (ภาคเรียนที่ 1 และ 2) ══ -->
-    ${[1, 2].map(term => {
-      const termTh = term === 1 ? '๑' : '๒';
-      const combinedTxt = highlights['combined']?.[`term${term}`]?.teacher || '&nbsp;';
-
-      const domainRows = [
-        `๑. ${DOMAIN_LABELS[0]}`,
-        `๒. ${DOMAIN_LABELS[1]}`,
-        `๓. ${DOMAIN_LABELS[2]}`,
-        `๔. ${DOMAIN_LABELS[3]}`,
-      ];
-
-      const leftRows = domainRows.map((label, i) =>
-        i === 0
-          ? `<tr>
-              <td style="padding:8px;border:1px solid #374151;font-size:.8rem;font-weight:600;vertical-align:middle;background:#f9fafb">${label}</td>
-              <td rowspan="4" style="padding:8px;border:1px solid #374151;font-size:.82rem;vertical-align:top;white-space:pre-wrap;min-height:120px">${combinedTxt}</td>
-            </tr>`
-          : `<tr>
-              <td style="padding:8px;border:1px solid #374151;font-size:.8rem;font-weight:600;vertical-align:middle;background:#f9fafb">${label}</td>
-            </tr>`
-      ).join('');
-
-      return `
-      <div class="page-break" style="page-break-before:always;break-before:page">
-        <div style="text-align:center;margin-bottom:16px;font-size:.95rem;font-weight:700">
-          จุดเด่นและความสามารถผู้เรียน ภาคเรียนที่ ${termTh}
-        </div>
-        <table style="width:100%;border-collapse:collapse;font-size:.82rem">
-          <colgroup>
-            <col style="width:30%">
-            <col style="width:70%">
-          </colgroup>
-          <thead>
-            <tr>
-              <th style="padding:8px;border:1px solid #374151;background:#f3f4f6;text-align:center">ความสามารถผู้เรียน</th>
-              <th style="padding:8px;border:1px solid #374151;background:#f3f4f6;text-align:center">
-                ภาคเรียนที่ ${termTh} — ความคิดเห็นครูประจำชั้น (จุดเด่น)<br>
-                <span style="font-weight:400;font-size:.72rem">ลงชื่อ .............................................(ครูประจำชั้น)</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            ${leftRows}
-          </tbody>
-        </table>
-      </div>`;
-    }).join('')}
-
     <!-- ══ หน้า: สมรรถนะผู้เรียน (bar chart) ══ -->
     <div class="page-break">
       <div style="text-align:center;margin-bottom:20px">

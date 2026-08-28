@@ -435,29 +435,31 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
           : '';
         domainRows = renderDevCompRows(domain.components, domain) + dsSummaryRow;
       }
-      return `
-        <tr style="background:${domain.color}20">
-          <td colspan="6" style="padding:6px 10px;border:1px solid #d1d5db;font-weight:900;font-size:.85rem;color:${domain.color}">
-            ${domain.emoji} พัฒนาการ${domain.label}
-          </td>
-        </tr>
-        ${domainRows}`;
+      // แต่ละ domain เป็น table ของตัวเอง พร้อม thead ที่ repeat ทั้งหัวคอลัมน์ + หัว domain
+      return `<table style="width:100%;border-collapse:collapse;margin:0;margin-bottom:-1px">
+        <thead style="display:table-header-group">
+          <tr>
+            <th style="${thDA};width:48px">รหัส</th>
+            <th style="${thDA}">องค์ประกอบ</th>
+            <th style="${thDA}">สภาพที่พึงประสงค์</th>
+            <th style="${thDA};width:52px">ภาค 1</th>
+            <th style="${thDA};width:52px">ภาค 2</th>
+            <th style="${thDA};width:52px">สรุป</th>
+          </tr>
+          <tr style="background:${domain.color}20">
+            <td colspan="6" style="padding:6px 10px;border:1px solid #d1d5db;font-weight:900;font-size:.85rem;color:${domain.color}">
+              ${domain.emoji} พัฒนาการ${domain.label}
+            </td>
+          </tr>
+        </thead>
+        <tbody>${domainRows}</tbody>
+      </table>`;
     }).join('');
 
     return `<div>
       <h2 style="font-size:.95rem;margin:14px 0 4px;background:#f3f4f6;padding:4px 8px;border-radius:4px">3. บันทึกผลการประเมินพัฒนาการ — ความสามารถผู้เรียนเมื่อจบชั้นปี</h2>
       <p style="font-size:.78rem;color:#555;margin-bottom:6px">อนุบาลปีที่ 2 (อายุ 4–5 ปี) · ระดับ 3 = ดี · ระดับ 2 = พอใช้ · ระดับ 1 = ปรับปรุง</p>
-      <table>
-        <tr>
-          <th style="${thDA};width:48px">รหัส</th>
-          <th style="${thDA}">องค์ประกอบ</th>
-          <th style="${thDA}">สภาพที่พึงประสงค์</th>
-          <th style="${thDA};width:52px">ภาค 1</th>
-          <th style="${thDA};width:52px">ภาค 2</th>
-          <th style="${thDA};width:52px">สรุป</th>
-        </tr>
-        ${allRows}
-      </table>
+      ${allRows}
     </div>`;
   })();
 
@@ -510,20 +512,24 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
             <td colspan="3" style="padding:5px 8px;border:1px solid #d1d5db;font-weight:800;font-size:.82rem;color:${domain.color}">${std.title}</td>
           </tr>${indRows}`;
       }).join('');
-      return `
-        <tr style="background:${domain.color}20">
-          <td colspan="3" style="padding:6px 8px;border:1px solid #d1d5db;font-weight:900;font-size:.88rem;color:${domain.color}">${domain.emoji} พัฒนาการด้าน${domain.label}</td>
-        </tr>
-        ${stdRows}`;
+      // แต่ละ domain เป็น table ของตัวเอง พร้อม thead ที่ repeat ทั้งหัวคอลัมน์ + หัว domain
+      return `<table style="width:100%;border-collapse:collapse;margin:0;margin-bottom:-1px">
+        <thead style="display:table-header-group">
+          <tr>
+            <th style="width:60%;background:#f3f4f6;padding:5px 8px;border:1px solid #d1d5db;font-weight:700;font-size:.8rem;text-align:left">พฤติกรรม / ตัวบ่งชี้</th>
+            <th style="background:#f3f4f6;padding:5px 8px;border:1px solid #d1d5db;font-weight:700;font-size:.8rem;text-align:center">ภาคเรียน 1</th>
+            <th style="background:#f3f4f6;padding:5px 8px;border:1px solid #d1d5db;font-weight:700;font-size:.8rem;text-align:center">ภาคเรียน 2</th>
+          </tr>
+          <tr style="background:${domain.color}20">
+            <td colspan="3" style="padding:6px 8px;border:1px solid #d1d5db;font-weight:900;font-size:.88rem;color:${domain.color}">${domain.emoji} พัฒนาการด้าน${domain.label}</td>
+          </tr>
+        </thead>
+        <tbody>${stdRows}</tbody>
+      </table>`;
     }).join('');
     return `<div>
       <h2 style="font-size:.95rem;margin:14px 0 4px;background:#f3f4f6;padding:4px 8px;border-radius:4px">4. ผลการประเมินตัวบ่งชี้</h2>
-      <table>
-        <thead style="display:table-header-group">
-          <tr><th style="width:60%">พฤติกรรม / ตัวบ่งชี้</th><th>ภาคเรียน 1</th><th>ภาคเรียน 2</th></tr>
-        </thead>
-        <tbody>${allRows}</tbody>
-      </table>
+      ${allRows}
     </div>`;
   })();
 
@@ -698,8 +704,8 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       </ol>
     </div>
 
-    <!-- ══ หน้า 4: เกณฑ์มาตรฐานน้ำหนักและส่วนสูง ══ -->
-    <div class="page-break" style="margin-top:-1.2cm">
+    <!-- ══ หน้า 5: เกณฑ์มาตรฐานน้ำหนักและส่วนสูง ══ -->
+    <div class="page-break" style="page-break-before:always;break-before:page;margin-top:0">
       <h2 style="text-align:center;font-size:.95rem;margin-top:0;margin-bottom:4px">
         ตารางแสดงการเจริญเติบโตของเพศชายและหญิง อายุ 3–6 ปี
       </h2>

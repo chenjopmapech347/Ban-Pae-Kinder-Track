@@ -527,7 +527,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
         <tbody>${stdRows}</tbody>
       </table>`;
     }).join('');
-    return `<div>
+    return `<div style="page-break-before:always;break-before:page">
       <h2 style="font-size:.95rem;margin:14px 0 4px;background:#f3f4f6;padding:4px 8px;border-radius:4px">4. ผลการประเมินตัวบ่งชี้</h2>
       ${allRows}
     </div>`;
@@ -916,14 +916,14 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
         <div style="border-top:1px solid #000;padding-top:6px;font-size:.85rem">
           ลงชื่อ..................................ครูประจำชั้น
         </div>
-        ${teacherName ? `<div style="font-size:.82rem;color:#374151;margin-top:4px">(${teacherName})</div>` : ''}
+        <div style="font-size:.82rem;color:#374151;margin-top:4px">(..................................)</div>
       </div>
       <div style="min-width:200px">
         <div style="height:52px"></div>
         <div style="border-top:1px solid #000;padding-top:6px;font-size:.85rem">
           ลงชื่อ..................................ผู้บริหารสถานศึกษา
         </div>
-        <div style="font-size:.82rem;color:#374151;margin-top:4px">(${directorName || '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'})</div>
+        <div style="font-size:.82rem;color:#374151;margin-top:4px">(..................................)</div>
       </div>
     </div>
   </body></html>`;

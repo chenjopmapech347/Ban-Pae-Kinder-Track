@@ -482,45 +482,47 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
     </tr>`
   ).join('') || `<tr><td colspan="3" style="padding:6px;text-align:center;color:#9ca3af;border:1px solid #374151;font-size:.8rem">ไม่มีข้อมูล</td></tr>`;
 
-  const devHtml = devDomains.map((domain, di) => {
-    const stdRows = domain.standards.map(std => {
-      const indRows = std.indicators.map(ind => {
-        const actRows = ind.actIds.map(actId => {
-          const t1 = ind.scores[actId]?.term1 ?? null;
-          const t2 = ind.scores[actId]?.term2 ?? null;
-          return `<tr>
-            <td style="padding:3px 8px;border:1px solid #d1d5db;font-size:.78rem">${ind.actLabels[actId] || actId}</td>
-            <td style="padding:3px 8px;border:1px solid #d1d5db;text-align:center">${t1 !== null ? levelTag(Math.round(t1)) : '—'}</td>
-            <td style="padding:3px 8px;border:1px solid #d1d5db;text-align:center">${t2 !== null ? levelTag(Math.round(t2)) : '—'}</td>
-          </tr>`;
+  const devHtml = (() => {
+    const allRows = devDomains.map(domain => {
+      const stdRows = domain.standards.map(std => {
+        const indRows = std.indicators.map(ind => {
+          const actRows = ind.actIds.map(actId => {
+            const t1 = ind.scores[actId]?.term1 ?? null;
+            const t2 = ind.scores[actId]?.term2 ?? null;
+            return `<tr>
+              <td style="padding:3px 8px;border:1px solid #d1d5db;font-size:.78rem">${ind.actLabels[actId] || actId}</td>
+              <td style="padding:3px 8px;border:1px solid #d1d5db;text-align:center">${t1 !== null ? levelTag(Math.round(t1)) : '—'}</td>
+              <td style="padding:3px 8px;border:1px solid #d1d5db;text-align:center">${t2 !== null ? levelTag(Math.round(t2)) : '—'}</td>
+            </tr>`;
+          }).join('');
+          const st1 = ind.indScores.term1, st2 = ind.indScores.term2;
+          return `${actRows}
+            <tr style="background:#f9fafb">
+              <td style="padding:4px 8px;border:1px solid #d1d5db;font-weight:700;font-size:.8rem">สรุปตัวบ่งชี้ ${ind.label}</td>
+              <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center;font-weight:700">${st1 !== null ? st1.toFixed(1) : '—'}</td>
+              <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center;font-weight:700">${st2 !== null ? st2.toFixed(1) : '—'}</td>
+            </tr>`;
         }).join('');
-        const st1 = ind.indScores.term1, st2 = ind.indScores.term2;
-        return `${actRows}
-          <tr style="background:#f9fafb">
-            <td style="padding:4px 8px;border:1px solid #d1d5db;font-weight:700;font-size:.8rem">สรุปตัวบ่งชี้ ${ind.label}</td>
-            <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center;font-weight:700">${st1 !== null ? st1.toFixed(1) : '—'}</td>
-            <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center;font-weight:700">${st2 !== null ? st2.toFixed(1) : '—'}</td>
-          </tr>`;
+        return `<tr style="background:${domain.bg}">
+            <td colspan="3" style="padding:5px 8px;border:1px solid #d1d5db;font-weight:800;font-size:.82rem;color:${domain.color}">${std.title}</td>
+          </tr>${indRows}`;
       }).join('');
-      return `<tr style="background:${domain.bg}">
-          <td colspan="3" style="padding:5px 8px;border:1px solid #d1d5db;font-weight:800;font-size:.82rem;color:${domain.color}">${std.title}</td>
-        </tr>${indRows}`;
+      return `
+        <tr style="background:${domain.color}20">
+          <td colspan="3" style="padding:6px 8px;border:1px solid #d1d5db;font-weight:900;font-size:.88rem;color:${domain.color}">${domain.emoji} พัฒนาการด้าน${domain.label}</td>
+        </tr>
+        ${stdRows}`;
     }).join('');
-    return `<div style="page-break-before:always;break-before:page">
-      <h2 style="font-size:.95rem;margin:14px 0 4px;background:#f3f4f6;padding:4px 8px;border-radius:4px">4.1 ผลการประเมินตัวบ่งชี้ — ${domain.emoji} ด้าน${domain.label}</h2>
+    return `<div>
+      <h2 style="font-size:.95rem;margin:14px 0 4px;background:#f3f4f6;padding:4px 8px;border-radius:4px">4. ผลการประเมินตัวบ่งชี้</h2>
       <table>
         <thead style="display:table-header-group">
           <tr><th style="width:60%">พฤติกรรม / ตัวบ่งชี้</th><th>ภาคเรียน 1</th><th>ภาคเรียน 2</th></tr>
         </thead>
-        <tbody>
-          <tr style="background:${domain.color}20">
-            <td colspan="3" style="padding:6px 8px;border:1px solid #d1d5db;font-weight:900;font-size:.88rem;color:${domain.color}">${domain.emoji} พัฒนาการด้าน${domain.label}</td>
-          </tr>
-          ${stdRows}
-        </tbody>
+        <tbody>${allRows}</tbody>
       </table>
     </div>`;
-  }).join('');
+  })();
 
   const photoHtml = student?.photo
     ? `<img src="${student.photo}" alt="รูปนักเรียน"

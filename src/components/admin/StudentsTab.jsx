@@ -212,8 +212,8 @@ export default function StudentsTab() {
   useEffect(() => {
     if (!openMenuId) return;
     const close = () => setOpenMenuId(null);
-    document.addEventListener('click', close, { capture: true, once: true });
-    return () => document.removeEventListener('click', close, { capture: true });
+    document.addEventListener('click', close, { once: true });
+    return () => document.removeEventListener('click', close);
   }, [openMenuId]);
 
   return (
@@ -463,44 +463,28 @@ export default function StudentsTab() {
                   </td>
                   <td><code style={{ background: '#f5f3ff', padding: '.15rem .5rem', borderRadius: '6px', fontSize: '.8rem' }}>{s.parentPin ?? '—'}</code></td>
                   <td style={{ position: 'sticky', right: 0, background: 'white', zIndex: 1, boxShadow: '-3px 0 8px rgba(0,0,0,.06)' }}>
-                    <div style={{ display: 'flex', gap: '.35rem', alignItems: 'center' }}>
-                      <button className="btn btn-sm" style={{ background: '#ede9fe', color: 'var(--primary)', whiteSpace: 'nowrap' }}
-                        onClick={() => setSelectedStudent(s)}>📄 รายงาน</button>
-                      <button className="btn btn-sm btn-primary" style={{ whiteSpace: 'nowrap' }}
-                        onClick={() => startAssess(s)}>✏️ ประเมิน</button>
-                      {/* ⋮ dropdown */}
-                      <div style={{ position: 'relative' }}>
-                        <button className="btn btn-sm" style={{ padding: '.25rem .5rem', fontWeight: 900, fontSize: '1rem', lineHeight: 1 }}
-                          onClick={() => setOpenMenuId(openMenuId === s.id ? null : s.id)}>⋮</button>
-                        {openMenuId === s.id && (
-                          <div style={{
-                            position: 'absolute', top: '110%', right: 0, zIndex: 300,
-                            background: 'white', borderRadius: '10px',
-                            boxShadow: '0 4px 20px rgba(0,0,0,.15)',
-                            minWidth: '130px', padding: '.3rem 0',
-                            border: '1px solid #e5e7eb',
-                          }}
-                            onMouseLeave={() => setOpenMenuId(null)}>
-                            <button type="button"
-                              style={{ display:'flex', alignItems:'center', gap:'.6rem', width:'100%', padding:'.5rem 1rem', background:'none', border:'none', cursor:'pointer', fontSize:'.85rem', color:'#374151', fontFamily:'inherit' }}
-                              onClick={() => { setEditingItem(s); setIsModalOpen(true); setOpenMenuId(null); }}>
-                              ✏️ แก้ไขข้อมูล
-                            </button>
-                            <div style={{ height:'1px', background:'#f3f4f6', margin:'.2rem 0' }} />
-                            <button type="button"
-                              style={{ display:'flex', alignItems:'center', gap:'.6rem', width:'100%', padding:'.5rem 1rem', background:'none', border:'none', cursor:'pointer', fontSize:'.85rem', color:'#dc2626', fontFamily:'inherit' }}
-                              onClick={() => {
-                                setOpenMenuId(null);
-                                if (confirm('ลบข้อมูลนักเรียน?')) {
-                                  addSystemLog?.('delete_student', `ลบนักเรียน: ${s.name} — ${s.className ?? ''}`, user?.name ?? 'admin');
-                                  deleteStudentAndSync?.(s.id);
-                                }
-                              }}>
-                              🗑️ ลบนักเรียน
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                    <div style={{ display: 'flex', gap: '.3rem', alignItems: 'center' }}>
+                      {/* รายงาน */}
+                      <button title="รายงาน" className="btn btn-sm"
+                        style={{ padding: '.3rem .5rem', background: '#ede9fe', color: 'var(--primary)', fontSize: '1rem', lineHeight: 1 }}
+                        onClick={() => setSelectedStudent(s)}>📄</button>
+                      {/* ประเมิน */}
+                      <button title="ประเมินพัฒนาการ" className="btn btn-sm btn-primary"
+                        style={{ padding: '.3rem .5rem', fontSize: '1rem', lineHeight: 1 }}
+                        onClick={() => startAssess(s)}>✏️</button>
+                      {/* แก้ไขข้อมูล */}
+                      <button title="แก้ไขข้อมูล" className="btn btn-sm"
+                        style={{ padding: '.3rem .5rem', background: '#f0fdf4', color: '#15803d', fontSize: '1rem', lineHeight: 1, border: '1.5px solid #bbf7d0' }}
+                        onClick={() => { setEditingItem(s); setIsModalOpen(true); }}>🖊️</button>
+                      {/* ลบ */}
+                      <button title="ลบนักเรียน" className="btn btn-sm"
+                        style={{ padding: '.3rem .5rem', background: '#fff1f2', color: '#dc2626', fontSize: '1rem', lineHeight: 1, border: '1.5px solid #fecaca' }}
+                        onClick={() => {
+                          if (confirm(`ลบข้อมูลนักเรียน "${s.name}" ?`)) {
+                            addSystemLog?.('delete_student', `ลบนักเรียน: ${s.name} — ${s.className ?? ''}`, user?.name ?? 'admin');
+                            deleteStudentAndSync?.(s.id);
+                          }
+                        }}>🗑️</button>
                     </div>
                   </td>
                 </tr>

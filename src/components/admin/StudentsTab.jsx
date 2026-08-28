@@ -200,7 +200,7 @@ export default function StudentsTab() {
     const matchName   = s.name.includes(search.trim());
     const matchLevel  = selectedLevel === 'all' || s.level === selectedLevel;
     const matchClass  = selectedClass === 'all' || s.className === selectedClass;
-    const matchStatus = showAll || !s.status || s.status === 'กำลังเรียน';
+    const matchStatus = showAll || !s.status || s.status === 'กำลังเรียน' || s.status === 'ปกติ';
     return matchName && matchLevel && matchClass && matchStatus;
   }).sort((a, b) => {
     const idA = Number(a.studentId || a.code || a.id) || 0;

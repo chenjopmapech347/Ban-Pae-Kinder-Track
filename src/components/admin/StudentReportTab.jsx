@@ -16,8 +16,11 @@ function thaiMonthShort(m) {
 }
 function isoToThai(iso) {
   if (!iso) return '';
-  const [y, m, d] = iso.split('-');
-  return `${Number(d)} ${thaiMonthShort(Number(m))} ${thaiYear(Number(y))}`;
+  const dateOnly = String(iso).split('T')[0]; // strip time part if full ISO datetime
+  const [y, m, d] = dateOnly.split('-');
+  const day = Number(d);
+  if (isNaN(day)) return String(iso).slice(0, 10); // fallback: show raw date
+  return `${day} ${thaiMonthShort(Number(m))} ${thaiYear(Number(y))}`;
 }
 function todayISO() { return new Date().toISOString().split('T')[0]; }
 
@@ -548,7 +551,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       .page-break { page-break-after:always; break-after:page; margin-bottom:20px; }
       @page { size:A4 portrait; margin:1in; }
       @media print {
-        body { margin:1in; padding:0; }
+        body { margin:0; padding:0; } /* @page already sets 1in margin — no doubling */
         .page-break { page-break-after:always; break-after:page; }
       }
     </style>
@@ -556,7 +559,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
 
     <!-- ══ หน้าปก ══ -->
     <div class="page-break" style="
-      min-height:calc(100vh - 40px);
+      min-height:calc(100vh - 2in);
       display:flex; flex-direction:column; align-items:center; justify-content:center;
       text-align:center; padding:40px 20px; box-sizing:border-box;
       background:linear-gradient(160deg,#f5f3ff 0%,#ede9fe 40%,#e0e7ff 100%);

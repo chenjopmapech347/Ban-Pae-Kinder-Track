@@ -568,7 +568,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       min-height:calc(100vh - 2in);
       display:flex; flex-direction:column; align-items:center; justify-content:center;
       text-align:center; padding:40px 20px; box-sizing:border-box;
-      background:linear-gradient(160deg,#f5f3ff 0%,#ede9fe 40%,#e0e7ff 100%);
+      background:white;
       border:3px solid #4f46e5; border-radius:8px;
     ">
       <!-- ดวงตราสถานศึกษา / header bar -->

@@ -215,7 +215,7 @@ export default function OverviewTab() {
             </div>
           )}
           {attStudents.length ? (
-            <AttendanceBarChart students={attStudents} />
+            <AttendanceBarChart students={attStudents} dailyRecords={dailyRecords} />
           ) : (
             <div className="text-center text-muted" style={{ padding: '2rem' }}>ยังไม่มีข้อมูล</div>
           )}

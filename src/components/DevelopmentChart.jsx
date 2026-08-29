@@ -101,32 +101,67 @@ export function RadarDevChart({ topics = [], summary = {} }) {
   );
 }
 
-/* ── AttendanceBarChart ──────────────────────────────── */
-export function AttendanceBarChart({ students = [] }) {
+/* ── AttendanceBarChart (monthly) ───────────────────── */
+const THAI_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+export function AttendanceBarChart({ students = [], dailyRecords = {} }) {
   if (!students.length) return null;
 
-  const data = students.map(s => ({
-    name: s.name.replace(/^เด็กชาย|^เด็กหญิง/, '').trim().split(' ')[0],
-    มา:   s.attendance?.present ?? 0,
-    ขาด:  s.attendance?.absent  ?? 0,
-    level: s.level,
-  }));
+  const studentIds = new Set(students.map(s => String(s.id)));
+
+  // รวบรวมข้อมูลรายเดือน
+  const byMonth = {};
+  Object.entries(dailyRecords).forEach(([date, dayData]) => {
+    const parts = date.split('-');
+    if (parts.length < 2) return;
+    const monthKey = `${parts[0]}-${parts[1]}`;
+    if (!byMonth[monthKey]) byMonth[monthKey] = { มา: 0, ขาด: 0 };
+    Object.entries(dayData).forEach(([sid, rec]) => {
+      if (!studentIds.has(sid)) return;
+      if (rec?.attendance === 'มา') byMonth[monthKey].มา++;
+      else if (['ขาด','ลา','ป่วย'].includes(rec?.attendance)) byMonth[monthKey].ขาด++;
+    });
+  });
+
+  const data = Object.keys(byMonth).sort().map(key => {
+    const [, m] = key.split('-');
+    return {
+      name: THAI_MONTHS_SHORT[parseInt(m, 10) - 1] ?? m,
+      มา:   byMonth[key].มา,
+      ขาด:  byMonth[key].ขาด,
+    };
+  });
+
+  if (!data.length) {
+    // fallback: แสดงรายนักเรียนถ้ายังไม่มี dailyRecords
+    const fallback = students.map(s => ({
+      name: s.name.replace(/^เด็กชาย|^เด็กหญิง/, '').trim().split(' ')[0],
+      มา:   s.attendance?.present ?? 0,
+      ขาด:  s.attendance?.absent  ?? 0,
+    }));
+    return (
+      <ResponsiveContainer width="100%" height={220}>
+        <BarChart data={fallback} margin={{ top: 5, right: 10, bottom: 30, left: 0 }} barSize={14}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#f1f0fb" vertical={false} />
+          <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#6b7280' }} angle={-35} textAnchor="end" interval={0} />
+          <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+          <Tooltip content={<CustomTooltip />} />
+          <Legend wrapperStyle={{ fontSize: '.8rem', paddingTop: '8px' }} iconType="circle" iconSize={8} />
+          <Bar dataKey="มา"  fill="#7c3aed" radius={[4,4,0,0]} name="มาเรียน" />
+          <Bar dataKey="ขาด" fill="#fca5a5" radius={[4,4,0,0]} name="ขาด/ลา" />
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  }
 
   return (
     <ResponsiveContainer width="100%" height={220}>
-      <BarChart data={data} margin={{ top: 5, right: 10, bottom: 30, left: 0 }} barSize={14}>
+      <BarChart data={data} margin={{ top: 5, right: 10, bottom: 20, left: 0 }} barSize={18}>
         <CartesianGrid strokeDasharray="3 3" stroke="#f1f0fb" vertical={false} />
-        <XAxis
-          dataKey="name"
-          tick={{ fontSize: 10, fill: '#6b7280' }}
-          angle={-35} textAnchor="end" interval={0}
-        />
+        <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#6b7280' }} interval={0} />
         <YAxis tick={{ fontSize: 11, fill: '#6b7280' }} axisLine={false} tickLine={false} />
         <Tooltip content={<CustomTooltip />} />
-        <Legend
-          wrapperStyle={{ fontSize: '.8rem', paddingTop: '8px' }}
-          iconType="circle" iconSize={8}
-        />
+        <Legend wrapperStyle={{ fontSize: '.8rem', paddingTop: '8px' }} iconType="circle" iconSize={8} />
         <Bar dataKey="มา"  fill="#7c3aed" radius={[4,4,0,0]} name="มาเรียน" />
         <Bar dataKey="ขาด" fill="#fca5a5" radius={[4,4,0,0]} name="ขาด/ลา" />
       </BarChart>

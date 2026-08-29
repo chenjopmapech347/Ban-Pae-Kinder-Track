@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { INDICATORS_DATA } from '../data/indicatorsData';
+import { INDICATORS_DATA_68 as INDICATORS_DATA } from '../data/indicatorsData_68';
 import { useApp } from '../context/AppContext';
 import { callClaude, buildPostAssessmentPrompt } from '../utils/aiHelper';
 

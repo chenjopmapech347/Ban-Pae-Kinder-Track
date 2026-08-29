@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
-import { INDICATORS_DATA } from '../../data/indicatorsData';
 import { INDICATORS_DATA_68 } from '../../data/indicatorsData_68';
+const INDICATORS_DATA = INDICATORS_DATA_68; // alias — ใช้มาตรฐาน 2568 เท่านั้น
 import { callClaude, buildTeacherCommentPrompt, buildDomainSummaryPrompt } from '../../utils/aiHelper';
 import CompCard from './report/CompCard';
 import SubDomainSummaryBox from './report/SubDomainSummaryBox';

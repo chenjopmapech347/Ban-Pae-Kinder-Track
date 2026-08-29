@@ -19,7 +19,7 @@ function isoToThai(iso) {
   const dateOnly = String(iso).split('T')[0]; // strip time part if full ISO datetime
   const [y, m, d] = dateOnly.split('-');
   const day = Number(d);
-  if (isNaN(day)) return String(iso).slice(0, 10); // fallback: show raw date
+  if (isNaN(day) || !day) return `${thaiMonthShort(Number(m))} ${thaiYear(Number(y))}`; // YYYY-MM only
   return `${day} ${thaiMonthShort(Number(m))} ${thaiYear(Number(y))}`;
 }
 function todayISO() { return new Date().toISOString().split('T')[0]; }
@@ -488,7 +488,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
   ).join('') || `<tr><td colspan="3" style="padding:6px;text-align:center;color:#9ca3af;border:1px solid #374151;font-size:.8rem">ไม่มีข้อมูล</td></tr>`;
 
   const devHtml = (() => {
-    const allRows = devDomains.map(domain => {
+    const allRows = devDomains.map((domain, di) => {
       const stdRows = domain.standards.map(std => {
         const indRows = std.indicators.map(ind => {
           const actRows = ind.actIds.map(actId => {
@@ -512,8 +512,9 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
             <td colspan="3" style="padding:5px 8px;border:1px solid #d1d5db;font-weight:800;font-size:.82rem;color:${domain.color}">${std.title}</td>
           </tr>${indRows}`;
       }).join('');
-      // แต่ละ domain เป็น table ของตัวเอง พร้อม thead ที่ repeat ทั้งหัวคอลัมน์ + หัว domain
-      return `<table style="width:100%;border-collapse:collapse;margin:0;margin-bottom:-1px">
+      // แต่ละ domain เริ่มหน้าใหม่ (ยกเว้น domain แรก)
+      const pageBreak = di > 0 ? 'page-break-before:always;break-before:page;' : '';
+      return `<table style="width:100%;border-collapse:collapse;margin:0;margin-bottom:-1px;${pageBreak}
         <thead style="display:table-header-group">
           <tr>
             <th style="width:60%;background:#f3f4f6;padding:5px 8px;border:1px solid #d1d5db;font-weight:700;font-size:.8rem;text-align:left">พฤติกรรม / ตัวบ่งชี้</th>
@@ -906,20 +907,20 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       มีความพร้อมในการเลื่อนชั้นขึ้นสู่ระดับชั้น <strong>${nextLevelLabel}</strong> ต่อไป
     </div>` : ''}
 
-    <div style="margin-top:32px;display:flex;justify-content:space-around;text-align:center">
+    <div style="margin-top:32px;display:flex;justify-content:space-around">
       <div style="min-width:200px">
         <div style="height:52px"></div>
-        <div style="border-top:1px solid #000;padding-top:6px;font-size:.85rem">
+        <div style="border-top:1px solid #000;padding-top:6px;font-size:.85rem;text-align:left">
           ลงชื่อ..................................ครูประจำชั้น
         </div>
-        <div style="font-size:.82rem;color:#374151;margin-top:4px">(..................................)</div>
+        <div style="font-size:.82rem;color:#374151;margin-top:4px;text-align:left;padding-left:2.5rem">(..................................)</div>
       </div>
       <div style="min-width:200px">
         <div style="height:52px"></div>
-        <div style="border-top:1px solid #000;padding-top:6px;font-size:.85rem">
+        <div style="border-top:1px solid #000;padding-top:6px;font-size:.85rem;text-align:left">
           ลงชื่อ..................................ผู้บริหารสถานศึกษา
         </div>
-        <div style="font-size:.82rem;color:#374151;margin-top:4px">(..................................)</div>
+        <div style="font-size:.82rem;color:#374151;margin-top:4px;text-align:left;padding-left:2.5rem">(..................................)</div>
       </div>
     </div>
   </body></html>`;

@@ -702,43 +702,43 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
 
     <!-- ══ หน้า 5: เกณฑ์มาตรฐานน้ำหนักและส่วนสูง ══ -->
     <div class="page-break" style="page-break-before:always;break-before:page;margin-top:0">
-      <h2 style="text-align:center;font-size:.95rem;margin-top:0;margin-bottom:4px">
+      <h2 style="text-align:center;font-size:.88rem;margin-top:0;margin-bottom:2px">
         ตารางแสดงการเจริญเติบโตของเพศชายและหญิง อายุ 3–6 ปี
       </h2>
-      <p style="text-align:center;font-size:.72rem;color:#666;margin-bottom:4px">
+      <p style="text-align:center;font-size:.67rem;color:#666;margin-bottom:3px">
         กองโภชนาการ กรมอนามัย กระทรวงสาธารณสุข พ.ศ. 2543 · ตั้งแต่ = –2SD · จนถึง = +2SD
       </p>
-      <table style="font-size:.72rem">
+      <table style="font-size:.67rem;line-height:1.2">
         <thead>
           <tr style="background:#1e3a5f;color:white">
-            <th rowspan="3" style="padding:4px 6px;border:1px solid #374151;text-align:center">ปี</th>
-            <th rowspan="3" style="padding:4px 6px;border:1px solid #374151;text-align:center">เดือน</th>
-            <th colspan="4" style="padding:4px 6px;border:1px solid #374151;text-align:center">น้ำหนักมาตรฐาน (กิโลกรัม)</th>
-            <th colspan="4" style="padding:4px 6px;border:1px solid #374151;text-align:center">ส่วนสูงมาตรฐาน (เซนติเมตร)</th>
+            <th rowspan="3" style="padding:3px 5px;border:1px solid #374151;text-align:center">ปี</th>
+            <th rowspan="3" style="padding:3px 5px;border:1px solid #374151;text-align:center">เดือน</th>
+            <th colspan="4" style="padding:3px 5px;border:1px solid #374151;text-align:center">น้ำหนักมาตรฐาน (กิโลกรัม)</th>
+            <th colspan="4" style="padding:3px 5px;border:1px solid #374151;text-align:center">ส่วนสูงมาตรฐาน (เซนติเมตร)</th>
           </tr>
           <tr style="background:#1e3a5f;color:white">
-            <th colspan="2" style="padding:3px 6px;border:1px solid #374151;text-align:center">ชาย</th>
-            <th colspan="2" style="padding:3px 6px;border:1px solid #374151;text-align:center">หญิง</th>
-            <th colspan="2" style="padding:3px 6px;border:1px solid #374151;text-align:center">ชาย</th>
-            <th colspan="2" style="padding:3px 6px;border:1px solid #374151;text-align:center">หญิง</th>
+            <th colspan="2" style="padding:2px 5px;border:1px solid #374151;text-align:center">ชาย</th>
+            <th colspan="2" style="padding:2px 5px;border:1px solid #374151;text-align:center">หญิง</th>
+            <th colspan="2" style="padding:2px 5px;border:1px solid #374151;text-align:center">ชาย</th>
+            <th colspan="2" style="padding:2px 5px;border:1px solid #374151;text-align:center">หญิง</th>
           </tr>
-          <tr style="background:#2d4a6e;color:#e5e7eb;font-size:.65rem">
-            ${['ตั้งแต่','จนถึง','ตั้งแต่','จนถึง','ตั้งแต่','จนถึง','ตั้งแต่','จนถึง'].map(l => `<th style="padding:2px 5px;border:1px solid #374151;text-align:center">${l}</th>`).join('')}
+          <tr style="background:#2d4a6e;color:#e5e7eb;font-size:.62rem">
+            ${['ตั้งแต่','จนถึง','ตั้งแต่','จนถึง','ตั้งแต่','จนถึง','ตั้งแต่','จนถึง'].map(l => `<th style="padding:2px 4px;border:1px solid #374151;text-align:center">${l}</th>`).join('')}
           </tr>
         </thead>
         <tbody>
           ${GROWTH_ROWS.map((r, idx) => `
             <tr style="background:${r.month === 0 ? '#eff6ff' : idx % 2 === 0 ? 'white' : '#f9fafb'}">
-              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center;font-weight:${r.month === 0 ? 700 : 400}">${r.month === 0 ? r.year : ''}</td>
-              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center">${r.month}</td>
-              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center">${r.bwl}</td>
-              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center">${r.bwh}</td>
-              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center">${r.gwl}</td>
-              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center">${r.gwh}</td>
-              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center">${r.bhl}</td>
-              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center">${r.bhh}</td>
-              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center">${r.ghl}</td>
-              <td style="padding:3px 6px;border:1px solid #6b7280;text-align:center">${r.ghh}</td>
+              <td style="padding:2px 5px;border:1px solid #6b7280;text-align:center;font-weight:${r.month === 0 ? 700 : 400}">${r.month === 0 ? r.year : ''}</td>
+              <td style="padding:2px 5px;border:1px solid #6b7280;text-align:center">${r.month}</td>
+              <td style="padding:2px 5px;border:1px solid #6b7280;text-align:center">${r.bwl}</td>
+              <td style="padding:2px 5px;border:1px solid #6b7280;text-align:center">${r.bwh}</td>
+              <td style="padding:2px 5px;border:1px solid #6b7280;text-align:center">${r.gwl}</td>
+              <td style="padding:2px 5px;border:1px solid #6b7280;text-align:center">${r.gwh}</td>
+              <td style="padding:2px 5px;border:1px solid #6b7280;text-align:center">${r.bhl}</td>
+              <td style="padding:2px 5px;border:1px solid #6b7280;text-align:center">${r.bhh}</td>
+              <td style="padding:2px 5px;border:1px solid #6b7280;text-align:center">${r.ghl}</td>
+              <td style="padding:2px 5px;border:1px solid #6b7280;text-align:center">${r.ghh}</td>
             </tr>`).join('')}
         </tbody>
       </table>

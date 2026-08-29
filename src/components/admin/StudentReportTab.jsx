@@ -648,7 +648,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
         <div style="text-align:center">
           <div style="height:48px"></div>
           <div style="border-top:1px solid #6b7280;width:160px;padding-top:5px;font-size:.78rem;color:#4b5563">
-            ลงชื่อผู้อำนวยการ
+            ผู้อำนวยการ
           </div>
         </div>
       </div>
@@ -673,13 +673,13 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
         <div style="display:inline-block;text-align:center">
           <div style="height:60px"></div>
           <div style="border-top:1px solid #000;width:220px;padding-top:4px;font-size:.82rem">
-            ลงชื่อ (ผู้อำนวยการสถานศึกษา)
+            ผู้อำนวยการสถานศึกษา
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ══ หน้า 2: ปรัชญา/วิสัยทัศน์ ══ -->
+    <!-- ══ หน้า 2: ปรัชญา/วิสัยทัศน์ + จุดมุ่งหมาย ══ -->
     <div class="page-break">
       <div style="border:2px solid #333;padding:8px 16px;text-align:center;font-size:1rem;font-weight:800;margin-bottom:20px;display:inline-block">
         ปรัชญาการศึกษาปฐมวัย
@@ -688,11 +688,7 @@ function printReport({ student, physData, growthRecords, devAssessment, attendan
       <div style="border:2px solid #333;padding:8px 16px;text-align:center;font-size:1rem;font-weight:800;margin-bottom:20px;display:inline-block">
         วิสัยทัศน์
       </div>
-      <p style="font-size:.87rem;line-height:2;text-align:justify;text-indent:1cm">${_vision}</p>
-    </div>
-
-    <!-- ══ หน้า 3: จุดมุ่งหมายของหลักสูตร ══ -->
-    <div class="page-break">
+      <p style="font-size:.87rem;line-height:2;text-align:justify;text-indent:1cm;margin-bottom:28px">${_vision}</p>
       <div style="border:2px solid #333;padding:8px 16px;text-align:center;font-size:1rem;font-weight:800;margin-bottom:20px;display:inline-block">
         จุดมุ่งหมายของหลักสูตรการศึกษาปฐมวัย พุทธศักราช 2568
       </div>
@@ -2151,7 +2147,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                       />
                       <div style={{ display: 'flex', gap: '3rem', marginTop: '.5rem', fontSize: '.75rem', color: '#6b7280' }}>
                         <span>ลงชื่อ _________________________ (ครูประจำชั้น)</span>
-                        <span>ลงชื่อ _________________________ (ผู้อำนวยการ)</span>
+                        <span>_________________________ ผู้อำนวยการ</span>
                       </div>
                     </div>
                   );

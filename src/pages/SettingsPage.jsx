@@ -13,6 +13,7 @@ export default function SettingsPage({ onBack }) {
     schoolSlogan, setSchoolSlogan,
     schoolLogo, setSchoolLogo,
     schoolDirectorName, setSchoolDirectorName,
+    yearDirectors, setYearDirectors,
     academicYears, setAcademicYears,
     resetAllData, authConfig, updateAuthConfig,
     exportBackupJson, importBackupJson,
@@ -291,11 +292,20 @@ export default function SettingsPage({ onBack }) {
               value={newYear} onChange={e=>setNewYear(e.target.value)} />
             <button type="button" className="btn btn-primary" onClick={addYear}>เพิ่ม</button>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div style={{ display:'flex', flexDirection:'column', gap:'.5rem' }}>
             {academicYears.map(y => (
-              <div key={y} className="badge" style={{ padding:'.5rem 1rem',background:'var(--primary)',color:'white',display:'flex',gap:'.5rem' }}>
-                ปี {y}
-                <span style={{ cursor:'pointer' }} onClick={()=>setAcademicYears(academicYears.filter(x=>x!==y))}>×</span>
+              <div key={y} style={{ display:'flex', alignItems:'center', gap:'.5rem', flexWrap:'wrap' }}>
+                <div className="badge" style={{ padding:'.5rem 1rem',background:'var(--primary)',color:'white',display:'flex',gap:'.5rem',flexShrink:0 }}>
+                  ปี {y}
+                  <span style={{ cursor:'pointer' }} onClick={()=>setAcademicYears(academicYears.filter(x=>x!==y))}>×</span>
+                </div>
+                <input
+                  className="input"
+                  style={{ flex:1, minWidth:'200px', fontSize:'.82rem', padding:'.3rem .6rem' }}
+                  placeholder={`ชื่อ ผอ. ปีการศึกษา ${y} (ไม่กรอก = ใช้ค่า default)`}
+                  value={yearDirectors?.[y] ?? ''}
+                  onChange={e => setYearDirectors(prev => ({ ...prev, [y]: e.target.value }))}
+                />
               </div>
             ))}
           </div>

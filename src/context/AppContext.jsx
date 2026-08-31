@@ -156,6 +156,7 @@ export function AppProvider({ children }) {
     'วินัยดี มีวิชา กีฬาเด่น เป็นโรงเรียนของชุมชน');
   const [schoolLogo, setSchoolLogo] = useLocalStorage(STORAGE_KEYS.schoolLogo, '');
   const [schoolDirectorName, setSchoolDirectorName] = useLocalStorage(STORAGE_KEYS.schoolDirectorName, '');
+  const [yearDirectors, setYearDirectors] = useLocalStorage(STORAGE_KEYS.yearDirectors, {});
   const [academicYear, setAcademicYear] = useLocalStorage(STORAGE_KEYS.academicYear, '2569');
   const [dailyRecords, setDailyRecords] = useLocalStorage(STORAGE_KEYS.dailyRecords, {});
   const [qaData, setQaData] = useLocalStorage(STORAGE_KEYS.qaData, null);
@@ -1350,6 +1351,8 @@ export function AppProvider({ children }) {
     setSchoolLogo,
     schoolDirectorName,
     setSchoolDirectorName,
+    yearDirectors,
+    setYearDirectors,
     academicYear,
     setAcademicYear,
     dailyRecords,

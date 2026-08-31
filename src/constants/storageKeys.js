@@ -40,7 +40,8 @@ export const STORAGE_KEYS = {
   aiApiKey:             'kt_aiApiKey',               // Claude API Key สำหรับฟีเจอร์ AI
   imgbbApiKey:          'kt_imgbbApiKey',             // ImgBB API Key สำหรับอัปโหลดรูปภาพนักเรียน
   schoolLogo:           'kt_schoolLogo',              // โลโก้โรงเรียน (base64 dataURL)
-  schoolDirectorName:   'kt_schoolDirectorName',      // ชื่อผู้บริหารสถานศึกษา
+  schoolDirectorName:   'kt_schoolDirectorName',      // ชื่อผู้บริหารสถานศึกษา (ค่า default)
+  yearDirectors:        'kt_yearDirectors',            // ชื่อผู้บริหารรายปีการศึกษา { "2567": "นาง..." }
   currentTerm:          'kt_currentTerm',             // ภาคเรียนปัจจุบัน ('1' หรือ '2')
   measurementDates:     'kt_measurementDates',        // วันกำหนดวัดน้ำหนัก/ส่วนสูง 4 ครั้ง (อ.01)
   parentCommentDeadlines: 'kt_parentCommentDeadlines', // วันสุดท้ายที่ผู้ปกครองกรอกความคิดเห็น { term1, term2 }

@@ -30,7 +30,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
   const {
     role,
     students, classes, teachers, academicYear, schoolName,
-    schoolPhilosophy, schoolVision, schoolLogo, schoolDirectorName, schools,
+    schoolPhilosophy, schoolVision, schoolLogo, schoolDirectorName, yearDirectors, schools,
     dailyRecords,
     studentReportRecords, setStudentReportRecords,
     indicators, activities, assessmentTopics,
@@ -413,7 +413,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
             <button type="button"
               onClick={() => {
                 const classTeacher = teachers?.find(t => t.className === (student?.className ?? student?.level));
-                printReport({ student, physData, growthRecords: growthData, devAssessment: devAssessData, attendanceSummary, healthServices, devDomains, teacherComments, parentComments, directorsComment, highlights, academicYear, schoolName, schoolPhilosophy, schoolVision, schoolLogo, teacherName: classTeacher?.name ?? '', directorName: schoolDirectorName || schools?.[0]?.principal || '' });
+                printReport({ student, physData, growthRecords: growthData, devAssessment: devAssessData, attendanceSummary, healthServices, devDomains, teacherComments, parentComments, directorsComment, highlights, academicYear, schoolName, schoolPhilosophy, schoolVision, schoolLogo, teacherName: classTeacher?.name ?? '', directorName: yearDirectors?.[academicYear] || schoolDirectorName || schools?.[0]?.principal || '' });
               }}
               style={{
                 marginLeft: 'auto', padding: '.35rem 1rem', borderRadius: '8px', border: 'none',

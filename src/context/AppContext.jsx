@@ -1090,25 +1090,46 @@ export function AppProvider({ children }) {
       })();
 
       // ── Corner & InnerCorner (รายสัปดาห์) ──
-      // corner      = แหล่งเรียนรู้นอกห้อง: เติมทุก key เมื่อนักเรียนมาเรียน
-      // innerCorner = มุมประสบการณ์ในห้อง: เติมทุก key เมื่อนักเรียนมาเรียน
+      // เช็คเฉพาะกิจกรรมที่กำหนดไว้สำหรับห้องนั้นในวันนั้น
+      // (จาก classOuterCornerKeys / classInnerCornerKeys)
       const monday = getMondayOf(date);
+      const THAI_DAYS = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+      const thaiDay  = THAI_DAYS[new Date(date).getDay()];
+
+      // คืนค่า key[] ที่กำหนดให้วันนั้น, หรือ null ถ้ายังไม่ได้กำหนด
+      function getKeysForDay(stored, day) {
+        if (!stored || stored.length === 0) return null;
+        if (typeof stored[0] === 'string') return stored; // รูปแบบเก่ามาก: key[] ทั้งหมด
+        const keys = [];
+        stored.forEach(e => {
+          if (e.dayTimes && Object.keys(e.dayTimes).length > 0) {
+            if (day in e.dayTimes) keys.push(e.key); // รูปแบบใหม่: {key, dayTimes}
+          } else if (e.days?.includes(day)) {
+            keys.push(e.key); // รูปแบบเก่า: {key, days[], time}
+          }
+        });
+        return keys;
+      }
 
       setCornerRecords(prev => {
-        const next       = { ...prev };
-        const allTrueRec = Object.fromEntries((cornerDefs ?? []).map(c => [c.key, true]));
-        const emptyRec   = Object.fromEntries((cornerDefs ?? []).map(c => [c.key, false]));
-        // มา → เซ็ตทุกมุมนอกห้อง = true (อ้างอิงตามวันที่นักเรียนมาเรียน)
+        const next     = { ...prev };
+        const emptyRec = Object.fromEntries((cornerDefs ?? []).map(c => [c.key, false]));
+        // มา → เช็คเฉพาะ key ที่กำหนดสำหรับวันนั้นใน classOuterCornerKeys
         Object.entries(byClass).forEach(([cls, ids]) => {
+          const dayKeys = getKeysForDay(classOuterCornerKeys[cls], thaiDay);
+          if (!dayKeys || dayKeys.length === 0) return; // วันนี้ไม่มีกิจกรรมนอกห้อง
+          const markRec  = Object.fromEntries(dayKeys.map(k => [k, true]));
           const weekKey  = `${cls}||${monday}`;
           const weekData = { ...(next[weekKey] ?? {}) };
           ids.forEach(id => {
-            weekData[id] = { ...emptyRec, ...(weekData[id] ?? {}), ...allTrueRec };
+            weekData[id] = { ...emptyRec, ...(weekData[id] ?? {}), ...markRec };
           });
           next[weekKey] = weekData;
         });
-        // ขาด/ลา/ป่วย → เซ็ต __absent
+        // ขาด/ลา/ป่วย → เซ็ต __absent เฉพาะห้องที่มีกิจกรรมวันนั้น
         Object.entries(byClassAllAbsent).forEach(([cls, ids]) => {
+          const dayKeys = getKeysForDay(classOuterCornerKeys[cls], thaiDay);
+          if (!dayKeys || dayKeys.length === 0) return;
           const weekKey  = `${cls}||${monday}`;
           const weekData = { ...(next[weekKey] ?? {}) };
           ids.forEach(id => {
@@ -1120,20 +1141,24 @@ export function AppProvider({ children }) {
       });
 
       setInnerCornerRecords(prev => {
-        const next = { ...prev };
-        // เติม innerCorner ทุก key = true สำหรับนักเรียนที่มา (มุมประสบการณ์ใช้ทุกวัน)
-        const allTrueRec = Object.fromEntries((innerCornerDefs ?? []).map(c => [c.key, true]));
-        const emptyRec   = Object.fromEntries((innerCornerDefs ?? []).map(c => [c.key, false]));
+        const next     = { ...prev };
+        const emptyRec = Object.fromEntries((innerCornerDefs ?? []).map(c => [c.key, false]));
+        // มา → เช็คเฉพาะ key ที่กำหนดสำหรับวันนั้นใน classInnerCornerKeys
         Object.entries(byClass).forEach(([cls, ids]) => {
+          const dayKeys = getKeysForDay(classInnerCornerKeys[cls], thaiDay);
+          if (!dayKeys || dayKeys.length === 0) return; // วันนี้ไม่มีกิจกรรมในห้อง
+          const markRec  = Object.fromEntries(dayKeys.map(k => [k, true]));
           const weekKey  = `${cls}||${monday}`;
           const weekData = { ...(next[weekKey] ?? {}) };
           ids.forEach(id => {
-            weekData[id] = { ...emptyRec, ...(weekData[id] ?? {}), ...allTrueRec };
+            weekData[id] = { ...emptyRec, ...(weekData[id] ?? {}), ...markRec };
           });
           next[weekKey] = weekData;
         });
-        // ขาด/ลา/ป่วย → เซ็ต __absent (ทุกวัน เพราะมุมในห้องใช้ทุกวัน)
+        // ขาด/ลา/ป่วย → เซ็ต __absent เฉพาะห้องที่มีกิจกรรมวันนั้น
         Object.entries(byClassAllAbsent).forEach(([cls, ids]) => {
+          const dayKeys = getKeysForDay(classInnerCornerKeys[cls], thaiDay);
+          if (!dayKeys || dayKeys.length === 0) return;
           const weekKey  = `${cls}||${monday}`;
           const weekData = { ...(next[weekKey] ?? {}) };
           ids.forEach(id => {
@@ -1155,8 +1180,8 @@ export function AppProvider({ children }) {
       setDailyRoutineRecords,
       setIllnessCheckRecords,
       healthCheckRecords, setHealthCheckRecords,
-      cornerRecords,      setCornerRecords,      cornerDefs,
-      innerCornerRecords, setInnerCornerRecords, innerCornerDefs,
+      cornerRecords,      setCornerRecords,      cornerDefs,      classOuterCornerKeys,
+      innerCornerRecords, setInnerCornerRecords, innerCornerDefs, classInnerCornerKeys,
       holidays, activitySchedule,
     ],
   );

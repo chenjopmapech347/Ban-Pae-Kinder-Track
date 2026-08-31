@@ -504,6 +504,10 @@ export default function ActivityScheduleTab() {
   const [confirmReseed,setConfirmReseed]= useState(false);
   const [reseedMsg,    setReseedMsg]    = useState(null); // {ok:bool, text:string}
 
+  /* ── Auto-fill all rooms from assignments ── */
+  const [fillingAll,   setFillingAll]   = useState(false);
+  const [fillAllMsg,   setFillAllMsg]   = useState(null); // {ok:bool, text:string}
+
   /* ── Seed corner defs + assignments ── */
   const [confirmSeedDefs,  setConfirmSeedDefs]  = useState(false);
   const [seedDefsMsg,      setSeedDefsMsg]      = useState(null);
@@ -660,6 +664,50 @@ export default function ActivityScheduleTab() {
     setEditRoom(null);
   };
 
+  /* ── Auto-fill ALL rooms from their corner assignments ── */
+  const handleAutoFillAll = async () => {
+    setFillingAll(true);
+    setFillAllMsg(null);
+    try {
+      const colRef = collection(db, 'activitySchedule');
+      let filledCount = 0;
+      await Promise.all(
+        rooms.map(async (room) => {
+          const { innerSchedule, outerSchedule } = getAssignedDefs(room.name);
+          const allSchedule = [...innerSchedule, ...outerSchedule]
+            .filter(e => e.days?.length > 0 && e.time);
+          if (allSchedule.length === 0) return; // ห้องนี้ยังไม่มีการกำหนด ข้ามไป
+
+          // สร้าง days ใหม่โดยเพิ่มกิจกรรมที่ยังไม่มี (ไม่ลบที่มีอยู่แล้ว)
+          const newDays = Object.fromEntries(
+            DAYS.map(d => [d, [...(room.days[d] ?? [])]])
+          );
+          allSchedule.forEach(({ key, days, time }) => {
+            days.forEach(day => {
+              if (!DAYS.includes(day)) return;
+              const already = (newDays[day] ?? []).some(e => e.type === key);
+              if (!already) {
+                const def   = [...innerCornerDefs, ...cornerDefs].find(o => o.key === key);
+                const label = def?.label ?? getLabel(key);
+                newDays[day] = [
+                  ...(newDays[day] ?? []),
+                  { type: key, time, label },
+                ].sort((a, b) => a.time.localeCompare(b.time));
+              }
+            });
+          });
+          await setDoc(doc(colRef, room.id), { days: newDays }, { merge: true });
+          filledCount++;
+        })
+      );
+      setFillAllMsg({ ok: true, text: `✅ เติมตารางสำเร็จ ${filledCount}/${rooms.length} ห้อง` });
+    } catch (e) {
+      setFillAllMsg({ ok: false, text: `❌ เกิดข้อผิดพลาด: ${e?.message ?? e}` });
+    } finally {
+      setFillingAll(false);
+    }
+  };
+
   /* ── Reseed with legacy sample data ── */
   const totalActivities = useMemo(
     () => rooms.reduce((sum, r) =>
@@ -779,6 +827,50 @@ export default function ActivityScheduleTab() {
           </div>
         )}
       </div>
+
+      {/* ── Auto-fill all rooms button ── */}
+      {rooms.length > 0 && (innerCornerDefs.length > 0 || cornerDefs.length > 0) && (
+        <div className="glass-card mb-4" style={{
+          background:'#F0FDF4', border:'1.5px solid #6EE7B7',
+          padding:'14px 18px', display:'flex', alignItems:'center',
+          gap:'12px', flexWrap:'wrap',
+        }}>
+          <span style={{ fontSize:'1.2em' }}>📅</span>
+          <div style={{ flex:1, minWidth:'200px' }}>
+            <div style={{ fontWeight:700, fontSize:'.9em', color:'#065F46' }}>
+              เติมตารางกิจกรรมทุกห้องจากการกำหนด
+            </div>
+            <div style={{ fontSize:'.78em', color:'#047857', marginTop:'2px' }}>
+              เพิ่มกิจกรรมที่กำหนดไว้ใน "กำหนดกิจกรรมภายใน/นอกห้องเรียน" เข้าไปในตารางแต่ละห้องพร้อมกัน (ไม่ลบที่มีอยู่แล้ว)
+            </div>
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:'6px', flexShrink:0 }}>
+            <button
+              onClick={handleAutoFillAll}
+              disabled={fillingAll}
+              style={{
+                padding:'8px 20px', borderRadius:'10px', border:'none',
+                background: fillingAll ? '#6EE7B7' : '#059669',
+                color:'white', fontWeight:700, fontSize:'.85em',
+                cursor: fillingAll ? 'not-allowed' : 'pointer',
+                fontFamily:'inherit', transition:'all .15s',
+              }}
+            >
+              {fillingAll ? '⏳ กำลังเติม…' : '📥 เติมตารางทุกห้อง'}
+            </button>
+            {fillAllMsg && (
+              <div style={{
+                padding:'5px 12px', borderRadius:'8px', fontSize:'.8em', fontWeight:600,
+                background: fillAllMsg.ok ? '#f0fdf4' : '#fef2f2',
+                color:      fillAllMsg.ok ? '#15803d' : '#991b1b',
+                border: `1.5px solid ${fillAllMsg.ok ? '#86efac' : '#fca5a5'}`,
+              }}>
+                {fillAllMsg.text}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ── Notice when no defs configured ── */}
       {innerCornerDefs.length === 0 && cornerDefs.length === 0 && (

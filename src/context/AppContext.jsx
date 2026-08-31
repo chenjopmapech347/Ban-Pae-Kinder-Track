@@ -1090,54 +1090,27 @@ export function AppProvider({ children }) {
       })();
 
       // ── Corner & InnerCorner (รายสัปดาห์) ──
-      // corner  = แหล่งเรียนรู้นอกห้อง: เติมตามกิจกรรมที่กำหนดในตาราง
+      // corner      = แหล่งเรียนรู้นอกห้อง: เติมทุก key เมื่อนักเรียนมาเรียน
       // innerCorner = มุมประสบการณ์ในห้อง: เติมทุก key เมื่อนักเรียนมาเรียน
       const monday = getMondayOf(date);
 
-      // แผนที่ประเภทกิจกรรม → key ของ cornerDefs
-      const ACT_TO_CORNER = {
-        wst: ['wasteSort', 'organicWaste'],
-        gar: ['garden'],
-        ef:  ['learningRoom'],
-        com: ['computerRoom'],
-        res: ['learningRoom'],
-      };
-
-      // ชื่อวันภาษาไทยตาม index ของ getDay()
-      const THAI_DAY_NAMES = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
-      const thaiDayName = THAI_DAY_NAMES[new Date(date).getDay()];
-
       setCornerRecords(prev => {
-        const next = { ...prev };
+        const next       = { ...prev };
+        const allTrueRec = Object.fromEntries((cornerDefs ?? []).map(c => [c.key, true]));
+        const emptyRec   = Object.fromEntries((cornerDefs ?? []).map(c => [c.key, false]));
+        // มา → เซ็ตทุกมุมนอกห้อง = true (อ้างอิงตามวันที่นักเรียนมาเรียน)
         Object.entries(byClass).forEach(([cls, ids]) => {
           const weekKey  = `${cls}||${monday}`;
           const weekData = { ...(next[weekKey] ?? {}) };
-          const emptyRec = Object.fromEntries((cornerDefs ?? []).map(c => [c.key, false]));
-
-          // หาห้องที่ตรงกับ className แล้วดูกิจกรรมวันนี้
-          const room        = activitySchedule.find(r => r.name === `ห้อง ${cls}`);
-          const dayActs     = room?.days?.[thaiDayName] ?? [];
-          const keysToMark  = new Set(
-            dayActs.flatMap(([type]) => ACT_TO_CORNER[type] ?? [])
-          );
-
           ids.forEach(id => {
-            const existing = weekData[id] ?? { ...emptyRec };
-            const updated  = { ...existing };
-            keysToMark.forEach(k => { updated[k] = true; });
-            weekData[id]   = updated;
+            weekData[id] = { ...emptyRec, ...(weekData[id] ?? {}), ...allTrueRec };
           });
           next[weekKey] = weekData;
         });
-        // ขาด/ลา/ป่วย → เซ็ต __absent (เฉพาะวันที่มีกิจกรรมในตาราง)
+        // ขาด/ลา/ป่วย → เซ็ต __absent
         Object.entries(byClassAllAbsent).forEach(([cls, ids]) => {
-          const room    = activitySchedule.find(r => r.name === `ห้อง ${cls}`);
-          const dayActs = room?.days?.[thaiDayName] ?? [];
-          const hasActs = dayActs.some(([type]) => (ACT_TO_CORNER[type]?.length ?? 0) > 0);
-          if (!hasActs) return;
           const weekKey  = `${cls}||${monday}`;
           const weekData = { ...(next[weekKey] ?? {}) };
-          const emptyRec = Object.fromEntries((cornerDefs ?? []).map(c => [c.key, false]));
           ids.forEach(id => {
             weekData[id] = { ...(weekData[id] ?? { ...emptyRec }), __absent: true };
           });

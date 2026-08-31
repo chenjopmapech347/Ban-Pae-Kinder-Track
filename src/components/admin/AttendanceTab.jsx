@@ -316,7 +316,7 @@ export default function AttendanceTab({ defaultClass }) {
     });
   }
 
-  // บันทึกห้องนี้ + auto-fill modules อัตโนมัติ
+  // บันทึกห้องนี้ + auto-fill modules อัตโนมัติ (ผ่าน saveDailyAttendance ใน AppContext)
   function handleSaveClass(cls) {
     const patch = {};
     let present = 0, absent = 0;
@@ -327,7 +327,7 @@ export default function AttendanceTab({ defaultClass }) {
     });
     saveDailyAttendance(selectedDate, patch);
     setDirtyClasses(prev => { const n = new Set(prev); n.delete(cls); return n; });
-    // auto-fill กิจกรรมประจำวัน
+    // auto-fill กิจกรรมประจำวัน (DailyRoutine — ส่วนอื่นจัดการโดย saveDailyAttendance)
     autoFillDailyRoutine(cls, selectedDate, present > 0);
     // แสดง auto-fill toast
     setAutoFillMsg({ cls, present, absent });

@@ -7,7 +7,7 @@ import {
   computeMonthlyStats, computeNutritionStats, computePickupStats,
   computeHealthCheckStats, computeIllnessStats, computeCornerStats,
   computeEventStats, computeRoutineStats,
-  pctColor, pctBg, pctToScore, HEALTH_ITEMS,
+  pctColor, pctBg, pctToScore,
 } from '../../utils/evaluationHelpers';
 import StepBadge from './evaluation/StepBadge';
 import PillGroup from './evaluation/PillGroup';

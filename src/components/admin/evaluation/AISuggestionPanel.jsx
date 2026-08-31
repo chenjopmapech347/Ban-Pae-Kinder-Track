@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { callClaude, buildActivitySuggestionPrompt } from '../../../utils/aiHelper';
-import { LEVEL_META, SCORES } from '../../../data/evaluationConstants';
 
 export default function AISuggestionPanel({ students, assessmentTopics, indicators, activities, aiApiKey }) {
   const [selId,   setSelId]   = useState(null);

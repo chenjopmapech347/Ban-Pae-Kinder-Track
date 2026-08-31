@@ -75,3 +75,47 @@ export function getWeekLabel(mondayStr) {
 export function genUniqueKey(prefix = 'key') {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 }
+
+// ── Thai date helpers (short format) ─────────────────────────────────────────
+const THAI_MONTHS_SHORT = [
+  '','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.',
+  'ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.',
+];
+
+/** แปลง ค.ศ. → พ.ศ. */
+export function thaiYear(adYear) { return adYear + 543; }
+
+/** เลขเดือน → ชื่อเดือนย่อ (1 → 'ม.ค.') */
+export function thaiMonthShort(m) { return THAI_MONTHS_SHORT[m] ?? ''; }
+
+/**
+ * แปลง ISO date string → วันเดือนปีไทย (ย่อ)
+ * - YYYY-MM-DD  → "2 มิ.ย. 2568"
+ * - YYYY-MM     → "มิ.ย. 2568"
+ */
+export function isoToThai(iso) {
+  if (!iso) return '';
+  const dateOnly = String(iso).split('T')[0];
+  const [y, m, d] = dateOnly.split('-');
+  const day = Number(d);
+  if (isNaN(day) || !day) return `${thaiMonthShort(Number(m))} ${thaiYear(Number(y))}`;
+  return `${day} ${thaiMonthShort(Number(m))} ${thaiYear(Number(y))}`;
+}
+
+// ── Calendar helpers (ใช้ใน Tab ที่มีตารางรายเดือน) ──────────────────────────
+
+/** จำนวนวันในเดือน (รับ พ.ศ.) */
+export function daysInMonth(buddhistYear, month) {
+  return new Date(buddhistYear - 543, month, 0).getDate();
+}
+
+/** หาวันในสัปดาห์ 0=อา…6=ส (รับ พ.ศ.) */
+export function getDow(buddhistYear, month, day) {
+  return new Date(buddhistYear - 543, month - 1, day).getDay();
+}
+
+/** ตรวจว่าวันนั้นเป็นวันหยุดสุดสัปดาห์ (รับ พ.ศ.) */
+export function isWeekendDay(buddhistYear, month, day) {
+  const dow = getDow(buddhistYear, month, day);
+  return dow === 0 || dow === 6;
+}

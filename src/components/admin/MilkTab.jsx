@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
+import { daysInMonth, getDow, isWeekendDay } from '../../utils/helpers';
 
 // √  = ดื่มนม
 // X  = ไม่มาเรียน / ขาด
@@ -21,9 +22,6 @@ const THAI_MONTHS = ['','มกราคม','กุมภาพันธ์','�
   'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
 const THAI_MONTHS_SHORT = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
-function daysInMonth(thaiYear, month) { return new Date(thaiYear - 543, month, 0).getDate(); }
-function getDow(thaiYear, month, day) { return new Date(thaiYear - 543, month - 1, day).getDay(); }
-function isWeekend(thaiYear, month, day) { const d = getDow(thaiYear, month, day); return d === 0 || d === 6; }
 function recKey(className, academicYear, year, month) {
   return `${className}__${academicYear}__${year}-${String(month).padStart(2, '0')}`;
 }
@@ -62,7 +60,7 @@ export default function MilkTab({ teacherClassFilter = null }) {
   }, [holidays]);
 
   function isSchoolOff(ty, mo, d) {
-    if (isWeekend(ty, mo, d)) return true;
+    if (isWeekendDay(ty, mo, d)) return true;
     const iso = `${ty-543}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     return holidayISOs.has(iso);
   }

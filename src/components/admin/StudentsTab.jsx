@@ -144,12 +144,25 @@ export default function StudentsTab() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      // ลบ BOM ถ้ามี
-      const raw = ev.target.result.replace(/^﻿/, '');
+      const buffer = ev.target.result;
+      let text;
+      // ลอง UTF-8 ก่อน (strict) — ถ้าไฟล์ไม่ใช่ UTF-8 จะ throw
+      try {
+        text = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+      } catch {
+        // ถ้า decode UTF-8 ไม่ได้ → ลอง Windows-874 (TIS-620 Thai encoding จาก Excel Windows)
+        try {
+          text = new TextDecoder('windows-874').decode(buffer);
+        } catch {
+          text = new TextDecoder('utf-8').decode(buffer); // lenient fallback
+        }
+      }
+      // ลบ BOM ถ้ามี (UTF-8 BOM = ﻿)
+      const raw = text.replace(/^﻿/, '');
       const r = handleImport('students', raw);
       alert(r.ok ? `✅ นำเข้าสำเร็จ! เพิ่มนักเรียน ${r.count ?? ''} คน` : r.message);
     };
-    reader.readAsText(file, 'utf-8');
+    reader.readAsArrayBuffer(file);
     e.target.value = '';
   };
 

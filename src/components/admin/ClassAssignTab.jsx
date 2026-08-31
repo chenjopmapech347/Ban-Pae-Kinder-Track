@@ -51,7 +51,8 @@ export default function ClassAssignTab() {
   const classByLevel = useMemo(() => {
     const map = {};
     enrichedClasses.forEach(c => {
-      (map[c.level] ??= []).push(c);
+      const key = c.level ?? 'other';
+      (map[key] ??= []).push(c);
     });
     return map;
   }, [enrichedClasses]);
@@ -323,7 +324,7 @@ export default function ClassAssignTab() {
                     paddingBottom: '.3rem', marginBottom: '.45rem',
                     borderBottom: `2px solid ${LEVEL_COLOR[level] ?? '#e5e7eb'}30`,
                   }}>
-                    {LEVEL_LABEL[level] ?? level}
+                    {LEVEL_LABEL[level] ?? (level === 'other' ? 'ไม่ระบุระดับ' : level)}
                   </div>
 
                   {/* Class cards */}

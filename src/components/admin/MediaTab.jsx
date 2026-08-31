@@ -1,7 +1,5 @@
 // MediaTab.jsx — ทะเบียนผลิตสื่อ / นวัตกรรมการเรียนการสอน
 import { useState, useMemo } from 'react';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { storage } from '../../lib/firebase';
 import { useApp } from '../../context/AppContext';
 
 // ── ประเภทการนำไปใช้ประกอบการสอน ──────────────────────────────────────────
@@ -23,8 +21,7 @@ const EMPTY_FORM = {
   ai:            false,   // สื่อ AI
   category:      'ใหม่', // ประเภทสื่อ: เก่า / ใหม่
   note:          '',      // หมายเหตุ
-  imageUrl:      '',      // URL จาก Firebase Storage
-  imagePath:     '',      // Storage path (สำหรับลบไฟล์)
+  imageUrl:      '',      // URL จาก ImgBB
 };
 
 // ── สร้างข้อความ "ประกอบการสอนหน่วย" จาก record ──────────────────────────
@@ -105,7 +102,7 @@ function printMediaList(records, cn, schoolName, teacher, academicYear, schoolLo
 }
 
 export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry' }) {
-  const { mediaRecords, setMediaRecords, classes, schoolName, academicYear, schoolLogo, teachers, user, role } = useApp();
+  const { mediaRecords, setMediaRecords, classes, schoolName, academicYear, schoolLogo, teachers, user, role, imgbbApiKey } = useApp();
   const isAdmin = role === 'admin';
 
   const [form, setForm]         = useState(EMPTY_FORM);
@@ -115,20 +112,16 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
   const [imgFile, setImgFile]   = useState(null);   // File object รอ upload
   const [uploading, setUploading] = useState(false);
 
-  // อัปโหลดรูปไป Firebase Storage → คืน { url, path }
-  async function uploadToStorage(file, recordId) {
-    const ext  = file.name.split('.').pop();
-    const path = `media-images/${recordId}.${ext}`;
-    const sRef = ref(storage, path);
-    await uploadBytes(sRef, file);
-    const url  = await getDownloadURL(sRef);
-    return { url, path };
-  }
-
-  // ลบรูปจาก Storage (ถ้ามี imagePath)
-  async function deleteFromStorage(imagePath) {
-    if (!imagePath || !storage) return;
-    try { await deleteObject(ref(storage, imagePath)); } catch (_) {}
+  // อัปโหลดรูปไป ImgBB → คืน URL
+  async function uploadToImgBB(file) {
+    if (!imgbbApiKey) throw new Error('ยังไม่ได้ตั้งค่า ImgBB API Key (ตั้งค่าระบบ → ImgBB)');
+    const form = new FormData();
+    form.append('key', imgbbApiKey);
+    form.append('image', file);
+    const resp = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form });
+    const json = await resp.json();
+    if (!json.success) throw new Error(json.error?.message ?? 'ImgBB upload failed');
+    return json.data.url;
   }
 
   function handleImageChange(e) {
@@ -142,7 +135,7 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
   function removeImage() {
     setImgFile(null);
     setImgPreview('');
-    setForm(f => ({ ...f, imageUrl: '', imagePath: '' }));
+    setForm(f => ({ ...f, imageUrl: '' }));
   }
   // '' = แสดงทุกห้อง; ถ้าเป็นครูประจำห้องให้ lock ที่ห้องตัวเอง
   const [selClass, setSelClass] = useState(teacherClassFilter ?? '');
@@ -184,23 +177,13 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
     if (!form.item.trim()) return;
     setUploading(true);
     try {
-      let imageUrl  = form.imageUrl;
-      let imagePath = form.imagePath;
+      let imageUrl = form.imageUrl;
 
-      if (imgFile && storage) {
-        // ถ้าแก้ไขและมีรูปเก่า → ลบทิ้งก่อน
-        if (editId && form.imagePath) await deleteFromStorage(form.imagePath);
-        const id = editId ?? Date.now();
-        const result = await uploadToStorage(imgFile, id);
-        imageUrl  = result.url;
-        imagePath = result.path;
-      } else if (!imgFile && !form.imageUrl) {
-        // ลบรูปออก — ถ้าเป็น edit และมี path เก่า ลบออกจาก Storage
-        if (editId && form.imagePath) await deleteFromStorage(form.imagePath);
-        imagePath = '';
+      if (imgFile) {
+        imageUrl = await uploadToImgBB(imgFile);
       }
 
-      const finalForm = { ...form, imageUrl, imagePath };
+      const finalForm = { ...form, imageUrl };
 
       if (editId) {
         setMediaRecords(prev => prev.map(r =>
@@ -239,7 +222,6 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
       category:      r.category      ?? 'ใหม่',
       note:          r.note          ?? '',
       imageUrl:      r.imageUrl      ?? '',
-      imagePath:     r.imagePath     ?? '',
     });
     setImgPreview(r.imageUrl ?? '');
     setImgFile(null);
@@ -255,10 +237,8 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
     setShowForm(false);
   }
 
-  async function del(id) {
+  function del(id) {
     if (!window.confirm('ลบรายการนี้?')) return;
-    const r = (mediaRecords ?? []).find(rec => rec.id === id);
-    if (r?.imagePath) await deleteFromStorage(r.imagePath);
     setMediaRecords(prev => prev.filter(rec => rec.id !== id));
   }
 

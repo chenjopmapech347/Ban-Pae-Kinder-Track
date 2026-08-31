@@ -508,6 +508,12 @@ export default function ActivityScheduleTab() {
   const [confirmSeedDefs,  setConfirmSeedDefs]  = useState(false);
   const [seedDefsMsg,      setSeedDefsMsg]      = useState(null);
 
+  /* ── Accordion open state ── */
+  const [openSchedule,  setOpenSchedule]  = useState(true);
+  const [openSummary,   setOpenSummary]   = useState(false);
+  const [openAllDefs,   setOpenAllDefs]   = useState(false);
+  const [openRatio,     setOpenRatio]     = useState(false);
+
   // แสดงปุ่มคืนค่าเมื่อ defs ว่างเปล่าหรือยังไม่มีค่าเริ่มต้นครบ 6 กิจกรรม
   const innerComplete = LEGACY_INNER_DEFS.every(d => innerCornerDefs.some(x => x.key === d.key));
   const outerComplete = LEGACY_OUTER_DEFS.every(d => cornerDefs.some(x => x.key === d.key));
@@ -710,71 +716,6 @@ export default function ActivityScheduleTab() {
         <div style={{ color:'#546e7a', marginTop:'4px', fontSize:'.9em' }}>
           แสดงเฉพาะกิจกรรมที่กำหนดไว้ในแต่ละห้องเรียน · ระดับอนุบาล ๑–๓
         </div>
-        {rooms.length > 0 && (
-          <div style={{ marginTop:'12px' }}>
-            {!confirmReseed ? (
-              <>
-                <button
-                  onClick={() => setConfirmReseed(true)}
-                  disabled={reseeding}
-                  style={{
-                    padding:'7px 18px', borderRadius:'10px', border:'1.5px solid #7c3aed',
-                    background:'#ede9fe', color:'#5b21b6', fontWeight:700, fontSize:'.85em',
-                    cursor:'pointer', fontFamily:'inherit',
-                  }}
-                >
-                  🔄 อัปเดตชื่อกิจกรรมตัวอย่างทุกห้อง
-                </button>
-                <div style={{ marginTop:'6px', fontSize:'.78em', color:'#7c3aed', opacity:.8 }}>
-                  เติม/อัปเดตข้อมูลตัวอย่างกิจกรรมทุกห้องให้ตรงกับชื่อปัจจุบัน (แปลงปลูกผัก, มุมนิทาน, มุมสร้างสรรค์ ฯลฯ)
-                </div>
-              </>
-            ) : (
-              <div style={{
-                display:'inline-flex', alignItems:'center', gap:'10px',
-                padding:'8px 14px', borderRadius:'12px',
-                background:'#faf5ff', border:'1.5px solid #a855f7',
-              }}>
-                <span style={{ fontSize:'.85em', color:'#6b21a8', fontWeight:600 }}>
-                  ยืนยันอัปเดตกิจกรรมตัวอย่างทุกห้อง?
-                </span>
-                <button
-                  onClick={handleReseedSample}
-                  disabled={reseeding}
-                  style={{
-                    padding:'5px 14px', borderRadius:'8px', border:'none',
-                    background:'#7c3aed', color:'white', fontWeight:700,
-                    fontSize:'.82em', cursor:'pointer', fontFamily:'inherit',
-                  }}
-                >
-                  {reseeding ? 'กำลังบันทึก…' : '✓ ยืนยัน'}
-                </button>
-                <button
-                  onClick={() => setConfirmReseed(false)}
-                  style={{
-                    padding:'5px 14px', borderRadius:'8px',
-                    border:'1px solid #d1d5db', background:'white',
-                    color:'#6b7280', fontWeight:600,
-                    fontSize:'.82em', cursor:'pointer', fontFamily:'inherit',
-                  }}
-                >
-                  ยกเลิก
-                </button>
-              </div>
-            )}
-            {reseedMsg && (
-              <div style={{
-                marginTop:'8px', padding:'7px 14px', borderRadius:'10px',
-                fontSize:'.82em', fontWeight:600,
-                background: reseedMsg.ok ? '#f0fdf4' : '#fef2f2',
-                color:      reseedMsg.ok ? '#15803d' : '#991b1b',
-                border: `1.5px solid ${reseedMsg.ok ? '#86efac' : '#fca5a5'}`,
-              }}>
-                {reseedMsg.text}
-              </div>
-            )}
-          </div>
-        )}
 
         {/* ── สร้างกำหนดกิจกรรม (corner defs + assignments) ── */}
         {showSeedDefsBtn && rooms.length > 0 && (
@@ -895,36 +836,67 @@ export default function ActivityScheduleTab() {
         </div>
       )}
 
-      {/* ── Schedule by level ── */}
-      {grouped.map(([lk, lvRooms]) => {
-        const meta = LEVEL_META[lk] ?? { label:`อนุบาล ${lk}`, hd:'linear-gradient(90deg,#546e7a,#78909c)' };
-        return (
-          <div key={lk} className="mb-4" style={{ borderRadius:'14px', overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,0.09)' }}>
-            <div style={{ padding:'10px 18px', fontWeight:700, color:'white', fontSize:'1em', background:meta.hd }}>
-              {meta.label}
-            </div>
-            <div style={{ display:'flex', flexWrap:'wrap', gap:'1px', background:'#dde3ea' }}>
-              {lvRooms.map(r => (
-                <RoomCard
-                  key={r.id}
-                  room={r}
-                  onEdit={() => setEditRoom(r)}
-                  getColor={getColor}
-                  getLabel={getLabel}
-                  innerKeySet={innerKeySet}
-                />
-              ))}
-            </div>
+      {/* ── Schedule by level (Accordion) ── */}
+      <div className="glass-card mb-4" style={{ padding:0, overflow:'hidden' }}>
+        <button
+          onClick={() => setOpenSchedule(v => !v)}
+          style={{
+            width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
+            padding:'12px 18px', background:'linear-gradient(135deg,#EDE7F6,#E3F2FD)',
+            border:'none', cursor:'pointer', fontFamily:'inherit',
+          }}
+        >
+          <span style={{ fontWeight:700, fontSize:'1em', color:'#1a237e' }}>
+            📅 ตารางกิจกรรมรายห้องเรียน
+          </span>
+          <span style={{ fontSize:'1.1em', color:'#5c6bc0', transition:'transform .2s',
+                         transform: openSchedule ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+        </button>
+        {openSchedule && (
+          <div style={{ padding:'12px' }}>
+            {grouped.map(([lk, lvRooms]) => {
+              const meta = LEVEL_META[lk] ?? { label:`อนุบาล ${lk}`, hd:'linear-gradient(90deg,#546e7a,#78909c)' };
+              return (
+                <div key={lk} className="mb-4" style={{ borderRadius:'14px', overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,0.09)' }}>
+                  <div style={{ padding:'10px 18px', fontWeight:700, color:'white', fontSize:'1em', background:meta.hd }}>
+                    {meta.label}
+                  </div>
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:'1px', background:'#dde3ea' }}>
+                    {lvRooms.map(r => (
+                      <RoomCard
+                        key={r.id}
+                        room={r}
+                        onEdit={() => setEditRoom(r)}
+                        getColor={getColor}
+                        getLabel={getLabel}
+                        innerKeySet={innerKeySet}
+                      />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        );
-      })}
+        )}
+      </div>
 
-      {/* ── Daily summary ── */}
-      <div className="glass-card mb-4">
-        <div style={{ fontWeight:700, fontSize:'1em', marginBottom:'14px',
-                      paddingBottom:'9px', borderBottom:'2px solid #eceff1' }}>
-          📅 สรุปการใช้แหล่งเรียนรู้รายวัน (ทุก {rooms.length} ห้องรวมกัน)
-        </div>
+      {/* ── Daily summary (Accordion) ── */}
+      <div className="glass-card mb-4" style={{ padding:0, overflow:'hidden' }}>
+        <button
+          onClick={() => setOpenSummary(v => !v)}
+          style={{
+            width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
+            padding:'12px 18px', background:'white', border:'none', cursor:'pointer', fontFamily:'inherit',
+          }}
+        >
+          <span style={{ fontWeight:700, fontSize:'1em', color:'#374151' }}>
+            📊 สรุปการใช้แหล่งเรียนรู้รายวัน (ทุก {rooms.length} ห้องรวมกัน)
+          </span>
+          <span style={{ fontSize:'1.1em', color:'#6b7280', transition:'transform .2s',
+                         transform: openSummary ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+        </button>
+        {openSummary && (
+        <div style={{ padding:'12px 18px 18px' }}>
         <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
           {DAYS.map(day => {
             const acts   = dailySummary[day];
@@ -987,11 +959,32 @@ export default function ActivityScheduleTab() {
             );
           })}
         </div>
+        </div>
+        )}
       </div>
 
-      {/* ── Dynamic activity list for this school ── */}
+      {/* ── Dynamic activity list for this school (Accordion) ── */}
       {allDefs.length > 0 && (
-        <div className="glass-card mb-4">
+        <div className="glass-card mb-4" style={{ padding:0, overflow:'hidden' }}>
+          <button
+            onClick={() => setOpenAllDefs(v => !v)}
+            style={{
+              width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
+              padding:'12px 18px', background:'white', border:'none', cursor:'pointer', fontFamily:'inherit',
+            }}
+          >
+            <span style={{ fontWeight:700, fontSize:'1em', color:'#374151' }}>
+              📋 กิจกรรมทั้งหมดในโรงเรียนนี้
+              <span style={{ fontSize:'.73em', marginLeft:'8px', padding:'2px 10px', borderRadius:'20px',
+                             fontWeight:600, background:'#E8F5E9', color:'#1B5E20' }}>
+                🏡 ใน {innerCornerDefs.length} · 🌿 นอก {cornerDefs.length}
+              </span>
+            </span>
+            <span style={{ fontSize:'1.1em', color:'#6b7280', transition:'transform .2s',
+                           transform: openAllDefs ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+          </button>
+          {openAllDefs && (
+          <div style={{ padding:'12px 18px 18px' }}>
           <div style={{ fontWeight:700, fontSize:'1em', marginBottom:'12px',
                         paddingBottom:'9px', borderBottom:'2px solid #eceff1' }}>
             📋 กิจกรรมทั้งหมดในโรงเรียนนี้
@@ -1014,15 +1007,28 @@ export default function ActivityScheduleTab() {
               );
             })}
           </div>
+          </div>
+          )}
         </div>
       )}
 
-      {/* ── Ratio table ── */}
-      <div className="glass-card mb-4">
-        <div style={{ fontWeight:700, fontSize:'1em', marginBottom:'12px',
-                      paddingBottom:'9px', borderBottom:'2px solid #eceff1' }}>
-          📊 เปรียบเทียบสัดส่วนแหล่งเรียนรู้รายห้อง
-        </div>
+      {/* ── Ratio table (Accordion) ── */}
+      <div className="glass-card mb-4" style={{ padding:0, overflow:'hidden' }}>
+        <button
+          onClick={() => setOpenRatio(v => !v)}
+          style={{
+            width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between',
+            padding:'12px 18px', background:'white', border:'none', cursor:'pointer', fontFamily:'inherit',
+          }}
+        >
+          <span style={{ fontWeight:700, fontSize:'1em', color:'#374151' }}>
+            📈 เปรียบเทียบสัดส่วนแหล่งเรียนรู้รายห้อง
+          </span>
+          <span style={{ fontSize:'1.1em', color:'#6b7280', transition:'transform .2s',
+                         transform: openRatio ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+        </button>
+        {openRatio && (
+        <div style={{ padding:'12px 18px 18px' }}>
         <div style={{ overflowX:'auto' }}>
           <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'.86em' }}>
             <thead>
@@ -1070,6 +1076,8 @@ export default function ActivityScheduleTab() {
             </tbody>
           </table>
         </div>
+        </div>
+        )}
       </div>
 
       {/* ── Edit modal ── */}

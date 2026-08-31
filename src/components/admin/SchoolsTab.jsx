@@ -14,7 +14,9 @@ const AFFILIATION_OPTIONS = [
   'อื่นๆ',
 ];
 
-const EMPTY_FORM = { name: '', address: '', phone: '', principal: '', affiliation: '', logo: '' };
+const SEMESTER_OPTIONS = ['ภาคเรียนที่ 1', 'ภาคเรียนที่ 2'];
+
+const EMPTY_FORM = { name: '', address: '', phone: '', principal: '', affiliation: '', logo: '', schoolYear: '', semester: '' };
 
 const FIELDS = [
   ['name',      'ชื่อโรงเรียน'],
@@ -86,6 +88,11 @@ export default function SchoolsTab() {
             <div className="text-sm">📞 {s.phone}</div>
             <div className="text-sm text-muted">👤 ผอ. {s.principal}</div>
             {s.affiliation && <div className="text-sm text-muted">🏢 สังกัด {s.affiliation}</div>}
+            {(s.schoolYear || s.semester) && (
+              <div className="text-sm text-muted">
+                📆{s.schoolYear ? ` ปีการศึกษา ${s.schoolYear}` : ''}{s.semester ? ` · ${s.semester}` : ''}
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -118,6 +125,23 @@ export default function SchoolsTab() {
               <option value="">— เลือกสังกัด —</option>
               {AFFILIATION_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
             </select>
+          </div>
+
+          {/* Academic year + semester */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.75rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '.35rem' }}>ปีการศึกษา</label>
+              <input className="input" placeholder="เช่น 2568" value={form.schoolYear || ''}
+                onChange={e => handleField('schoolYear', e.target.value)} />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '.35rem' }}>ภาคเรียน</label>
+              <select className="input" value={form.semester || ''}
+                onChange={e => handleField('semester', e.target.value)} style={{ cursor: 'pointer' }}>
+                <option value="">— เลือก —</option>
+                {SEMESTER_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+              </select>
+            </div>
           </div>
 
           {/* Logo upload */}

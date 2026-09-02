@@ -461,13 +461,14 @@ export function AppProvider({ children }) {
 
             if (cloudTime > localPushTs + 60_000) {
               // Firebase ใหม่กว่า local push ล่าสุดมากกว่า 1 นาที → เป็น sync จากเครื่องอื่น
-              // ป้องกัน: ถ้า Firebase มีนักเรียนน้อยกว่า local อย่างมีนัย (> 3 คน)
-              // แสดงว่า Firebase อาจถูกดัน snapshot เก่าทับ → ข้ามเพื่อป้องกันข้อมูลสูญ
+              // ป้องกัน: ถ้า Firebase มีนักเรียนน้อยกว่าหรือเท่ากับ local
+              // แสดงว่าเครื่องนี้มีข้อมูลใหม่กว่า (เช่น เพิ่งเพิ่มนักเรียน แต่ปิดแอปก่อน push)
+              // → ข้ามเพื่อป้องกันนักเรียนและข้อมูลการมาเรียนหาย
               const localStudentCount = students.length;
-              if (cloudStudentCount < localStudentCount - 3) {
+              if (cloudStudentCount < localStudentCount) {
                 console.warn(
                   `[KinderTrack] Pull blocked — cloud has ${cloudStudentCount} students` +
-                  ` but local has ${localStudentCount}. Possible stale Firebase push detected.`
+                  ` but local has ${localStudentCount}. Local data is newer, skipping pull to prevent data loss.`
                 );
                 setPullSyncStatus('done');
               } else {
@@ -520,6 +521,9 @@ export function AppProvider({ children }) {
 
     // บอก UI ว่ามีการเปลี่ยนแปลงรอ sync
     setAutoSyncStatus('pending');
+
+    // อัปเดต timestamp ทันที (ก่อน debounce) เพื่อป้องกัน pull เขียนทับถ้าปิดแอปก่อน push เสร็จ
+    localStorage.setItem('kt_lastPushAt', Date.now().toString());
 
     // ล้าง timer เก่า แล้วเริ่มนับใหม่
     clearTimeout(autoSyncTimer.current);

@@ -9,6 +9,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../lib/firebase';
 
 const EvaluationTab          = lazy(() => import('../components/admin/EvaluationTab'));
+const AbilityAssessmentTab   = lazy(() => import('../components/admin/AbilityAssessmentTab'));
 const ReportsTab             = lazy(() => import('../components/admin/ReportsTab'));
 const MediaTab               = lazy(() => import('../components/admin/MediaTab'));
 const MediaBorrowTab         = lazy(() => import('../components/admin/MediaBorrowTab'));
@@ -85,6 +86,7 @@ const TEACHER_TAB_GROUPS = [
     color: '#4f46e5',
     tabs: [
       { id: 'evaluation',    label: '✏️ ประเมินพัฒนาการ'  },  // 1. ลงมือประเมิน
+      { id: 'abilityassess', label: '🎯 ประเมินความสามารถผู้เรียน' },  // 2. หลักสูตร 2560
       { id: 'activitylog',   label: '📜 ประวัติการประเมิน' },  // 2. ดูประวัติ
       { id: 'devreport',     label: '📑 ผลการประเมินพัฒนาการ' },  // 3. ผลการประเมินพัฒนาการ
       { id: 'formreports',   label: '📄 รายงานสรุป'       },  // 4. รายงานสรุป
@@ -763,6 +765,7 @@ export default function TeacherDashboard() {
           {/* ── Learning results ── */}
           {activeTab === 'studentreport' && <StudentReportTab teacherClassFilter={myClass} />}
           {activeTab === 'evaluation'    && <EvaluationTab />}
+          {activeTab === 'abilityassess' && <AbilityAssessmentTab teacherClassFilter={myClass} />}
           {activeTab === 'formreports'   && <ReportsTab teacherClassFilter={myClass} />}
           {activeTab === 'activitylog'   && <ActivityLogTab />}
 

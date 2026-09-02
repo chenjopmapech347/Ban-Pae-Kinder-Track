@@ -45,6 +45,7 @@ const AssignOuterCornersTab  = lazy(() => import('../components/admin/AssignOute
 const YearEndTab             = lazy(() => import('../components/admin/YearEndTab'));
 const SystemLogTab           = lazy(() => import('../components/admin/SystemLogTab'));
 const HelpTab                = lazy(() => import('../components/admin/HelpTab'));
+const AbilityAssessmentTab   = lazy(() => import('../components/admin/AbilityAssessmentTab'));
 
 const TAB_GROUPS = [
   {
@@ -90,6 +91,7 @@ const TAB_GROUPS = [
     color: '#4f46e5',
     tabs: [
       { id: 'evaluation',    label: '📊 ประเมินพัฒนาการ'        },
+      { id: 'abilityassess', label: '🎯 ประเมินความสามารถผู้เรียน' },
       { id: 'activitylog',   label: '📜 ประวัติการประเมิน'      },
       { id: 'devreport',     label: '📑 ผลการประเมินพัฒนาการ'   },
       { id: 'reports',       label: '📈 รายงานสรุปผลการประเมินพัฒนาการ' },
@@ -175,6 +177,7 @@ export default function AdminDashboard() {
           {activeTab === 'specialevent'   && <SpecialEventTab />}
           {activeTab === 'studentreport'  && <StudentReportTab />}
           {activeTab === 'evaluation'     && <EvaluationTab />}
+          {activeTab === 'abilityassess'  && <AbilityAssessmentTab />}
           {activeTab === 'reports'        && <ReportsTab />}
           {activeTab === 'activitylog'    && <ActivityLogTab />}
           {activeTab === 'nationalstd'    && <NationalStandardsTab />}

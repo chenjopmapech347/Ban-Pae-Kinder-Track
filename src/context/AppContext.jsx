@@ -201,6 +201,7 @@ export function AppProvider({ children }) {
   const [dailyRoutineRecords, setDailyRoutineRecords] = useLocalStorage(STORAGE_KEYS.dailyRoutineRecords, {});
   const [specialEvents,       setSpecialEvents]       = useLocalStorage(STORAGE_KEYS.specialEvents,       {});
   const [studentReportRecords, setStudentReportRecords] = useLocalStorage(STORAGE_KEYS.studentReportRecords, {});
+  const [abilityAssessments,  setAbilityAssessments]  = useLocalStorage(STORAGE_KEYS.abilityAssessments, {});
   const [measurementDates, setMeasurementDates] = useLocalStorage(STORAGE_KEYS.measurementDates, {
     t1m1: '', // ภาคเรียน 1 ครั้งที่ 1 (อ้างอิง มิ.ย.)
     t1m2: '', // ภาคเรียน 1 ครั้งที่ 2 (อ้างอิง ก.ย.)
@@ -549,7 +550,7 @@ export function AppProvider({ children }) {
     pickupRecords, mediaRecords, cornerRecords, innerCornerRecords,
     healthCheckRecords, illnessCheckRecords, toothBrushRecords,
     lunchRecords, milkRecords, nutritionRecords, dailyRoutineRecords, studentReportRecords,
-    specialEvents, specialHolidays,
+    specialEvents, specialHolidays, abilityAssessments,
     cornerDefs, innerCornerDefs,
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1469,6 +1470,8 @@ export function AppProvider({ children }) {
     // Parent comment deadline (วันปิดรับความคิดเห็นผู้ปกครอง)
     parentCommentDeadlines,
     setParentCommentDeadlines,
+    // ประเมินความสามารถผู้เรียน หลักสูตรปฐมวัย 2560
+    abilityAssessments,    setAbilityAssessments,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

@@ -140,9 +140,13 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
   // '' = แสดงทุกห้อง; ถ้าเป็นครูประจำห้องให้ lock ที่ห้องตัวเอง
   const [selClass, setSelClass] = useState(teacherClassFilter ?? '');
 
-  // สิทธิ์ต่อรายการ: แก้ไขได้ถ้าเป็น admin หรือเป็นเจ้าของ record
-  const canEdit   = (r) => isAdmin || r.createdByTeacherId === user?.teacherId;
-  const canDelete = ()  => isAdmin;
+  // สิทธิ์ต่อรายการ: แก้ไขได้ถ้าเป็น admin, เจ้าของ record, หรือครูประจำห้องนั้น
+  const canEdit   = (r) => isAdmin
+    || r.createdByTeacherId === user?.teacherId
+    || (!!teacherClassFilter && r.className === teacherClassFilter);
+  const canDelete = (r) => isAdmin
+    || r.createdByTeacherId === user?.teacherId
+    || (!!teacherClassFilter && r.className === teacherClassFilter);
 
   const classList = useMemo(() => {
     if (teacherClassFilter) return [teacherClassFilter];
@@ -480,13 +484,13 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
                               แก้ไข
                             </button>
                           )}
-                          {canDelete() && (
+                          {canDelete(r) && (
                             <button type="button" onClick={() => del(r.id)}
                               style={{ padding: '.2rem .5rem', borderRadius: '5px', border: 'none', background: '#fee2e2', color: '#dc2626', cursor: 'pointer', fontSize: '.75rem', fontWeight: 600 }}>
                               ลบ
                             </button>
                           )}
-                          {!canEdit(r) && !canDelete() && (
+                          {!canEdit(r) && !canDelete(r) && (
                             <span style={{ color: '#d1d5db', fontSize: '.75rem' }}>—</span>
                           )}
                         </div>

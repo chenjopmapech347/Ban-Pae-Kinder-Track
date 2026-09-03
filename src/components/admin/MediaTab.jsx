@@ -1,5 +1,6 @@
 // MediaTab.jsx — ทะเบียนผลิตสื่อ / นวัตกรรมการเรียนการสอน
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../../context/AppContext';
 
 // ── ประเภทการนำไปใช้ประกอบการสอน ──────────────────────────────────────────
@@ -23,6 +24,176 @@ const EMPTY_FORM = {
   note:          '',      // หมายเหตุ
   imageUrl:      '',      // URL จาก ImgBB
 };
+
+// ── Modal แบบฟอร์มเพิ่ม/แก้ไขสื่อ ────────────────────────────────────────
+function MediaFormModal({ editId, form, setForm, imgPreview, imgbbApiKey, uploading, onImageChange, onRemoveImage, onCancel, onSave, inp, lbl }) {
+  // ปิดด้วย ESC
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape') onCancel(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onCancel]);
+
+  return (
+    <div
+      onClick={e => { if (e.target === e.currentTarget) onCancel(); }}
+      style={{
+        position: 'fixed', inset: 0,
+        background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(4px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        zIndex: 9999, padding: '1rem',
+      }}
+    >
+      <div style={{
+        background: 'white', borderRadius: '16px',
+        width: '100%', maxWidth: '560px',
+        maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+        boxShadow: '0 20px 60px rgba(0,0,0,.25)',
+        overflow: 'hidden',
+      }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '1rem 1.25rem',
+          borderBottom: '1px solid #e0f2fe',
+          background: 'linear-gradient(135deg,#0891b2,#06b6d4)',
+          color: 'white',
+        }}>
+          <span style={{ fontWeight: 800, fontSize: '.95rem' }}>
+            {editId ? '✏️ แก้ไขรายการสื่อ' : '➕ เพิ่มรายการสื่อใหม่'}
+          </span>
+          <button type="button" onClick={onCancel}
+            style={{ background: 'rgba(255,255,255,.2)', border: 'none', color: 'white', borderRadius: '8px', width: '28px', height: '28px', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            ✕
+          </button>
+        </div>
+
+        {/* Body — scrollable */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.75rem' }}>
+
+            {/* ชื่อสื่อ */}
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={lbl}>รายการสื่อ / นวัตกรรม *</label>
+              <input style={inp} placeholder="ชื่อสื่อการสอน..." value={form.item}
+                onChange={e => setForm(f => ({ ...f, item: e.target.value }))}
+                autoFocus />
+            </div>
+
+            {/* ประกอบการสอน */}
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={lbl}>ประกอบการสอน</label>
+              <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', padding: '.5rem .75rem', background: '#f0f9ff', borderRadius: '8px', border: '1px solid #bae6fd' }}>
+                {CTX_OPTS.map(o => (
+                  <label key={o.key} style={{ display: 'flex', alignItems: 'center', gap: '.4rem', fontSize: '.85rem', fontWeight: 600, cursor: 'pointer' }}>
+                    <input type="checkbox" checked={form[o.key]}
+                      onChange={e => setForm(f => ({ ...f, [o.key]: e.target.checked }))} />
+                    {o.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* หน่วยการสอน */}
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={lbl}>หน่วยการเรียนรู้</label>
+              <input style={inp} placeholder="เช่น ของเล่นของใช้, รักการอ่าน..." value={form.unitName}
+                onChange={e => setForm(f => ({ ...f, unitName: e.target.value }))} />
+            </div>
+
+            {/* สื่อทำมือ + AI */}
+            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', paddingTop: '.3rem', flexWrap: 'wrap' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '.4rem', fontSize: '.85rem', fontWeight: 600, cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.handmade}
+                  onChange={e => setForm(f => ({ ...f, handmade: e.target.checked }))} />
+                🖐️ สื่อทำมือ
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '.4rem', fontSize: '.85rem', fontWeight: 600, cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.ai}
+                  onChange={e => setForm(f => ({ ...f, ai: e.target.checked }))} />
+                🤖 สื่อ AI
+              </label>
+            </div>
+
+            {/* ประเภทสื่อ */}
+            <div>
+              <label style={lbl}>ประเภทสื่อ</label>
+              <select style={inp} value={form.category}
+                onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
+                <option value="ใหม่">สื่อใหม่</option>
+                <option value="เก่า">สื่อเก่า</option>
+              </select>
+            </div>
+
+            {/* หมายเหตุ */}
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={lbl}>หมายเหตุ</label>
+              <input style={inp} placeholder="หมายเหตุ..." value={form.note}
+                onChange={e => setForm(f => ({ ...f, note: e.target.value }))} />
+            </div>
+
+            {/* รูปภาพ */}
+            <div style={{ gridColumn: '1 / -1' }}>
+              <label style={lbl}>รูปภาพสื่อ</label>
+              {!imgbbApiKey ? (
+                <div style={{ padding: '.6rem .9rem', background: '#fef9c3', border: '1px solid #fde047', borderRadius: '8px', fontSize: '.8rem', color: '#854d0e' }}>
+                  ⚠️ ยังไม่ได้ตั้งค่า ImgBB API Key — บันทึกข้อมูลสื่อได้แต่ไม่มีรูปภาพ
+                  <br/><span style={{ opacity: .75 }}>ไปที่ ตั้งค่าระบบ → ImgBB API Key เพื่อเปิดใช้รูปภาพ</span>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                  {imgPreview ? (
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                      <img src={imgPreview} alt="preview"
+                        style={{ width: '120px', height: '90px', objectFit: 'cover', borderRadius: '8px', border: '1.5px solid #bae6fd' }} />
+                      <button type="button" onClick={onRemoveImage}
+                        style={{ position: 'absolute', top: '-6px', right: '-6px', width: '20px', height: '20px', borderRadius: '50%', border: 'none', background: '#ef4444', color: 'white', cursor: 'pointer', fontSize: '.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ width: '120px', height: '90px', border: '2px dashed #bae6fd', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '.75rem', flexDirection: 'column', gap: '.25rem' }}>
+                      <span style={{ fontSize: '1.5rem' }}>🖼️</span>
+                      <span>ยังไม่มีรูป</span>
+                    </div>
+                  )}
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
+                    <span style={{ fontSize: '.78rem', color: '#6b7280' }}>เลือกไฟล์รูป (ไม่เกิน 10MB)</span>
+                    <input type="file" accept="image/*"
+                      style={{ fontSize: '.8rem', fontFamily: 'inherit' }}
+                      onChange={onImageChange} />
+                  </label>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer — fixed */}
+        <div style={{
+          display: 'flex', gap: '.5rem', justifyContent: 'flex-end',
+          padding: '1rem 1.25rem',
+          borderTop: '1px solid #f1f5f9',
+          background: 'white',
+        }}>
+          <button type="button" onClick={onCancel}
+            style={{ padding: '.45rem 1.1rem', borderRadius: '8px', border: '1.5px solid #d1d5db', background: 'white', fontFamily: 'inherit', fontSize: '.85rem', cursor: 'pointer' }}>
+            ยกเลิก
+          </button>
+          <button type="button" onClick={onSave} disabled={!form.item.trim() || uploading}
+            style={{
+              padding: '.45rem 1.4rem', borderRadius: '8px', border: 'none',
+              background: (form.item.trim() && !uploading) ? '#0891b2' : '#cbd5e1',
+              color: 'white', fontFamily: 'inherit', fontWeight: 700, fontSize: '.85rem',
+              cursor: (form.item.trim() && !uploading) ? 'pointer' : 'default',
+            }}>
+            {uploading ? '⏳ กำลังอัปโหลด...' : editId ? '💾 บันทึกการแก้ไข' : '✅ บันทึก'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ── สร้างข้อความ "ประกอบการสอนหน่วย" จาก record ──────────────────────────
 function buildCtxText(r) {
@@ -293,124 +464,20 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
         </div>
       </div>
 
-      {/* ── Add / Edit Form ── */}
-      {showForm && viewMode === 'entry' && (
-        <div style={{
-          background: 'white', borderRadius: '12px', border: '1.5px solid #bae6fd',
-          padding: '1.25rem', marginBottom: '1.25rem',
-          boxShadow: '0 4px 16px rgba(8,145,178,.1)',
-        }}>
-          <div style={{ fontWeight: 800, fontSize: '.95rem', color: '#0891b2', marginBottom: '1rem' }}>
-            {editId ? '✏️ แก้ไขรายการ' : '➕ เพิ่มรายการสื่อใหม่'}
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.75rem' }}>
-
-            {/* ชื่อสื่อ */}
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={lbl}>รายการสื่อ / นวัตกรรม *</label>
-              <input style={inp} placeholder="ชื่อสื่อการสอน..." value={form.item}
-                onChange={e => setForm(f => ({ ...f, item: e.target.value }))} />
-            </div>
-
-            {/* ประกอบการสอน checkboxes */}
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={lbl}>ประกอบการสอน</label>
-              <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap', padding: '.5rem .75rem', background: '#f0f9ff', borderRadius: '8px', border: '1px solid #bae6fd' }}>
-                {CTX_OPTS.map(o => (
-                  <label key={o.key} style={{ display: 'flex', alignItems: 'center', gap: '.4rem', fontSize: '.85rem', fontWeight: 600, cursor: 'pointer' }}>
-                    <input type="checkbox" checked={form[o.key]}
-                      onChange={e => setForm(f => ({ ...f, [o.key]: e.target.checked }))} />
-                    {o.label}
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* หน่วยการสอน */}
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={lbl}>หน่วยการเรียนรู้</label>
-              <input style={inp} placeholder="เช่น ของเล่นของใช้, รักการอ่าน..." value={form.unitName}
-                onChange={e => setForm(f => ({ ...f, unitName: e.target.value }))} />
-            </div>
-
-            {/* สื่อทำมือ + AI */}
-            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', paddingTop: '.3rem', flexWrap: 'wrap' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '.4rem', fontSize: '.85rem', fontWeight: 600, cursor: 'pointer' }}>
-                <input type="checkbox" checked={form.handmade}
-                  onChange={e => setForm(f => ({ ...f, handmade: e.target.checked }))} />
-                🖐️ สื่อทำมือ
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '.4rem', fontSize: '.85rem', fontWeight: 600, cursor: 'pointer' }}>
-                <input type="checkbox" checked={form.ai}
-                  onChange={e => setForm(f => ({ ...f, ai: e.target.checked }))} />
-                🤖 สื่อ AI
-              </label>
-            </div>
-
-            {/* ประเภทสื่อ */}
-            <div>
-              <label style={lbl}>ประเภทสื่อ</label>
-              <select style={inp} value={form.category}
-                onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
-                <option value="ใหม่">สื่อใหม่</option>
-                <option value="เก่า">สื่อเก่า</option>
-              </select>
-            </div>
-
-            {/* หมายเหตุ */}
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={lbl}>หมายเหตุ</label>
-              <input style={inp} placeholder="หมายเหตุ..." value={form.note}
-                onChange={e => setForm(f => ({ ...f, note: e.target.value }))} />
-            </div>
-
-            {/* รูปภาพ */}
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={lbl}>รูปภาพสื่อ</label>
-              {!imgbbApiKey ? (
-                <div style={{ padding: '.6rem .9rem', background: '#fef9c3', border: '1px solid #fde047', borderRadius: '8px', fontSize: '.8rem', color: '#854d0e' }}>
-                  ⚠️ ยังไม่ได้ตั้งค่า ImgBB API Key — บันทึกข้อมูลสื่อได้แต่ไม่มีรูปภาพ
-                  <br/><span style={{ opacity: .75 }}>ไปที่ ตั้งค่าระบบ → ImgBB API Key เพื่อเปิดใช้รูปภาพ</span>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                  {imgPreview ? (
-                    <div style={{ position: 'relative', display: 'inline-block' }}>
-                      <img src={imgPreview} alt="preview"
-                        style={{ width: '120px', height: '90px', objectFit: 'cover', borderRadius: '8px', border: '1.5px solid #bae6fd' }} />
-                      <button type="button" onClick={removeImage}
-                        style={{ position: 'absolute', top: '-6px', right: '-6px', width: '20px', height: '20px', borderRadius: '50%', border: 'none', background: '#ef4444', color: 'white', cursor: 'pointer', fontSize: '.7rem', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <div style={{ width: '120px', height: '90px', border: '2px dashed #bae6fd', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '.75rem', flexDirection: 'column', gap: '.25rem' }}>
-                      <span style={{ fontSize: '1.5rem' }}>🖼️</span>
-                      <span>ยังไม่มีรูป</span>
-                    </div>
-                  )}
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
-                    <span style={{ fontSize: '.78rem', color: '#6b7280' }}>เลือกไฟล์รูป (ไม่เกิน 10MB)</span>
-                    <input type="file" accept="image/*"
-                      style={{ fontSize: '.8rem', fontFamily: 'inherit' }}
-                      onChange={handleImageChange} />
-                  </label>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '.5rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-            <button type="button" onClick={cancelForm}
-              style={{ padding: '.4rem 1rem', borderRadius: '8px', border: '1.5px solid #d1d5db', background: 'white', fontFamily: 'inherit', fontSize: '.85rem', cursor: 'pointer' }}>
-              ยกเลิก
-            </button>
-            <button type="button" onClick={save} disabled={!form.item.trim() || uploading}
-              style={{ padding: '.4rem 1.2rem', borderRadius: '8px', border: 'none', background: (form.item.trim() && !uploading) ? '#0891b2' : '#cbd5e1', color: 'white', fontFamily: 'inherit', fontWeight: 700, fontSize: '.85rem', cursor: (form.item.trim() && !uploading) ? 'pointer' : 'default' }}>
-              {uploading ? '⏳ กำลังอัปโหลด...' : editId ? '💾 บันทึกการแก้ไข' : '✅ บันทึก'}
-            </button>
-          </div>
-        </div>
+      {/* ── Add / Edit Modal ── */}
+      {showForm && createPortal(
+        <MediaFormModal
+          editId={editId}
+          form={form} setForm={setForm}
+          imgPreview={imgPreview} imgbbApiKey={imgbbApiKey}
+          uploading={uploading}
+          onImageChange={handleImageChange}
+          onRemoveImage={removeImage}
+          onCancel={cancelForm}
+          onSave={save}
+          inp={inp} lbl={lbl}
+        />,
+        document.body
       )}
 
       {/* ── Table ── */}

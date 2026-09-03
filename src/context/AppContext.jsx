@@ -959,13 +959,13 @@ export function AppProvider({ children }) {
       const monthStr = String(month).padStart(2, '0');
       const makeKey  = (cls) => `${cls}__${academicYear}__${thaiYear}-${monthStr}`;
 
-      // ── Milk, Lunch, ToothBrush → H (มา) และ X (ขาด/ลา/ป่วย) ──
-      // ใช้ functional updater setter(prev => ...) เพื่อให้ H และ X ถูก apply ใน
-      // setState เดียวกัน ป้องกัน React batch ทำให้ patchX ทับ patchH
+      // ── Milk, Lunch, ToothBrush → X (ทุกคน รวมถึงคนที่มา) ──
+      // ค่าเริ่มต้น = 'X' เสมอ ครูต้องคลิกเองเพื่อเช็ค '√'
+      // (ไม่ auto-fill '√' อีกต่อไป เพื่อให้ครูเช็คได้ตามจริง)
       const applyHX = (setter) => {
         setter(prev => {
           const next = { ...prev };
-          // H สำหรับนักเรียนที่มา
+          // X สำหรับนักเรียนที่มา (ค่าเริ่มต้น — ครูคลิก √ เอง)
           Object.entries(byClass).forEach(([cls, ids]) => {
             const k   = makeKey(cls);
             const rec = next[k]
@@ -974,7 +974,7 @@ export function AppProvider({ children }) {
             ids.forEach(id => {
               const sData = rec.students[id] ?? { days: {} };
               if (!(day in (sData.days ?? {}))) {
-                rec.students[id] = { ...sData, days: { ...(sData.days ?? {}), [day]: '√' } };
+                rec.students[id] = { ...sData, days: { ...(sData.days ?? {}), [day]: 'X' } };
               }
             });
             next[k] = rec;

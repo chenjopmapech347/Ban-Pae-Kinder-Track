@@ -3,17 +3,16 @@ import { useApp } from '../../context/AppContext';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 import { daysInMonth, getDow, isWeekendDay } from '../../utils/helpers';
 
-// √  = ดื่มนม
-// X  = ไม่มาเรียน / ขาด
-// '' = ว่าง (วันหยุด / ยังไม่บันทึก)
-const CYCLE = ['', '√', 'X'];
+// √  = ดื่มนม (ครูเช็คแล้ว)
+// X  = ยังไม่ดื่ม / ขาด / ไม่เช็ค (ค่าเริ่มต้น)
+const CYCLE = ['X', '√']; // 2 สถานะ: คลิกสลับ X ↔ √
 const DONE_SYM = '√'; // เดิมใช้ 'H'
 
 const CELL_STYLE = {
   '√': { bg: '#dbeafe', color: '#1e40af', fw: 800 }, // ฟ้าอ่อน = ดื่มนม
   H:   { bg: '#dbeafe', color: '#1e40af', fw: 800 }, // backward compat (ข้อมูลเก่า)
-  X:   { bg: '#f3f4f6', color: '#9ca3af', fw: 700 }, // เทา = ไม่มาเรียน
-  '':  { bg: 'white',   color: '#d1d5db', fw: 400 },
+  X:   { bg: '#f3f4f6', color: '#9ca3af', fw: 700 }, // เทา = ยังไม่ดื่ม
+  '':  { bg: '#f3f4f6', color: '#9ca3af', fw: 700 }, // treat empty same as X
 };
 function isDone(v) { return v === DONE_SYM || v === 'H'; } // รองรับข้อมูลเก่า
 
@@ -170,7 +169,7 @@ export default function MilkTab({ teacherClassFilter = null }) {
       const updated = { ...prev.students };
       classStudents.forEach(s => {
         const sData = updated[s.id] ?? { days: {} };
-        updated[s.id] = { ...sData, days: { ...(sData.days ?? {}), [day]: allH ? '' : DONE_SYM } };
+        updated[s.id] = { ...sData, days: { ...(sData.days ?? {}), [day]: allH ? 'X' : DONE_SYM } };
       });
       return { ...prev, students: updated };
     });

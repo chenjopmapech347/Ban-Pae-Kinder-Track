@@ -4,17 +4,16 @@ import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 import { daysInMonth, getDow, isWeekendDay } from '../../utils/helpers';
 
 // ── สัญลักษณ์ ────────────────────────────────────────────────────────────────
-// √  = รับประทานอาหารกลางวัน (ate lunch)
-// X  = ไม่มาเรียน / ขาด
-// '' = ว่าง (วันหยุด / ยังไม่บันทึก)
-const CYCLE = ['', '√', 'X'];
+// √  = รับประทานอาหารกลางวัน (ครูเช็คแล้ว)
+// X  = ยังไม่รับประทาน / ขาด / ไม่เช็ค (ค่าเริ่มต้น)
+const CYCLE = ['X', '√']; // 2 สถานะ: คลิกสลับ X ↔ √
 const DONE_SYM = '√'; // เดิมใช้ 'H'
 
 const CELL_STYLE = {
   '√': { bg: '#fef3c7', color: '#92400e', fw: 800 }, // ส้มอ่อน = กินอาหาร
   H:   { bg: '#fef3c7', color: '#92400e', fw: 800 }, // backward compat (ข้อมูลเก่า)
-  X:   { bg: '#f3f4f6', color: '#9ca3af', fw: 700 }, // เทา = ไม่มาเรียน
-  '':  { bg: 'white',   color: '#d1d5db', fw: 400 }, // ว่าง
+  X:   { bg: '#f3f4f6', color: '#9ca3af', fw: 700 }, // เทา = ยังไม่รับประทาน
+  '':  { bg: '#f3f4f6', color: '#9ca3af', fw: 700 }, // treat empty same as X
 };
 function isDone(v) { return v === DONE_SYM || v === 'H'; } // รองรับข้อมูลเก่า
 
@@ -180,7 +179,7 @@ export default function LunchTab({ teacherClassFilter = null }) {
       const updated = { ...prev.students };
       classStudents.forEach(s => {
         const sData = updated[s.id] ?? { days: {} };
-        updated[s.id] = { ...sData, days: { ...(sData.days ?? {}), [day]: allH ? '' : DONE_SYM } };
+        updated[s.id] = { ...sData, days: { ...(sData.days ?? {}), [day]: allH ? 'X' : DONE_SYM } };
       });
       return { ...prev, students: updated };
     });

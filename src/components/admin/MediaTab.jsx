@@ -424,6 +424,7 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
             <thead>
               <tr style={{ background: '#f0f9ff' }}>
                 <th style={{ ...cell, width: '36px' }}>ที่</th>
+                <th style={{ ...cell, width: '90px' }}>จัดการ</th>
                 <th style={{ ...cell, width: '190px' }}>รูปภาพ</th>
                 <th style={{ ...cell, textAlign: 'center', minWidth: '180px' }}>รายการสื่อ / นวัตกรรม</th>
                 <th style={{ ...cell, textAlign: 'center', minWidth: '120px' }}>ห้อง / ผู้ผลิต</th>
@@ -433,9 +434,6 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
                 <th style={{ ...cell, width: '55px' }}>สื่อเก่า</th>
                 <th style={{ ...cell, width: '55px' }}>สื่อใหม่</th>
                 <th style={{ ...cell, textAlign: 'center', minWidth: '80px' }}>หมายเหตุ</th>
-                {viewMode === 'entry' && (
-                  <th style={{ ...cell, width: '80px' }}>จัดการ</th>
-                )}
               </tr>
             </thead>
             <tbody>
@@ -446,6 +444,25 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
                 return (
                   <tr key={r.id} style={{ background: i % 2 === 0 ? 'white' : '#f0f9ff', verticalAlign: 'top' }}>
                     <td style={{ ...cell, textAlign: 'center', color: '#6b7280' }}>{i + 1}</td>
+                    <td style={{ ...cell, textAlign: 'center' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '.3rem', alignItems: 'center' }}>
+                        {canEdit(r) && (
+                          <button type="button" onClick={() => startEdit(r)}
+                            style={{ padding: '.25rem .6rem', borderRadius: '5px', border: 'none', background: '#e0f2fe', color: '#0891b2', cursor: 'pointer', fontSize: '.75rem', fontWeight: 600, width: '62px' }}>
+                            ✏️ แก้ไข
+                          </button>
+                        )}
+                        {canDelete(r) && (
+                          <button type="button" onClick={() => del(r.id)}
+                            style={{ padding: '.25rem .6rem', borderRadius: '5px', border: 'none', background: '#fee2e2', color: '#dc2626', cursor: 'pointer', fontSize: '.75rem', fontWeight: 600, width: '62px' }}>
+                            🗑 ลบ
+                          </button>
+                        )}
+                        {!canEdit(r) && !canDelete(r) && (
+                          <span style={{ color: '#d1d5db', fontSize: '.75rem' }}>—</span>
+                        )}
+                      </div>
+                    </td>
                     <td style={{ ...cell, textAlign: 'center', padding: '.3rem' }}>
                       {r.imageUrl ? (
                         <img src={r.imageUrl} alt={r.item}
@@ -485,27 +502,6 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
                       {(r.category === 'ใหม่' || !r.category) ? <span style={{ color: '#15803d', fontWeight: 700 }}>✓</span> : ''}
                     </td>
                     <td style={{ ...cell, color: '#6b7280', fontSize: '.8rem' }}>{r.note ?? ''}</td>
-                    {viewMode === 'entry' && (
-                      <td style={{ ...cell, textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '.3rem', justifyContent: 'center' }}>
-                          {canEdit(r) && (
-                            <button type="button" onClick={() => startEdit(r)}
-                              style={{ padding: '.2rem .5rem', borderRadius: '5px', border: 'none', background: '#e0f2fe', color: '#0891b2', cursor: 'pointer', fontSize: '.75rem', fontWeight: 600 }}>
-                              แก้ไข
-                            </button>
-                          )}
-                          {canDelete(r) && (
-                            <button type="button" onClick={() => del(r.id)}
-                              style={{ padding: '.2rem .5rem', borderRadius: '5px', border: 'none', background: '#fee2e2', color: '#dc2626', cursor: 'pointer', fontSize: '.75rem', fontWeight: 600 }}>
-                              ลบ
-                            </button>
-                          )}
-                          {!canEdit(r) && !canDelete(r) && (
-                            <span style={{ color: '#d1d5db', fontSize: '.75rem' }}>—</span>
-                          )}
-                        </div>
-                      </td>
-                    )}
                   </tr>
                 );
               })}

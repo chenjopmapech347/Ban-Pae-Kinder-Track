@@ -268,6 +268,7 @@ export function AppProvider({ children }) {
       activityLogs,
       mediaRecords,
       mediaBorrowRecords,
+      imgbbApiKey,
     }),
     [
       students,
@@ -288,6 +289,7 @@ export function AppProvider({ children }) {
       activityLogs,
       mediaRecords,
       mediaBorrowRecords,
+      imgbbApiKey,
     ],
   );
 
@@ -310,6 +312,7 @@ export function AppProvider({ children }) {
     if (payload.activityLogs) setActivityLogs(payload.activityLogs);
     if (payload.mediaRecords) setMediaRecords(payload.mediaRecords);
     if (payload.mediaBorrowRecords) setMediaBorrowRecords(payload.mediaBorrowRecords);
+    if (payload.imgbbApiKey) setImgbbApiKey(payload.imgbbApiKey);
   }, [
     setStudents,
     setTeachers,
@@ -329,6 +332,7 @@ export function AppProvider({ children }) {
     setActivityLogs,
     setMediaRecords,
     setMediaBorrowRecords,
+    setImgbbApiKey,
   ]);
 
   const importStudentAssessmentExcel = useCallback(
@@ -1060,7 +1064,7 @@ export function AppProvider({ children }) {
         };
         applyIllness(byClass,       '√');
         applyIllness(byClassAbsent, 'X');
-        applyIllness(byClassSick,   'C'); // ป่วย → C (ไข้ทั่วไป) ครูเปลี่ยน H/D เองภายหลัง
+        applyIllness(byClassSick,   'C'); // ป่วย → C (ไม่มาเรียน + ป่วยหวัด/ไข้) ครูเปลี่ยน D เองถ้าอุจจาระร่วง
         return next;
       });
 

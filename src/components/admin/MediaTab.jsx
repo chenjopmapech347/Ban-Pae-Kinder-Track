@@ -12,6 +12,7 @@ const CTX_OPTS = [
 
 const EMPTY_FORM = {
   item:          '',      // ชื่อรายการสื่อ / นวัตกรรม
+  className:     '',      // ห้องเรียน (กำหนดตอน startEdit หรือ save ใหม่)
   // ── ประกอบการสอน (checkboxes) ──
   ctxExperience: false,   // ☑ เสริมประสบการณ์
   ctxGame:       false,   // ☑ เกมการศึกษา
@@ -26,7 +27,7 @@ const EMPTY_FORM = {
 };
 
 // ── Modal แบบฟอร์มเพิ่ม/แก้ไขสื่อ ────────────────────────────────────────
-function MediaFormModal({ editId, form, setForm, imgPreview, imgbbApiKey, uploading, onImageChange, onRemoveImage, onCancel, onSave, inp, lbl }) {
+function MediaFormModal({ editId, form, setForm, imgPreview, imgbbApiKey, uploading, onImageChange, onRemoveImage, onCancel, onSave, inp, lbl, classList, isAdmin }) {
   // ปิดด้วย ESC
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onCancel(); };
@@ -79,6 +80,19 @@ function MediaFormModal({ editId, form, setForm, imgPreview, imgbbApiKey, upload
                 onChange={e => setForm(f => ({ ...f, item: e.target.value }))}
                 autoFocus />
             </div>
+
+            {/* ห้องเรียน — แสดงเฉพาะ admin ที่มีหลายห้อง */}
+            {isAdmin && classList.length > 1 && (
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={lbl}>ห้องเรียน</label>
+                <select style={inp} value={form.className}
+                  onChange={e => setForm(f => ({ ...f, className: e.target.value }))}>
+                  {classList.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* ประกอบการสอน */}
             <div style={{ gridColumn: '1 / -1' }}>
@@ -365,14 +379,15 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
 
       if (editId) {
         setMediaRecords(prev => prev.map(r =>
-          r.id === editId ? { ...r, ...finalForm, className: cn } : r
+          // ใช้ form.className ที่ผู้ใช้เลือกใน modal (ไม่ใช่ cn จาก header dropdown)
+          r.id === editId ? { ...r, ...finalForm, className: form.className || cn } : r
         ));
         setEditId(null);
       } else {
         setMediaRecords(prev => [...(prev ?? []), {
           ...finalForm,
           id: Date.now(),
-          className: cn,
+          className: form.className || cn,  // ← ใช้ห้องที่เลือกใน modal
           createdByTeacherId: user?.teacherId ?? null,
           createdAt: new Date().toISOString(),
         }]);
@@ -391,6 +406,7 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
   function startEdit(r) {
     setForm({
       item:          r.item          ?? '',
+      className:     r.className     ?? cn,  // ← โหลดห้องเดิมของ record
       ctxExperience: r.ctxExperience ?? false,
       ctxGame:       r.ctxGame       ?? false,
       ctxCorner:     r.ctxCorner     ?? false,
@@ -457,7 +473,7 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
             🖨️ พิมพ์
           </button>
           {/* ครูและ admin เพิ่มรายการได้ */}
-          <button type="button" onClick={() => { cancelForm(); setShowForm(true); }}
+          <button type="button" onClick={() => { cancelForm(); setForm(f => ({ ...f, className: cn })); setShowForm(true); }}
             style={{ padding: '.4rem .9rem', borderRadius: '8px', border: 'none', background: 'white', color: '#0891b2', fontFamily: 'inherit', fontWeight: 700, fontSize: '.82rem', cursor: 'pointer' }}>
             + เพิ่มรายการ
           </button>
@@ -476,6 +492,8 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
           onCancel={cancelForm}
           onSave={save}
           inp={inp} lbl={lbl}
+          classList={classList}
+          isAdmin={isAdmin}
         />,
         document.body
       )}

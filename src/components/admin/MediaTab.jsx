@@ -183,8 +183,11 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
     try {
       let imageUrl = form.imageUrl;
 
-      if (imgFile) {
+      if (imgFile && imgbbApiKey) {
         imageUrl = await uploadToImgBB(imgFile);
+      } else if (imgFile && !imgbbApiKey) {
+        // ไม่มี ImgBB key — บันทึกข้อมูลโดยไม่มีรูปภาพ
+        console.warn('[MediaTab] ไม่มี ImgBB API Key — บันทึกโดยไม่มีรูป');
       }
 
       const finalForm = { ...form, imageUrl };
@@ -363,30 +366,37 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
 
             {/* รูปภาพ */}
             <div style={{ gridColumn: '1 / -1' }}>
-              <label style={lbl}>รูปภาพสื่อ (ไม่เกิน 2MB)</label>
-              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                {imgPreview ? (
-                  <div style={{ position: 'relative', display: 'inline-block' }}>
-                    <img src={imgPreview} alt="preview"
-                      style={{ width: '120px', height: '90px', objectFit: 'cover', borderRadius: '8px', border: '1.5px solid #bae6fd' }} />
-                    <button type="button" onClick={removeImage}
-                      style={{ position: 'absolute', top: '-6px', right: '-6px', width: '20px', height: '20px', borderRadius: '50%', border: 'none', background: '#ef4444', color: 'white', cursor: 'pointer', fontSize: '.7rem', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
-                      ✕
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ width: '120px', height: '90px', border: '2px dashed #bae6fd', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '.75rem', flexDirection: 'column', gap: '.25rem' }}>
-                    <span style={{ fontSize: '1.5rem' }}>🖼️</span>
-                    <span>ยังไม่มีรูป</span>
-                  </div>
-                )}
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
-                  <span style={{ fontSize: '.78rem', color: '#6b7280' }}>เลือกไฟล์รูป</span>
-                  <input type="file" accept="image/*"
-                    style={{ fontSize: '.8rem', fontFamily: 'inherit' }}
-                    onChange={handleImageChange} />
-                </label>
-              </div>
+              <label style={lbl}>รูปภาพสื่อ</label>
+              {!imgbbApiKey ? (
+                <div style={{ padding: '.6rem .9rem', background: '#fef9c3', border: '1px solid #fde047', borderRadius: '8px', fontSize: '.8rem', color: '#854d0e' }}>
+                  ⚠️ ยังไม่ได้ตั้งค่า ImgBB API Key — บันทึกข้อมูลสื่อได้แต่ไม่มีรูปภาพ
+                  <br/><span style={{ opacity: .75 }}>ไปที่ ตั้งค่าระบบ → ImgBB API Key เพื่อเปิดใช้รูปภาพ</span>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                  {imgPreview ? (
+                    <div style={{ position: 'relative', display: 'inline-block' }}>
+                      <img src={imgPreview} alt="preview"
+                        style={{ width: '120px', height: '90px', objectFit: 'cover', borderRadius: '8px', border: '1.5px solid #bae6fd' }} />
+                      <button type="button" onClick={removeImage}
+                        style={{ position: 'absolute', top: '-6px', right: '-6px', width: '20px', height: '20px', borderRadius: '50%', border: 'none', background: '#ef4444', color: 'white', cursor: 'pointer', fontSize: '.7rem', lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div style={{ width: '120px', height: '90px', border: '2px dashed #bae6fd', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '.75rem', flexDirection: 'column', gap: '.25rem' }}>
+                      <span style={{ fontSize: '1.5rem' }}>🖼️</span>
+                      <span>ยังไม่มีรูป</span>
+                    </div>
+                  )}
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '.4rem' }}>
+                    <span style={{ fontSize: '.78rem', color: '#6b7280' }}>เลือกไฟล์รูป (ไม่เกิน 10MB)</span>
+                    <input type="file" accept="image/*"
+                      style={{ fontSize: '.8rem', fontFamily: 'inherit' }}
+                      onChange={handleImageChange} />
+                  </label>
+                </div>
+              )}
             </div>
           </div>
 

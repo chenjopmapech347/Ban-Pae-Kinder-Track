@@ -213,6 +213,36 @@ export function AppProvider({ children }) {
     { term1: '', term2: '' } // YYYY-MM-DD — ว่างหมายถึงไม่ล็อก
   );
 
+  // ── One-time migration: แปลง 'H' → '√' ใน milk/lunch/toothbrush records ──
+  // (เดิม auto-fill ใช้ 'H' เป็นสัญลักษณ์ "ดื่มนม" ต่อมาเปลี่ยนเป็น '√')
+  useEffect(() => {
+    const migrateHToCheck = (records, setter) => {
+      let needsUpdate = false;
+      const updated = {};
+      Object.entries(records).forEach(([rKey, rec]) => {
+        const newStudents = {};
+        let recChanged = false;
+        Object.entries(rec.students ?? {}).forEach(([sid, sData]) => {
+          const newDays = {};
+          let dayChanged = false;
+          Object.entries(sData.days ?? {}).forEach(([day, val]) => {
+            if (val === 'H') { newDays[day] = '√'; dayChanged = true; }
+            else newDays[day] = val;
+          });
+          newStudents[sid] = dayChanged ? { ...sData, days: newDays } : sData;
+          if (dayChanged) recChanged = true;
+        });
+        updated[rKey] = recChanged ? { ...rec, students: newStudents } : rec;
+        if (recChanged) needsUpdate = true;
+      });
+      if (needsUpdate) { console.log('[KinderTrack] migrated H→√'); setter(updated); }
+    };
+    migrateHToCheck(milkRecords, setMilkRecords);
+    migrateHToCheck(lunchRecords, setLunchRecords);
+    migrateHToCheck(toothBrushRecords, setToothBrushRecords);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once on mount
+
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [evaluatingStudent, setEvaluatingStudent] = useState(null);
   const [isAdding, setIsAdding] = useState(false);

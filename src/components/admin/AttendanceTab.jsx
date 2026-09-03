@@ -249,13 +249,18 @@ export default function AttendanceTab({ defaultClass }) {
   // โหลด/รีเซ็ต draft เมื่อเปลี่ยนวันที่หรือ dailyRecords อัปเดต
   useEffect(() => {
     if (mainView !== 'daily') return;
+    const todayISO = new Date().toISOString().slice(0, 10);
+    const isToday  = selectedDate === todayISO;
     const newDrafts = {};
     ALL_CLASSES.forEach(cls => {
       const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)') && isStudentActive(s, selectedDate)).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
       const draft = {};
       sts.forEach(s => {
         const rec = getDayRecord(dailyRecords, selectedDate, s.id);
-        draft[s.id] = rec?.attendance ?? 'มา'; // default: มา
+        // ถ้ามี record บันทึกไว้แล้ว ใช้ค่าจาก record
+        // ถ้าเป็นวันนี้และยังไม่บันทึก → default เป็น 'มา' (ครูเริ่มเช็คชื่อ)
+        // ถ้าเป็นวันอื่นและไม่มี record → เว้นว่าง ไม่แสดง ✓ เพื่อให้ตรงกับ monthly summary
+        draft[s.id] = rec?.attendance ?? (isToday ? 'มา' : '');
       });
       newDrafts[cls] = draft;
     });
@@ -266,7 +271,7 @@ export default function AttendanceTab({ defaultClass }) {
   // วน: มา → ขาด → ลา → ป่วย → มา
   const ATT_CYCLE = ['มา', 'ขาด', 'ลา', 'ป่วย'];
   function cycleStudentAtt(cls, studentId) {
-    const cur  = classDrafts[cls]?.[studentId] ?? 'มา';
+    const cur  = classDrafts[cls]?.[studentId] || 'มา';
     const next = ATT_CYCLE[(ATT_CYCLE.indexOf(cur) + 1) % ATT_CYCLE.length];
     setClassDrafts(prev => ({ ...prev, [cls]: { ...prev[cls], [studentId]: next } }));
     setDirtyClasses(prev => new Set([...prev, cls]));

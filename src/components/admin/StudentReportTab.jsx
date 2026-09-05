@@ -2,6 +2,12 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { INDICATORS_DATA_68 } from '../../data/indicatorsData_68';
 const INDICATORS_DATA = INDICATORS_DATA_68; // alias — ใช้มาตรฐาน 2568 เท่านั้น
+import {
+  SCALE_C60, DOMAINS_C60, INDICATORS_C60, LEVEL_TO_KEY,
+} from '../../data/indicatorsData_curriculum60';
+import {
+  SCALE_C68, DOMAINS_C68, COMPETENCIES_C68, getCompetenciesByDomain,
+} from '../../data/competenciesData_อ3_68';
 import { callClaude, buildTeacherCommentPrompt, buildDomainSummaryPrompt } from '../../utils/aiHelper';
 import CompCard from './report/CompCard';
 import SubDomainSummaryBox from './report/SubDomainSummaryBox';
@@ -36,6 +42,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
     indicators, activities, assessmentTopics,
     aiApiKey,
     measurementDates,
+    abilityAssessments,
   } = useApp();
 
   const [aiCommentLoading, setAiCommentLoading] = useState({ 1: false, 2: false });
@@ -318,6 +325,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
     { id: 'summary',     label: '📊 สรุป 4 มาตรฐาน'       },
     { id: 'domain4',     label: '🎯 สรุปพัฒนาการ 4 ด้าน'  },
     { id: 'comments',    label: '💬 ความคิดเห็น'           },
+    { id: 'ability',     label: '📊 ความสามารถผู้เรียน'   },
     { id: 'philosophy',  label: '📖 ปรัชญา/วิสัยทัศน์'    },
     { id: 'growthtable', label: '📏 เกณฑ์การเจริญเติบโต'  },
   ];
@@ -1025,6 +1033,171 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
               {/* Director's Comment — removed input; data stored via Admin panel */}
             </div>
           )}
+
+          {/* ══════════════════════════════════════════════════════════
+              SECTION: ความสามารถผู้เรียน (จาก AbilityAssessmentTab)
+          ══════════════════════════════════════════════════════════ */}
+          {activeSection === 'ability' && student && (() => {
+            // helper: get ability score for this student
+            const getAbilityScore = (sid, year, term, code, dsKey) => {
+              const base = `${sid}||${year}||${term}`;
+              const k = dsKey === 'c60' ? base : `${base}||${dsKey}`;
+              return abilityAssessments?.[k]?.[code] ?? 0;
+            };
+            const levelKey = (() => {
+              const lv = Object.keys(LEVEL_TO_KEY).find(k => student.className?.includes(k));
+              return lv ? LEVEL_TO_KEY[lv] : 'k2';
+            })();
+            const isK3 = student.className?.includes('3');
+
+            // ─── C60 scores ───────────────────────────────────────────
+            const c60Scores = Object.fromEntries(
+              INDICATORS_C60.map(i => [i.code, getAbilityScore(student.id, academicYear, '1', i.code, 'c60')])
+            );
+            const c60Filled = INDICATORS_C60.filter(i => c60Scores[i.code] > 0).length;
+
+            // ─── C68 scores (อ.3 only) ────────────────────────────────
+            const c68Scores = Object.fromEntries(
+              COMPETENCIES_C68.map(i => [i.code, getAbilityScore(student.id, academicYear, '1', i.code, 'c68')])
+            );
+            const c68Filled = COMPETENCIES_C68.filter(i => c68Scores[i.code] > 0).length;
+
+            const avgOf = (scores, indicators) => {
+              const vals = indicators.map(i => scores[i.code]).filter(v => v > 0);
+              return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+            };
+            const labelColor = v => v >= 2.5 ? '#059669' : v >= 1.5 ? '#d97706' : v > 0 ? '#dc2626' : '#9ca3af';
+            const levelLabel = v => v >= 2.5 ? 'ดี' : v >= 1.5 ? 'พอใช้' : v > 0 ? 'ควรส่งเสริม' : '—';
+
+            return (
+              <div className="space-y-6 mt-4">
+                <p className="text-xs text-gray-400">
+                  ข้อมูลนี้ดึงจากแท็บ "ประเมินความสามารถ" · ปีการศึกษา {academicYear} · ภาคเรียนที่ 1
+                </p>
+
+                {/* ─── C60: หลักสูตร 2560 ─────────────────────────── */}
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="px-4 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between">
+                    <div>
+                      <span className="font-semibold text-sm text-indigo-800">📋 ตัวบ่งชี้หลักสูตร พ.ศ. 2560</span>
+                      <span className="ml-2 text-xs text-indigo-500">4 ด้าน · 23 ตัวบ่งชี้</span>
+                    </div>
+                    <span className={`text-xs font-medium ${c60Filled > 0 ? 'text-indigo-600' : 'text-gray-400'}`}>
+                      ประเมินแล้ว {c60Filled}/23 ข้อ
+                    </span>
+                  </div>
+                  {c60Filled === 0 ? (
+                    <p className="px-4 py-8 text-center text-gray-400 text-sm">ยังไม่มีข้อมูลการประเมิน</p>
+                  ) : (
+                    <div className="divide-y divide-gray-50">
+                      {DOMAINS_C60.map(d => {
+                        const inds = INDICATORS_C60.filter(i => i.domainId === d.id);
+                        const avg = avgOf(c60Scores, inds);
+                        return (
+                          <div key={d.id} className="px-4 py-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-semibold" style={{ color: d.color }}>
+                                {d.icon} {d.label}
+                              </span>
+                              {avg > 0 && (
+                                <span className="text-xs font-bold" style={{ color: labelColor(avg) }}>
+                                  {avg.toFixed(2)} — {levelLabel(avg)}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {inds.map(ind => {
+                                const sc = c60Scores[ind.code];
+                                const meta = SCALE_C60[sc];
+                                return (
+                                  <div key={ind.code} title={ind.label}
+                                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs border"
+                                    style={meta
+                                      ? { background: meta.bg, borderColor: meta.border, color: meta.color }
+                                      : { background: '#f9fafb', borderColor: '#e5e7eb', color: '#9ca3af' }}>
+                                    <span className="font-mono font-bold">{ind.code}</span>
+                                    {meta ? <span>{sc} {meta.label}</span> : <span>—</span>}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <p className="text-[10px] text-indigo-400 mt-1">เกณฑ์ {levelKey}: {inds[0]?.levelDescriptors?.[levelKey] ?? '—'}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* ─── C68: ความสามารถสิ้นปี อ.3 ─────────────────── */}
+                {isK3 && (
+                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="px-4 py-3 bg-purple-50 border-b border-purple-100 flex items-center justify-between">
+                      <div>
+                        <span className="font-semibold text-sm text-purple-800">🎯 ความสามารถผู้เรียนสิ้นปี พ.ศ. 2568</span>
+                        <span className="ml-2 text-xs text-purple-500">4 ด้าน · 15 ความสามารถ</span>
+                      </div>
+                      <span className={`text-xs font-medium ${c68Filled > 0 ? 'text-purple-600' : 'text-gray-400'}`}>
+                        ประเมินแล้ว {c68Filled}/15 ข้อ
+                      </span>
+                    </div>
+                    {c68Filled === 0 ? (
+                      <p className="px-4 py-8 text-center text-gray-400 text-sm">ยังไม่มีข้อมูลการประเมิน</p>
+                    ) : (
+                      <div className="divide-y divide-gray-50">
+                        {DOMAINS_C68.map(d => {
+                          const items = getCompetenciesByDomain(d.id);
+                          const avg = avgOf(c68Scores, items);
+                          const passCount = items.filter(i => c68Scores[i.code] >= 2).length;
+                          return (
+                            <div key={d.id} className="px-4 py-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="text-sm font-semibold" style={{ color: d.color }}>
+                                  {d.icon} {d.label}
+                                </span>
+                                {avg > 0 && (
+                                  <span className="text-xs font-bold" style={{ color: labelColor(avg) }}>
+                                    ผ่าน {passCount}/{items.length} · เฉลี่ย {avg.toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="space-y-1.5">
+                                {items.map(ind => {
+                                  const sc = c68Scores[ind.code];
+                                  const meta = SCALE_C68[sc];
+                                  const passed = sc >= 2;
+                                  return (
+                                    <div key={ind.code}
+                                      className="flex items-start gap-2 text-xs">
+                                      <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center font-bold shrink-0 text-[10px] ${
+                                        sc === 0 ? 'bg-gray-100 text-gray-300' :
+                                        passed ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-500'
+                                      }`}>{sc === 0 ? '—' : passed ? '✓' : '✗'}</div>
+                                      <div className="flex-1">
+                                        <span className="font-mono font-bold" style={{ color: d.color }}>{ind.code}</span>
+                                        <span className="text-gray-700 ml-1">{ind.label}</span>
+                                        {meta && <span className="ml-1 font-semibold" style={{ color: meta.color }}>({meta.label})</span>}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {!isK3 && (
+                  <p className="text-center text-xs text-amber-600 bg-amber-50 rounded-xl py-3 border border-amber-100">
+                    ⚠️ ชุดความสามารถผู้เรียนสิ้นปี (หลักสูตร พ.ศ. 2568) ใช้สำหรับ อนุบาล 3 เท่านั้น
+                  </p>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ══════════════════════════════════════════════════════════
               SECTION 7: Philosophy & Vision (static)

@@ -292,20 +292,37 @@ export default function SettingsPage({ onBack }) {
               value={newYear} onChange={e=>setNewYear(e.target.value)} />
             <button type="button" className="btn btn-primary" onClick={addYear}>เพิ่ม</button>
           </div>
-          <div style={{ display:'flex', flexDirection:'column', gap:'.5rem' }}>
+          <div style={{ display:'flex', flexDirection:'column', gap:'.75rem' }}>
             {academicYears.map(y => (
-              <div key={y} style={{ display:'flex', alignItems:'center', gap:'.5rem', flexWrap:'wrap' }}>
-                <div className="badge" style={{ padding:'.5rem 1rem',background:'var(--primary)',color:'white',display:'flex',gap:'.5rem',flexShrink:0 }}>
-                  ปี {y}
-                  <span style={{ cursor:'pointer' }} onClick={()=>setAcademicYears(academicYears.filter(x=>x!==y))}>×</span>
+              <div key={y} style={{ border:'1.5px solid #e9d5ff', borderRadius:'12px', padding:'.75rem 1rem', background:'#faf5ff' }}>
+                {/* Year header */}
+                <div style={{ display:'flex', alignItems:'center', gap:'.5rem', flexWrap:'wrap', marginBottom:'.6rem' }}>
+                  <div className="badge" style={{ padding:'.4rem .9rem',background:'var(--primary)',color:'white',display:'flex',gap:'.5rem',flexShrink:0 }}>
+                    ปีการศึกษา {y}
+                    <span style={{ cursor:'pointer' }} onClick={()=>setAcademicYears(academicYears.filter(x=>x!==y))}>×</span>
+                  </div>
+                  <input
+                    className="input"
+                    style={{ flex:1, minWidth:'200px', fontSize:'.82rem', padding:'.3rem .6rem' }}
+                    placeholder={`ชื่อ ผอ. ปีการศึกษา ${y} (ไม่กรอก = ใช้ค่า default)`}
+                    value={yearDirectors?.[y] ?? ''}
+                    onChange={e => setYearDirectors(prev => ({ ...prev, [y]: e.target.value }))}
+                  />
                 </div>
-                <input
-                  className="input"
-                  style={{ flex:1, minWidth:'200px', fontSize:'.82rem', padding:'.3rem .6rem' }}
-                  placeholder={`ชื่อ ผอ. ปีการศึกษา ${y} (ไม่กรอก = ใช้ค่า default)`}
-                  value={yearDirectors?.[y] ?? ''}
-                  onChange={e => setYearDirectors(prev => ({ ...prev, [y]: e.target.value }))}
-                />
+                {/* Terms */}
+                <div style={{ display:'flex', gap:'.5rem', flexWrap:'wrap', paddingLeft:'.25rem' }}>
+                  {[1, 2].map(t => (
+                    <div key={t} style={{
+                      display:'flex', alignItems:'center', gap:'.35rem',
+                      background:'white', border:'1.5px solid #d8b4fe',
+                      borderRadius:'8px', padding:'.25rem .75rem',
+                      fontSize:'.78rem', color:'#7c3aed', fontWeight:600,
+                    }}>
+                      <span style={{ fontSize:'.9rem' }}>📘</span>
+                      ภาคเรียนที่ {t}
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>

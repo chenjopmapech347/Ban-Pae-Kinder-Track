@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { SOURCE_ACTIVITY_MAP } from '../../../data/evaluationConstants';
 import {
   computeMonthlyStats, computeNutritionStats, computePickupStats,

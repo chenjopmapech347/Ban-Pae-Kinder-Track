@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { callClaude, buildActivitySuggestionPrompt } from '../../../utils/aiHelper';
 
 export default function AISuggestionPanel({ students, assessmentTopics, indicators, activities, aiApiKey }) {

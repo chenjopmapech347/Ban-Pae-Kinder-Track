@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { callClaude, buildActivitySuggestionPrompt } from '../../utils/aiHelper';
-import { isoToThai } from '../../utils/helpers';
+import { isoToThai, todayISO } from '../../utils/helpers';
 import { LEVEL_META, SCORES, SOURCE_ACTIVITY_MAP } from '../../data/evaluationConstants';
 import {
   computeMonthlyStats, computeNutritionStats, computePickupStats,
@@ -50,7 +50,7 @@ export default function EvaluationTab() {
 
   // Step 3 — ประเมิน
   const [round,      setRound]      = useState(1);
-  const [assessDate, setAssessDate] = useState(todayISO);
+  const [assessDate, setAssessDate] = useState(todayISO());
   const [results,    setResults]    = useState({});   // { studentId: score (1|2|3|0) }
   const [saved,      setSaved]      = useState(false);
 

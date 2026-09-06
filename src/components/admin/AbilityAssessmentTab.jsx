@@ -255,7 +255,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
                   datasetKey === ds.key
                     ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-400 hover:text-indigo-600'
+                    : 'bg-white text-gray-800 border-gray-300 hover:border-indigo-400 hover:text-indigo-600'
                 }`}
               >{ds.label}</button>
             ))}

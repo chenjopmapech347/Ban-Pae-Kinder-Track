@@ -41,7 +41,7 @@ const DATASETS = {
   },
   c68: {
     key: 'c68',
-    label: 'สิ้นปี อ.3 (พ.ศ. 2568)',
+    label: 'หลักสูตร พ.ศ. 2568',
     subtitle: '4 ด้าน 15 ความสามารถ (เฉพาะ อ.3)',
     scale: SCALE_C68,
     domains: DOMAINS_C68,
@@ -63,12 +63,15 @@ function recKey(sid, year, term) { return `${sid}||${year}||${term}`; }
 function ScoreBadge({ score, onClick, scale }) {
   const meta = scale[score];
   if (!meta) {
+    // ยังไม่มีคะแนน → แสดง 3 (ดี) เป็น default พร้อม opacity จางลงเล็กน้อย
+    const def = scale[3];
     return (
       <button
         onClick={onClick}
-        className="px-2 py-0.5 rounded text-xs border border-dashed border-gray-300 text-gray-400 hover:border-blue-400 hover:text-blue-500 transition-all"
-        title="คลิกเพื่อให้คะแนน"
-      >—</button>
+        style={{ background: def.bg, color: def.color, borderColor: def.border, opacity: 0.55 }}
+        className="px-2 py-0.5 rounded text-xs font-semibold border transition-all hover:opacity-100"
+        title="ยังไม่ได้ให้คะแนน (default = 3 ดี) — คลิกเพื่อเปลี่ยน"
+      >3 {def.label}</button>
     );
   }
   return (

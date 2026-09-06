@@ -255,10 +255,10 @@ function KhamChiaeng() {
 // ── มาตรฐาน (หลักสูตรปฐมวัย พ.ศ. 2568) ────────────────────────────────────────
 // หลักสูตรการศึกษาปฐมวัย พ.ศ. 2568 — 4 มาตรฐาน 4 ด้าน
 const STANDARD_DEFS = [
-  { id: 'std68-physical',  no: 1, domain: 'physical',  title: 'มาตรฐานที่ 1 สุขภาวะทางกาย' },
-  { id: 'std68-emotional', no: 2, domain: 'emotional', title: 'มาตรฐานที่ 2 อารมณ์ จิตใจ และสังคม' },
-  { id: 'std68-citizen',   no: 3, domain: 'citizen',   title: 'มาตรฐานที่ 3 ความเป็นพลเมืองและความเป็นไทย' },
-  { id: 'std68-cognitive', no: 4, domain: 'cognitive', title: 'มาตรฐานที่ 4 สติปัญญา' },
+  { id: 'std68-physical',  no: 1, domain: 'physical',  domainKey: 'd1', title: 'มาตรฐานที่ 1 สุขภาวะทางกาย' },
+  { id: 'std68-emotional', no: 2, domain: 'emotional', domainKey: 'd2', title: 'มาตรฐานที่ 2 อารมณ์ จิตใจ และสังคม' },
+  { id: 'std68-citizen',   no: 3, domain: 'citizen',   domainKey: 'd3', title: 'มาตรฐานที่ 3 ความเป็นพลเมืองและความเป็นไทย' },
+  { id: 'std68-cognitive', no: 4, domain: 'cognitive', domainKey: 'd4', title: 'มาตรฐานที่ 4 สติปัญญา' },
 ];
 
 const DOMAIN_DEFS = [
@@ -441,7 +441,7 @@ function IndicatorTable({ students, indActivities }) {
 
 // ── Standard Summary mini-table ───────────────────────────────────────────────
 function StandardSummary({ students, indicators, activities, stdDef, domDef }) {
-  const stdInds = useMemo(() => indicators.filter(i => i.standardId === stdDef.id), [indicators, stdDef]);
+  const stdInds = useMemo(() => indicators.filter(i => i.domainId === stdDef.domainKey), [indicators, stdDef]);
   const rows = useMemo(() => {
     return stdInds.map(ind => {
       const acts = activities.filter(a => a.indicatorId === ind.id);
@@ -506,7 +506,7 @@ function SummaryView({ students, indicators, activities, className, schoolName, 
   const data = useMemo(() => students.map(s => {
     const stds = {};
     STANDARD_DEFS.forEach(sd => {
-      const inds = indicators.filter(i => i.standardId === sd.id);
+      const inds = indicators.filter(i => i.domainId === sd.domainKey);
       const t1 = avg(inds.map(ind => { const acts = activities.filter(a => a.indicatorId === ind.id); return avg(acts.map(a => actT1(s, a))); }).filter(v => v > 0));
       const t2 = avg(inds.map(ind => { const acts = activities.filter(a => a.indicatorId === ind.id); return avg(acts.map(a => actT2(s, a))); }).filter(v => v > 0));
       stds[sd.id] = { t1, t2 };
@@ -647,7 +647,7 @@ function DetailView({ students, indicators, activities, className, schoolName, a
 
   const domDef  = DOMAIN_DEFS.find(d => d.id === selDomain);
   const stdDef  = STANDARD_DEFS.find(s => s.id === selStdId);
-  const stdInds = useMemo(() => indicators.filter(i => i.standardId === selStdId), [indicators, selStdId]);
+  const stdInds = useMemo(() => indicators.filter(i => i.domainId === (stdDef?.domainKey ?? '')), [indicators, stdDef]);
   const curInd  = stdInds[selIndIdx] ?? null;
   const curActs = useMemo(() => curInd ? activities.filter(a => a.indicatorId === curInd.id) : [], [activities, curInd]);
 
@@ -726,8 +726,8 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
 <tr>${hdr2}</tr>
 <tr>${hdr3}<th>ภาค1</th><th>ภาค2</th></tr>
 ${allRows}
-</table></body></html>`);
-    win.document.close(); win.print();
+</table><script>setTimeout(()=>window.print(),600)<\/script></body></html>`);
+    win.document.close();
   }
 
   return (

@@ -607,6 +607,7 @@ export function AppProvider({ children }) {
     lunchRecords, milkRecords, nutritionRecords, dailyRoutineRecords, studentReportRecords,
     specialEvents, specialHolidays, abilityAssessments,
     cornerDefs, innerCornerDefs,
+    imgbbApiKey,   // ← ต้องอยู่ใน dep เพื่อให้ push ขึ้น Firebase ทันทีที่ตั้งค่า
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Firebase Auth login (async, admin/teacher) ─────────

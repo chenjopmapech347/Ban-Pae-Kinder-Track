@@ -243,6 +243,23 @@ export function AppProvider({ children }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
 
+  // ── One-time migration: เพิ่ม domain ที่หายไปใน indicators/activities ──────
+  // บางเครื่องอาจมี indicators ที่โหลดมาจาก snapshot เก่า (ก่อนเพิ่ม citizen/cognitive)
+  // → เติมเฉพาะ domain ที่ขาดหายจาก INITIAL_INDICATORS
+  useEffect(() => {
+    const REQUIRED_DOMAINS = ['physical', 'emotional', 'citizen', 'cognitive'];
+    const presentDomains = new Set((indicators ?? []).map(i => i.domainId));
+    const missingDomains = REQUIRED_DOMAINS.filter(d => !presentDomains.has(d));
+    if (missingDomains.length > 0) {
+      const addInds = INITIAL_INDICATORS.filter(i => missingDomains.includes(i.domainId));
+      const addActs = INITIAL_ACTIVITIES.filter(a => missingDomains.includes(a.domainId));
+      if (addInds.length > 0) setIndicators(prev => [...(prev ?? []), ...addInds]);
+      if (addActs.length > 0) setActivities(prev => [...(prev ?? []), ...addActs]);
+      console.info(`[KinderTrack] Migration: restored missing indicator domains: ${missingDomains.join(', ')}`);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once on mount
+
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [evaluatingStudent, setEvaluatingStudent] = useState(null);
   const [isAdding, setIsAdding] = useState(false);

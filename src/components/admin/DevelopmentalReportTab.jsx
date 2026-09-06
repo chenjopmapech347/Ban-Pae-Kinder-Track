@@ -255,10 +255,10 @@ function KhamChiaeng() {
 // ── มาตรฐาน (หลักสูตรปฐมวัย พ.ศ. 2568) ────────────────────────────────────────
 // หลักสูตรการศึกษาปฐมวัย พ.ศ. 2568 — 4 มาตรฐาน 4 ด้าน
 const STANDARD_DEFS = [
-  { id: 'std68-physical',  no: 1, domain: 'physical',  domainKey: 'd1', title: 'มาตรฐานที่ 1 สุขภาวะทางกาย' },
-  { id: 'std68-emotional', no: 2, domain: 'emotional', domainKey: 'd2', title: 'มาตรฐานที่ 2 อารมณ์ จิตใจ และสังคม' },
-  { id: 'std68-citizen',   no: 3, domain: 'citizen',   domainKey: 'd3', title: 'มาตรฐานที่ 3 ความเป็นพลเมืองและความเป็นไทย' },
-  { id: 'std68-cognitive', no: 4, domain: 'cognitive', domainKey: 'd4', title: 'มาตรฐานที่ 4 สติปัญญา' },
+  { id: 'std68-physical',  no: 1, domain: 'physical',  domainKey: 'physical',  title: 'มาตรฐานที่ 1 สุขภาวะทางกาย' },
+  { id: 'std68-emotional', no: 2, domain: 'emotional', domainKey: 'emotional', title: 'มาตรฐานที่ 2 อารมณ์ จิตใจ และสังคม' },
+  { id: 'std68-citizen',   no: 3, domain: 'citizen',   domainKey: 'citizen',   title: 'มาตรฐานที่ 3 ความเป็นพลเมืองและความเป็นไทย' },
+  { id: 'std68-cognitive', no: 4, domain: 'cognitive', domainKey: 'cognitive', title: 'มาตรฐานที่ 4 สติปัญญา' },
 ];
 
 const DOMAIN_DEFS = [

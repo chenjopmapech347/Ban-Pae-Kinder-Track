@@ -552,10 +552,22 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
                       {r.imageUrl ? (
                         <img src={r.imageUrl} alt={r.item}
                           style={{ width: '151px', height: '189px', objectFit: 'cover', borderRadius: '5px', border: '1px solid #bae6fd', cursor: 'pointer' }}
-                          onClick={() => window.open(r.imageUrl, '_blank')} />
-                      ) : (
-                        <span style={{ color: '#d1d5db', fontSize: '.75rem' }}>—</span>
-                      )}
+                          onClick={() => window.open(r.imageUrl, '_blank')}
+                          onError={e => {
+                            e.currentTarget.style.display = 'none';
+                            e.currentTarget.nextSibling.style.display = 'flex';
+                          }} />
+                      ) : null}
+                      <div style={{ display: r.imageUrl ? 'none' : 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: '#9ca3af', fontSize: '.7rem' }}>
+                        <span style={{ fontSize: '1.5rem' }}>🖼️</span>
+                        <span>{r.imageUrl ? 'โหลดรูปไม่ได้' : '—'}</span>
+                        {r.imageUrl && (
+                          <button onClick={() => navigator.clipboard.writeText(r.imageUrl)}
+                            style={{ fontSize: '.65rem', padding: '2px 6px', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer', background: '#f9fafb' }}>
+                            copy URL
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td style={{ ...cell, fontWeight: 600 }}>{r.item}</td>
                     <td style={{ ...cell, fontSize: '.8rem', lineHeight: 1.6 }}>

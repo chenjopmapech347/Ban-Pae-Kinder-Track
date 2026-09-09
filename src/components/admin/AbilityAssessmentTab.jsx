@@ -227,10 +227,11 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
       {/* ── Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-gray-800">📊 ประเมินความสามารถผู้เรียน</h2>
-          <p className="text-xs text-gray-500 mt-0.5">{DS.label} · {DS.subtitle}</p>
+          <h2 className="text-xl font-bold text-gray-900">ประเมินความสามารถผู้เรียน</h2>
+          <p className="text-xs text-gray-400 mt-0.5">{DS.label} · {DS.subtitle}</p>
         </div>
-        <div className="flex gap-2">
+        {/* View mode toggle — pill group */}
+        <div className="flex items-center bg-gray-100 rounded-xl p-1 gap-0.5">
           {[
             { key: 'input',   icon: '✏️', label: 'บันทึก' },
             { key: 'summary', icon: '📈', label: 'สรุปผล' },
@@ -238,112 +239,134 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
           ].map(m => (
             <button key={m.key}
               onClick={() => setViewMode(m.key)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${viewMode === m.key ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
-            >{m.icon} {m.label}</button>
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                viewMode === m.key
+                  ? 'bg-white text-indigo-700 shadow-sm font-semibold'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <span>{m.icon}</span>
+              <span>{m.label}</span>
+            </button>
           ))}
         </div>
       </div>
 
       {/* ── Filters ── */}
-      <div className="flex flex-wrap gap-3 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 
-        {/* ชุดตัวบ่งชี้ */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs text-gray-500 font-medium">ชุดตัวบ่งชี้</label>
-          <div className="flex gap-2">
+        {/* แถว 1: เลือกชุดตัวบ่งชี้ */}
+        <div className="px-5 pt-4 pb-3 border-b border-gray-50">
+          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2.5">ชุดตัวบ่งชี้</p>
+          <div className="flex gap-3">
             {Object.values(DATASETS).map(ds => {
               const active = datasetKey === ds.key;
               return (
                 <button
                   key={ds.key}
                   onClick={() => switchDataset(ds.key)}
-                  className={`flex flex-col items-start px-4 py-2.5 rounded-xl border-2 transition-all text-left min-w-[160px] ${
+                  className={`relative flex items-center gap-3 px-5 py-3 rounded-2xl border-2 transition-all text-left flex-1 max-w-xs ${
                     active
-                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-md'
-                      : 'bg-white border-gray-200 text-gray-700 hover:border-indigo-400 hover:bg-indigo-50'
+                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200'
+                      : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-indigo-300 hover:bg-indigo-50'
                   }`}
                 >
-                  <span className={`text-xs font-bold ${active ? 'text-indigo-100' : 'text-indigo-500'}`}>
-                    {ds.key === 'c60' ? '📘 2560' : '📗 2568'}
-                  </span>
-                  <span className="text-sm font-semibold leading-tight mt-0.5">
-                    {ds.key === 'c60' ? 'หลักสูตรเดิม' : 'หลักสูตรใหม่'}
-                  </span>
-                  <span className={`text-[11px] mt-0.5 ${active ? 'text-indigo-200' : 'text-gray-400'}`}>
-                    {ds.subtitle}
-                  </span>
+                  <span className="text-2xl leading-none">{ds.key === 'c60' ? '📘' : '📗'}</span>
+                  <div>
+                    <div className={`text-sm font-bold leading-tight ${active ? 'text-white' : 'text-gray-800'}`}>
+                      {ds.key === 'c60' ? 'หลักสูตร 2560' : 'หลักสูตร 2568'}
+                    </div>
+                    <div className={`text-[11px] mt-0.5 ${active ? 'text-indigo-200' : 'text-gray-400'}`}>
+                      {ds.subtitle}
+                    </div>
+                  </div>
+                  {active && (
+                    <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-white opacity-80" />
+                  )}
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* ปีการศึกษา */}
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-gray-500 font-medium">ปีการศึกษา</label>
-          <input
-            type="text"
-            value={selYear}
-            onChange={e => setSelYear(e.target.value)}
-            className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm w-24"
-          />
-        </div>
-
-        {/* ภาคเรียน */}
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-gray-500 font-medium">ภาคเรียน</label>
-          <select value={selTerm} onChange={e => setSelTerm(e.target.value)}
-            className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm">
-            <option value="1">ภาคเรียนที่ 1</option>
-            <option value="2">ภาคเรียนที่ 2</option>
-          </select>
-        </div>
-
-        {/* ห้องเรียน */}
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-gray-500 font-medium">ห้องเรียน</label>
-          {isTeacher ? (
-            <span className="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 text-sm font-medium">{myClass}</span>
-          ) : (
-            <select value={selClass} onChange={e => setSelClass(e.target.value)}
-              className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm">
-              <option value="">— เลือกห้อง —</option>
-              {(allClassNames ?? []).sort().map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          )}
-        </div>
-
-        {/* ระดับ (C60 เท่านั้น) */}
-        {selClass && DS.allLevels && (
+        {/* แถว 2: ตัวกรอง */}
+        <div className="px-5 py-3 flex flex-wrap items-end gap-4">
+          {/* ปีการศึกษา */}
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-gray-500 font-medium">ระดับ</label>
-            <span className="px-3 py-1.5 rounded-lg bg-gray-50 text-gray-600 text-sm">
-              {Object.keys(LEVEL_TO_KEY).find(k => selClass.includes(k)) ?? selClass}
-            </span>
+            <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">ปีการศึกษา</label>
+            <input
+              type="text"
+              value={selYear}
+              onChange={e => setSelYear(e.target.value)}
+              className="px-3 py-2 rounded-xl border border-gray-200 text-sm w-24 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none"
+            />
           </div>
-        )}
 
-        {/* คำเตือน C68 ถ้าห้องไม่ใช่ อ.3 */}
-        {selClass && !DS.allLevels && !selClass.includes('3') && (
-          <div className="flex items-center">
-            <span className="px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 text-xs font-medium border border-amber-200">
+          <div className="w-px h-8 bg-gray-100" />
+
+          {/* ภาคเรียน */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">ภาคเรียน</label>
+            <select value={selTerm} onChange={e => setSelTerm(e.target.value)}
+              className="px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
+              <option value="1">ภาคเรียนที่ 1</option>
+              <option value="2">ภาคเรียนที่ 2</option>
+            </select>
+          </div>
+
+          <div className="w-px h-8 bg-gray-100" />
+
+          {/* ห้องเรียน */}
+          <div className="flex flex-col gap-1">
+            <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">ห้องเรียน</label>
+            {isTeacher ? (
+              <span className="px-3 py-2 rounded-xl bg-indigo-50 text-indigo-700 text-sm font-semibold border border-indigo-100">{myClass}</span>
+            ) : (
+              <select value={selClass} onChange={e => setSelClass(e.target.value)}
+                className="px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
+                <option value="">— เลือกห้อง —</option>
+                {(allClassNames ?? []).sort().map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            )}
+          </div>
+
+          {/* ระดับ (C60) */}
+          {selClass && DS.allLevels && (
+            <>
+              <div className="w-px h-8 bg-gray-100" />
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">ระดับ</label>
+                <span className="px-3 py-2 rounded-xl bg-gray-50 text-gray-600 text-sm border border-gray-100">
+                  {Object.keys(LEVEL_TO_KEY).find(k => selClass.includes(k)) ?? selClass}
+                </span>
+              </div>
+            </>
+          )}
+
+          {/* คำเตือน C68 ถ้าห้องไม่ใช่ อ.3 */}
+          {selClass && !DS.allLevels && !selClass.includes('3') && (
+            <span className="px-3 py-2 rounded-xl bg-amber-50 text-amber-700 text-xs font-medium border border-amber-200 self-end">
               ⚠️ ชุดนี้ออกแบบสำหรับ อ.3 เท่านั้น
             </span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {!selClass && (
-        <div className="text-center py-10 text-gray-400 text-sm">
-          กรุณาเลือกห้องเรียนเพื่อเริ่มประเมิน
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="text-4xl mb-3">🏫</div>
+          <p className="text-gray-500 font-medium">กรุณาเลือกห้องเรียน</p>
+          <p className="text-gray-400 text-sm mt-1">เพื่อเริ่มบันทึกการประเมิน</p>
         </div>
       )}
 
       {selClass && classStudents.length === 0 && (
-        <div className="text-center py-10 text-gray-400 text-sm">
-          ไม่พบนักเรียนในห้อง {selClass}
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="text-4xl mb-3">👥</div>
+          <p className="text-gray-500 font-medium">ไม่พบนักเรียนในห้อง {selClass}</p>
+          <p className="text-gray-400 text-sm mt-1">กรุณาตรวจสอบข้อมูลนักเรียน</p>
         </div>
       )}
 
@@ -353,22 +376,31 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
 
           {/* Domain tabs */}
           <div className="flex flex-wrap gap-2">
-            {DS.domains.map(d => (
-              <button
-                key={d.id}
-                onClick={() => { setActiveDomain(d.id); setPicker(null); }}
-                style={activeDomain === d.id
-                  ? { background: d.bg, color: d.color, borderColor: d.border }
-                  : { background: '#f9fafb', color: '#6b7280', borderColor: '#e5e7eb' }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-sm font-medium transition-all"
-              >
-                <span>{d.icon}</span>
-                <span className={activeDomain === d.id ? 'font-semibold' : ''}>{d.label}</span>
-                {domainAvgs[d.id] > 0 && (
-                  <span className="ml-1 text-xs opacity-70">{domainAvgs[d.id].toFixed(1)}</span>
-                )}
-              </button>
-            ))}
+            {DS.domains.map(d => {
+              const active = activeDomain === d.id;
+              const avg = domainAvgs[d.id];
+              return (
+                <button
+                  key={d.id}
+                  onClick={() => { setActiveDomain(d.id); setPicker(null); }}
+                  style={active
+                    ? { background: d.bg, color: d.color, borderColor: d.border, boxShadow: `0 2px 8px ${d.border}55` }
+                    : { background: '#fff', color: '#6b7280', borderColor: '#e5e7eb' }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-2xl border-2 text-sm transition-all"
+                >
+                  <span className="text-base leading-none">{d.icon}</span>
+                  <span className={`font-medium ${active ? 'font-semibold' : ''}`}>{d.label}</span>
+                  {avg > 0 && (
+                    <span
+                      className="text-[11px] px-1.5 py-0.5 rounded-full font-bold"
+                      style={active
+                        ? { background: d.border + '33', color: d.color }
+                        : { background: '#f3f4f6', color: '#9ca3af' }}
+                    >{avg.toFixed(1)}</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           {/* Assessment table */}

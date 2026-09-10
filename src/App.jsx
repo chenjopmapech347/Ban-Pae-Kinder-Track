@@ -37,7 +37,7 @@ function AppShell() {
     isSettingsOpen, setIsSettingsOpen,
     isAdding, setIsAdding,
     handleSaveEvaluation, assessmentTopics, addStudent,
-    autoSyncStatus, pullSyncStatus, isFirebaseConfigured,
+    autoSyncStatus, autoSyncError, pullSyncStatus, isFirebaseConfigured,
     syncPushToFirebase, syncPullFromFirebase,
     schools, schoolLogo,
   } = useApp();
@@ -177,7 +177,11 @@ function AppShell() {
               {autoSyncStatus === 'syncing'  && <><span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>🔄</span> {isFirebaseConfigured ? 'กำลังบันทึกลงฐานข้อมูล…' : 'กำลังบันทึก…'}</>}
               {autoSyncStatus === 'done'     && isFirebaseConfigured  && <>✅ บันทึกลงฐานข้อมูลแล้ว</>}
               {autoSyncStatus === 'done'     && !isFirebaseConfigured && <>💾 บันทึกเฉพาะในเครื่องนี้</>}
-              {autoSyncStatus === 'error'    && <>❌ บันทึกไม่สำเร็จ</>}
+              {autoSyncStatus === 'error'    && (
+                <span title={autoSyncError || 'sync failed'}>
+                  ❌ บันทึกไม่สำเร็จ {autoSyncError && <span style={{ fontWeight: 400, opacity: 0.8 }}>— {autoSyncError.slice(0, 60)}{autoSyncError.length > 60 ? '…' : ''}</span>}
+                </span>
+              )}
             </div>
           )}
 

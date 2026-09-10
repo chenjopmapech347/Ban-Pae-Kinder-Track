@@ -560,6 +560,7 @@ export function AppProvider({ children }) {
 
   // ─── Auto-sync to Firebase (debounced 4s) ──────────────
   const [autoSyncStatus, setAutoSyncStatus] = useState('idle'); // 'idle' | 'pending' | 'syncing' | 'done' | 'error'
+  const [autoSyncError,  setAutoSyncError]  = useState('');
   const autoSyncTimer  = useRef(null);
   const isMounted      = useRef(false);   // skip initial mount
 
@@ -588,8 +589,15 @@ export function AppProvider({ children }) {
         const payload = buildAppSnapshot(snapData);
         const result  = await pushSnapshotToFirebase(payload);
         if (result.ok) localStorage.setItem('kt_lastPushAt', Date.now().toString());
-        setAutoSyncStatus(result.ok ? 'done' : 'error');
-      } catch {
+        if (result.ok) {
+          setAutoSyncError('');
+          setAutoSyncStatus('done');
+        } else {
+          setAutoSyncError(result.message ?? '');
+          setAutoSyncStatus('error');
+        }
+      } catch (e) {
+        setAutoSyncError(e?.message ?? 'unknown error');
         setAutoSyncStatus('error');
       }
       // reset กลับ idle หลัง 3 วินาที
@@ -1346,10 +1354,12 @@ export function AppProvider({ children }) {
   );
 
   // รายชื่อห้องเรียนทั้งหมด (dynamic — ไม่ hardcode)
-  const allClassNames = useMemo(
-    () => (classes ?? []).map(c => c.name ?? c.id).filter(Boolean).sort(),
-    [classes],
-  );
+  const allClassNames = useMemo(() => {
+    // รวมห้องจาก classes collection + ห้องที่นักเรียนมีจริงแต่ไม่ได้ลงทะเบียน
+    const fromClasses  = (classes  ?? []).map(c => c.name ?? c.id).filter(Boolean);
+    const fromStudents = (students ?? []).map(s => s.className).filter(Boolean);
+    return [...new Set([...fromClasses, ...fromStudents])].sort();
+  }, [classes, students]);
 
   // แผนที่ห้องเรียนจัดกลุ่มตามระดับชั้น { K1: ['อ.1/1', ...], K2: [...], K3: [...] }
   const classMap = useMemo(() => {
@@ -1454,6 +1464,7 @@ export function AppProvider({ children }) {
     syncPullFromFirebase,
     deleteStudentAndSync,
     autoSyncStatus,
+    autoSyncError,
     pullSyncStatus,
     // Activity Log (evaluation-specific)
     activityLogs,

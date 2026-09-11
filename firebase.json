@@ -6,6 +6,7 @@
     "rules": "storage.rules"
   },
   "hosting": {
+    "site": "kinder-track-57770",
     "public": "dist",
     "ignore": [
       "firebase.json",

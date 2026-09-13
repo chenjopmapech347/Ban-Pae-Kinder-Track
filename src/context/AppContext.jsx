@@ -286,6 +286,7 @@ export function AppProvider({ children }) {
       mediaRecords,
       mediaBorrowRecords,
       imgbbApiKey,
+      abilityAssessments,
     }),
     [
       students,
@@ -307,6 +308,7 @@ export function AppProvider({ children }) {
       mediaRecords,
       mediaBorrowRecords,
       imgbbApiKey,
+      abilityAssessments,
     ],
   );
 
@@ -330,6 +332,7 @@ export function AppProvider({ children }) {
     if (payload.mediaRecords) setMediaRecords(payload.mediaRecords);
     if (payload.mediaBorrowRecords) setMediaBorrowRecords(payload.mediaBorrowRecords);
     if (payload.imgbbApiKey) setImgbbApiKey(payload.imgbbApiKey);
+    if (payload.abilityAssessments) setAbilityAssessments(payload.abilityAssessments);
   }, [
     setStudents,
     setTeachers,
@@ -350,6 +353,7 @@ export function AppProvider({ children }) {
     setMediaRecords,
     setMediaBorrowRecords,
     setImgbbApiKey,
+    setAbilityAssessments,
   ]);
 
   const importStudentAssessmentExcel = useCallback(

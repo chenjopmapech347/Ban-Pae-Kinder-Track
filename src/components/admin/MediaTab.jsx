@@ -355,11 +355,16 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
 
   // แสดงทุกสื่อ (ไม่กรองตามห้อง) เพื่อให้เห็นภาพรวม
   // ถ้ามีการเลือกห้องจาก dropdown → กรองตามห้องนั้น
+  // *** FIX: รายการที่ไม่มี className (บันทึกผิดพลาด) ให้ครูประจำห้องเห็นด้วย
   const records = useMemo(() =>
     (mediaRecords ?? [])
-      .filter(r => !selClass || r.className === selClass)
+      .filter(r =>
+        !selClass ||                                          // admin เลือก "ทุกห้อง"
+        r.className === selClass ||                           // className ตรงกับห้องที่เลือก
+        (!r.className && !!teacherClassFilter)                // ไม่มี className → ครูประจำห้องยังเห็นได้
+      )
       .sort((a, b) => a.id - b.id),
-    [mediaRecords, selClass]
+    [mediaRecords, selClass, teacherClassFilter]
   );
 
   async function save() {
@@ -376,18 +381,19 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
       }
 
       const finalForm = { ...form, imageUrl };
+      // *** FIX: fallback ลำดับ form.className → cn (header dropdown) → teacherClassFilter
+      const resolvedClass = form.className || cn || teacherClassFilter || '';
 
       if (editId) {
         setMediaRecords(prev => prev.map(r =>
-          // ใช้ form.className ที่ผู้ใช้เลือกใน modal (ไม่ใช่ cn จาก header dropdown)
-          r.id === editId ? { ...r, ...finalForm, className: form.className || cn } : r
+          r.id === editId ? { ...r, ...finalForm, className: form.className || cn || teacherClassFilter || r.className } : r
         ));
         setEditId(null);
       } else {
         setMediaRecords(prev => [...(prev ?? []), {
           ...finalForm,
           id: Date.now(),
-          className: form.className || cn,  // ← ใช้ห้องที่เลือกใน modal
+          className: resolvedClass,
           createdByTeacherId: user?.teacherId ?? null,
           createdAt: new Date().toISOString(),
         }]);

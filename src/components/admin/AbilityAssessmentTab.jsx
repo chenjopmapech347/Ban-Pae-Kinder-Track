@@ -819,39 +819,48 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
       {/* ══════════ VIEW: ACTIVITY (กิจกรรม↔ความสามารถ) ════════════ */}
       {viewMode === 'activity' && (() => {
         const selAct = ACTIVITY_TYPES.find(a => a.id === selActId) ?? ACTIVITY_TYPES[0];
-        // competencies covered by selected activity (filtered to current dataset)
         const compCodesForAct = selAct.competencyCodes;
         const compsForAct = DS.indicators.filter(i => compCodesForAct.includes(i.code));
-
-        // activities covering the selected competency
         const actsForComp = getActivitiesForCompetency(selCompCode);
+
+        // ── แนะนำอัตโนมัติ: คำนวณความสามารถที่คะแนนต่ำจาก summaryRows ──
+        const compAvgMap = {};
+        DS.indicators.forEach(ind => {
+          const vals = summaryRows.map(r => r.scores[ind.code]).filter(v => v > 0);
+          if (vals.length) compAvgMap[ind.code] = vals.reduce((a, b) => a + b, 0) / vals.length;
+        });
+        const weakComps = DS.indicators
+          .filter(ind => compAvgMap[ind.code] != null)
+          .sort((a, b) => compAvgMap[a.code] - compAvgMap[b.code])
+          .slice(0, 8); // bottom 8
+
+        // จัดอันดับกิจกรรมตามจำนวน weak comps ที่ครอบคลุม
+        const actScores = ACTIVITY_TYPES.map(act => {
+          const covered = weakComps.filter(ind => act.competencyCodes.includes(ind.code));
+          return { act, covered, score: covered.length };
+        }).filter(x => x.score > 0).sort((a, b) => b.score - a.score);
 
         return (
           <div className="space-y-4">
 
             {/* direction toggle */}
-            <div className="flex items-center justify-center">
-              <div className="flex items-center bg-gray-100 rounded-xl p-1 gap-0.5">
-                <button
-                  onClick={() => setActDir('act2comp')}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    actDir === 'act2comp'
-                      ? 'bg-white text-indigo-700 shadow-sm font-semibold'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  🎯 กิจกรรม → ความสามารถ
-                </button>
-                <button
-                  onClick={() => setActDir('comp2act')}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                    actDir === 'comp2act'
-                      ? 'bg-white text-indigo-700 shadow-sm font-semibold'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  📋 ความสามารถ → กิจกรรม
-                </button>
+            <div className="flex flex-wrap items-center justify-center gap-1">
+              <div className="flex flex-wrap items-center bg-gray-100 rounded-xl p-1 gap-0.5">
+                {[
+                  { key: 'act2comp',  label: '🎯 กิจกรรม → ความสามารถ' },
+                  { key: 'comp2act',  label: '📋 ความสามารถ → กิจกรรม' },
+                  { key: 'matrix',    label: '🗂️ ตาราง Matrix' },
+                  { key: 'recommend', label: `✨ แนะนำอัตโนมัติ${selClass && weakComps.length ? ` (${weakComps.length})` : ''}` },
+                ].map(m => (
+                  <button key={m.key}
+                    onClick={() => setActDir(m.key)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      actDir === m.key
+                        ? 'bg-white text-indigo-700 shadow-sm font-semibold'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >{m.label}</button>
+                ))}
               </div>
             </div>
 
@@ -1034,6 +1043,199 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                     );
                   })()}
                 </div>
+              </div>
+            )}
+
+            {/* ─── MATRIX ─── */}
+            {actDir === 'matrix' && (
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
+                <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
+                  <span className="font-semibold text-sm text-gray-700">
+                    ตาราง Matrix — กิจกรรม × ความสามารถ
+                  </span>
+                  <span className="ml-2 text-xs text-gray-400">({DS.label})</span>
+                </div>
+                <table className="w-full text-xs min-w-[720px]">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-gray-50">
+                      <th className="text-left px-3 py-2 text-gray-500 font-medium w-12">รหัส</th>
+                      <th className="text-left px-3 py-2 text-gray-500 font-medium min-w-[160px]">ความสามารถ</th>
+                      {ACTIVITY_TYPES.map(act => (
+                        <th key={act.id} className="px-2 py-2 text-center min-w-[80px]">
+                          <div className="text-lg leading-none">{act.icon}</div>
+                          <div className="text-[9px] text-gray-400 mt-0.5 leading-tight max-w-[72px] mx-auto">
+                            {act.label.replace('กิจกรรม', '').trim()}
+                          </div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {DS.domains.map(dom => (
+                      <>
+                        {/* domain header row */}
+                        <tr key={`dom-${dom.id}`} style={{ background: dom.bg }}>
+                          <td colSpan={2 + ACTIVITY_TYPES.length}
+                            className="px-3 py-1.5 font-bold text-xs"
+                            style={{ color: dom.color }}>
+                            {dom.icon} {dom.label}
+                          </td>
+                        </tr>
+                        {DS.getByDomain(dom.id).map(ind => (
+                          <tr key={ind.code} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                            <td className="px-3 py-2">
+                              <span className="font-mono font-bold" style={{ color: dom.color }}>{ind.code}</span>
+                            </td>
+                            <td className="px-3 py-2 text-gray-700 leading-tight">{ind.label}</td>
+                            {ACTIVITY_TYPES.map(act => {
+                              const linked = act.competencyCodes.includes(ind.code);
+                              return (
+                                <td key={act.id} className="px-2 py-2 text-center">
+                                  {linked ? (
+                                    <span
+                                      className="inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-bold"
+                                      style={{ background: act.color }}
+                                      title={act.label}
+                                    >✓</span>
+                                  ) : (
+                                    <span className="inline-block w-6 h-6 rounded-full bg-gray-50" />
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </>
+                    ))}
+                  </tbody>
+                </table>
+                {/* legend */}
+                <div className="px-5 py-3 border-t border-gray-50 flex flex-wrap gap-4">
+                  {ACTIVITY_TYPES.map(act => (
+                    <div key={act.id} className="flex items-center gap-1.5 text-xs text-gray-600">
+                      <span className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px]"
+                        style={{ background: act.color }}>✓</span>
+                      {act.icon} {act.label.replace('กิจกรรม', '').trim()}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ─── RECOMMEND ─── */}
+            {actDir === 'recommend' && (
+              <div className="space-y-4">
+                {!selClass ? (
+                  <div className="flex flex-col items-center justify-center py-14 text-center">
+                    <div className="text-4xl mb-3">🏫</div>
+                    <p className="text-gray-500 font-medium">กรุณาเลือกห้องเรียนก่อน</p>
+                    <p className="text-gray-400 text-sm mt-1">ระบบจะดึงคะแนนของห้องมาวิเคราะห์</p>
+                  </div>
+                ) : weakComps.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-14 text-center">
+                    <div className="text-4xl mb-3">📊</div>
+                    <p className="text-gray-500 font-medium">ยังไม่มีข้อมูลคะแนนในห้อง {selClass}</p>
+                    <p className="text-gray-400 text-sm mt-1">บันทึกคะแนนในแท็บ "บันทึก" ก่อน แล้วกลับมาดูคำแนะนำ</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* weak competencies list */}
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                      <div className="px-5 py-3 border-b border-gray-100 bg-amber-50">
+                        <span className="font-semibold text-sm text-amber-800">
+                          ⚠️ ความสามารถที่คะแนนเฉลี่ยต่ำสุด — {selClass}
+                        </span>
+                        <span className="ml-2 text-xs text-amber-600">
+                          ({selYear} ภาค {selTerm})
+                        </span>
+                      </div>
+                      <div className="divide-y divide-gray-50">
+                        {weakComps.map((ind, rank) => {
+                          const avg = compAvgMap[ind.code];
+                          const dom = DS.domains.find(d => d.id === ind.domainId);
+                          const pct = ((avg / 3) * 100).toFixed(0);
+                          const color = avg >= 2.5 ? '#059669' : avg >= 1.5 ? '#d97706' : '#dc2626';
+                          return (
+                            <div key={ind.code} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50">
+                              <span className="text-lg font-black text-gray-300 w-6 text-center shrink-0">
+                                {rank + 1}
+                              </span>
+                              <span className="font-mono text-xs font-bold shrink-0 px-2 py-0.5 rounded-lg"
+                                style={{ background: dom?.bg, color: dom?.color }}>
+                                {ind.code}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm text-gray-800 leading-tight">{ind.label}</div>
+                                <div className="mt-1.5 h-1.5 bg-gray-100 rounded-full overflow-hidden w-full max-w-[180px]">
+                                  <div className="h-full rounded-full transition-all"
+                                    style={{ width: `${pct}%`, background: color }} />
+                                </div>
+                              </div>
+                              <span className="text-sm font-bold shrink-0" style={{ color }}>
+                                {avg.toFixed(2)}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* recommended activities */}
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                      <div className="px-5 py-3 border-b border-gray-100 bg-indigo-50">
+                        <span className="font-semibold text-sm text-indigo-800">
+                          ✨ กิจกรรมที่แนะนำ — เรียงตามความครอบคลุม
+                        </span>
+                      </div>
+                      {actScores.length === 0 ? (
+                        <div className="py-8 text-center text-gray-400 text-sm">ไม่พบการเชื่อมโยง</div>
+                      ) : (
+                        <div className="divide-y divide-gray-50">
+                          {actScores.map(({ act, covered }, rank) => (
+                            <div key={act.id} className="px-5 py-4 hover:bg-gray-50 transition-colors">
+                              <div className="flex items-center gap-3">
+                                <span className="text-lg font-black text-gray-300 w-6 text-center shrink-0">
+                                  {rank + 1}
+                                </span>
+                                <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-2xl shrink-0"
+                                  style={{ background: act.bg }}>
+                                  {act.icon}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-semibold text-sm" style={{ color: act.color }}>
+                                    {act.label}
+                                  </div>
+                                  <div className="text-[11px] text-gray-500 mt-0.5">{act.description}</div>
+                                </div>
+                                <div className="shrink-0 text-right">
+                                  <div className="text-xl font-black" style={{ color: act.color }}>
+                                    {covered.length}
+                                  </div>
+                                  <div className="text-[10px] text-gray-400">ความสามารถ</div>
+                                </div>
+                              </div>
+                              {/* covered weak comps */}
+                              <div className="mt-2.5 ml-[52px] flex flex-wrap gap-1.5">
+                                {covered.map(ind => {
+                                  const dom = DS.domains.find(d => d.id === ind.domainId);
+                                  const avg = compAvgMap[ind.code];
+                                  return (
+                                    <div key={ind.code}
+                                      className="flex items-center gap-1 px-2 py-1 rounded-xl text-xs"
+                                      style={{ background: dom?.bg, color: dom?.color }}>
+                                      <span className="font-mono font-bold">{ind.code}</span>
+                                      <span className="opacity-70">({avg?.toFixed(1)})</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

@@ -129,8 +129,7 @@ function ScoreBadge({ score, onClick, scale }) {
     return (
       <button
         onClick={onClick}
-        style={{ background: def.bg, color: def.color, borderColor: def.border, opacity: 0.55 }}
-        className="px-2 py-0.5 rounded text-xs font-semibold border transition-all hover:opacity-100"
+        style={{ background: def.bg, color: def.color, borderColor: def.border, border: `1px solid ${def.border}`, opacity: 0.55, padding: '2px 8px', borderRadius: '4px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}
         title="ยังไม่ได้ให้คะแนน (default = 3 ดี) — คลิกเพื่อเปลี่ยน"
       >3 {def.label}</button>
     );
@@ -138,8 +137,7 @@ function ScoreBadge({ score, onClick, scale }) {
   return (
     <button
       onClick={onClick}
-      style={{ background: meta.bg, color: meta.color, borderColor: meta.border }}
-      className="px-2 py-0.5 rounded text-xs font-semibold border transition-all hover:opacity-80"
+      style={{ background: meta.bg, color: meta.color, border: `1px solid ${meta.border}`, padding: '2px 8px', borderRadius: '4px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}
       title={`${meta.label} — คลิกเพื่อเปลี่ยน`}
     >{score} {meta.label}</button>
   );
@@ -147,33 +145,32 @@ function ScoreBadge({ score, onClick, scale }) {
 
 function ScorePicker({ onPick, scale }) {
   return (
-    <div className="flex gap-1">
+    <div style={{ display: 'flex', gap: '4px' }}>
       {[3, 2, 1].map(s => (
         <button
           key={s}
           onClick={() => onPick(s)}
-          style={{ background: scale[s].bg, color: scale[s].color, borderColor: scale[s].border }}
-          className="px-2 py-0.5 rounded text-xs font-semibold border hover:opacity-80"
+          style={{ background: scale[s].bg, color: scale[s].color, border: `1px solid ${scale[s].border}`, padding: '2px 8px', borderRadius: '4px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}
         >{s} {scale[s].label}</button>
       ))}
       <button
         onClick={() => onPick(0)}
-        className="px-2 py-0.5 rounded text-xs border border-gray-300 text-gray-400 hover:bg-gray-100"
+        style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '.75rem', border: '1px solid #d1d5db', color: '#9ca3af', background: 'white', cursor: 'pointer' }}
       >ล้าง</button>
     </div>
   );
 }
 
 function AvgBar({ avg }) {
-  if (!avg) return <span className="text-gray-300 text-xs">—</span>;
+  if (!avg) return <span style={{ color: '#d1d5db', fontSize: '.75rem' }}>—</span>;
   const pct = ((avg - 1) / 2) * 100;
   const color = avg >= 2.5 ? '#059669' : avg >= 1.5 ? '#d97706' : '#dc2626';
   return (
-    <div className="flex items-center gap-1.5">
-      <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
-        <div style={{ width: `${pct}%`, background: color }} className="h-full rounded-full transition-all" />
+    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <div style={{ width: '64px', height: '8px', background: '#f3f4f6', borderRadius: '999px', overflow: 'hidden' }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: '999px' }} />
       </div>
-      <span className="text-xs font-semibold" style={{ color }}>{avg.toFixed(2)}</span>
+      <span style={{ fontSize: '.75rem', fontWeight: 700, color }}>{avg.toFixed(2)}</span>
     </div>
   );
 }
@@ -299,16 +296,16 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
 
   // ──────────────────────────────────────────────────────────────────────────
   return (
-    <div className="space-y-4">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
       {/* ── Header ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
         <div>
-          <h2 className="text-xl font-bold text-gray-900">ประเมินความสามารถผู้เรียน</h2>
-          <p className="text-xs text-gray-400 mt-0.5">{DS.label} · {DS.subtitle}</p>
+          <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#1e293b' }}>ประเมินความสามารถผู้เรียน</h2>
+          <p style={{ margin: '2px 0 0', fontSize: '.78rem', color: '#94a3b8' }}>{DS.label} · {DS.subtitle}</p>
         </div>
         {/* View mode toggle — pill group */}
-        <div className="flex items-center bg-gray-100 rounded-xl p-1 gap-0.5">
+        <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '8px', padding: '2px', gap: '2px', flexShrink: 0 }}>
           {[
             { key: 'input',    icon: '✏️', label: 'บันทึก' },
             { key: 'summary',  icon: '📈', label: 'สรุปผล' },
@@ -317,11 +314,10 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
           ].map(m => (
             <button key={m.key}
               onClick={() => setViewMode(m.key)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                viewMode === m.key
-                  ? 'bg-white text-indigo-700 shadow-sm font-semibold'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              style={viewMode === m.key
+                ? { display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 12px', borderRadius: '6px', fontSize: '.8rem', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'white', color: '#4f46e5', boxShadow: '0 1px 3px rgba(0,0,0,.1)' }
+                : { display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 12px', borderRadius: '6px', fontSize: '.8rem', fontWeight: 500, border: 'none', cursor: 'pointer', background: 'transparent', color: '#64748b' }
+              }
             >
               <span>{m.icon}</span>
               <span>{m.label}</span>
@@ -331,34 +327,36 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
       </div>
 
       {/* ── Filters ── */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div style={{ background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,.04)' }}>
 
         {/* แถว 1: เลือกชุดตัวบ่งชี้ */}
-        <div className="px-5 pt-4 pb-3 border-b border-gray-50">
-          <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2.5">ชุดตัวบ่งชี้</p>
-          <div className="flex gap-3">
+        <div style={{ padding: '.75rem 1rem', borderBottom: '1px solid #e2e8f0' }}>
+          <p style={{ margin: '0 0 .5rem', fontSize: '.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.05em' }}>ชุดตัวบ่งชี้</p>
+          <div style={{ display: 'flex', gap: '.625rem', flexWrap: 'wrap' }}>
             {/* ── ปุ่ม C60 ── */}
             {(() => {
               const active = datasetKey === 'c60';
               return (
                 <button
                   onClick={() => switchDataset('c60')}
-                  className={`relative flex items-center gap-3 px-5 py-3 rounded-2xl border-2 transition-all text-left ${
-                    active
-                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200'
-                      : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-indigo-300 hover:bg-indigo-50'
-                  }`}
+                  style={{
+                    position: 'relative', display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '.5rem .875rem', borderRadius: '8px', border: `2px solid ${active ? '#6366f1' : '#e2e8f0'}`,
+                    background: active ? '#6366f1' : 'white', cursor: 'pointer', textAlign: 'left',
+                    boxShadow: active ? '0 2px 8px rgba(99,102,241,.25)' : 'none',
+                    transition: 'all .15s',
+                  }}
                 >
-                  <span className="text-2xl leading-none">📘</span>
+                  <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>📘</span>
                   <div>
-                    <div className={`text-sm font-bold leading-tight ${active ? 'text-white' : 'text-gray-800'}`}>
+                    <div style={{ fontSize: '.82rem', fontWeight: 700, color: active ? 'white' : '#1e293b', lineHeight: 1.2 }}>
                       หลักสูตร 2560
                     </div>
-                    <div className={`text-[11px] mt-0.5 ${active ? 'text-indigo-200' : 'text-gray-400'}`}>
+                    <div style={{ fontSize: '.72rem', marginTop: '2px', color: active ? 'rgba(255,255,255,.7)' : '#94a3b8' }}>
                       4 ด้าน 23 ตัวบ่งชี้
                     </div>
                   </div>
-                  {active && <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-white opacity-80" />}
+                  {active && <span style={{ position: 'absolute', top: '6px', right: '6px', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,.8)' }} />}
                 </button>
               );
             })()}
@@ -370,28 +368,31 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
               return (
                 <button
                   onClick={() => switchDataset(autoC68KeyFromClass(selClass))}
-                  className={`relative flex items-center gap-3 px-5 py-3 rounded-2xl border-2 transition-all text-left ${
-                    active
-                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200'
-                      : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-indigo-300 hover:bg-indigo-50'
-                  }`}
+                  style={{
+                    position: 'relative', display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '.5rem .875rem', borderRadius: '8px', border: `2px solid ${active ? '#6366f1' : '#e2e8f0'}`,
+                    background: active ? '#6366f1' : 'white', cursor: 'pointer', textAlign: 'left',
+                    boxShadow: active ? '0 2px 8px rgba(99,102,241,.25)' : 'none',
+                    transition: 'all .15s',
+                  }}
                 >
-                  <span className="text-2xl leading-none">📗</span>
+                  <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>📗</span>
                   <div>
-                    <div className={`text-sm font-bold leading-tight ${active ? 'text-white' : 'text-gray-800'}`}>
+                    <div style={{ fontSize: '.82rem', fontWeight: 700, color: active ? 'white' : '#1e293b', lineHeight: 1.2 }}>
                       หลักสูตร 2568
                     </div>
-                    <div className={`text-[11px] mt-0.5 ${active ? 'text-indigo-200' : 'text-gray-400'}`}>
+                    <div style={{ fontSize: '.72rem', marginTop: '2px', color: active ? 'rgba(255,255,255,.7)' : '#94a3b8' }}>
                       4 ด้าน 33 ความสามารถ
                     </div>
                   </div>
-                  {/* badge แสดงระดับ auto-detected */}
-                  <span className={`ml-auto text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                    active ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-600'
-                  }`}>
+                  {/* badge ระดับ */}
+                  <span style={{
+                    marginLeft: 'auto', fontSize: '.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: '999px',
+                    background: active ? 'rgba(255,255,255,.2)' : '#ede9fe', color: active ? 'white' : '#6366f1',
+                  }}>
                     {level}
                   </span>
-                  {active && <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-white opacity-80" />}
+                  {active && <span style={{ position: 'absolute', top: '6px', right: '6px', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,.8)' }} />}
                 </button>
               );
             })()}
@@ -399,40 +400,40 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
         </div>
 
         {/* แถว 2: ตัวกรอง */}
-        <div className="px-5 py-3 flex flex-wrap items-end gap-4">
+        <div style={{ padding: '.625rem 1rem', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '.75rem', background: 'white' }}>
           {/* ปีการศึกษา */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">ปีการศึกษา</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            <label style={{ fontSize: '.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.05em' }}>ปีการศึกษา</label>
             <input
               type="text"
               value={selYear}
               onChange={e => setSelYear(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-gray-200 text-sm w-24 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none"
+              style={{ padding: '.3rem .6rem', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '.82rem', width: '5.5rem', outline: 'none', color: '#1e293b' }}
             />
           </div>
 
-          <div className="w-px h-8 bg-gray-100" />
+          <div style={{ width: '1px', height: '28px', background: '#e2e8f0', alignSelf: 'flex-end', marginBottom: '1px' }} />
 
           {/* ภาคเรียน */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">ภาคเรียน</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            <label style={{ fontSize: '.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.05em' }}>ภาคเรียน</label>
             <select value={selTerm} onChange={e => setSelTerm(e.target.value)}
-              className="px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
+              style={{ padding: '.3rem .6rem', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '.82rem', outline: 'none', color: '#1e293b', background: 'white' }}>
               <option value="1">ภาคเรียนที่ 1</option>
               <option value="2">ภาคเรียนที่ 2</option>
             </select>
           </div>
 
-          <div className="w-px h-8 bg-gray-100" />
+          <div style={{ width: '1px', height: '28px', background: '#e2e8f0', alignSelf: 'flex-end', marginBottom: '1px' }} />
 
           {/* ห้องเรียน */}
-          <div className="flex flex-col gap-1">
-            <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">ห้องเรียน</label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+            <label style={{ fontSize: '.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.05em' }}>ห้องเรียน</label>
             {isTeacher ? (
-              <span className="px-3 py-2 rounded-xl bg-indigo-50 text-indigo-700 text-sm font-semibold border border-indigo-100">{myClass}</span>
+              <span style={{ padding: '.3rem .75rem', borderRadius: '6px', background: '#ede9fe', color: '#6366f1', fontSize: '.82rem', fontWeight: 700, border: '1px solid #c4b5fd' }}>{myClass}</span>
             ) : (
               <select value={selClass} onChange={e => setSelClass(e.target.value)}
-                className="px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none">
+                style={{ padding: '.3rem .6rem', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '.82rem', outline: 'none', color: '#1e293b', background: 'white' }}>
                 <option value="">— เลือกห้อง —</option>
                 {(allClassNames ?? []).sort().map(c => (
                   <option key={c} value={c}>{c}</option>
@@ -441,13 +442,13 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
             )}
           </div>
 
-          {/* ระดับ (C60) */}
+          {/* ระดับ (C60 allLevels) */}
           {selClass && DS.allLevels && (
             <>
-              <div className="w-px h-8 bg-gray-100" />
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">ระดับ</label>
-                <span className="px-3 py-2 rounded-xl bg-gray-50 text-gray-600 text-sm border border-gray-100">
+              <div style={{ width: '1px', height: '28px', background: '#e2e8f0', alignSelf: 'flex-end', marginBottom: '1px' }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <label style={{ fontSize: '.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.05em' }}>ระดับ</label>
+                <span style={{ padding: '.3rem .75rem', borderRadius: '6px', background: '#f8fafc', color: '#475569', fontSize: '.82rem', border: '1px solid #e2e8f0' }}>
                   {Object.keys(LEVEL_TO_KEY).find(k => selClass.includes(k)) ?? selClass}
                 </span>
               </div>
@@ -456,7 +457,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
 
           {/* คำเตือน C68 ถ้าห้องไม่ใช่ อ.3 */}
           {selClass && !DS.allLevels && !selClass.includes('3') && (
-            <span className="px-3 py-2 rounded-xl bg-amber-50 text-amber-700 text-xs font-medium border border-amber-200 self-end">
+            <span style={{ padding: '.3rem .75rem', borderRadius: '6px', background: '#fffbeb', color: '#92400e', fontSize: '.78rem', fontWeight: 600, border: '1px solid #fde68a', alignSelf: 'flex-end' }}>
               ⚠️ ชุดนี้ออกแบบสำหรับ อ.3 เท่านั้น
             </span>
           )}
@@ -464,27 +465,27 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
       </div>
 
       {!selClass && (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="text-4xl mb-3">🏫</div>
-          <p className="text-gray-500 font-medium">กรุณาเลือกห้องเรียน</p>
-          <p className="text-gray-400 text-sm mt-1">เพื่อเริ่มบันทึกการประเมิน</p>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3.5rem 1rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '.75rem' }}>🏫</div>
+          <p style={{ margin: 0, fontSize: '.9rem', fontWeight: 600, color: '#64748b' }}>กรุณาเลือกห้องเรียน</p>
+          <p style={{ margin: '4px 0 0', fontSize: '.82rem', color: '#94a3b8' }}>เพื่อเริ่มบันทึกการประเมิน</p>
         </div>
       )}
 
       {selClass && classStudents.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <div className="text-4xl mb-3">👥</div>
-          <p className="text-gray-500 font-medium">ไม่พบนักเรียนในห้อง {selClass}</p>
-          <p className="text-gray-400 text-sm mt-1">กรุณาตรวจสอบข้อมูลนักเรียน</p>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3.5rem 1rem', textAlign: 'center' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '.75rem' }}>👥</div>
+          <p style={{ margin: 0, fontSize: '.9rem', fontWeight: 600, color: '#64748b' }}>ไม่พบนักเรียนในห้อง {selClass}</p>
+          <p style={{ margin: '4px 0 0', fontSize: '.82rem', color: '#94a3b8' }}>กรุณาตรวจสอบข้อมูลนักเรียน</p>
         </div>
       )}
 
       {/* ══════════ VIEW: INPUT ════════════ */}
       {selClass && classStudents.length > 0 && viewMode === 'input' && (
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
           {/* Domain tabs */}
-          <div className="flex flex-wrap gap-2">
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem' }}>
             {DS.domains.map(d => {
               const active = activeDomain === d.id;
               const avg = domainAvgs[d.id];
@@ -493,18 +494,16 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                   key={d.id}
                   onClick={() => { setActiveDomain(d.id); setPicker(null); }}
                   style={active
-                    ? { background: d.bg, color: d.color, borderColor: d.border, boxShadow: `0 2px 8px ${d.border}55` }
-                    : { background: '#fff', color: '#6b7280', borderColor: '#e5e7eb' }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-2xl border-2 text-sm transition-all"
+                    ? { display: 'flex', alignItems: 'center', gap: '6px', padding: '.4rem .9rem', borderRadius: '20px', border: `2px solid ${d.border}`, background: d.bg, color: d.color, boxShadow: `0 2px 8px ${d.border}55`, cursor: 'pointer', fontSize: '.82rem' }
+                    : { display: 'flex', alignItems: 'center', gap: '6px', padding: '.4rem .9rem', borderRadius: '20px', border: '2px solid #e5e7eb', background: 'white', color: '#6b7280', cursor: 'pointer', fontSize: '.82rem' }}
                 >
-                  <span className="text-base leading-none">{d.icon}</span>
-                  <span className={`font-medium ${active ? 'font-semibold' : ''}`}>{d.label}</span>
+                  <span style={{ fontSize: '1rem', lineHeight: 1 }}>{d.icon}</span>
+                  <span style={{ fontWeight: active ? 700 : 500 }}>{d.label}</span>
                   {avg > 0 && (
                     <span
-                      className="text-[11px] px-1.5 py-0.5 rounded-full font-bold"
                       style={active
-                        ? { background: d.border + '33', color: d.color }
-                        : { background: '#f3f4f6', color: '#9ca3af' }}
+                        ? { fontSize: '.72rem', padding: '1px 6px', borderRadius: '999px', fontWeight: 700, background: d.border + '33', color: d.color }
+                        : { fontSize: '.72rem', padding: '1px 6px', borderRadius: '999px', fontWeight: 700, background: '#f3f4f6', color: '#9ca3af' }}
                     >{avg.toFixed(1)}</span>
                   )}
                 </button>
@@ -516,33 +515,33 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
           {(() => {
             const domain = DS.domains.find(d => d.id === activeDomain);
             return (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
-                <div className="p-3 border-b border-gray-50" style={{ background: domain.bg }}>
-                  <span style={{ color: domain.color }} className="font-semibold text-sm">
+              <div style={{ background: 'white', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,.04)', overflowX: 'auto' }}>
+                <div style={{ padding: '.625rem .875rem', borderBottom: '1px solid #e2e8f0', background: domain.bg }}>
+                  <span style={{ color: domain.color, fontWeight: 700, fontSize: '.85rem' }}>
                     {domain.icon} {domain.label}
                   </span>
                 </div>
-                <table className="w-full text-sm min-w-[700px]">
+                <table style={{ width: '100%', fontSize: '.82rem', minWidth: '700px', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr className="border-b border-gray-100 bg-gray-50">
-                      <th className="text-left px-3 py-2 text-gray-500 font-medium w-8">#</th>
-                      <th className="text-left px-3 py-2 text-gray-500 font-medium min-w-[140px]">ชื่อ-สกุล</th>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                      <th style={{ textAlign: 'left', padding: '.5rem .75rem', color: '#64748b', fontWeight: 600, width: '2rem' }}>#</th>
+                      <th style={{ textAlign: 'left', padding: '.5rem .75rem', color: '#64748b', fontWeight: 600, minWidth: '140px' }}>ชื่อ-สกุล</th>
                       {domainIndicators.map(ind => (
-                        <th key={ind.code} className="px-2 py-2 text-center text-gray-500 font-medium min-w-[110px]">
-                          <div className="text-xs font-bold text-gray-700">{ind.code}</div>
-                          <div className="text-[10px] text-gray-400 leading-tight max-w-[100px] mx-auto">
+                        <th key={ind.code} style={{ padding: '.5rem .5rem', textAlign: 'center', color: '#64748b', fontWeight: 600, minWidth: '110px' }}>
+                          <div style={{ fontSize: '.78rem', fontWeight: 700, color: '#374151' }}>{ind.code}</div>
+                          <div style={{ fontSize: '.7rem', color: '#94a3b8', lineHeight: 1.3, maxWidth: '100px', margin: '0 auto' }}>
                             {ind.label}
                           </div>
                         </th>
                       ))}
                     </tr>
                     {/* descriptor row */}
-                    <tr className="border-b border-gray-100 bg-blue-50/40">
-                      <td colSpan={2} className="px-3 py-1 text-[10px] text-blue-600 font-medium">
+                    <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#eff6ff' }}>
+                      <td colSpan={2} style={{ padding: '.25rem .75rem', fontSize: '.72rem', color: '#2563eb', fontWeight: 600 }}>
                         {DS.descriptorLabel(selClass)}
                       </td>
                       {domainIndicators.map(ind => (
-                        <td key={ind.code} className="px-2 py-1 text-[10px] text-blue-500 text-center leading-tight">
+                        <td key={ind.code} style={{ padding: '.25rem .5rem', fontSize: '.7rem', color: '#3b82f6', textAlign: 'center', lineHeight: 1.3 }}>
                           {DS.descriptorRow(ind, levelKey)}
                         </td>
                       ))}
@@ -550,15 +549,14 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                   </thead>
                   <tbody>
                     {classStudents.map((s, idx) => (
-                      <tr key={s.id}
-                        className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                        <td className="px-3 py-2 text-gray-400 text-xs">{idx + 1}</td>
-                        <td className="px-3 py-2">
-                          <div className="font-medium text-gray-800 text-sm">{s.name}</div>
-                          <div className="text-xs text-gray-400">{s.studentCode ?? ''}</div>
+                      <tr key={s.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '.5rem .75rem', color: '#94a3b8', fontSize: '.78rem' }}>{idx + 1}</td>
+                        <td style={{ padding: '.5rem .75rem' }}>
+                          <div style={{ fontWeight: 600, color: '#1e293b', fontSize: '.82rem' }}>{s.name}</div>
+                          <div style={{ fontSize: '.72rem', color: '#94a3b8' }}>{s.studentCode ?? ''}</div>
                         </td>
                         {domainIndicators.map(ind => (
-                          <td key={ind.code} className="px-2 py-2 text-center">
+                          <td key={ind.code} style={{ padding: '.5rem .5rem', textAlign: 'center' }}>
                             {picker?.sid === s.id && picker?.code === ind.code ? (
                               <ScorePicker
                                 scale={DS.scale}
@@ -581,7 +579,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
             );
           })()}
 
-          <p className="text-xs text-gray-400 text-center">
+          <p style={{ fontSize: '.78rem', color: '#94a3b8', textAlign: 'center', margin: 0 }}>
             คลิกที่ช่องคะแนนเพื่อให้คะแนน · ข้อมูลบันทึกอัตโนมัติทันที
           </p>
         </div>
@@ -589,48 +587,47 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
 
       {/* ══════════ VIEW: SUMMARY ════════════ */}
       {selClass && classStudents.length > 0 && viewMode === 'summary' && (
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
           {/* domain avg cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '.75rem' }}>
             {DS.domains.map(d => {
               const avg = domainAvgs[d.id];
               const meta = DS.scale[avg >= 2.5 ? 3 : avg >= 1.5 ? 2 : avg > 0 ? 1 : 0];
               return (
                 <div key={d.id}
-                  style={{ background: d.bg, borderColor: d.border }}
-                  className="rounded-2xl border p-4 flex flex-col gap-2">
-                  <div className="text-lg">{d.icon}</div>
-                  <div style={{ color: d.color }} className="text-sm font-semibold leading-tight">{d.label}</div>
-                  <div className="text-2xl font-bold" style={{ color: d.color }}>
+                  style={{ background: d.bg, border: `1px solid ${d.border}`, borderRadius: '10px', padding: '.875rem', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ fontSize: '1.2rem' }}>{d.icon}</div>
+                  <div style={{ color: d.color, fontSize: '.82rem', fontWeight: 700, lineHeight: 1.3 }}>{d.label}</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: d.color }}>
                     {avg ? avg.toFixed(2) : '—'}
                   </div>
-                  {meta && <div className="text-xs" style={{ color: meta.color }}>{meta.label}</div>}
+                  {meta && <div style={{ fontSize: '.75rem', color: meta.color }}>{meta.label}</div>}
                 </div>
               );
             })}
           </div>
 
           {/* student summary table */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
-            <div className="p-3 border-b border-gray-100 bg-gray-50">
-              <span className="font-semibold text-sm text-gray-700">
+          <div style={{ background: 'white', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,.04)', overflowX: 'auto' }}>
+            <div style={{ padding: '.625rem .875rem', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+              <span style={{ fontWeight: 700, fontSize: '.85rem', color: '#374151' }}>
                 สรุปผลรายนักเรียน — {selClass} ปีการศึกษา {selYear} ภาคเรียน {selTerm}
-                <span className="ml-2 text-xs text-indigo-600 font-normal">({DS.label})</span>
+                <span style={{ marginLeft: '8px', fontSize: '.78rem', color: '#6366f1', fontWeight: 500 }}>({DS.label})</span>
               </span>
             </div>
-            <table className="w-full text-sm">
+            <table style={{ width: '100%', fontSize: '.82rem', borderCollapse: 'collapse' }}>
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left px-3 py-2 text-gray-500 font-medium w-8">#</th>
-                  <th className="text-left px-3 py-2 text-gray-500 font-medium">ชื่อ-สกุล</th>
+                <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                  <th style={{ textAlign: 'left', padding: '.5rem .75rem', color: '#64748b', fontWeight: 600, width: '2rem' }}>#</th>
+                  <th style={{ textAlign: 'left', padding: '.5rem .75rem', color: '#64748b', fontWeight: 600 }}>ชื่อ-สกุล</th>
                   {DS.domains.map(d => (
-                    <th key={d.id} className="px-3 py-2 text-center text-gray-500 font-medium text-xs">
+                    <th key={d.id} style={{ padding: '.5rem .75rem', textAlign: 'center', color: '#64748b', fontWeight: 600, fontSize: '.75rem' }}>
                       {d.icon} {d.label.replace('ด้าน', '')}
                     </th>
                   ))}
-                  <th className="px-3 py-2 text-center text-gray-500 font-medium text-xs">เฉลี่ยรวม</th>
-                  <th className="px-3 py-2 text-center text-gray-500 font-medium text-xs">ระดับ</th>
+                  <th style={{ padding: '.5rem .75rem', textAlign: 'center', color: '#64748b', fontWeight: 600, fontSize: '.75rem' }}>เฉลี่ยรวม</th>
+                  <th style={{ padding: '.5rem .75rem', textAlign: 'center', color: '#64748b', fontWeight: 600, fontSize: '.75rem' }}>ระดับ</th>
                 </tr>
               </thead>
               <tbody>
@@ -638,29 +635,29 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                   const label = s.avg >= 2.5 ? 'ดี' : s.avg >= 1.5 ? 'พอใช้' : s.avg > 0 ? 'ควรส่งเสริม' : '—';
                   const color = s.avg >= 2.5 ? '#059669' : s.avg >= 1.5 ? '#d97706' : s.avg > 0 ? '#dc2626' : '#9ca3af';
                   return (
-                    <tr key={s.id} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="px-3 py-2 text-gray-400 text-xs">{idx + 1}</td>
-                      <td className="px-3 py-2">
-                        <div className="font-medium text-gray-800">{s.name}</div>
-                        <div className="text-xs text-gray-400">{s.studentCode ?? ''}</div>
+                    <tr key={s.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '.5rem .75rem', color: '#94a3b8', fontSize: '.78rem' }}>{idx + 1}</td>
+                      <td style={{ padding: '.5rem .75rem' }}>
+                        <div style={{ fontWeight: 600, color: '#1e293b' }}>{s.name}</div>
+                        <div style={{ fontSize: '.72rem', color: '#94a3b8' }}>{s.studentCode ?? ''}</div>
                       </td>
                       {DS.domains.map(d => {
                         const inds = DS.getByDomain(d.id);
                         const vals = inds.map(i => s.scores[i.code]).filter(v => v > 0);
                         const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
                         return (
-                          <td key={d.id} className="px-3 py-2 text-center">
+                          <td key={d.id} style={{ padding: '.5rem .75rem', textAlign: 'center' }}>
                             <AvgBar avg={avg} />
                           </td>
                         );
                       })}
-                      <td className="px-3 py-2 text-center">
-                        <span className="font-bold" style={{ color }}>
+                      <td style={{ padding: '.5rem .75rem', textAlign: 'center' }}>
+                        <span style={{ fontWeight: 700, color }}>
                           {s.avg ? s.avg.toFixed(2) : '—'}
                         </span>
                       </td>
-                      <td className="px-3 py-2 text-center">
-                        <span className="text-xs font-semibold" style={{ color }}>{label}</span>
+                      <td style={{ padding: '.5rem .75rem', textAlign: 'center' }}>
+                        <span style={{ fontSize: '.75rem', fontWeight: 700, color }}>{label}</span>
                       </td>
                     </tr>
                   );
@@ -670,19 +667,19 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
           </div>
 
           {/* indicator-level detail */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
-            <div className="p-3 border-b border-gray-100 bg-gray-50">
-              <span className="font-semibold text-sm text-gray-700">เฉลี่ยตามตัวบ่งชี้/ความสามารถ — ทั้งห้อง</span>
+          <div style={{ background: 'white', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,.04)', overflowX: 'auto' }}>
+            <div style={{ padding: '.625rem .875rem', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+              <span style={{ fontWeight: 700, fontSize: '.85rem', color: '#374151' }}>เฉลี่ยตามตัวบ่งชี้/ความสามารถ — ทั้งห้อง</span>
             </div>
-            <table className="w-full text-sm">
+            <table style={{ width: '100%', fontSize: '.82rem', borderCollapse: 'collapse' }}>
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left px-3 py-2 text-gray-500 font-medium">รหัส</th>
-                  <th className="text-left px-3 py-2 text-gray-500 font-medium">ตัวบ่งชี้ / ความสามารถ</th>
-                  <th className="px-3 py-2 text-center text-gray-500 font-medium">เฉลี่ย</th>
-                  <th className="px-3 py-2 text-center text-gray-500 font-medium">ดี</th>
-                  <th className="px-3 py-2 text-center text-gray-500 font-medium">พอใช้</th>
-                  <th className="px-3 py-2 text-center text-gray-500 font-medium">ควรส่งเสริม</th>
+                <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                  <th style={{ textAlign: 'left', padding: '.5rem .75rem', color: '#64748b', fontWeight: 600 }}>รหัส</th>
+                  <th style={{ textAlign: 'left', padding: '.5rem .75rem', color: '#64748b', fontWeight: 600 }}>ตัวบ่งชี้ / ความสามารถ</th>
+                  <th style={{ padding: '.5rem .75rem', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>เฉลี่ย</th>
+                  <th style={{ padding: '.5rem .75rem', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>ดี</th>
+                  <th style={{ padding: '.5rem .75rem', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>พอใช้</th>
+                  <th style={{ padding: '.5rem .75rem', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>ควรส่งเสริม</th>
                 </tr>
               </thead>
               <tbody>
@@ -694,15 +691,15 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                   const c1 = summaryRows.filter(r => r.scores[ind.code] === 1).length;
                   const dom = DS.domains.find(d => d.id === ind.domainId);
                   return (
-                    <tr key={ind.code} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="px-3 py-2">
-                        <span className="font-mono text-xs font-bold" style={{ color: dom?.color }}>{ind.code}</span>
+                    <tr key={ind.code} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '.5rem .75rem' }}>
+                        <span style={{ fontFamily: 'monospace', fontSize: '.75rem', fontWeight: 700, color: dom?.color }}>{ind.code}</span>
                       </td>
-                      <td className="px-3 py-2 text-xs text-gray-700">{ind.label}</td>
-                      <td className="px-3 py-2 text-center"><AvgBar avg={avg} /></td>
-                      <td className="px-3 py-2 text-center text-xs font-semibold text-emerald-700">{c3 || '—'}</td>
-                      <td className="px-3 py-2 text-center text-xs font-semibold text-amber-600">{c2 || '—'}</td>
-                      <td className="px-3 py-2 text-center text-xs font-semibold text-red-600">{c1 || '—'}</td>
+                      <td style={{ padding: '.5rem .75rem', fontSize: '.78rem', color: '#374151' }}>{ind.label}</td>
+                      <td style={{ padding: '.5rem .75rem', textAlign: 'center' }}><AvgBar avg={avg} /></td>
+                      <td style={{ padding: '.5rem .75rem', textAlign: 'center', fontSize: '.78rem', fontWeight: 700, color: '#059669' }}>{c3 || '—'}</td>
+                      <td style={{ padding: '.5rem .75rem', textAlign: 'center', fontSize: '.78rem', fontWeight: 700, color: '#d97706' }}>{c2 || '—'}</td>
+                      <td style={{ padding: '.5rem .75rem', textAlign: 'center', fontSize: '.78rem', fontWeight: 700, color: '#dc2626' }}>{c1 || '—'}</td>
                     </tr>
                   );
                 })}
@@ -721,21 +718,21 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
         const overallLabel = overall >= 2.5 ? 'ดี' : overall >= 1.5 ? 'พอใช้' : overall > 0 ? 'ควรส่งเสริม' : '—';
         const overallColor = overall >= 2.5 ? '#059669' : overall >= 1.5 ? '#d97706' : overall > 0 ? '#dc2626' : '#9ca3af';
         return (
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             {/* student picker */}
-            <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
-              <label className="text-xs text-gray-500 font-medium">นักเรียน</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '.75rem', padding: '.75rem 1rem', background: 'white', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,.04)' }}>
+              <label style={{ fontSize: '.78rem', color: '#64748b', fontWeight: 600 }}>นักเรียน</label>
               <select
                 value={stu.id}
                 onChange={e => setSelStudentId(e.target.value)}
-                className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm flex-1 max-w-xs"
+                style={{ padding: '.3rem .6rem', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '.82rem', flex: '1 1 auto', maxWidth: '280px', outline: 'none', color: '#1e293b', background: 'white' }}
               >
                 {classStudents.map(s => (
                   <option key={s.id} value={s.id}>{s.studentCode ? `${s.studentCode} ` : ''}{s.name}</option>
                 ))}
               </select>
               {overall > 0 && (
-                <span className="text-sm font-bold" style={{ color: overallColor }}>
+                <span style={{ fontSize: '.82rem', fontWeight: 700, color: overallColor }}>
                   เฉลี่ยรวม {overall.toFixed(2)} — {overallLabel}
                 </span>
               )}
@@ -748,52 +745,52 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
               const dAvg = dVals.length ? dVals.reduce((a, b) => a + b, 0) / dVals.length : 0;
               const passed = dVals.filter(v => v >= 2).length;
               return (
-                <div key={d.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                <div key={d.id} style={{ background: 'white', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,.04)', overflow: 'hidden' }}>
                   {/* domain header */}
-                  <div className="flex items-center justify-between px-4 py-3"
-                    style={{ background: d.bg, borderBottomColor: d.border, borderBottomWidth: 1 }}>
-                    <div className="flex items-center gap-2">
-                      <span className="text-lg">{d.icon}</span>
-                      <span className="font-semibold text-sm" style={{ color: d.color }}>{d.label}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '.625rem .875rem', background: d.bg, borderBottom: `1px solid ${d.border}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '1.1rem' }}>{d.icon}</span>
+                      <span style={{ fontWeight: 700, fontSize: '.85rem', color: d.color }}>{d.label}</span>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       {dAvg > 0 && <AvgBar avg={dAvg} />}
                       {dVals.length > 0 && (
-                        <span className="text-xs" style={{ color: d.color }}>
+                        <span style={{ fontSize: '.78rem', color: d.color, fontWeight: 600 }}>
                           ผ่าน {passed}/{items.length}
                         </span>
                       )}
                     </div>
                   </div>
                   {/* items */}
-                  <div className="divide-y divide-gray-50">
-                    {items.map(ind => {
+                  <div>
+                    {items.map((ind, itemIdx) => {
                       const sc = stuScores[ind.code];
                       const meta = DS.scale[sc];
                       const passed = sc >= 2;
                       return (
-                        <div key={ind.code} className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+                        <div key={ind.code} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '.625rem .875rem', borderBottom: itemIdx < items.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
                           {/* pass/fail indicator */}
-                          <div className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                            sc === 0 ? 'bg-gray-100 text-gray-300' :
-                            passed ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-500'
-                          }`}>
+                          <div style={{
+                            marginTop: '2px', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.72rem', fontWeight: 700, flexShrink: 0,
+                            background: sc === 0 ? '#f1f5f9' : passed ? '#d1fae5' : '#fee2e2',
+                            color: sc === 0 ? '#cbd5e1' : passed ? '#059669' : '#ef4444',
+                          }}>
                             {sc === 0 ? '—' : passed ? '✓' : '✗'}
                           </div>
                           {/* code + label */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-baseline gap-2">
-                              <span className="font-mono text-xs font-bold" style={{ color: d.color }}>{ind.code}</span>
-                              <span className="text-sm text-gray-800">{ind.label}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                              <span style={{ fontFamily: 'monospace', fontSize: '.75rem', fontWeight: 700, color: d.color }}>{ind.code}</span>
+                              <span style={{ fontSize: '.82rem', color: '#1e293b' }}>{ind.label}</span>
                             </div>
                             {DS.descriptorRow(ind, levelKey) !== '—' && (
-                              <p className="text-[11px] text-gray-400 mt-0.5 leading-relaxed">
+                              <p style={{ margin: '3px 0 0', fontSize: '.72rem', color: '#94a3b8', lineHeight: 1.5 }}>
                                 {DS.descriptorRow(ind, levelKey)}
                               </p>
                             )}
                           </div>
                           {/* score badge + picker */}
-                          <div className="shrink-0">
+                          <div style={{ flexShrink: 0 }}>
                             {picker?.sid === stu.id && picker?.code === ind.code ? (
                               <ScorePicker scale={DS.scale} onPick={v => setScore(stu.id, ind.code, v)} />
                             ) : (
@@ -809,7 +806,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
               );
             })}
 
-            <p className="text-xs text-gray-400 text-center">
+            <p style={{ fontSize: '.78rem', color: '#94a3b8', textAlign: 'center', margin: 0 }}>
               ✓ = ผ่าน (คะแนน ≥ 2) · ✗ = ยังไม่ผ่าน (คะแนน 1) · คลิกที่คะแนนเพื่อเปลี่ยน
             </p>
           </div>
@@ -841,11 +838,11 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
         }).filter(x => x.score > 0).sort((a, b) => b.score - a.score);
 
         return (
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
             {/* direction toggle */}
-            <div className="flex flex-wrap items-center justify-center gap-1">
-              <div className="flex flex-wrap items-center bg-gray-100 rounded-xl p-1 gap-0.5">
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', background: '#f1f5f9', borderRadius: '8px', padding: '2px', gap: '2px' }}>
                 {[
                   { key: 'act2comp',  label: '🎯 กิจกรรม → ความสามารถ' },
                   { key: 'comp2act',  label: '📋 ความสามารถ → กิจกรรม' },
@@ -854,11 +851,10 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                 ].map(m => (
                   <button key={m.key}
                     onClick={() => setActDir(m.key)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                      actDir === m.key
-                        ? 'bg-white text-indigo-700 shadow-sm font-semibold'
-                        : 'text-gray-500 hover:text-gray-700'
-                    }`}
+                    style={actDir === m.key
+                      ? { padding: '5px 12px', borderRadius: '6px', fontSize: '.8rem', fontWeight: 700, border: 'none', cursor: 'pointer', background: 'white', color: '#4f46e5', boxShadow: '0 1px 3px rgba(0,0,0,.1)' }
+                      : { padding: '5px 12px', borderRadius: '6px', fontSize: '.8rem', fontWeight: 500, border: 'none', cursor: 'pointer', background: 'transparent', color: '#64748b' }
+                    }
                   >{m.label}</button>
                 ))}
               </div>
@@ -866,28 +862,26 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
 
             {/* ─── กิจกรรม → ความสามารถ ─── */}
             {actDir === 'act2comp' && (
-              <div className="grid md:grid-cols-[280px_1fr] gap-4">
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px,280px) 1fr', gap: '1rem' }}>
 
                 {/* left: activity list */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-1">เลือกกิจกรรม</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <p style={{ margin: 0, fontSize: '.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.05em' }}>เลือกกิจกรรม</p>
                   {ACTIVITY_TYPES.map(act => {
                     const active = act.id === selActId;
                     return (
                       <button
                         key={act.id}
                         onClick={() => setSelActId(act.id)}
-                        className="w-full text-left flex items-start gap-3 px-4 py-3 rounded-2xl border-2 transition-all"
                         style={active
-                          ? { background: act.bg, borderColor: act.border, color: act.color }
-                          : { background: '#fff', borderColor: '#e5e7eb', color: '#374151' }}
+                          ? { display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '.625rem .875rem', borderRadius: '10px', border: `2px solid ${act.border}`, background: act.bg, color: act.color, cursor: 'pointer', textAlign: 'left', width: '100%' }
+                          : { display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '.625rem .875rem', borderRadius: '10px', border: '2px solid #e2e8f0', background: 'white', color: '#374151', cursor: 'pointer', textAlign: 'left', width: '100%' }}
                       >
-                        <span className="text-2xl leading-none">{act.icon}</span>
+                        <span style={{ fontSize: '1.4rem', lineHeight: 1 }}>{act.icon}</span>
                         <div>
-                          <div className="font-semibold text-sm leading-tight">{act.label}</div>
-                          <div className="text-[11px] mt-0.5 opacity-70 leading-snug">{act.description}</div>
-                          <div className="mt-1 text-[11px] font-bold"
-                            style={{ color: active ? act.color : '#9ca3af' }}>
+                          <div style={{ fontWeight: 700, fontSize: '.82rem', lineHeight: 1.3 }}>{act.label}</div>
+                          <div style={{ fontSize: '.72rem', marginTop: '2px', opacity: .7, lineHeight: 1.4 }}>{act.description}</div>
+                          <div style={{ marginTop: '4px', fontSize: '.72rem', fontWeight: 700, color: active ? act.color : '#9ca3af' }}>
                             {act.competencyCodes.length} ความสามารถ
                           </div>
                         </div>
@@ -898,16 +892,15 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
 
                 {/* right: competencies covered */}
                 <div>
-                  <div className="rounded-2xl border border-gray-100 shadow-sm bg-white overflow-hidden">
-                    <div className="px-5 py-3 border-b border-gray-50 flex items-center gap-3"
-                      style={{ background: selAct.bg }}>
-                      <span className="text-2xl">{selAct.icon}</span>
+                  <div style={{ background: 'white', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,.04)', overflow: 'hidden' }}>
+                    <div style={{ padding: '.625rem .875rem', borderBottom: '1px solid #e2e8f0', background: selAct.bg, display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '1.4rem' }}>{selAct.icon}</span>
                       <div>
-                        <div className="font-bold text-sm" style={{ color: selAct.color }}>{selAct.label}</div>
-                        <div className="text-[11px] mt-0.5" style={{ color: selAct.color + 'aa' }}>
+                        <div style={{ fontWeight: 700, fontSize: '.85rem', color: selAct.color }}>{selAct.label}</div>
+                        <div style={{ fontSize: '.72rem', marginTop: '2px', color: selAct.color + 'aa' }}>
                           ส่งเสริมความสามารถ {compsForAct.length} รายการ
                           {compsForAct.length < compCodesForAct.length && (
-                            <span className="ml-1 text-amber-500">
+                            <span style={{ marginLeft: '6px', color: '#d97706' }}>
                               (ชุดนี้มี {compCodesForAct.length - compsForAct.length} รหัสที่ไม่อยู่ในหลักสูตรที่เลือก)
                             </span>
                           )}
@@ -915,23 +908,22 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                       </div>
                     </div>
                     {compsForAct.length === 0 ? (
-                      <div className="py-10 text-center text-gray-400 text-sm">
+                      <div style={{ padding: '2.5rem 1rem', textAlign: 'center', color: '#94a3b8', fontSize: '.85rem' }}>
                         ไม่พบความสามารถในชุดหลักสูตรที่เลือก
                       </div>
                     ) : (
-                      <div className="divide-y divide-gray-50">
-                        {compsForAct.map(ind => {
+                      <div>
+                        {compsForAct.map((ind, idx) => {
                           const dom = DS.domains.find(d => d.id === ind.domainId);
                           return (
-                            <div key={ind.code} className="flex items-start gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
-                              <span
-                                className="mt-0.5 text-xs font-bold font-mono px-2 py-0.5 rounded-lg shrink-0"
-                                style={{ background: dom?.bg ?? '#f3f4f6', color: dom?.color ?? '#6b7280' }}
-                              >{ind.code}</span>
-                              <div className="flex-1 min-w-0">
-                                <div className="text-sm font-medium text-gray-800">{ind.label}</div>
+                            <div key={ind.code} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '.625rem .875rem', borderBottom: idx < compsForAct.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                              <span style={{ marginTop: '2px', fontSize: '.72rem', fontWeight: 700, fontFamily: 'monospace', padding: '2px 6px', borderRadius: '6px', flexShrink: 0, background: dom?.bg ?? '#f3f4f6', color: dom?.color ?? '#6b7280' }}>
+                                {ind.code}
+                              </span>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: '.82rem', fontWeight: 600, color: '#1e293b' }}>{ind.label}</div>
                                 {dom && (
-                                  <div className="text-[11px] mt-0.5" style={{ color: dom.color }}>
+                                  <div style={{ fontSize: '.72rem', marginTop: '2px', color: dom.color }}>
                                     {dom.icon} {dom.label}
                                   </div>
                                 )}
@@ -948,15 +940,16 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
 
             {/* ─── ความสามารถ → กิจกรรม ─── */}
             {actDir === 'comp2act' && (
-              <div className="grid md:grid-cols-[300px_1fr] gap-4">
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px,300px) 1fr', gap: '1rem' }}>
 
                 {/* left: competency list */}
-                <div className="space-y-1 max-h-[600px] overflow-y-auto pr-1">
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-1 sticky top-0 bg-white pb-1">เลือกความสามารถ</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', maxHeight: '600px', overflowY: 'auto', paddingRight: '4px' }}>
+                  <p style={{ margin: '0 0 4px', fontSize: '.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.05em', position: 'sticky', top: 0, background: 'white', paddingBottom: '4px' }}>เลือกความสามารถ</p>
                   {DS.domains.map(dom => (
                     <div key={dom.id}>
-                      <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider mt-2"
-                        style={{ color: dom.color }}>{dom.icon} {dom.label}</div>
+                      <div style={{ padding: '4px 8px', fontSize: '.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', marginTop: '8px', color: dom.color }}>
+                        {dom.icon} {dom.label}
+                      </div>
                       {DS.getByDomain(dom.id).map(ind => {
                         const active = ind.code === selCompCode;
                         const actCount = getActivitiesForCompetency(ind.code).length;
@@ -964,19 +957,15 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                           <button
                             key={ind.code}
                             onClick={() => setSelCompCode(ind.code)}
-                            className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-xl transition-all text-sm"
                             style={active
-                              ? { background: dom.bg, color: dom.color, fontWeight: 600 }
-                              : { color: '#374151' }}
+                              ? { display: 'flex', alignItems: 'center', gap: '6px', padding: '.35rem .625rem', borderRadius: '6px', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', background: dom.bg, color: dom.color, fontWeight: 700 }
+                              : { display: 'flex', alignItems: 'center', gap: '6px', padding: '.35rem .625rem', borderRadius: '6px', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', background: 'transparent', color: '#374151', fontWeight: 400 }}
                           >
-                            <span className="font-mono text-xs font-bold shrink-0"
-                              style={{ color: active ? dom.color : '#9ca3af' }}>{ind.code}</span>
-                            <span className="flex-1 leading-tight text-xs">{ind.label}</span>
+                            <span style={{ fontFamily: 'monospace', fontSize: '.72rem', fontWeight: 700, flexShrink: 0, color: active ? dom.color : '#9ca3af' }}>{ind.code}</span>
+                            <span style={{ flex: 1, lineHeight: 1.3, fontSize: '.75rem' }}>{ind.label}</span>
                             {actCount > 0 && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded-full shrink-0"
-                                style={active
-                                  ? { background: dom.border + '44', color: dom.color }
-                                  : { background: '#f3f4f6', color: '#9ca3af' }}>
+                              <span style={{ fontSize: '.68rem', padding: '1px 5px', borderRadius: '999px', flexShrink: 0,
+                                background: active ? dom.border + '44' : '#f1f5f9', color: active ? dom.color : '#94a3b8' }}>
                                 {actCount}
                               </span>
                             )}
@@ -993,44 +982,38 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                     const ind = DS.indicators.find(i => i.code === selCompCode);
                     const dom = ind ? DS.domains.find(d => d.id === ind.domainId) : null;
                     return (
-                      <div className="rounded-2xl border border-gray-100 shadow-sm bg-white overflow-hidden">
-                        <div className="px-5 py-3 border-b border-gray-50"
-                          style={{ background: dom?.bg ?? '#f9fafb' }}>
-                          <div className="flex items-baseline gap-2">
-                            <span className="font-mono text-sm font-bold"
-                              style={{ color: dom?.color ?? '#374151' }}>{selCompCode}</span>
-                            <span className="font-semibold text-sm text-gray-800">{ind?.label ?? ''}</span>
+                      <div style={{ background: 'white', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,.04)', overflow: 'hidden' }}>
+                        <div style={{ padding: '.625rem .875rem', borderBottom: '1px solid #e2e8f0', background: dom?.bg ?? '#f8fafc' }}>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                            <span style={{ fontFamily: 'monospace', fontSize: '.85rem', fontWeight: 700, color: dom?.color ?? '#374151' }}>{selCompCode}</span>
+                            <span style={{ fontWeight: 600, fontSize: '.85rem', color: '#1e293b' }}>{ind?.label ?? ''}</span>
                           </div>
                           {dom && (
-                            <div className="text-[11px] mt-0.5" style={{ color: dom.color }}>
+                            <div style={{ fontSize: '.72rem', marginTop: '2px', color: dom.color }}>
                               {dom.icon} {dom.label} · ส่งเสริมโดย {actsForComp.length} กิจกรรม
                             </div>
                           )}
                         </div>
                         {actsForComp.length === 0 ? (
-                          <div className="py-10 text-center text-gray-400 text-sm">
+                          <div style={{ padding: '2.5rem 1rem', textAlign: 'center', color: '#94a3b8', fontSize: '.85rem' }}>
                             ความสามารถนี้ยังไม่มีกิจกรรมที่เชื่อมโยง
                           </div>
                         ) : (
-                          <div className="divide-y divide-gray-50">
-                            {actsForComp.map(act => (
-                              <div key={act.id} className="flex items-start gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
-                                <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-2xl shrink-0"
-                                  style={{ background: act.bg }}>
+                          <div>
+                            {actsForComp.map((act, actIdx) => (
+                              <div key={act.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', padding: '.75rem .875rem', borderBottom: actIdx < actsForComp.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                                <div style={{ width: '36px', height: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0, background: act.bg }}>
                                   {act.icon}
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-semibold text-sm" style={{ color: act.color }}>{act.label}</div>
-                                  <div className="text-[11px] text-gray-500 mt-0.5 leading-snug">{act.description}</div>
-                                  <div className="mt-1.5 flex flex-wrap gap-1">
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontWeight: 700, fontSize: '.85rem', color: act.color }}>{act.label}</div>
+                                  <div style={{ fontSize: '.72rem', color: '#64748b', marginTop: '2px', lineHeight: 1.4 }}>{act.description}</div>
+                                  <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                                     {act.competencyCodes.map(code => (
                                       <span key={code}
-                                        className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono font-bold ${
-                                          code === selCompCode
-                                            ? 'text-white'
-                                            : 'text-gray-500 bg-gray-100'
-                                        }`}
-                                        style={code === selCompCode ? { background: act.color } : {}}
+                                        style={{ fontSize: '.68rem', padding: '1px 5px', borderRadius: '4px', fontFamily: 'monospace', fontWeight: 700,
+                                          background: code === selCompCode ? act.color : '#f1f5f9',
+                                          color: code === selCompCode ? 'white' : '#64748b' }}
                                       >{code}</span>
                                     ))}
                                   </div>
@@ -1048,22 +1031,22 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
 
             {/* ─── MATRIX ─── */}
             {actDir === 'matrix' && (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-x-auto">
-                <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
-                  <span className="font-semibold text-sm text-gray-700">
+              <div style={{ background: 'white', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,.04)', overflowX: 'auto' }}>
+                <div style={{ padding: '.625rem .875rem', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                  <span style={{ fontWeight: 700, fontSize: '.85rem', color: '#374151' }}>
                     ตาราง Matrix — กิจกรรม × ความสามารถ
                   </span>
-                  <span className="ml-2 text-xs text-gray-400">({DS.label})</span>
+                  <span style={{ marginLeft: '8px', fontSize: '.75rem', color: '#94a3b8' }}>({DS.label})</span>
                 </div>
-                <table className="w-full text-xs min-w-[720px]">
+                <table style={{ width: '100%', fontSize: '.75rem', minWidth: '720px', borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr className="border-b border-gray-100 bg-gray-50">
-                      <th className="text-left px-3 py-2 text-gray-500 font-medium w-12">รหัส</th>
-                      <th className="text-left px-3 py-2 text-gray-500 font-medium min-w-[160px]">ความสามารถ</th>
+                    <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                      <th style={{ textAlign: 'left', padding: '.5rem .75rem', color: '#64748b', fontWeight: 600, width: '3rem' }}>รหัส</th>
+                      <th style={{ textAlign: 'left', padding: '.5rem .75rem', color: '#64748b', fontWeight: 600, minWidth: '160px' }}>ความสามารถ</th>
                       {ACTIVITY_TYPES.map(act => (
-                        <th key={act.id} className="px-2 py-2 text-center min-w-[80px]">
-                          <div className="text-lg leading-none">{act.icon}</div>
-                          <div className="text-[9px] text-gray-400 mt-0.5 leading-tight max-w-[72px] mx-auto">
+                        <th key={act.id} style={{ padding: '.5rem .5rem', textAlign: 'center', minWidth: '80px' }}>
+                          <div style={{ fontSize: '1.1rem', lineHeight: 1 }}>{act.icon}</div>
+                          <div style={{ fontSize: '.65rem', color: '#94a3b8', marginTop: '2px', lineHeight: 1.3, maxWidth: '72px', margin: '2px auto 0' }}>
                             {act.label.replace('กิจกรรม', '').trim()}
                           </div>
                         </th>
@@ -1076,29 +1059,27 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                         {/* domain header row */}
                         <tr key={`dom-${dom.id}`} style={{ background: dom.bg }}>
                           <td colSpan={2 + ACTIVITY_TYPES.length}
-                            className="px-3 py-1.5 font-bold text-xs"
-                            style={{ color: dom.color }}>
+                            style={{ padding: '.375rem .75rem', fontWeight: 700, fontSize: '.75rem', color: dom.color }}>
                             {dom.icon} {dom.label}
                           </td>
                         </tr>
                         {DS.getByDomain(dom.id).map(ind => (
-                          <tr key={ind.code} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                            <td className="px-3 py-2">
-                              <span className="font-mono font-bold" style={{ color: dom.color }}>{ind.code}</span>
+                          <tr key={ind.code} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '.5rem .75rem' }}>
+                              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: dom.color }}>{ind.code}</span>
                             </td>
-                            <td className="px-3 py-2 text-gray-700 leading-tight">{ind.label}</td>
+                            <td style={{ padding: '.5rem .75rem', color: '#374151', lineHeight: 1.4 }}>{ind.label}</td>
                             {ACTIVITY_TYPES.map(act => {
                               const linked = act.competencyCodes.includes(ind.code);
                               return (
-                                <td key={act.id} className="px-2 py-2 text-center">
+                                <td key={act.id} style={{ padding: '.5rem .5rem', textAlign: 'center' }}>
                                   {linked ? (
                                     <span
-                                      className="inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-bold"
-                                      style={{ background: act.color }}
+                                      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '22px', borderRadius: '50%', color: 'white', fontSize: '.72rem', fontWeight: 700, background: act.color }}
                                       title={act.label}
                                     >✓</span>
                                   ) : (
-                                    <span className="inline-block w-6 h-6 rounded-full bg-gray-50" />
+                                    <span style={{ display: 'inline-block', width: '22px', height: '22px', borderRadius: '50%', background: '#f1f5f9' }} />
                                   )}
                                 </td>
                               );
@@ -1110,11 +1091,10 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                   </tbody>
                 </table>
                 {/* legend */}
-                <div className="px-5 py-3 border-t border-gray-50 flex flex-wrap gap-4">
+                <div style={{ padding: '.625rem .875rem', borderTop: '1px solid #f1f5f9', display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                   {ACTIVITY_TYPES.map(act => (
-                    <div key={act.id} className="flex items-center gap-1.5 text-xs text-gray-600">
-                      <span className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px]"
-                        style={{ background: act.color }}>✓</span>
+                    <div key={act.id} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '.75rem', color: '#475569' }}>
+                      <span style={{ width: '16px', height: '16px', borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '.65rem', background: act.color }}>✓</span>
                       {act.icon} {act.label.replace('กิจกรรม', '').trim()}
                     </div>
                   ))}
@@ -1124,54 +1104,52 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
 
             {/* ─── RECOMMEND ─── */}
             {actDir === 'recommend' && (
-              <div className="space-y-4">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {!selClass ? (
-                  <div className="flex flex-col items-center justify-center py-14 text-center">
-                    <div className="text-4xl mb-3">🏫</div>
-                    <p className="text-gray-500 font-medium">กรุณาเลือกห้องเรียนก่อน</p>
-                    <p className="text-gray-400 text-sm mt-1">ระบบจะดึงคะแนนของห้องมาวิเคราะห์</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '2.5rem', marginBottom: '.75rem' }}>🏫</div>
+                    <p style={{ margin: 0, fontSize: '.9rem', fontWeight: 600, color: '#64748b' }}>กรุณาเลือกห้องเรียนก่อน</p>
+                    <p style={{ margin: '4px 0 0', fontSize: '.82rem', color: '#94a3b8' }}>ระบบจะดึงคะแนนของห้องมาวิเคราะห์</p>
                   </div>
                 ) : weakComps.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-14 text-center">
-                    <div className="text-4xl mb-3">📊</div>
-                    <p className="text-gray-500 font-medium">ยังไม่มีข้อมูลคะแนนในห้อง {selClass}</p>
-                    <p className="text-gray-400 text-sm mt-1">บันทึกคะแนนในแท็บ "บันทึก" ก่อน แล้วกลับมาดูคำแนะนำ</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '2.5rem', marginBottom: '.75rem' }}>📊</div>
+                    <p style={{ margin: 0, fontSize: '.9rem', fontWeight: 600, color: '#64748b' }}>ยังไม่มีข้อมูลคะแนนในห้อง {selClass}</p>
+                    <p style={{ margin: '4px 0 0', fontSize: '.82rem', color: '#94a3b8' }}>บันทึกคะแนนในแท็บ "บันทึก" ก่อน แล้วกลับมาดูคำแนะนำ</p>
                   </div>
                 ) : (
                   <>
                     {/* weak competencies list */}
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                      <div className="px-5 py-3 border-b border-gray-100 bg-amber-50">
-                        <span className="font-semibold text-sm text-amber-800">
+                    <div style={{ background: 'white', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,.04)', overflow: 'hidden' }}>
+                      <div style={{ padding: '.625rem .875rem', borderBottom: '1px solid #e2e8f0', background: '#fffbeb' }}>
+                        <span style={{ fontWeight: 700, fontSize: '.85rem', color: '#92400e' }}>
                           ⚠️ ความสามารถที่คะแนนเฉลี่ยต่ำสุด — {selClass}
                         </span>
-                        <span className="ml-2 text-xs text-amber-600">
+                        <span style={{ marginLeft: '8px', fontSize: '.75rem', color: '#b45309' }}>
                           ({selYear} ภาค {selTerm})
                         </span>
                       </div>
-                      <div className="divide-y divide-gray-50">
+                      <div>
                         {weakComps.map((ind, rank) => {
                           const avg = compAvgMap[ind.code];
                           const dom = DS.domains.find(d => d.id === ind.domainId);
                           const pct = ((avg / 3) * 100).toFixed(0);
                           const color = avg >= 2.5 ? '#059669' : avg >= 1.5 ? '#d97706' : '#dc2626';
                           return (
-                            <div key={ind.code} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50">
-                              <span className="text-lg font-black text-gray-300 w-6 text-center shrink-0">
+                            <div key={ind.code} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '.625rem .875rem', borderBottom: rank < weakComps.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                              <span style={{ fontSize: '1rem', fontWeight: 900, color: '#cbd5e1', width: '20px', textAlign: 'center', flexShrink: 0 }}>
                                 {rank + 1}
                               </span>
-                              <span className="font-mono text-xs font-bold shrink-0 px-2 py-0.5 rounded-lg"
-                                style={{ background: dom?.bg, color: dom?.color }}>
+                              <span style={{ fontFamily: 'monospace', fontSize: '.72rem', fontWeight: 700, flexShrink: 0, padding: '2px 6px', borderRadius: '6px', background: dom?.bg, color: dom?.color }}>
                                 {ind.code}
                               </span>
-                              <div className="flex-1 min-w-0">
-                                <div className="text-sm text-gray-800 leading-tight">{ind.label}</div>
-                                <div className="mt-1.5 h-1.5 bg-gray-100 rounded-full overflow-hidden w-full max-w-[180px]">
-                                  <div className="h-full rounded-full transition-all"
-                                    style={{ width: `${pct}%`, background: color }} />
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: '.82rem', color: '#1e293b', lineHeight: 1.3 }}>{ind.label}</div>
+                                <div style={{ marginTop: '5px', height: '5px', background: '#f1f5f9', borderRadius: '999px', overflow: 'hidden', maxWidth: '180px' }}>
+                                  <div style={{ height: '100%', borderRadius: '999px', width: `${pct}%`, background: color }} />
                                 </div>
                               </div>
-                              <span className="text-sm font-bold shrink-0" style={{ color }}>
+                              <span style={{ fontSize: '.85rem', fontWeight: 700, flexShrink: 0, color }}>
                                 {avg.toFixed(2)}
                               </span>
                             </div>
@@ -1181,50 +1159,48 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                     </div>
 
                     {/* recommended activities */}
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                      <div className="px-5 py-3 border-b border-gray-100 bg-indigo-50">
-                        <span className="font-semibold text-sm text-indigo-800">
+                    <div style={{ background: 'white', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,.04)', overflow: 'hidden' }}>
+                      <div style={{ padding: '.625rem .875rem', borderBottom: '1px solid #e2e8f0', background: '#ede9fe' }}>
+                        <span style={{ fontWeight: 700, fontSize: '.85rem', color: '#4c1d95' }}>
                           ✨ กิจกรรมที่แนะนำ — เรียงตามความครอบคลุม
                         </span>
                       </div>
                       {actScores.length === 0 ? (
-                        <div className="py-8 text-center text-gray-400 text-sm">ไม่พบการเชื่อมโยง</div>
+                        <div style={{ padding: '2rem 1rem', textAlign: 'center', color: '#94a3b8', fontSize: '.85rem' }}>ไม่พบการเชื่อมโยง</div>
                       ) : (
-                        <div className="divide-y divide-gray-50">
+                        <div>
                           {actScores.map(({ act, covered }, rank) => (
-                            <div key={act.id} className="px-5 py-4 hover:bg-gray-50 transition-colors">
-                              <div className="flex items-center gap-3">
-                                <span className="text-lg font-black text-gray-300 w-6 text-center shrink-0">
+                            <div key={act.id} style={{ padding: '.75rem .875rem', borderBottom: rank < actScores.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <span style={{ fontSize: '1rem', fontWeight: 900, color: '#cbd5e1', width: '20px', textAlign: 'center', flexShrink: 0 }}>
                                   {rank + 1}
                                 </span>
-                                <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-2xl shrink-0"
-                                  style={{ background: act.bg }}>
+                                <div style={{ width: '36px', height: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0, background: act.bg }}>
                                   {act.icon}
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-semibold text-sm" style={{ color: act.color }}>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontWeight: 700, fontSize: '.85rem', color: act.color }}>
                                     {act.label}
                                   </div>
-                                  <div className="text-[11px] text-gray-500 mt-0.5">{act.description}</div>
+                                  <div style={{ fontSize: '.72rem', color: '#64748b', marginTop: '2px' }}>{act.description}</div>
                                 </div>
-                                <div className="shrink-0 text-right">
-                                  <div className="text-xl font-black" style={{ color: act.color }}>
+                                <div style={{ flexShrink: 0, textAlign: 'right' }}>
+                                  <div style={{ fontSize: '1.25rem', fontWeight: 900, color: act.color }}>
                                     {covered.length}
                                   </div>
-                                  <div className="text-[10px] text-gray-400">ความสามารถ</div>
+                                  <div style={{ fontSize: '.68rem', color: '#94a3b8' }}>ความสามารถ</div>
                                 </div>
                               </div>
                               {/* covered weak comps */}
-                              <div className="mt-2.5 ml-[52px] flex flex-wrap gap-1.5">
+                              <div style={{ marginTop: '8px', marginLeft: '66px', display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
                                 {covered.map(ind => {
                                   const dom = DS.domains.find(d => d.id === ind.domainId);
                                   const avg = compAvgMap[ind.code];
                                   return (
                                     <div key={ind.code}
-                                      className="flex items-center gap-1 px-2 py-1 rounded-xl text-xs"
-                                      style={{ background: dom?.bg, color: dom?.color }}>
-                                      <span className="font-mono font-bold">{ind.code}</span>
-                                      <span className="opacity-70">({avg?.toFixed(1)})</span>
+                                      style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '8px', fontSize: '.72rem', background: dom?.bg, color: dom?.color }}>
+                                      <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{ind.code}</span>
+                                      <span style={{ opacity: .7 }}>({avg?.toFixed(1)})</span>
                                     </div>
                                   );
                                 })}
@@ -1239,7 +1215,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
               </div>
             )}
 
-            <p className="text-xs text-gray-400 text-center">
+            <p style={{ fontSize: '.78rem', color: '#94a3b8', textAlign: 'center', margin: 0 }}>
               ข้อมูลอ้างอิงจากหลักสูตรการศึกษาปฐมวัย พ.ศ. 2568 · รหัสความสามารถใช้ร่วมกันทั้ง อ.1–อ.3
             </p>
           </div>

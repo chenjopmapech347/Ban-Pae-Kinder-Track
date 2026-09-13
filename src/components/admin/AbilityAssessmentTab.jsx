@@ -1,7 +1,8 @@
 // AbilityAssessmentTab.jsx
-// ประเมินความสามารถผู้เรียน — รองรับ 2 ชุดข้อมูล
-//   • C60 : หลักสูตรการศึกษาปฐมวัย พ.ศ. 2560 · 4 ด้าน 23 ตัวบ่งชี้
-//   • C68 : ความสามารถผู้เรียนสิ้นปี อ.3 หลักสูตร พ.ศ. 2568 · 4 ด้าน 15 ความสามารถ
+// ประเมินความสามารถผู้เรียน — รองรับ 3 ชุดข้อมูล
+//   • C60      : หลักสูตรการศึกษาปฐมวัย พ.ศ. 2560 · 4 ด้าน 23 ตัวบ่งชี้
+//   • C68 อ.3  : ความสามารถผู้เรียนสิ้นปี อ.3 หลักสูตร พ.ศ. 2568 · 4 ด้าน 15 ความสามารถ
+//   • C68 อ.2  : ความสามารถผู้เรียนสิ้นปี อ.2 หลักสูตร พ.ศ. 2568 · 4 ด้าน 33 ความสามารถ
 
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
@@ -13,6 +14,10 @@ import {
   SCALE_C68, DOMAINS_C68, COMPETENCIES_C68,
   getCompetenciesByDomain, calcAvgScoreC68,
 } from '../../data/competenciesData_อ3_68';
+import {
+  COMPETENCIES_C68_อ2,
+  getCompetenciesByDomainอ2, calcAvgScoreC68_อ2,
+} from '../../data/competenciesData_อ2_68';
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -42,7 +47,7 @@ const DATASETS = {
   c68: {
     key: 'c68',
     label: 'หลักสูตร พ.ศ. 2568',
-    subtitle: '4 ด้าน 15 ความสามารถ (เฉพาะ อ.3)',
+    subtitle: '4 ด้าน 15 ความสามารถ (อ.3)',
     scale: SCALE_C68,
     domains: DOMAINS_C68,
     indicators: COMPETENCIES_C68,
@@ -51,6 +56,20 @@ const DATASETS = {
     calcDomainAvg: (scores, domainId) => calcAvgScoreC68(scores, domainId),
     descriptorRow: (ind) => ind.descriptor ?? '—',
     descriptorLabel: () => 'ความสามารถที่คาดหวัง (อนุบาล 3)',
+    allLevels: false,
+  },
+  c68_อ2: {
+    key: 'c68_อ2',
+    label: 'หลักสูตร พ.ศ. 2568',
+    subtitle: '4 ด้าน 33 ความสามารถ (อ.2)',
+    scale: SCALE_C68,
+    domains: DOMAINS_C68,
+    indicators: COMPETENCIES_C68_อ2,
+    getByDomain: getCompetenciesByDomainอ2,
+    calcAvg: (scores) => calcAvgScoreC68_อ2(scores),
+    calcDomainAvg: (scores, domainId) => calcAvgScoreC68_อ2(scores, domainId),
+    descriptorRow: (ind) => ind.descriptor ?? '—',
+    descriptorLabel: () => 'ความสามารถที่คาดหวัง (อนุบาล 2)',
     allLevels: false,
   },
 };

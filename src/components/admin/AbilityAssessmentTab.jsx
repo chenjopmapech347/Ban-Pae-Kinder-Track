@@ -1,8 +1,9 @@
 // AbilityAssessmentTab.jsx
-// ประเมินความสามารถผู้เรียน — รองรับ 3 ชุดข้อมูล
+// ประเมินความสามารถผู้เรียน — รองรับ 4 ชุดข้อมูล
 //   • C60      : หลักสูตรการศึกษาปฐมวัย พ.ศ. 2560 · 4 ด้าน 23 ตัวบ่งชี้
 //   • C68 อ.3  : ความสามารถผู้เรียนสิ้นปี อ.3 หลักสูตร พ.ศ. 2568 · 4 ด้าน 15 ความสามารถ
 //   • C68 อ.2  : ความสามารถผู้เรียนสิ้นปี อ.2 หลักสูตร พ.ศ. 2568 · 4 ด้าน 33 ความสามารถ
+//   • C68 อ.1  : ความสามารถผู้เรียนสิ้นปี อ.1 หลักสูตร พ.ศ. 2568 · 4 ด้าน 33 ความสามารถ
 
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
@@ -18,6 +19,10 @@ import {
   COMPETENCIES_C68_อ2,
   getCompetenciesByDomainอ2, calcAvgScoreC68_อ2,
 } from '../../data/competenciesData_อ2_68';
+import {
+  COMPETENCIES_C68_อ1,
+  getCompetenciesByDomainอ1, calcAvgScoreC68_อ1,
+} from '../../data/competenciesData_อ1_68';
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -70,6 +75,20 @@ const DATASETS = {
     calcDomainAvg: (scores, domainId) => calcAvgScoreC68_อ2(scores, domainId),
     descriptorRow: (ind) => ind.descriptor ?? '—',
     descriptorLabel: () => 'ความสามารถที่คาดหวัง (อนุบาล 2)',
+    allLevels: false,
+  },
+  c68_อ1: {
+    key: 'c68_อ1',
+    label: 'หลักสูตร พ.ศ. 2568',
+    subtitle: '4 ด้าน 33 ความสามารถ (อ.1)',
+    scale: SCALE_C68,
+    domains: DOMAINS_C68,
+    indicators: COMPETENCIES_C68_อ1,
+    getByDomain: getCompetenciesByDomainอ1,
+    calcAvg: (scores) => calcAvgScoreC68_อ1(scores),
+    calcDomainAvg: (scores, domainId) => calcAvgScoreC68_อ1(scores, domainId),
+    descriptorRow: (ind) => ind.descriptor ?? '—',
+    descriptorLabel: () => 'ความสามารถที่คาดหวัง (อนุบาล 1)',
     allLevels: false,
   },
 };

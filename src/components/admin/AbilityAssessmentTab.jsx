@@ -5,7 +5,7 @@
 //   • C68 อ.2  : ความสามารถผู้เรียนสิ้นปี อ.2 หลักสูตร พ.ศ. 2568 · 4 ด้าน 33 ความสามารถ
 //   • C68 อ.1  : ความสามารถผู้เรียนสิ้นปี อ.1 หลักสูตร พ.ศ. 2568 · 4 ด้าน 33 ความสามารถ
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
   SCALE_C60, DOMAINS_C60, INDICATORS_C60,
@@ -94,6 +94,26 @@ const DATASETS = {
 };
 
 // ──────────────────────────────────────────────────────────────────────────────
+// Auto-select C68 dataset ตามชื่อห้อง
+// ──────────────────────────────────────────────────────────────────────────────
+function autoC68KeyFromClass(className = '') {
+  if (className.includes('อ.1') || className.includes('อนุบาล 1') ||
+      className.includes('อนุบาล๑') || /อ\.?1/.test(className)) return 'c68_อ1';
+  if (className.includes('อ.2') || className.includes('อนุบาล 2') ||
+      className.includes('อนุบาล๒') || /อ\.?2/.test(className)) return 'c68_อ2';
+  if (className.includes('อ.3') || className.includes('อนุบาล 3') ||
+      className.includes('อนุบาล๓') || /อ\.?3/.test(className)) return 'c68';
+  return 'c68';   // default → อ.3
+}
+
+/** label สั้นสำหรับแสดงใน badge */
+function c68LevelLabel(key) {
+  if (key === 'c68_อ1') return 'อ.1';
+  if (key === 'c68_อ2') return 'อ.2';
+  return 'อ.3';
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // helpers — รับ scale เป็น prop เพื่อรองรับทั้งสองชุด
 // ──────────────────────────────────────────────────────────────────────────────
 function recKey(sid, year, term) { return `${sid}||${year}||${term}`; }
@@ -173,7 +193,10 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
   const [selYear,   setSelYear]   = useState(academicYear);
   const [selTerm,   setSelTerm]   = useState(currentTerm ?? '1');
   const [selClass,  setSelClass]  = useState(myClass ?? '');
-  const [datasetKey, setDatasetKey] = useState('c60');        // ← ชุดข้อมูล
+  // auto-select c68_อ1/อ2/อ3 จากชื่อห้อง; ถ้าไม่มีห้อง default = 'c60'
+  const [datasetKey, setDatasetKey] = useState(
+    myClass ? autoC68KeyFromClass(myClass) : 'c60'
+  );
   const [activeDomain, setActiveDomain] = useState('d1');
   const [picker, setPicker] = useState(null);
   const [viewMode, setViewMode] = useState('input');
@@ -188,6 +211,15 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
     setActiveDomain(DATASETS[key].domains[0]?.id ?? 'd1');
     setPicker(null);
   }
+
+  // เมื่อเปลี่ยนห้อง → auto-switch c68 sub-dataset ให้ตรงระดับ
+  useEffect(() => {
+    if (datasetKey !== 'c60') {
+      const autoKey = autoC68KeyFromClass(selClass);
+      if (autoKey !== datasetKey) switchDataset(autoKey);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selClass]);
 
   // ─── derived ─────────────────────────────────────────────────────────────────
   const classStudents = useMemo(
@@ -297,33 +329,64 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
         <div className="px-5 pt-4 pb-3 border-b border-gray-50">
           <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-2.5">ชุดตัวบ่งชี้</p>
           <div className="flex gap-3">
-            {Object.values(DATASETS).map(ds => {
-              const active = datasetKey === ds.key;
+            {/* ── ปุ่ม C60 ── */}
+            {(() => {
+              const active = datasetKey === 'c60';
               return (
                 <button
-                  key={ds.key}
-                  onClick={() => switchDataset(ds.key)}
-                  className={`relative flex items-center gap-3 px-5 py-3 rounded-2xl border-2 transition-all text-left flex-1 max-w-xs ${
+                  onClick={() => switchDataset('c60')}
+                  className={`relative flex items-center gap-3 px-5 py-3 rounded-2xl border-2 transition-all text-left ${
                     active
                       ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200'
                       : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-indigo-300 hover:bg-indigo-50'
                   }`}
                 >
-                  <span className="text-2xl leading-none">{ds.key === 'c60' ? '📘' : '📗'}</span>
+                  <span className="text-2xl leading-none">📘</span>
                   <div>
                     <div className={`text-sm font-bold leading-tight ${active ? 'text-white' : 'text-gray-800'}`}>
-                      {ds.key === 'c60' ? 'หลักสูตร 2560' : 'หลักสูตร 2568'}
+                      หลักสูตร 2560
                     </div>
                     <div className={`text-[11px] mt-0.5 ${active ? 'text-indigo-200' : 'text-gray-400'}`}>
-                      {ds.subtitle}
+                      4 ด้าน 23 ตัวบ่งชี้
                     </div>
                   </div>
-                  {active && (
-                    <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-white opacity-80" />
-                  )}
+                  {active && <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-white opacity-80" />}
                 </button>
               );
-            })}
+            })()}
+
+            {/* ── ปุ่ม C68 รวม (auto-select ระดับจากห้อง) ── */}
+            {(() => {
+              const active = datasetKey !== 'c60';
+              const level  = active ? c68LevelLabel(datasetKey) : (selClass ? c68LevelLabel(autoC68KeyFromClass(selClass)) : 'อ.3');
+              return (
+                <button
+                  onClick={() => switchDataset(autoC68KeyFromClass(selClass))}
+                  className={`relative flex items-center gap-3 px-5 py-3 rounded-2xl border-2 transition-all text-left ${
+                    active
+                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200'
+                      : 'bg-gray-50 border-gray-100 text-gray-600 hover:border-indigo-300 hover:bg-indigo-50'
+                  }`}
+                >
+                  <span className="text-2xl leading-none">📗</span>
+                  <div>
+                    <div className={`text-sm font-bold leading-tight ${active ? 'text-white' : 'text-gray-800'}`}>
+                      หลักสูตร 2568
+                    </div>
+                    <div className={`text-[11px] mt-0.5 ${active ? 'text-indigo-200' : 'text-gray-400'}`}>
+                      4 ด้าน 33 ความสามารถ
+                    </div>
+                  </div>
+                  {/* badge แสดงระดับ auto-detected */}
+                  <span className={`ml-auto text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                    active ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-600'
+                  }`}>
+                    {level}
+                  </span>
+                  {active && <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-white opacity-80" />}
+                </button>
+              );
+            })()}
           </div>
         </div>
 

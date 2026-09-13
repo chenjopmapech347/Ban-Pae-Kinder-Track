@@ -23,6 +23,9 @@ import {
   COMPETENCIES_C68_อ1,
   getCompetenciesByDomainอ1, calcAvgScoreC68_อ1,
 } from '../../data/competenciesData_อ1_68';
+import {
+  ACTIVITY_TYPES, getActivitiesForCompetency,
+} from '../../data/activitiesData_68';
 
 const TODAY = new Date().toISOString().slice(0, 10);
 
@@ -52,7 +55,7 @@ const DATASETS = {
   c68: {
     key: 'c68',
     label: 'หลักสูตร พ.ศ. 2568',
-    subtitle: '4 ด้าน 15 ความสามารถ (อ.3)',
+    subtitle: '4 ด้าน 33 ความสามารถ (อ.3)',
     scale: SCALE_C68,
     domains: DOMAINS_C68,
     indicators: COMPETENCIES_C68,
@@ -201,6 +204,10 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
   const [picker, setPicker] = useState(null);
   const [viewMode, setViewMode] = useState('input');
   const [selStudentId, setSelStudentId] = useState(null);  // สำหรับ view='student'
+  // สำหรับ view='activity'
+  const [actDir, setActDir] = useState('act2comp');   // 'act2comp' | 'comp2act'
+  const [selActId, setSelActId] = useState('A1');
+  const [selCompCode, setSelCompCode] = useState('1.1');
 
   // ─── active dataset ─────────────────────────────────────────────────────────
   const DS = DATASETS[datasetKey];
@@ -303,9 +310,10 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
         {/* View mode toggle — pill group */}
         <div className="flex items-center bg-gray-100 rounded-xl p-1 gap-0.5">
           {[
-            { key: 'input',   icon: '✏️', label: 'บันทึก' },
-            { key: 'summary', icon: '📈', label: 'สรุปผล' },
-            { key: 'student', icon: '👤', label: 'รายคน' },
+            { key: 'input',    icon: '✏️', label: 'บันทึก' },
+            { key: 'summary',  icon: '📈', label: 'สรุปผล' },
+            { key: 'student',  icon: '👤', label: 'รายคน' },
+            { key: 'activity', icon: '🎯', label: 'กิจกรรม' },
           ].map(m => (
             <button key={m.key}
               onClick={() => setViewMode(m.key)}
@@ -803,6 +811,234 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
 
             <p className="text-xs text-gray-400 text-center">
               ✓ = ผ่าน (คะแนน ≥ 2) · ✗ = ยังไม่ผ่าน (คะแนน 1) · คลิกที่คะแนนเพื่อเปลี่ยน
+            </p>
+          </div>
+        );
+      })()}
+
+      {/* ══════════ VIEW: ACTIVITY (กิจกรรม↔ความสามารถ) ════════════ */}
+      {viewMode === 'activity' && (() => {
+        const selAct = ACTIVITY_TYPES.find(a => a.id === selActId) ?? ACTIVITY_TYPES[0];
+        // competencies covered by selected activity (filtered to current dataset)
+        const compCodesForAct = selAct.competencyCodes;
+        const compsForAct = DS.indicators.filter(i => compCodesForAct.includes(i.code));
+
+        // activities covering the selected competency
+        const actsForComp = getActivitiesForCompetency(selCompCode);
+
+        return (
+          <div className="space-y-4">
+
+            {/* direction toggle */}
+            <div className="flex items-center justify-center">
+              <div className="flex items-center bg-gray-100 rounded-xl p-1 gap-0.5">
+                <button
+                  onClick={() => setActDir('act2comp')}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    actDir === 'act2comp'
+                      ? 'bg-white text-indigo-700 shadow-sm font-semibold'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  🎯 กิจกรรม → ความสามารถ
+                </button>
+                <button
+                  onClick={() => setActDir('comp2act')}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    actDir === 'comp2act'
+                      ? 'bg-white text-indigo-700 shadow-sm font-semibold'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  📋 ความสามารถ → กิจกรรม
+                </button>
+              </div>
+            </div>
+
+            {/* ─── กิจกรรม → ความสามารถ ─── */}
+            {actDir === 'act2comp' && (
+              <div className="grid md:grid-cols-[280px_1fr] gap-4">
+
+                {/* left: activity list */}
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-1">เลือกกิจกรรม</p>
+                  {ACTIVITY_TYPES.map(act => {
+                    const active = act.id === selActId;
+                    return (
+                      <button
+                        key={act.id}
+                        onClick={() => setSelActId(act.id)}
+                        className="w-full text-left flex items-start gap-3 px-4 py-3 rounded-2xl border-2 transition-all"
+                        style={active
+                          ? { background: act.bg, borderColor: act.border, color: act.color }
+                          : { background: '#fff', borderColor: '#e5e7eb', color: '#374151' }}
+                      >
+                        <span className="text-2xl leading-none">{act.icon}</span>
+                        <div>
+                          <div className="font-semibold text-sm leading-tight">{act.label}</div>
+                          <div className="text-[11px] mt-0.5 opacity-70 leading-snug">{act.description}</div>
+                          <div className="mt-1 text-[11px] font-bold"
+                            style={{ color: active ? act.color : '#9ca3af' }}>
+                            {act.competencyCodes.length} ความสามารถ
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* right: competencies covered */}
+                <div>
+                  <div className="rounded-2xl border border-gray-100 shadow-sm bg-white overflow-hidden">
+                    <div className="px-5 py-3 border-b border-gray-50 flex items-center gap-3"
+                      style={{ background: selAct.bg }}>
+                      <span className="text-2xl">{selAct.icon}</span>
+                      <div>
+                        <div className="font-bold text-sm" style={{ color: selAct.color }}>{selAct.label}</div>
+                        <div className="text-[11px] mt-0.5" style={{ color: selAct.color + 'aa' }}>
+                          ส่งเสริมความสามารถ {compsForAct.length} รายการ
+                          {compsForAct.length < compCodesForAct.length && (
+                            <span className="ml-1 text-amber-500">
+                              (ชุดนี้มี {compCodesForAct.length - compsForAct.length} รหัสที่ไม่อยู่ในหลักสูตรที่เลือก)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {compsForAct.length === 0 ? (
+                      <div className="py-10 text-center text-gray-400 text-sm">
+                        ไม่พบความสามารถในชุดหลักสูตรที่เลือก
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-gray-50">
+                        {compsForAct.map(ind => {
+                          const dom = DS.domains.find(d => d.id === ind.domainId);
+                          return (
+                            <div key={ind.code} className="flex items-start gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+                              <span
+                                className="mt-0.5 text-xs font-bold font-mono px-2 py-0.5 rounded-lg shrink-0"
+                                style={{ background: dom?.bg ?? '#f3f4f6', color: dom?.color ?? '#6b7280' }}
+                              >{ind.code}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium text-gray-800">{ind.label}</div>
+                                {dom && (
+                                  <div className="text-[11px] mt-0.5" style={{ color: dom.color }}>
+                                    {dom.icon} {dom.label}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ─── ความสามารถ → กิจกรรม ─── */}
+            {actDir === 'comp2act' && (
+              <div className="grid md:grid-cols-[300px_1fr] gap-4">
+
+                {/* left: competency list */}
+                <div className="space-y-1 max-h-[600px] overflow-y-auto pr-1">
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-1 sticky top-0 bg-white pb-1">เลือกความสามารถ</p>
+                  {DS.domains.map(dom => (
+                    <div key={dom.id}>
+                      <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider mt-2"
+                        style={{ color: dom.color }}>{dom.icon} {dom.label}</div>
+                      {DS.getByDomain(dom.id).map(ind => {
+                        const active = ind.code === selCompCode;
+                        const actCount = getActivitiesForCompetency(ind.code).length;
+                        return (
+                          <button
+                            key={ind.code}
+                            onClick={() => setSelCompCode(ind.code)}
+                            className="w-full text-left flex items-center gap-2 px-3 py-2 rounded-xl transition-all text-sm"
+                            style={active
+                              ? { background: dom.bg, color: dom.color, fontWeight: 600 }
+                              : { color: '#374151' }}
+                          >
+                            <span className="font-mono text-xs font-bold shrink-0"
+                              style={{ color: active ? dom.color : '#9ca3af' }}>{ind.code}</span>
+                            <span className="flex-1 leading-tight text-xs">{ind.label}</span>
+                            {actCount > 0 && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full shrink-0"
+                                style={active
+                                  ? { background: dom.border + '44', color: dom.color }
+                                  : { background: '#f3f4f6', color: '#9ca3af' }}>
+                                {actCount}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+
+                {/* right: activities for selected competency */}
+                <div>
+                  {(() => {
+                    const ind = DS.indicators.find(i => i.code === selCompCode);
+                    const dom = ind ? DS.domains.find(d => d.id === ind.domainId) : null;
+                    return (
+                      <div className="rounded-2xl border border-gray-100 shadow-sm bg-white overflow-hidden">
+                        <div className="px-5 py-3 border-b border-gray-50"
+                          style={{ background: dom?.bg ?? '#f9fafb' }}>
+                          <div className="flex items-baseline gap-2">
+                            <span className="font-mono text-sm font-bold"
+                              style={{ color: dom?.color ?? '#374151' }}>{selCompCode}</span>
+                            <span className="font-semibold text-sm text-gray-800">{ind?.label ?? ''}</span>
+                          </div>
+                          {dom && (
+                            <div className="text-[11px] mt-0.5" style={{ color: dom.color }}>
+                              {dom.icon} {dom.label} · ส่งเสริมโดย {actsForComp.length} กิจกรรม
+                            </div>
+                          )}
+                        </div>
+                        {actsForComp.length === 0 ? (
+                          <div className="py-10 text-center text-gray-400 text-sm">
+                            ความสามารถนี้ยังไม่มีกิจกรรมที่เชื่อมโยง
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-gray-50">
+                            {actsForComp.map(act => (
+                              <div key={act.id} className="flex items-start gap-4 px-5 py-4 hover:bg-gray-50 transition-colors">
+                                <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-2xl shrink-0"
+                                  style={{ background: act.bg }}>
+                                  {act.icon}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-semibold text-sm" style={{ color: act.color }}>{act.label}</div>
+                                  <div className="text-[11px] text-gray-500 mt-0.5 leading-snug">{act.description}</div>
+                                  <div className="mt-1.5 flex flex-wrap gap-1">
+                                    {act.competencyCodes.map(code => (
+                                      <span key={code}
+                                        className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono font-bold ${
+                                          code === selCompCode
+                                            ? 'text-white'
+                                            : 'text-gray-500 bg-gray-100'
+                                        }`}
+                                        style={code === selCompCode ? { background: act.color } : {}}
+                                      >{code}</span>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+
+            <p className="text-xs text-gray-400 text-center">
+              ข้อมูลอ้างอิงจากหลักสูตรการศึกษาปฐมวัย พ.ศ. 2568 · รหัสความสามารถใช้ร่วมกันทั้ง อ.1–อ.3
             </p>
           </div>
         );

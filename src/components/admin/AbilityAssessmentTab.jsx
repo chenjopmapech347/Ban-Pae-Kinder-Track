@@ -553,7 +553,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                         <td style={{ padding: '.5rem .75rem', color: '#94a3b8', fontSize: '.78rem' }}>{idx + 1}</td>
                         <td style={{ padding: '.5rem .75rem' }}>
                           <div style={{ fontWeight: 600, color: '#1e293b', fontSize: '.82rem' }}>{s.name}</div>
-                          <div style={{ fontSize: '.72rem', color: '#94a3b8' }}>{s.studentCode ?? ''}</div>
+                          <div style={{ fontSize: '.72rem', color: '#94a3b8' }}>{s.studentCode || s.studentId || ''}</div>
                         </td>
                         {domainIndicators.map(ind => (
                           <td key={ind.code} style={{ padding: '.5rem .5rem', textAlign: 'center' }}>
@@ -639,7 +639,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                       <td style={{ padding: '.5rem .75rem', color: '#94a3b8', fontSize: '.78rem' }}>{idx + 1}</td>
                       <td style={{ padding: '.5rem .75rem' }}>
                         <div style={{ fontWeight: 600, color: '#1e293b' }}>{s.name}</div>
-                        <div style={{ fontSize: '.72rem', color: '#94a3b8' }}>{s.studentCode ?? ''}</div>
+                        <div style={{ fontSize: '.72rem', color: '#94a3b8' }}>{s.studentCode || s.studentId || ''}</div>
                       </td>
                       {DS.domains.map(d => {
                         const inds = DS.getByDomain(d.id);

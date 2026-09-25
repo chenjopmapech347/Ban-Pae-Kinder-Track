@@ -16,5 +16,10 @@ service cloud.firestore {
     match /cornerAssignments/{docId} {
       allow read, write: if true;
     }
+
+    // มาตรฐานที่ 2 — แบบประเมินตนเองรายครู (Std2SelfTab)
+    match /std2_ratings/{teacherId} {
+      allow read, write: if true;
+    }
   }
 }

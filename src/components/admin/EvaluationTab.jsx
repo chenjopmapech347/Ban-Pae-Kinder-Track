@@ -620,7 +620,7 @@ export default function EvaluationTab() {
                       <td style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '.8rem' }}>{idx + 1}</td>
                       <td>
                         <code style={{ fontSize: '.72rem', background: '#f1f5f9', padding: '.1rem .4rem', borderRadius: '4px', color: '#475569', fontWeight: 700 }}>
-                          {s.id}
+                          {s.studentCode || s.studentId || s.id}
                         </code>
                       </td>
                       <td style={{ fontWeight: 600 }}>{s.name}{showAbsent && <span style={{ marginLeft:'.4rem', fontSize:'.72rem', background:'#fee2e2', color:'#dc2626', borderRadius:'4px', padding:'0 .35rem', fontWeight:700 }}>{(dailyRecords[assessDate]?.[String(s.id)]?.attendance === 'ป่วย') ? 'ป่วย' : 'ขาด/ลา'}</span>}</td>

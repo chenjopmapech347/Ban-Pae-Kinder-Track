@@ -272,12 +272,24 @@ export function AppProvider({ children }) {
       classes,
       schools,
       holidays,
+      specialHolidays,
       authConfig,
       assessmentTopics,
       announcements,
       academicYears,
       schoolName,
+      schoolPhilosophy,
+      schoolVision,
+      localGovSlogan,
+      schoolSlogan,
+      schoolDirectorName,
+      yearDirectors,
       academicYear,
+      schoolTerms,
+      lockedTerms,
+      currentTerm,
+      measurementDates,
+      parentCommentDeadlines,
       dailyRecords,
       qaData,
       indicators,
@@ -287,6 +299,23 @@ export function AppProvider({ children }) {
       mediaBorrowRecords,
       imgbbApiKey,
       abilityAssessments,
+      // บันทึกรายเดือน/รายวัน
+      nutritionRecords,
+      milkRecords,
+      lunchRecords,
+      toothBrushRecords,
+      healthCheckRecords,
+      illnessCheckRecords,
+      dailyRoutineRecords,
+      cornerRecords,
+      innerCornerRecords,
+      cornerDefs,
+      innerCornerDefs,
+      classInnerCornerKeys,
+      classOuterCornerKeys,
+      studentReportRecords,
+      specialEvents,
+      pickupRecords,
     }),
     [
       students,
@@ -294,12 +323,24 @@ export function AppProvider({ children }) {
       classes,
       schools,
       holidays,
+      specialHolidays,
       authConfig,
       assessmentTopics,
       announcements,
       academicYears,
       schoolName,
+      schoolPhilosophy,
+      schoolVision,
+      localGovSlogan,
+      schoolSlogan,
+      schoolDirectorName,
+      yearDirectors,
       academicYear,
+      schoolTerms,
+      lockedTerms,
+      currentTerm,
+      measurementDates,
+      parentCommentDeadlines,
       dailyRecords,
       qaData,
       indicators,
@@ -309,6 +350,22 @@ export function AppProvider({ children }) {
       mediaBorrowRecords,
       imgbbApiKey,
       abilityAssessments,
+      nutritionRecords,
+      milkRecords,
+      lunchRecords,
+      toothBrushRecords,
+      healthCheckRecords,
+      illnessCheckRecords,
+      dailyRoutineRecords,
+      cornerRecords,
+      innerCornerRecords,
+      cornerDefs,
+      innerCornerDefs,
+      classInnerCornerKeys,
+      classOuterCornerKeys,
+      studentReportRecords,
+      specialEvents,
+      pickupRecords,
     ],
   );
 
@@ -318,33 +375,87 @@ export function AppProvider({ children }) {
     if (payload.classes) setClasses(payload.classes);
     if (payload.schools) setSchools(payload.schools);
     if (payload.holidays) setHolidays(payload.holidays);
+    if (payload.specialHolidays) setSpecialHolidays(payload.specialHolidays);
     if (payload.authConfig) setAuthConfig(payload.authConfig);
     if (payload.assessmentTopics) setAssessmentTopics(payload.assessmentTopics);
     if (payload.announcements) setAnnouncements(payload.announcements);
     if (payload.academicYears) setAcademicYears(payload.academicYears);
     if (payload.schoolName) setSchoolName(payload.schoolName);
+    if (payload.schoolPhilosophy) setSchoolPhilosophy(payload.schoolPhilosophy);
+    if (payload.schoolVision) setSchoolVision(payload.schoolVision);
+    if (payload.localGovSlogan) setLocalGovSlogan(payload.localGovSlogan);
+    if (payload.schoolSlogan) setSchoolSlogan(payload.schoolSlogan);
+    if (payload.schoolDirectorName) setSchoolDirectorName(payload.schoolDirectorName);
+    if (payload.yearDirectors) setYearDirectors(payload.yearDirectors);
     if (payload.academicYear) setAcademicYear(payload.academicYear);
+    if (payload.schoolTerms) setSchoolTerms(payload.schoolTerms);
+    if (payload.lockedTerms) setLockedTerms(payload.lockedTerms);
+    if (payload.currentTerm) setCurrentTerm(payload.currentTerm);
+    if (payload.measurementDates) setMeasurementDates(payload.measurementDates);
+    if (payload.parentCommentDeadlines) setParentCommentDeadlines(payload.parentCommentDeadlines);
     if (payload.dailyRecords) setDailyRecords(payload.dailyRecords);
     if (payload.qaData) setQaData(payload.qaData);
-    if (payload.indicators) setIndicators(payload.indicators);
+    if (payload.indicators) {
+      // ── ป้องกัน snapshot เก่าที่มี domainId รูปแบบ 'd1'/'d2' แทน 'physical'/'emotional' ──
+      // เติม domain ที่หายไปทันทีหลัง restore แทนที่จะรอ migration useEffect
+      const REQUIRED_DOMAINS_2568 = ['physical', 'emotional', 'citizen', 'cognitive'];
+      const incoming = payload.indicators;
+      const presentDomains = new Set(incoming.map(i => i.domainId));
+      const missingDomains = REQUIRED_DOMAINS_2568.filter(d => !presentDomains.has(d));
+      if (missingDomains.length > 0) {
+        const addInds = INITIAL_INDICATORS.filter(i => missingDomains.includes(i.domainId));
+        setIndicators([...incoming, ...addInds]);
+      } else {
+        setIndicators(incoming);
+      }
+    }
     if (payload.activities) setActivities(payload.activities);
     if (payload.activityLogs) setActivityLogs(payload.activityLogs);
     if (payload.mediaRecords) setMediaRecords(payload.mediaRecords);
     if (payload.mediaBorrowRecords) setMediaBorrowRecords(payload.mediaBorrowRecords);
     if (payload.imgbbApiKey) setImgbbApiKey(payload.imgbbApiKey);
     if (payload.abilityAssessments) setAbilityAssessments(payload.abilityAssessments);
+    // บันทึกรายเดือน/รายวัน
+    if (payload.nutritionRecords) setNutritionRecords(payload.nutritionRecords);
+    if (payload.milkRecords) setMilkRecords(payload.milkRecords);
+    if (payload.lunchRecords) setLunchRecords(payload.lunchRecords);
+    if (payload.toothBrushRecords) setToothBrushRecords(payload.toothBrushRecords);
+    if (payload.healthCheckRecords) setHealthCheckRecords(payload.healthCheckRecords);
+    if (payload.illnessCheckRecords) setIllnessCheckRecords(payload.illnessCheckRecords);
+    if (payload.dailyRoutineRecords) setDailyRoutineRecords(payload.dailyRoutineRecords);
+    if (payload.cornerRecords) setCornerRecords(payload.cornerRecords);
+    if (payload.innerCornerRecords) setInnerCornerRecords(payload.innerCornerRecords);
+    if (payload.cornerDefs) setCornerDefs(payload.cornerDefs);
+    if (payload.innerCornerDefs) setInnerCornerDefs(payload.innerCornerDefs);
+    if (payload.classInnerCornerKeys) setClassInnerCornerKeys(payload.classInnerCornerKeys);
+    if (payload.classOuterCornerKeys) setClassOuterCornerKeys(payload.classOuterCornerKeys);
+    if (payload.studentReportRecords) setStudentReportRecords(payload.studentReportRecords);
+    if (payload.specialEvents) setSpecialEvents(payload.specialEvents);
+    if (payload.pickupRecords) setPickupRecords(payload.pickupRecords);
   }, [
     setStudents,
     setTeachers,
     setClasses,
     setSchools,
     setHolidays,
+    setSpecialHolidays,
     setAuthConfig,
     setAssessmentTopics,
     setAnnouncements,
     setAcademicYears,
     setSchoolName,
+    setSchoolPhilosophy,
+    setSchoolVision,
+    setLocalGovSlogan,
+    setSchoolSlogan,
+    setSchoolDirectorName,
+    setYearDirectors,
     setAcademicYear,
+    setSchoolTerms,
+    setLockedTerms,
+    setCurrentTerm,
+    setMeasurementDates,
+    setParentCommentDeadlines,
     setDailyRecords,
     setQaData,
     setIndicators,
@@ -354,6 +465,22 @@ export function AppProvider({ children }) {
     setMediaBorrowRecords,
     setImgbbApiKey,
     setAbilityAssessments,
+    setNutritionRecords,
+    setMilkRecords,
+    setLunchRecords,
+    setToothBrushRecords,
+    setHealthCheckRecords,
+    setIllnessCheckRecords,
+    setDailyRoutineRecords,
+    setCornerRecords,
+    setInnerCornerRecords,
+    setCornerDefs,
+    setInnerCornerDefs,
+    setClassInnerCornerKeys,
+    setClassOuterCornerKeys,
+    setStudentReportRecords,
+    setSpecialEvents,
+    setPickupRecords,
   ]);
 
   const importStudentAssessmentExcel = useCallback(
@@ -843,7 +970,10 @@ export function AppProvider({ children }) {
   const handleImport = useCallback(
     (type, text) => {
       try {
-        const rows = text.trim().split('\n').map((row) => row.split(',').map((cell) => cell.trim()));
+        // detect separator: ถ้า header row มี ';' มากกว่า ',' → ใช้ semicolon (Excel ไทย/ยุโรป)
+        const firstLine = text.trim().split('\n')[0] ?? '';
+        const sep = (firstLine.split(';').length > firstLine.split(',').length) ? ';' : ',';
+        const rows = text.trim().split('\n').map((row) => row.split(sep).map((cell) => cell.trim()));
         const dataRows = rows.slice(1);
 
         if (type === 'students') {
@@ -993,13 +1123,14 @@ export function AppProvider({ children }) {
       const monthStr = String(month).padStart(2, '0');
       const makeKey  = (cls) => `${cls}__${academicYear}__${thaiYear}-${monthStr}`;
 
-      // ── Milk, Lunch, ToothBrush → X (ทุกคน รวมถึงคนที่มา) ──
-      // ค่าเริ่มต้น = 'X' เสมอ ครูต้องคลิกเองเพื่อเช็ค '√'
-      // (ไม่ auto-fill '√' อีกต่อไป เพื่อให้ครูเช็คได้ตามจริง)
-      const applyHX = (setter) => {
+      // ── Milk, Lunch, ToothBrush → auto-link จากการเช็คชื่อ ──
+      // นักเรียนที่ "มา" → '√' (เข้าร่วมกิจกรรมอัตโนมัติ ครูแก้ได้ภายหลัง)
+      // นักเรียนที่ "ขาด/ลา/ป่วย" → 'X' (ไม่ได้รับการดูแล)
+      // เฉพาะวันที่ยังไม่มีข้อมูล (ไม่ overwrite ที่ครูบันทึกแล้ว)
+      const applyAttendanceLink = (setter) => {
         setter(prev => {
           const next = { ...prev };
-          // X สำหรับนักเรียนที่มา (ค่าเริ่มต้น — ครูคลิก √ เอง)
+          // √ สำหรับนักเรียนที่มา
           Object.entries(byClass).forEach(([cls, ids]) => {
             const k   = makeKey(cls);
             const rec = next[k]
@@ -1008,7 +1139,7 @@ export function AppProvider({ children }) {
             ids.forEach(id => {
               const sData = rec.students[id] ?? { days: {} };
               if (!(day in (sData.days ?? {}))) {
-                rec.students[id] = { ...sData, days: { ...(sData.days ?? {}), [day]: 'X' } };
+                rec.students[id] = { ...sData, days: { ...(sData.days ?? {}), [day]: '√' } };
               }
             });
             next[k] = rec;
@@ -1030,9 +1161,9 @@ export function AppProvider({ children }) {
           return next;
         });
       };
-      applyHX(setMilkRecords);
-      applyHX(setLunchRecords);
-      applyHX(setToothBrushRecords);
+      applyAttendanceLink(setMilkRecords);
+      applyAttendanceLink(setLunchRecords);
+      applyAttendanceLink(setToothBrushRecords);
 
       // ── DailyRoutine → ทำกิจกรรมปกติ 7 key = true สำหรับห้องที่มีนักเรียนมา ──
       // เป็น record ระดับห้องเรียน (ไม่ใช่รายนักเรียน) — เช็ค class-level เท่านั้น

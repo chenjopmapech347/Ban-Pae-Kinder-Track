@@ -95,7 +95,11 @@ function recKey(className, academicYear, date) {
 
 // ── genderOf ─────────────────────────────────────────────────────────────────
 function genderOf(student) {
-  if (student.gender) return student.gender;
+  // ตรวจ field gender ก่อน (รองรับทั้ง 'ชาย'/'หญิง' และ 'male'/'female')
+  const g = student.gender?.trim();
+  if (g === 'ชาย' || g === 'male' || g === 'M' || g === 'm') return 'ชาย';
+  if (g === 'หญิง' || g === 'female' || g === 'F' || g === 'f') return 'หญิง';
+  // fallback: อ่านจากชื่อตามธรรมเนียมไทย
   if (student.name?.includes('ชาย')) return 'ชาย';
   if (student.name?.includes('หญิง')) return 'หญิง';
   return 'ชาย';

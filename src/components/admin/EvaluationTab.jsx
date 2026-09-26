@@ -625,32 +625,32 @@ export default function EvaluationTab() {
                       </td>
                       <td style={{ fontWeight: 600 }}>{s.name}{showAbsent && <span style={{ marginLeft:'.4rem', fontSize:'.72rem', background:'#fee2e2', color:'#dc2626', borderRadius:'4px', padding:'0 .35rem', fontWeight:700 }}>{(dailyRecords[assessDate]?.[String(s.id)]?.attendance === 'ป่วย') ? 'ป่วย' : 'ขาด/ลา'}</span>}</td>
                       <td>
-                        {showAbsent ? (
-                          <div style={{ textAlign:'center' }}>
-                            <span style={{ background:'#fee2e2', color:'#dc2626', borderRadius:'8px', padding:'.28rem .9rem', fontWeight:800, fontSize:'.85rem', display:'inline-block', border:'2px solid #fca5a5' }}>
-                              ✗ ไม่ได้รับการประเมิน
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.25rem' }}>
+                          {showAbsent && (
+                            <span style={{ fontSize: '.65rem', background: '#fee2e2', color: '#dc2626', borderRadius: '4px', padding: '0 .35rem', fontWeight: 700 }}>
+                              ขาด — ประเมินย้อนหลังได้
                             </span>
+                          )}
+                          <div style={{ display: 'flex', gap: '.4rem', justifyContent: 'center' }}>
+                            {SCORES.map(sc => {
+                              const active = score === sc.value;
+                              return (
+                                <button key={sc.value} onClick={() => setScore(s.id, sc.value)} style={{
+                                  border: `2px solid ${active ? sc.color : '#e5e7eb'}`,
+                                  borderRadius: '8px', padding: '.28rem .7rem',
+                                  background: active ? sc.bg : 'white',
+                                  color: active ? sc.color : '#9ca3af',
+                                  fontWeight: 800, fontSize: '.8rem',
+                                  cursor: 'pointer', fontFamily: 'inherit',
+                                  transition: 'all .12s',
+                                  opacity: showAbsent && score === 0 ? 0.6 : 1,
+                                }}>
+                                  {sc.icon} {sc.short}
+                                </button>
+                              );
+                            })}
                           </div>
-                        ) : (
-                        <div style={{ display: 'flex', gap: '.4rem', justifyContent: 'center' }}>
-                          {SCORES.map(sc => {
-                            const active = score === sc.value;
-                            return (
-                              <button key={sc.value} onClick={() => setScore(s.id, sc.value)} style={{
-                                border: `2px solid ${active ? sc.color : '#e5e7eb'}`,
-                                borderRadius: '8px', padding: '.28rem .7rem',
-                                background: active ? sc.bg : 'white',
-                                color: active ? sc.color : '#9ca3af',
-                                fontWeight: 800, fontSize: '.8rem',
-                                cursor: 'pointer', fontFamily: 'inherit',
-                                transition: 'all .12s',
-                              }}>
-                                {sc.icon} {sc.short}
-                              </button>
-                            );
-                          })}
                         </div>
-                        )}
                       </td>
                       <td style={{ textAlign: 'center' }}>
                         <div style={{ display:'flex', gap:'.2rem', justifyContent:'center', flexWrap:'wrap' }}>

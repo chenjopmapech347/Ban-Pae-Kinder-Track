@@ -37,7 +37,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
     role,
     students, classes, teachers, academicYear, schoolName,
     schoolPhilosophy, schoolVision, schoolLogo, schoolDirectorName, yearDirectors, schools,
-    dailyRecords,
+    dailyRecords, schoolTerms,
     studentReportRecords, setStudentReportRecords,
     indicators, activities, assessmentTopics,
     aiApiKey,
@@ -262,22 +262,33 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
   // ── attendance summary (computed from dailyRecords) ───────────────────────
   const attendanceSummary = useMemo(() => {
     if (!student) return { term1: {}, term2: {} };
-    // gather all dates with a record for this student
+    const terms = schoolTerms?.[academicYear] ?? [];
+    const useConfiguredTerms = terms.length >= 2 &&
+      terms[0]?.open && terms[0]?.close && terms[1]?.open && terms[1]?.close;
     const summary = { term1: { totalDays: 0, presentDays: 0, absentDays: 0 },
                       term2: { totalDays: 0, presentDays: 0, absentDays: 0 } };
     Object.entries(dailyRecords).forEach(([date, dayRecs]) => {
       const stuRec = dayRecs?.[String(student.id)];
       if (!stuRec) return;
-      const m = new Date(date).getMonth() + 1; // 1-12
-      // term1 = May–Sep (5–9), term2 = Oct–Mar (10–12, 1–4)
-      const term = (m >= 5 && m <= 9) ? 1 : 2;
-      const t = `term${term}`;
+      let termNum;
+      if (useConfiguredTerms) {
+        // ใช้ช่วงวันเปิด–ปิดจากการตั้งค่าภาคเรียน
+        if (date >= terms[0].open && date <= terms[0].close) termNum = 1;
+        else if (date >= terms[1].open && date <= terms[1].close) termNum = 2;
+        else return; // วันนี้ไม่อยู่ในช่วงเปิดภาคเรียน
+      } else {
+        // fallback: ภาคเรียน 1 = พ.ค.–ต.ค. (5–10), ภาคเรียน 2 = พ.ย.–เม.ย. (11–12, 1–4)
+        const m = new Date(date).getMonth() + 1;
+        termNum = (m >= 5 && m <= 10) ? 1 : 2;
+      }
+      const t = `term${termNum}`;
       summary[t].totalDays++;
-      if (stuRec.status === 'present' || stuRec.present) summary[t].presentDays++;
+      const att = stuRec.attendance ?? stuRec.status;
+      if (att === 'มา' || att === 'present') summary[t].presentDays++;
       else summary[t].absentDays++;
     });
     return summary;
-  }, [dailyRecords, student]);
+  }, [dailyRecords, student, schoolTerms, academicYear]);
 
   // ── developmental domains (from indicators + student.assessments) ─────────
   const devDomains = useMemo(() => {

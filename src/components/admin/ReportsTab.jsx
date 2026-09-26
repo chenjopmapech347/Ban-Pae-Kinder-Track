@@ -489,8 +489,14 @@ function ViewClass({ students, assessmentTopics, indicators, activities, allClas
 
 function ViewStudent({ students, assessmentTopics, indicators, activities, schoolName, schoolLogo }) {
   const { classMap: CLASS_MAP } = useApp();
-  const [selLevel, setLevel] = useState('K1');
-  const [selClass, setClass] = useState(() => CLASS_MAP?.K1?.[0] ?? '');
+  const [selLevel, setLevel] = useState(() => {
+    for (const lv of ['K1','K2','K3']) { if (CLASS_MAP?.[lv]?.length) return lv; }
+    return 'K1';
+  });
+  const [selClass, setClass] = useState(() => {
+    for (const lv of ['K1','K2','K3']) { if (CLASS_MAP?.[lv]?.length) return CLASS_MAP[lv][0]; }
+    return '';
+  });
   const lv = LEVEL_META.find(m => m.level === selLevel);
 
   const classStudents = useMemo(() =>
@@ -643,8 +649,14 @@ function TrendCell({ prev, curr }) {
 function ViewProgress({ students, assessmentTopics, indicators, activities, allClassNames }) {
   const { classMap: CLASS_MAP } = useApp();
   const ALL_CLASSES = allClassNames ?? [];
-  const [selLevel, setLevel]   = useState('K1');
-  const [selClass, setClass]   = useState(() => CLASS_MAP?.K1?.[0] ?? '');
+  const [selLevel, setLevel]   = useState(() => {
+    for (const lv of ['K1','K2','K3']) { if (CLASS_MAP?.[lv]?.length) return lv; }
+    return 'K1';
+  });
+  const [selClass, setClass]   = useState(() => {
+    for (const lv of ['K1','K2','K3']) { if (CLASS_MAP?.[lv]?.length) return CLASS_MAP[lv][0]; }
+    return '';
+  });
   const [selTopic, setTopic]   = useState(assessmentTopics[0]?.id ?? null);
   const [viewMode, setViewMode]= useState('student'); // 'student' | 'class'
   const lv = LEVEL_META.find(m => m.level === selLevel);

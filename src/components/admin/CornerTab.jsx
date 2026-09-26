@@ -147,6 +147,7 @@ export default function CornerTab({ teacherClassFilter = null }) {
     cornerRecords, setCornerRecords,
     cornerDefs, setCornerDefs,
     students, teachers, classes, schoolName, schoolLogo, academicYear,
+    dailyRecords,
   } = useApp();
 
   const today = new Date().toISOString().slice(0, 10);
@@ -310,7 +311,10 @@ export default function CornerTab({ teacherClassFilter = null }) {
               {classStudents.map((s, i) => {
                 const sid = String(s.id);
                 const rec = weekData[sid] ?? {};
-                const isAbsent = !!rec.__absent;
+                const dayRec = dailyRecords?.[selDate]?.[sid];
+                const isAbsent = dayRec
+                  ? dayRec.attendance !== 'มา'
+                  : false; // ไม่ auto-mark ✗ อีกต่อไป — แสดง ○ ถ้าไม่มีข้อมูล
                 const count = CORNERS.filter(c => rec[c.key]).length;
                 return (
                   <tr key={s.id} style={{ background: isAbsent ? '#fff5f5' : i % 2 === 0 ? 'white' : '#f0f9ff', verticalAlign:'middle' }}>

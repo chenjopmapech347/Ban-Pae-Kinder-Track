@@ -255,13 +255,21 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
     [students, selClass]
   );
 
-  // ── ดึงน้ำหนัก/ส่วนสูงล่าสุดของแต่ละคนจาก nutritionRecords ──
+  // ── ดึงน้ำหนัก/ส่วนสูงของแต่ละคนจาก nutritionRecords ──
+  // แสดงค่าที่ใกล้เคียงกับเดือนที่ดูอยู่มากที่สุด (≤ selYear-selMonth)
   // NutritionTab เป็น source of truth; IllnessCheck แสดง read-only
   const latestMeasures = useMemo(() => {
     const prefix = `${selClass}__${academicYear}__`;
-    // เรียงตาม key ลดลง (key มี ISO date → ล่าสุดมาก่อน)
+    // ตัดทศนิยม: CE year-month ของเดือนที่กำลังดู (เช่น "2025-09")
+    const selCeMonth = `${selYear - 543}-${String(selMonth).padStart(2, '0')}`;
+    // เรียงตาม key ลดลง (key มี ISO date/month → ล่าสุดก่อน)
+    // กรองเฉพาะ record ที่ key ≤ เดือนที่เลือก เพื่อไม่ให้เดือนอนาคตซึมเข้ามา
     const sorted = Object.entries(nutritionRecords)
-      .filter(([k]) => k.startsWith(prefix))
+      .filter(([k]) => {
+        if (!k.startsWith(prefix)) return false;
+        const datePart = k.slice(prefix.length); // เช่น "2025-09" หรือ "2025-09-15"
+        return datePart.slice(0, 7) <= selCeMonth;
+      })
       .sort(([a], [b]) => b.localeCompare(a));
 
     const measures = {};
@@ -279,7 +287,7 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
       }
     });
     return measures;
-  }, [nutritionRecords, selClass, academicYear, classStudents]);
+  }, [nutritionRecords, selClass, academicYear, classStudents, selYear, selMonth]);
 
   // โหลด/สร้าง draft
   const [draft, setDraft] = useState(() => {

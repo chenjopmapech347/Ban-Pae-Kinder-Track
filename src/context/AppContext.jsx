@@ -1326,17 +1326,8 @@ export function AppProvider({ children }) {
           });
           next[weekKey] = weekData;
         });
-        // ขาด/ลา/ป่วย → เซ็ต __absent เฉพาะห้องที่มีกิจกรรมวันนั้น
-        Object.entries(byClassAllAbsent).forEach(([cls, ids]) => {
-          const dayKeys = getKeysForDay(classOuterCornerKeys[cls], thaiDay);
-          if (!dayKeys || dayKeys.length === 0) return;
-          const weekKey  = `${cls}||${monday}`;
-          const weekData = { ...(next[weekKey] ?? {}) };
-          ids.forEach(id => {
-            weekData[id] = { ...(weekData[id] ?? { ...emptyRec }), __absent: true };
-          });
-          next[weekKey] = weekData;
-        });
+        // หมายเหตุ: นักเรียนขาด/ลา/ป่วย → ไม่ auto-mark แหล่งเรียนรู้เป็น ✗
+        // ครูสามารถดูสถานะขาดจาก dailyRecords ได้โดยตรง (ไม่เซ็ต __absent อีกต่อไป)
         return next;
       });
 
@@ -1355,17 +1346,8 @@ export function AppProvider({ children }) {
           });
           next[weekKey] = weekData;
         });
-        // ขาด/ลา/ป่วย → เซ็ต __absent เฉพาะห้องที่มีกิจกรรมวันนั้น
-        Object.entries(byClassAllAbsent).forEach(([cls, ids]) => {
-          const dayKeys = getKeysForDay(classInnerCornerKeys[cls], thaiDay);
-          if (!dayKeys || dayKeys.length === 0) return;
-          const weekKey  = `${cls}||${monday}`;
-          const weekData = { ...(next[weekKey] ?? {}) };
-          ids.forEach(id => {
-            weekData[id] = { ...(weekData[id] ?? { ...emptyRec }), __absent: true };
-          });
-          next[weekKey] = weekData;
-        });
+        // หมายเหตุ: นักเรียนขาด/ลา/ป่วย → ไม่ auto-mark แหล่งเรียนรู้เป็น ✗
+        // InnerCornerTab อ่านสถานะขาดจาก dailyRecords โดยตรงอยู่แล้ว
         return next;
       });
 

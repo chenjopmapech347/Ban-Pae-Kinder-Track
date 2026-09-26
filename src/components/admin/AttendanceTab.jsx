@@ -211,12 +211,22 @@ function printRollCall(classSections, selMonth, schoolName, schoolLogo, holidayI
   win.addEventListener('load', () => { win.focus(); win.print(); URL.revokeObjectURL(url); });
 }
 
+// ── ตรวจสอบสถานะสุขอนามัยจาก monthly records (นม/แปรงฟัน/อาหารกลางวัน) ───────
+function getHygieneDone(records, cls, academicYear, dateISO, studentId) {
+  if (!records || !dateISO) return false;
+  const [ceYearStr, monthStr, dayStr] = dateISO.split('-');
+  const key = `${cls}__${academicYear}__${ceYearStr}-${monthStr}`;
+  const val = records[key]?.students?.[String(studentId)]?.days?.[Number(dayStr)];
+  return val === '√' || val === 'H';
+}
+
 export default function AttendanceTab({ defaultClass }) {
   const {
     students, dailyRecords, teachers, saveDailyAttendance,
     schoolName, schoolLogo, allClassNames, schoolTerms, academicYear,
     dailyRoutineRecords, setDailyRoutineRecords,
     holidays,
+    milkRecords, toothBrushRecords, lunchRecords,
   } = useApp();
 
   // Set ของวันหยุด (ISO YYYY-MM-DD)
@@ -236,6 +246,7 @@ export default function AttendanceTab({ defaultClass }) {
   const [mainView,     setMainView]     = useState('daily');   // 'daily' | 'monthly'
   const [selectedDate, setSelectedDate] = useState(todayISO());
   const isLocked = useIsTermLocked(selectedDate);
+  const isHolidayDate = holidayISOs.has(selectedDate);
   const [filterClass,  setFilterClass]  = useState(defaultClass ?? 'ทั้งหมด');
   const [viewMode,     setViewMode]     = useState('card');  // 'card' | 'table'
   const [showHygiene,  setShowHygiene]  = useState(false);
@@ -323,6 +334,18 @@ export default function AttendanceTab({ defaultClass }) {
 
   // บันทึกห้องนี้ + auto-fill modules อัตโนมัติ (ผ่าน saveDailyAttendance ใน AppContext)
   function handleSaveClass(cls) {
+    if (isHolidayDate) {
+      const h = holidays.find(hd => {
+        if (!hd.date) return false;
+        if (hd.date.includes('/')) {
+          const [dd, mm, bYear] = hd.date.split('/');
+          return `${parseInt(bYear,10)-543}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}` === selectedDate;
+        }
+        return hd.date === selectedDate;
+      });
+      alert(`วันหยุด${h?.name ? ` (${h.name})` : ''} — ไม่สามารถบันทึกข้อมูลได้`);
+      return;
+    }
     const patch = {};
     let present = 0, absent = 0;
     Object.entries(classDrafts[cls] ?? {}).forEach(([id, att]) => {
@@ -456,13 +479,17 @@ export default function AttendanceTab({ defaultClass }) {
       const rows = sts.map(s => {
         const rec = getDayRecord(dailyRecords, selectedDate, s.id);
         const draftAtt = classDrafts[cls]?.[s.id] ?? rec?.attendance ?? 'มา';
-        return { ...s, rec, draftAtt };
+        const milkDone  = getHygieneDone(milkRecords,       cls, academicYear, selectedDate, s.id);
+        const brushDone = getHygieneDone(toothBrushRecords, cls, academicYear, selectedDate, s.id);
+        const lunchDone = getHygieneDone(lunchRecords,       cls, academicYear, selectedDate, s.id);
+        return { ...s, rec, draftAtt, milkDone, brushDone, lunchDone };
       });
       const counts = {};
       ATT_OPTS.forEach(o => { counts[o] = rows.filter(r => r.draftAtt === o).length; });
       return { cls, teacher, rows, counts, total: sts.length };
     });
-  }, [displayClasses, students, dailyRecords, selectedDate, teachers, classDrafts]);
+  }, [displayClasses, students, dailyRecords, selectedDate, teachers, classDrafts,
+      milkRecords, toothBrushRecords, lunchRecords, academicYear]);
 
   return (
     <div className="animate-fade">
@@ -800,18 +827,18 @@ export default function AttendanceTab({ defaultClass }) {
                   ✅ มาทั้งหมด
                 </button>
                 <button
-                  onClick={() => !isLocked && handleSaveClass(cls)}
-                  disabled={isLocked}
+                  onClick={() => !isLocked && !isHolidayDate && handleSaveClass(cls)}
+                  disabled={isLocked || isHolidayDate}
                   style={{
                     padding: '.25rem .75rem', borderRadius: '8px', border: 'none',
                     background: isLocked ? '#f3f4f6' : dirtyClasses.has(cls) ? '#7c3aed' : '#e5e7eb',
                     color: isLocked ? '#9ca3af' : dirtyClasses.has(cls) ? 'white' : '#9ca3af',
                     fontFamily: 'inherit', fontWeight: 700, fontSize: '.73rem',
                     cursor: isLocked ? 'not-allowed' : 'pointer',
-                    opacity: isLocked ? 0.6 : 1,
+                    opacity: isLocked || isHolidayDate ? 0.6 : 1,
                   }}
                 >
-                  {isLocked ? '🔒 ล็อกแล้ว' : `💾 บันทึก${dirtyClasses.has(cls) ? '' : ' (บันทึกแล้ว)'}`}
+                  {isLocked ? '🔒 ล็อกแล้ว' : isHolidayDate ? '🚫 วันหยุด' : `💾 บันทึก${dirtyClasses.has(cls) ? '' : ' (บันทึกแล้ว)'}`}
                 </button>
               </div>
             </div>
@@ -875,12 +902,12 @@ export default function AttendanceTab({ defaultClass }) {
                         </div>
                         {showHygiene && (
                           <div style={{ display: 'flex', gap: '.25rem', marginTop: '.25rem', flexWrap: 'wrap' }}>
-                            {s.rec?.milk  && <span style={{ fontSize: '.65rem', background: '#d1fae5', color: '#065f46', borderRadius: '5px', padding: '0 .3rem' }}>🥛</span>}
-                            {s.rec?.brush && <span style={{ fontSize: '.65rem', background: '#dbeafe', color: '#1e40af', borderRadius: '5px', padding: '0 .3rem' }}>🪥</span>}
-                            {s.rec?.lunch && (
+                            {s.milkDone  && <span style={{ fontSize: '.65rem', background: '#d1fae5', color: '#065f46', borderRadius: '5px', padding: '0 .3rem' }}>🥛</span>}
+                            {s.brushDone && <span style={{ fontSize: '.65rem', background: '#dbeafe', color: '#1e40af', borderRadius: '5px', padding: '0 .3rem' }}>🪥</span>}
+                            {s.lunchDone && (
                               <span style={{ fontSize: '.6rem', borderRadius: '5px', padding: '0 .3rem',
                                 background: '#fef3c7', color: '#92400e' }}>
-                                🍱{s.rec.lunch}
+                                🍱
                               </span>
                             )}
                           </div>
@@ -933,17 +960,17 @@ export default function AttendanceTab({ defaultClass }) {
                           </td>
                           {showHygiene && <>
                             <td style={{ textAlign: 'center' }}>
-                              {s.rec?.milk ? '✅' : <span style={{ color: '#d1d5db' }}>—</span>}
+                              {s.milkDone ? '✅' : <span style={{ color: '#d1d5db' }}>—</span>}
                             </td>
                             <td style={{ textAlign: 'center' }}>
-                              {s.rec?.brush ? '✅' : <span style={{ color: '#d1d5db' }}>—</span>}
+                              {s.brushDone ? '✅' : <span style={{ color: '#d1d5db' }}>—</span>}
                             </td>
                             <td style={{ textAlign: 'center' }}>
-                              {s.rec?.lunch ? (
+                              {s.lunchDone ? (
                                 <span style={{
                                   fontSize: '.75rem', borderRadius: '6px', padding: '.1rem .4rem',
                                   background: '#fef3c7', color: '#92400e', fontWeight: 600,
-                                }}>{s.rec.lunch}</span>
+                                }}>✅</span>
                               ) : <span style={{ color: '#d1d5db' }}>—</span>}
                             </td>
                           </>}

@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { callClaude, buildActivitySuggestionPrompt } from '../../utils/aiHelper';
 import { isoToThai, todayISO } from '../../utils/helpers';
+import { pushClassAssessments } from '../../lib/firebaseSync';
 import { LEVEL_META, SCORES, SOURCE_ACTIVITY_MAP } from '../../data/evaluationConstants';
 import {
   computeMonthlyStats, computeNutritionStats, computePickupStats,
@@ -188,6 +189,15 @@ export default function EvaluationTab() {
     setStudents(updated);
     setSaved(true);
 
+    // ── Push assessments ของห้องนี้ขึ้น Firestore แยก (ป้องกัน race condition) ──
+    if (selClass) {
+      const classAssessData = {};
+      updated
+        .filter(s => s.className === selClass && s.assessments?.indicators)
+        .forEach(s => { classAssessData[String(s.id)] = { indicators: s.assessments.indicators }; });
+      pushClassAssessments(selClass, classAssessData).catch(() => {});
+    }
+
     // ── บันทึก Activity Log ──────────────────────────────────
     const scored = classStudents.filter(s => (results[s.id] ?? 0) > 0);
     const s1 = scored.filter(s => results[s.id] === 1).length;
@@ -262,6 +272,15 @@ export default function EvaluationTab() {
       };
     });
     setStudents(updated);
+
+    // ── Push assessments ของห้องนี้ขึ้น Firestore แยก (ป้องกัน race condition) ──
+    if (selClass) {
+      const classAssessData = {};
+      updated
+        .filter(s => s.className === selClass && s.assessments?.indicators)
+        .forEach(s => { classAssessData[String(s.id)] = { indicators: s.assessments.indicators }; });
+      pushClassAssessments(selClass, classAssessData).catch(() => {});
+    }
   };
 
   // summary

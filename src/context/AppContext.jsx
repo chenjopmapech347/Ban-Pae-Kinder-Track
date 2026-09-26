@@ -20,7 +20,10 @@ import { pullSnapshotFromCloud, pushSnapshotToCloud } from '../lib/cloudSync';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { isFirebaseConfigured, db } from '../lib/firebase';
 import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
-import { pushSnapshotToFirebase, pullSnapshotFromFirebase } from '../lib/firebaseSync';
+import {
+  pushSnapshotToFirebase, pullSnapshotFromFirebase,
+  pushClassAssessments, pullClassAssessments, pullAllClassAssessments,
+} from '../lib/firebaseSync';
 import { firebaseLogin, firebaseLogout, onFirebaseAuthChange } from '../lib/firebaseAuth';
 import {
   readWorkbookFromFile,
@@ -683,6 +686,32 @@ export function AppProvider({ children }) {
       })
       .catch(() => { setPullSyncStatus('error'); })
       .finally(() => {
+        // ── หลัง pull snapshot เสร็จ → pull classAssessments แล้ว inject เข้า students ──
+        // ครู: pull เฉพาะห้องตัวเอง / admin: pull ทุกห้อง
+        const className = role === 'teacher' ? user?.className : null;
+        const pullFn = className
+          ? pullClassAssessments(className)
+          : (role === 'admin' ? pullAllClassAssessments() : Promise.resolve({ ok: false, students: {} }));
+
+        pullFn.then(assResult => {
+          if (assResult.ok && Object.keys(assResult.students).length > 0) {
+            setStudents(prev => prev.map(s => {
+              const sa = assResult.students[String(s.id)];
+              if (!sa) return s;
+              return {
+                ...s,
+                assessments: {
+                  ...(s.assessments ?? {}),
+                  indicators: {
+                    ...(s.assessments?.indicators ?? {}),
+                    ...(sa.indicators ?? {}),
+                  },
+                },
+              };
+            }));
+          }
+        }).catch(() => {});
+
         // อนุญาตให้ auto-sync push ได้หลังจาก pull เสร็จ (หรือ fail)
         initialPullDone.current = true;
         setTimeout(() => setPullSyncStatus('idle'), 3000);
@@ -718,33 +747,15 @@ export function AppProvider({ children }) {
         // (firebaseSync ใช้ merge:true ดังนั้น field ที่ไม่ส่งจะคงอยู่ใน Firestore)
         if (!snapData.activities?.length) delete snapData.activities;
 
-        // ── Merge student assessments ก่อน push ──────────────────────────────────
-        // ป้องกันการที่ครูคนละห้องเปิดแอปพร้อมกัน แล้ว push ทับกัน ทำให้ข้อมูลประเมินหาย
-        // วิธี: pull Firebase ล่าสุด → รวม assessments.indicators (Firebase + local, local wins)
+        // ── Strip assessments.indicators ออกจาก students ก่อน push snapshot หลัก ──
+        // คะแนนประเมินถูกเก็บแยกใน classAssessments (push โดย EvaluationTab โดยตรง)
+        // ไม่รวมใน snapshot หลัก เพื่อป้องกัน race condition ข้ามเครื่อง
         if (snapData.students?.length) {
-          try {
-            const fbResult = await pullSnapshotFromFirebase();
-            if (fbResult.ok) {
-              const fbCheck = validateSnapshot(fbResult.payload);
-              if (fbCheck.ok && Array.isArray(fbCheck.snapshot.students)) {
-                const fbStudents = fbCheck.snapshot.students;
-                snapData.students = snapData.students.map(localStu => {
-                  const fbStu = fbStudents.find(fs => String(fs.id) === String(localStu.id));
-                  if (!fbStu) return localStu; // นักเรียนใหม่ที่ยังไม่มีใน Firebase
-                  // รวม indicators: Firebase + local (local wins เพราะเพิ่งกรอก)
-                  const fbInds    = fbStu.assessments?.indicators ?? {};
-                  const localInds = localStu.assessments?.indicators ?? {};
-                  const mergedInds = { ...fbInds, ...localInds };
-                  return {
-                    ...localStu,
-                    assessments: { ...(localStu.assessments ?? {}), indicators: mergedInds },
-                  };
-                });
-              }
-            }
-          } catch (_mergeErr) {
-            // merge ไม่สำเร็จ → push ข้อมูล local ต่อไปตามปกติ (ดีกว่าไม่ push เลย)
-          }
+          snapData.students = snapData.students.map(s => {
+            if (!s.assessments?.indicators) return s;
+            const { indicators: _removed, ...restAssess } = s.assessments;
+            return { ...s, assessments: restAssess };
+          });
         }
 
         const payload = buildAppSnapshot(snapData);

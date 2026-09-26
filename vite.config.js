@@ -1,17 +1,34 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { fileURLToPath } from 'url'
+import { fileURLToPath, pathToFileURL } from 'url'
 import { dirname, resolve } from 'path'
+import { readFileSync, writeFileSync } from 'fs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
+// อ่าน version จาก package.json
+const pkg = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf-8'))
+const APP_VERSION = pkg.version
+
+// Plugin: เขียน public/version.json ทุกครั้งที่ build เพื่อให้ server serve เวอร์ชั่นล่าสุด
+const versionPlugin = {
+  name: 'write-version-json',
+  buildStart() {
+    writeFileSync(
+      resolve(__dirname, 'public/version.json'),
+      JSON.stringify({ version: APP_VERSION }, null, 2),
+    )
+  },
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), versionPlugin],
   // Polyfill Node built-ins that `docx` relies on (buffer, process)
   // Vite 8 / Rolldown requires absolute paths in resolve.alias
   define: {
     global: 'globalThis',
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
   },
   resolve: {
     alias: {

@@ -717,6 +717,36 @@ export function AppProvider({ children }) {
         // ถ้า activities ว่างเปล่าในเครื่องนี้ → ไม่ส่ง field นี้ เพื่อป้องกันทับข้อมูล activities จากเครื่องอื่น
         // (firebaseSync ใช้ merge:true ดังนั้น field ที่ไม่ส่งจะคงอยู่ใน Firestore)
         if (!snapData.activities?.length) delete snapData.activities;
+
+        // ── Merge student assessments ก่อน push ──────────────────────────────────
+        // ป้องกันการที่ครูคนละห้องเปิดแอปพร้อมกัน แล้ว push ทับกัน ทำให้ข้อมูลประเมินหาย
+        // วิธี: pull Firebase ล่าสุด → รวม assessments.indicators (Firebase + local, local wins)
+        if (snapData.students?.length) {
+          try {
+            const fbResult = await pullSnapshotFromFirebase();
+            if (fbResult.ok) {
+              const fbCheck = validateSnapshot(fbResult.payload);
+              if (fbCheck.ok && Array.isArray(fbCheck.snapshot.students)) {
+                const fbStudents = fbCheck.snapshot.students;
+                snapData.students = snapData.students.map(localStu => {
+                  const fbStu = fbStudents.find(fs => String(fs.id) === String(localStu.id));
+                  if (!fbStu) return localStu; // นักเรียนใหม่ที่ยังไม่มีใน Firebase
+                  // รวม indicators: Firebase + local (local wins เพราะเพิ่งกรอก)
+                  const fbInds    = fbStu.assessments?.indicators ?? {};
+                  const localInds = localStu.assessments?.indicators ?? {};
+                  const mergedInds = { ...fbInds, ...localInds };
+                  return {
+                    ...localStu,
+                    assessments: { ...(localStu.assessments ?? {}), indicators: mergedInds },
+                  };
+                });
+              }
+            }
+          } catch (_mergeErr) {
+            // merge ไม่สำเร็จ → push ข้อมูล local ต่อไปตามปกติ (ดีกว่าไม่ push เลย)
+          }
+        }
+
         const payload = buildAppSnapshot(snapData);
         const result  = await pushSnapshotToFirebase(payload);
         if (result.ok) localStorage.setItem('kt_lastPushAt', Date.now().toString());

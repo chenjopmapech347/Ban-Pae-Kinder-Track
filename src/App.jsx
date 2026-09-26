@@ -1,6 +1,7 @@
 import './index.css';
 import { useState, useEffect, lazy, Suspense } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
+import VersionChecker from './components/VersionChecker';
 import LoginPage from './pages/LoginPage';
 import SettingsPage from './pages/SettingsPage';
 import AdminDashboard from './pages/AdminDashboard';
@@ -347,6 +348,7 @@ function AppShell() {
 export default function App() {
   return (
     <AppProvider>
+      <VersionChecker />
       <AppShell />
     </AppProvider>
   );

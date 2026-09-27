@@ -3,7 +3,6 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import VersionChecker from './components/VersionChecker';
 import LoginPage from './pages/LoginPage';
-import SettingsPage from './pages/SettingsPage';
 import AdminDashboard from './pages/AdminDashboard';
 import TeacherDashboard from './pages/TeacherDashboard';
 import ParentView from './pages/ParentView';
@@ -35,7 +34,6 @@ function AppShell() {
     currentTerm, setCurrentTerm,
     evaluatingStudent, setEvaluatingStudent,
     selectedStudent, setSelectedStudent,
-    isSettingsOpen, setIsSettingsOpen,
     isAdding, setIsAdding,
     handleSaveEvaluation, assessmentTopics, addStudent,
     autoSyncStatus, autoSyncError, pullSyncStatus, isFirebaseConfigured,
@@ -238,13 +236,6 @@ function AppShell() {
             </button>
           )}
 
-          {role === 'admin' && (
-            <button type="button" className="btn btn-sm"
-              style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: '1.5px solid rgba(255,255,255,0.35)' }}
-              onClick={() => setIsSettingsOpen(true)}>
-              ⚙️ ตั้งค่า
-            </button>
-          )}
 
           <div className="flex items-center gap-2">
             <div className="user-avatar">{ROLE_AVATAR[role] ?? '?'}</div>
@@ -299,8 +290,6 @@ function AppShell() {
           </div>
         ) : selectedStudent ? (
           <ReportPage />
-        ) : isSettingsOpen ? (
-          <SettingsPage onBack={() => setIsSettingsOpen(false)} />
         ) : role === 'admin' ? (
           <AdminDashboard />
         ) : role === 'teacher' ? (

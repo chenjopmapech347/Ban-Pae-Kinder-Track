@@ -44,6 +44,7 @@ const AssignInnerCornersTab  = lazy(() => import('../components/admin/AssignInne
 const AssignOuterCornersTab  = lazy(() => import('../components/admin/AssignOuterCornersTab'));
 const YearEndTab             = lazy(() => import('../components/admin/YearEndTab'));
 const SystemLogTab           = lazy(() => import('../components/admin/SystemLogTab'));
+const SystemSettingsTab      = lazy(() => import('../components/admin/SystemSettingsTab'));
 const HelpTab                = lazy(() => import('../components/admin/HelpTab'));
 const AbilityAssessmentTab   = lazy(() => import('../components/admin/AbilityAssessmentTab'));
 
@@ -116,6 +117,7 @@ const TAB_GROUPS = [
     label: 'ตั้งค่าระบบ',
     color: '#6b7280',
     tabs: [
+      { id: 'syssettings',       label: '🔧 ระบบและความปลอดภัย'         },  // ย้ายมาจากปุ่ม header
       { id: 'schools',           label: '🏛️ โรงเรียน'                  },  // ตั้งค่าพื้นฐาน
       { id: 'terms',             label: '📅 ภาคเรียน'                   },  // กรอบเวลา
       { id: 'holidays',          label: '🏖️ วันหยุดราชการ'               },  // ปฏิทิน
@@ -205,6 +207,7 @@ export default function AdminDashboard() {
           {activeTab === 'manageoutercorners' && <ManageOuterCornersTab />}
           {activeTab === 'assigninnercorners' && <AssignInnerCornersTab />}
           {activeTab === 'assignoutercorners' && <AssignOuterCornersTab />}
+          {activeTab === 'syssettings'        && <SystemSettingsTab />}
           {activeTab === 'systemlog'          && <SystemLogTab />}
           {activeTab === 'help'             && <HelpTab />}
         </Suspense>

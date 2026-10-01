@@ -150,51 +150,7 @@ export default function StandardsMapTab() {
         <h3>📋 มาตรฐานการศึกษาปฐมวัย</h3>
       </div>
 
-      {/* คำอธิบาย 3 กรอบ */}
-      {/* กรอบมาตรฐานเดิม (3 กรอบ) + ปี 68 (ทดแทน) */}
-      <div style={{ marginBottom: '1.25rem' }}>
-        <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#6b7280', marginBottom: '.4rem', textTransform: 'uppercase', letterSpacing: '.05em' }}>
-          ⏮ มาตรฐานเดิม (ถูกทดแทน)
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '.6rem', marginBottom: '.75rem', opacity: 0.7 }}>
-          {['dcy', 'cur', 'onesqa'].map(k => {
-            const f = FRAME[k];
-            return (
-              <div key={k} style={{ background: f.bg, border: `1.5px solid ${f.border}`, borderRadius: '10px', padding: '.7rem .9rem', position: 'relative' }}>
-                <div style={{ fontWeight: 800, fontSize: '.78rem', color: f.color, marginBottom: '.2rem', textDecoration: 'line-through', textDecorationColor: f.color }}>{f.label}</div>
-                <div style={{ fontSize: '.72rem', color: '#6b7280', lineHeight: 1.4 }}>{f.full}</div>
-              </div>
-            );
-          })}
-        </div>
-        <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#7e22ce', marginBottom: '.4rem', textTransform: 'uppercase', letterSpacing: '.05em' }}>
-          ✨ มาตรฐานใหม่ (ทดแทนทั้ง 3 กรอบข้างต้น)
-        </div>
-        {(() => { const f = FRAME.std68; return (
-          <div style={{ background: '#faf5ff', border: '2px solid #a855f7', borderRadius: '12px', padding: '.85rem 1rem' }}>
-            <div style={{ fontWeight: 800, fontSize: '.85rem', color: f.color, marginBottom: '.25rem' }}>หลักสูตรปฐมวัย 2568 (ปี 68)</div>
-            <div style={{ fontSize: '.75rem', color: '#374151', lineHeight: 1.5 }}>{f.full}</div>
-          </div>
-        ); })()}
-      </div>
 
-      {/* Sub-nav */}
-      <div style={{ display: 'flex', gap: '.4rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
-        {[
-          { id: 'map',    label: '🔗 ตารางแมปรวม' },
-          { id: 'onesqa', label: '🔍 กรอบ สมศ.' },
-          { id: 'dcy',    label: '🏛 มาตรฐาน ดย.' },
-        ].map(s => (
-          <button
-            key={s.id} type="button"
-            onClick={() => setActiveSection(s.id)}
-            className={'tab-btn' + (activeSection === s.id ? ' active' : '')}
-            style={{ fontSize: '.8rem', padding: '.45rem .9rem' }}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
 
       {/* ── ตารางแมปรวม ── */}
       {activeSection === 'map' && (
@@ -206,22 +162,12 @@ export default function StandardsMapTab() {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.8rem' }}>
               <thead>
-                {/* แถว 1 — grouping header */}
                 <tr>
-                  <th rowSpan={2} style={{ background: '#1e40af', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '7%', verticalAlign: 'middle' }}>ด้าน</th>
-                  <th colSpan={3} style={{ background: '#4b5563', color: '#d1d5db', padding: '.45rem .85rem', textAlign: 'center', fontSize: '.75rem', borderBottom: '1px solid #6b7280' }}>
-                    ⏮ มาตรฐานเดิม (ถูกทดแทนโดย ปี 68)
-                  </th>
-                  <th rowSpan={2} style={{ background: '#7e22ce', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '20%', verticalAlign: 'middle', lineHeight: 1.4 }}>
+                  <th style={{ background: '#1e40af', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '7%', verticalAlign: 'middle' }}>ด้าน</th>
+                  <th style={{ background: '#7e22ce', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '30%', verticalAlign: 'middle', lineHeight: 1.4 }}>
                     ✨ หลักสูตรปฐมวัย 2568<br/><span style={{ fontSize: '.7rem', fontWeight: 400 }}>(ม.1 คุณภาพเด็ก กลุ่ม ข)</span>
                   </th>
-                  <th rowSpan={2} style={{ background: '#374151', color: 'white', padding: '.6rem .85rem', textAlign: 'center', verticalAlign: 'middle' }}>หลักฐานร่วม</th>
-                </tr>
-                {/* แถว 2 — ชื่อคอลัมน์เดิม (strikethrough) */}
-                <tr>
-                  <th style={{ background: '#6b7280', color: '#e5e7eb', padding: '.35rem .6rem', textAlign: 'center', width: '22%', fontSize: '.72rem', textDecoration: 'line-through', textDecorationColor: '#9ca3af' }}>มาตรฐาน ดย. (3.x–6.x)</th>
-                  <th style={{ background: '#6b7280', color: '#e5e7eb', padding: '.35rem .6rem', textAlign: 'center', width: '26%', fontSize: '.72rem', textDecoration: 'line-through', textDecorationColor: '#9ca3af' }}>หลักสูตรปฐมวัย 2560</th>
-                  <th style={{ background: '#6b7280', color: '#e5e7eb', padding: '.35rem .6rem', textAlign: 'center', width: '8%',  fontSize: '.72rem', textDecoration: 'line-through', textDecorationColor: '#9ca3af' }}>สมศ.</th>
+                  <th style={{ background: '#374151', color: 'white', padding: '.6rem .85rem', textAlign: 'center', verticalAlign: 'middle' }}>หลักฐานร่วม</th>
                 </tr>
               </thead>
               <tbody>
@@ -238,26 +184,6 @@ export default function StandardsMapTab() {
                           }}
                         >
                           {domain.domain}
-                        </td>
-                      )}
-                      <td style={{ padding: '.55rem .75rem', borderBottom: '1px solid #e5e7eb', verticalAlign: 'top' }}>
-                        <Tag type="dcy" text={row.dcy.code} />
-                        <div style={{ marginTop: '.25rem', color: '#374151' }}>{row.dcy.desc}</div>
-                      </td>
-                      <td style={{ padding: '.55rem .75rem', borderBottom: '1px solid #e5e7eb', verticalAlign: 'top' }}>
-                        {row.cur.map((c, i) => (
-                          <div key={i} style={{ marginBottom: i < row.cur.length - 1 ? '.35rem' : 0 }}>
-                            <Tag type="cur" text={c.code} />
-                            <span style={{ fontSize: '.75rem', color: '#374151' }}> {c.desc}</span>
-                          </div>
-                        ))}
-                      </td>
-                      {ri === 0 && (
-                        <td
-                          rowSpan={domain.rows.length}
-                          style={{ padding: '.55rem .75rem', borderBottom: '1px solid #e5e7eb', verticalAlign: 'middle', textAlign: 'center' }}
-                        >
-                          <Tag type="onesqa" text={domain.rows[0].onesqa} />
                         </td>
                       )}
                       <td style={{ padding: '.55rem .75rem', borderBottom: '1px solid #e5e7eb', verticalAlign: 'top' }}>

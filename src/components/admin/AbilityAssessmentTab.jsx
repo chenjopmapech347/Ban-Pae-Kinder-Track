@@ -333,33 +333,6 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
         <div style={{ padding: '.75rem 1rem', borderBottom: '1px solid #e2e8f0' }}>
           <p style={{ margin: '0 0 .5rem', fontSize: '.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.05em' }}>ชุดตัวบ่งชี้</p>
           <div style={{ display: 'flex', gap: '.625rem', flexWrap: 'wrap' }}>
-            {/* ── ปุ่ม C60 ── */}
-            {(() => {
-              const active = datasetKey === 'c60';
-              return (
-                <button
-                  onClick={() => switchDataset('c60')}
-                  style={{
-                    position: 'relative', display: 'flex', alignItems: 'center', gap: '10px',
-                    padding: '.5rem .875rem', borderRadius: '8px', border: `2px solid ${active ? '#6366f1' : '#e2e8f0'}`,
-                    background: active ? '#6366f1' : 'white', cursor: 'pointer', textAlign: 'left',
-                    boxShadow: active ? '0 2px 8px rgba(99,102,241,.25)' : 'none',
-                    transition: 'all .15s',
-                  }}
-                >
-                  <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>📘</span>
-                  <div>
-                    <div style={{ fontSize: '.82rem', fontWeight: 700, color: active ? 'white' : '#1e293b', lineHeight: 1.2 }}>
-                      หลักสูตร 2560
-                    </div>
-                    <div style={{ fontSize: '.72rem', marginTop: '2px', color: active ? 'rgba(255,255,255,.7)' : '#94a3b8' }}>
-                      4 ด้าน 23 ตัวบ่งชี้
-                    </div>
-                  </div>
-                  {active && <span style={{ position: 'absolute', top: '6px', right: '6px', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,.8)' }} />}
-                </button>
-              );
-            })()}
 
             {/* ── ปุ่ม C68 รวม (auto-select ระดับจากห้อง) ── */}
             {(() => {

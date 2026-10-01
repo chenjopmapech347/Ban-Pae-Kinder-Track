@@ -1,282 +1,147 @@
-// StandardsMapTab.jsx — ตารางแมปเชื่อมโยงมาตรฐานการศึกษาปฐมวัย
-// หลักสูตรปฐมวัย 2568 (ปี 68) ทดแทน ดย. (3.x–6.x) · หลักสูตรปฐมวัย 2560 · สมศ.
-import { useState } from 'react';
+// StandardsMapTab.jsx — ตารางแมปมาตรฐานการศึกษาปฐมวัย (หลักสูตรปฐมวัย 2568)
 
-// ── สีและ style สำหรับแต่ละกรอบ ──────────────────────────────────────────
-const FRAME = {
-  dcy:      { label: 'ดย.',       full: 'กรมกิจการเด็กและเยาวชน (มาตรฐานเดิม)',              bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' },
-  cur:      { label: 'ปวัย.2560', full: 'หลักสูตรการศึกษาปฐมวัย พ.ศ. 2560 (มาตรฐานเดิม)',   bg: '#dcfce7', color: '#15803d', border: '#86efac' },
-  onesqa:   { label: 'สมศ.',      full: 'สำนักงานรับรองมาตรฐานฯ สมศ. (มาตรฐานเดิม)',        bg: '#ffedd5', color: '#c2410c', border: '#fdba74' },
-  std68:    { label: 'ปี 68 ม.1', full: 'หลักสูตรปฐมวัย 2568 (ปี 68) — ทดแทนมาตรฐานเดิมทั้ง 3 กรอบข้างต้น', bg: '#fdf4ff', color: '#7e22ce', border: '#e9d5ff' },
-};
+const STD68 = { label: 'ปี 68 ม.1', bg: '#fdf4ff', color: '#7e22ce', border: '#e9d5ff' };
 
-function Tag({ type, text }) {
-  const f = FRAME[type];
+function Tag({ text }) {
   return (
     <span style={{
       display: 'inline-block', fontSize: '.68rem', fontWeight: 700,
       padding: '2px 7px', borderRadius: '999px', margin: '2px 2px 0 0',
-      background: f.bg, color: f.color, border: `1px solid ${f.border}`,
-      whiteSpace: 'nowrap',
-    }}>{f.label} {text}</span>
+      background: STD68.bg, color: STD68.color, border: `1px solid ${STD68.border}`,
+    }}>{STD68.label} {text}</span>
   );
 }
 
-// ── ข้อมูลตารางแมป (จัดกลุ่มตาม 4 ด้าน หลักสูตร 2568) ─────────────────────
+// ── ข้อมูลตารางแมป (4 ด้าน หลักสูตรปฐมวัย 2568 — ม.1 คุณภาพเด็ก กลุ่ม ข) ──
 const MAP_ROWS = [
 
-  // ─── 1. สุขภาวะทางกาย ───────────────────────────────────────────────────
+  // ─── 1. สุขภาวะทางกาย (1.1ข, 1.6ข, 1.2ข) ──────────────────────────────
   {
     domain: '🏃 สุขภาวะทางกาย', domainColor: '#059669', domainBg: '#ecfdf5',
-    evidenceBg: '#f0fdf4',
     rows: [
-      { dcy: { code: '3.1', desc: 'น้ำหนักและส่วนสูงตามเกณฑ์กรมอนามัย' },
-        cur: [{ code: '1', desc: 'ร่างกายเจริญเติบโตตามวัยและมีสุขนิสัยที่ดี' }],
-        onesqa: '1.1', std68: '1.1ข น้ำหนักและส่วนสูงตามเกณฑ์มาตรฐาน' },
-      { dcy: { code: '3.2', desc: 'มีสุขภาพอนามัยที่ดีและมีสุขนิสัยที่ดี' },
-        cur: [{ code: '1', desc: 'ตัวบ่งชี้ 1.2–1.3 สุขนิสัย ความปลอดภัย' }],
-        onesqa: '1.1', std68: '1.6ข ความปลอดภัยในชีวิตประจำวัน' },
-      { dcy: { code: '3.3', desc: 'มีทักษะการเคลื่อนไหวตามวัย (GM/FM)' },
-        cur: [{ code: '2', desc: 'กล้ามเนื้อใหญ่และกล้ามเนื้อเล็กแข็งแรง คล่องแคล่ว' }],
-        onesqa: '1.1', std68: '1.2ข กล้ามเนื้อมัดใหญ่-มัดเล็กแข็งแรงและคล่องแคล่ว' },
+      { std68: '1.1ข น้ำหนักและส่วนสูงตามเกณฑ์มาตรฐาน' },
+      { std68: '1.6ข ความปลอดภัยในชีวิตประจำวัน' },
+      { std68: '1.2ข กล้ามเนื้อมัดใหญ่-มัดเล็กแข็งแรงและคล่องแคล่ว' },
     ],
-    evidence: ['บันทึกน้ำหนัก-ส่วนสูง', 'สมุดสุขภาพรายบุคคล', 'บันทึกกิจกรรม GM/FM', 'ภาพถ่ายกิจกรรมพลศึกษา', 'บันทึกกิจกรรมความปลอดภัยและสุขอนามัย'],
+    evidence: [
+      'บันทึกน้ำหนัก-ส่วนสูง',
+      'สมุดสุขภาพรายบุคคล',
+      'บันทึกกิจกรรม GM/FM',
+      'ภาพถ่ายกิจกรรมพลศึกษา',
+      'บันทึกกิจกรรมความปลอดภัยและสุขอนามัย',
+    ],
   },
 
-  // ─── 2. อารมณ์ จิตใจ และสังคม (รวม อารมณ์ + สังคม เดิม) ──────────────
+  // ─── 2. อารมณ์ จิตใจ และสังคม (1.3ข, 1.4ข) ────────────────────────────
   {
     domain: '❤️ อารมณ์ จิตใจ และสังคม', domainColor: '#e11d48', domainBg: '#fff1f2',
-    evidenceBg: '#fdf4ff',
     rows: [
-      { dcy: { code: '4.1', desc: 'มีสุขภาพจิตดี มีความสุข ร่าเริงแจ่มใส' },
-        cur: [{ code: '3', desc: 'มีสุขภาพจิตดีและมีความสุข' }],
-        onesqa: '1.4', std68: '1.3ข มีสุขภาวะทางอารมณ์และจิตใจที่ดี' },
-      { dcy: { code: '4.3', desc: 'เล่นอิสระ เล่นสมมติ ทำตามกฎกติกา (PS)' },
-        cur: [{ code: '3', desc: 'ตัวบ่งชี้ 3.1–3.2' }],
-        onesqa: '1.4', std68: '1.3ข / 1.4ข สุขภาวะอารมณ์-จิตใจและสังคม' },
-      { dcy: { code: '5.1', desc: 'ช่วยเหลือตนเองในกิจวัตรประจำวัน' },
-        cur: [{ code: '5', desc: 'คุณธรรม จริยธรรม จิตใจดีงาม' },
-              { code: '6', desc: 'ทักษะชีวิต เศรษฐกิจพอเพียง' }],
-        onesqa: '1.5', std68: '1.4ข มีสุขภาวะทางสังคมที่ดี' },
-      { dcy: { code: '5.3', desc: 'ยอมรับความเหมือนและความแตกต่างระหว่างบุคคล' },
-        cur: [{ code: '8', desc: 'อยู่ร่วมกับผู้อื่น ปฏิบัติตนเป็นสมาชิกที่ดีของสังคม' }],
-        onesqa: '1.5', std68: '1.4ข มีสุขภาวะทางสังคมที่ดี' },
-      { dcy: { code: '5.4', desc: 'ปฏิสัมพันธ์ที่ดีกับผู้อื่น ทำงานร่วมกัน (PS)' },
-        cur: [{ code: '8', desc: 'ตัวบ่งชี้ 8.2–8.3' }],
-        onesqa: '1.5', std68: '1.4ข มีสุขภาวะทางสังคมที่ดี' },
+      { std68: '1.3ข มีสุขภาวะทางอารมณ์และจิตใจที่ดี' },
+      { std68: '1.3ข / 1.4ข สุขภาวะอารมณ์-จิตใจและสังคม' },
+      { std68: '1.4ข มีสุขภาวะทางสังคมที่ดี' },
+      { std68: '1.4ข มีสุขภาวะทางสังคมที่ดี' },
+      { std68: '1.4ข มีสุขภาวะทางสังคมที่ดี' },
     ],
-    evidence: ['บันทึกพฤติกรรมเด็ก', 'แผนการจัดประสบการณ์ด้านอารมณ์-สังคม', 'แบบสังเกตพฤติกรรม', 'ภาพถ่ายกิจกรรมกลุ่ม', 'แฟ้มสะสมผลงาน'],
+    evidence: [
+      'บันทึกพฤติกรรมเด็ก',
+      'แผนการจัดประสบการณ์ด้านอารมณ์-สังคม',
+      'แบบสังเกตพฤติกรรม',
+      'ภาพถ่ายกิจกรรมกลุ่ม',
+      'แฟ้มสะสมผลงาน',
+    ],
   },
 
-  // ─── 3. ความเป็นพลเมืองและความเป็นไทย (ด้านใหม่ แยกจากสังคม) ──────────
+  // ─── 3. ความเป็นพลเมืองและความเป็นไทย (1.7ข) ──────────────────────────
   {
     domain: '🇹🇭 ความเป็นพลเมืองและความเป็นไทย', domainColor: '#1d4ed8', domainBg: '#eff6ff',
-    evidenceBg: '#f0f9ff',
     rows: [
-      { dcy: { code: '4.2', desc: 'มีคุณธรรม จริยธรรม และจิตใจที่ดีงาม' },
-        cur: [{ code: '4', desc: 'ชื่นชมและแสดงออกทางศิลปะ ดนตรี การเคลื่อนไหว' },
-              { code: '5', desc: 'มีคุณธรรม จริยธรรม และจิตใจที่ดีงาม' }],
-        onesqa: '1.4', std68: '1.7ข คุณธรรม จริยธรรม จิตสำนึกสาธารณะ และความภูมิใจในความเป็นไทย' },
-      { dcy: { code: '5.2', desc: 'มีวินัย ดูแลสิ่งแวดล้อม มารยาทไทย' },
-        cur: [{ code: '6', desc: 'ทักษะชีวิต ช่วยเหลือตนเอง มีวินัย' },
-              { code: '7', desc: 'รักธรรมชาติ วัฒนธรรม ความเป็นไทย' }],
-        onesqa: '1.5', std68: '1.7ข จิตสำนึกสาธารณะ รักและภูมิใจในความเป็นไทย ดูแลสิ่งแวดล้อม' },
+      { std68: '1.7ข คุณธรรม จริยธรรม จิตสำนึกสาธารณะ และความภูมิใจในความเป็นไทย' },
+      { std68: '1.7ข จิตสำนึกสาธารณะ รักและภูมิใจในความเป็นไทย ดูแลสิ่งแวดล้อม' },
     ],
-    evidence: ['บันทึกพฤติกรรมคุณธรรม', 'กิจกรรมวัฒนธรรมไทย', 'บันทึกการทำความดี', 'ภาพถ่ายกิจกรรมจิตสาธารณะ', 'ภาพถ่ายกิจกรรมดูแลสิ่งแวดล้อม'],
+    evidence: [
+      'บันทึกพฤติกรรมคุณธรรม',
+      'กิจกรรมวัฒนธรรมไทย',
+      'บันทึกการทำความดี',
+      'ภาพถ่ายกิจกรรมจิตสาธารณะ',
+      'ภาพถ่ายกิจกรรมดูแลสิ่งแวดล้อม',
+    ],
   },
 
-  // ─── 4. สติปัญญา ────────────────────────────────────────────────────────
+  // ─── 4. สติปัญญา (1.5ข) ─────────────────────────────────────────────────
   {
     domain: '💡 สติปัญญา', domainColor: '#b45309', domainBg: '#fffbeb',
-    evidenceBg: '#f0fdf4',
     rows: [
-      { dcy: { code: '6.1', desc: 'ใช้ภาษาสื่อสารได้เหมาะสมกับวัย (LG/RL)' },
-        cur: [{ code: '9', desc: 'ใช้ภาษาสื่อสารได้เหมาะสมกับวัย' }],
-        onesqa: '1.3', std68: '1.5ข ภาษาสื่อสารและทักษะการอ่าน-เขียนพื้นฐาน' },
-      { dcy: { code: '6.2', desc: 'มีความสามารถในการคิดและแก้ปัญหา (CG)' },
-        cur: [{ code: '10', desc: 'มีความสามารถในการคิดที่เป็นพื้นฐานในการเรียนรู้' }],
-        onesqa: '1.2', std68: '1.5ข การคิดและแก้ปัญหาเบื้องต้น' },
-      { dcy: { code: '6.3', desc: 'มีจินตนาการและความคิดสร้างสรรค์ (CG)' },
-        cur: [{ code: '11', desc: 'มีจินตนาการและความคิดสร้างสรรค์' },
-              { code: '12', desc: 'มีเจตคติที่ดีต่อการเรียนรู้และแสวงหาความรู้' }],
-        onesqa: '1.2', std68: '1.5ข จินตนาการและความคิดสร้างสรรค์' },
+      { std68: '1.5ข ภาษาสื่อสารและทักษะการอ่าน-เขียนพื้นฐาน' },
+      { std68: '1.5ข การคิดและแก้ปัญหาเบื้องต้น' },
+      { std68: '1.5ข จินตนาการและความคิดสร้างสรรค์' },
     ],
-    evidence: ['บันทึกคำพูด-คำถามเด็ก', 'บันทึกกิจกรรมอ่านและเล่านิทาน', 'ชิ้นงานเด็ก (วาด ปั้น ขีดเขียน ตัวอักษร)', 'แฟ้มสะสมผลงาน', 'วีดิทัศน์กิจกรรมคิด-สร้างสรรค์'],
-  },
-];
-
-// ── สรุป สมศ. 3 มาตรฐาน ──────────────────────────────────────────────────
-const ONESQA_STANDARDS = [
-  { code: '1', title: 'ผลลัพธ์คุณภาพของเด็กปฐมวัย', desc: '5 ตัวชี้วัด — วัดที่ตัวเด็ก',
-    subs: [
-      { code: '1.1', desc: 'เจริญเติบโตสมวัย สุขภาพแข็งแรง พัฒนาการเคลื่อนไหว' },
-      { code: '1.2', desc: 'พัฒนาการด้านสติปัญญา เรียนรู้ และสร้างสรรค์' },
-      { code: '1.3', desc: 'พัฒนาการด้านภาษาและการสื่อสาร' },
-      { code: '1.4', desc: 'พัฒนาการด้านอารมณ์และจิตใจ' },
-      { code: '1.5', desc: 'พัฒนาการด้านสังคมและคุณธรรม' },
+    evidence: [
+      'บันทึกคำพูด-คำถามเด็ก',
+      'บันทึกกิจกรรมอ่านและเล่านิทาน',
+      'ชิ้นงานเด็ก (วาด ปั้น ขีดเขียน ตัวอักษร)',
+      'แฟ้มสะสมผลงาน',
+      'วีดิทัศน์กิจกรรมคิด-สร้างสรรค์',
     ],
   },
-  { code: '2', title: 'การบริหารจัดการสถานพัฒนาเด็กปฐมวัย', desc: '10 ตัวชี้วัด — วัดที่ผู้บริหาร',
-    subs: [
-      { code: '2.1–2.5', desc: 'วิสัยทัศน์ · กลยุทธ์ · ภาวะผู้นำ · พัฒนาบุคลากร · นิเทศ' },
-      { code: '2.6–2.10', desc: 'สื่อการเรียนรู้ · สภาพแวดล้อม · สวัสดิการ · คัดกรองเด็ก · เครือข่าย' },
-    ],
-  },
-  { code: '3', title: 'การพัฒนาคุณภาพการจัดประสบการณ์', desc: '3 ตัวชี้วัด — วัดที่ครู',
-    subs: [
-      { code: '3.1', desc: 'หลักสูตรและแผนการจัดประสบการณ์การเรียนรู้' },
-      { code: '3.2', desc: 'จัดกิจกรรมพัฒนาคุณลักษณะพึงประสงค์เหมาะสมกับวัย' },
-      { code: '3.3', desc: 'ประเมินพัฒนาการเด็กอย่างเป็นระบบและต่อเนื่อง' },
-    ],
-  },
-];
-
-// ── ดย. มาตรฐาน 1–2 (บริหาร + ครู) ──────────────────────────────────────
-const DCY_ADMIN = [
-  { code: '1.1–1.5', title: 'มาตรฐาน 1 — การบริหารจัดการสถานพัฒนาเด็กปฐมวัย',
-    desc: 'วิสัยทัศน์ · บุคลากร · สภาพแวดล้อม · สุขภาพ · ชุมชน', onesqa: '2.1–2.10' },
-  { code: '2.1–2.5', title: 'มาตรฐาน 2 — ครู/ผู้ดูแลเด็กให้การดูแลและจัดประสบการณ์',
-    desc: 'แผนการสอน · ร่างกาย · อารมณ์-สังคม · สติปัญญา · ประเมินพัฒนาการ', onesqa: '3.1–3.3' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function StandardsMapTab() {
-  const [activeSection, setActiveSection] = useState('map');
-
   return (
     <div className="glass p-6 animate-fade">
       <div className="page-header mb-4">
         <h3>📋 มาตรฐานการศึกษาปฐมวัย</h3>
       </div>
 
+      <div style={{ fontSize: '.78rem', color: 'var(--text-muted)', marginBottom: '1rem', background: '#f5f3ff', border: '1px solid #c4b5fd', borderRadius: '8px', padding: '.65rem 1rem' }}>
+        ✨ <strong>หลักสูตรปฐมวัย 2568 (ปี 68)</strong> ใช้ทดแทนมาตรฐาน ดย. · หลักสูตรปฐมวัย 2560 · และ สมศ. — หลักฐานจากกิจกรรมเดียวกันสามารถใช้รายงานต่อมาตรฐานใหม่ ปี 68 ได้ทั้งหมด
+      </div>
 
-
-      {/* ── ตารางแมปรวม ── */}
-      {activeSection === 'map' && (
-        <div>
-          <div style={{ fontSize: '.78rem', color: 'var(--text-muted)', marginBottom: '1rem', background: '#f5f3ff', border: '1px solid #c4b5fd', borderRadius: '8px', padding: '.65rem 1rem' }}>
-            ✨ <strong>หลักสูตรปฐมวัย 2568 (ปี 68)</strong> ใช้ทดแทนมาตรฐาน ดย. · หลักสูตรปฐมวัย 2560 · และ สมศ. — หลักฐานจากกิจกรรมเดียวกันสามารถใช้รายงานต่อมาตรฐานใหม่ ปี 68 ได้ทั้งหมด
-          </div>
-
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.8rem' }}>
-              <thead>
-                <tr>
-                  <th style={{ background: '#1e40af', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '7%', verticalAlign: 'middle' }}>ด้าน</th>
-                  <th style={{ background: '#7e22ce', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '30%', verticalAlign: 'middle', lineHeight: 1.4 }}>
-                    ✨ หลักสูตรปฐมวัย 2568<br/><span style={{ fontSize: '.7rem', fontWeight: 400 }}>(ม.1 คุณภาพเด็ก กลุ่ม ข)</span>
-                  </th>
-                  <th style={{ background: '#374151', color: 'white', padding: '.6rem .85rem', textAlign: 'center', verticalAlign: 'middle' }}>หลักฐานร่วม</th>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.8rem' }}>
+          <thead>
+            <tr>
+              <th style={{ background: '#1e40af', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '7%', verticalAlign: 'middle' }}>ด้าน</th>
+              <th style={{ background: '#7e22ce', color: 'white', padding: '.6rem .85rem', textAlign: 'center', width: '30%', verticalAlign: 'middle', lineHeight: 1.4 }}>
+                ✨ หลักสูตรปฐมวัย 2568<br/><span style={{ fontSize: '.7rem', fontWeight: 400 }}>(ม.1 คุณภาพเด็ก กลุ่ม ข)</span>
+              </th>
+              <th style={{ background: '#374151', color: 'white', padding: '.6rem .85rem', textAlign: 'center', verticalAlign: 'middle' }}>หลักฐานร่วม</th>
+            </tr>
+          </thead>
+          <tbody>
+            {MAP_ROWS.map((domain, di) =>
+              domain.rows.map((row, ri) => (
+                <tr key={`${di}-${ri}`} style={{ background: ri % 2 === 0 ? domain.domainBg : 'white' }}>
+                  {ri === 0 && (
+                    <td
+                      rowSpan={domain.rows.length}
+                      style={{
+                        background: domain.domainColor, color: 'white', fontWeight: 800,
+                        fontSize: '.75rem', textAlign: 'center', padding: '.5rem .6rem',
+                        verticalAlign: 'middle', whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {domain.domain}
+                    </td>
+                  )}
+                  <td style={{ padding: '.55rem .75rem', borderBottom: '1px solid #e5e7eb', verticalAlign: 'top', whiteSpace: 'normal' }}>
+                    {row.std68 && <Tag text={row.std68} />}
+                  </td>
+                  {ri === 0 && (
+                    <td
+                      rowSpan={domain.rows.length}
+                      style={{ padding: '.55rem .75rem', borderBottom: '1px solid #e5e7eb', verticalAlign: 'top', fontSize: '.72rem', color: '#6b7280' }}
+                    >
+                      {domain.evidence.map((e, i) => <div key={i}>• {e}</div>)}
+                    </td>
+                  )}
                 </tr>
-              </thead>
-              <tbody>
-                {MAP_ROWS.map((domain, di) => (
-                  domain.rows.map((row, ri) => (
-                    <tr key={`${di}-${ri}`} style={{ background: ri % 2 === 0 ? domain.domainBg : 'white' }}>
-                      {ri === 0 && (
-                        <td
-                          rowSpan={domain.rows.length}
-                          style={{
-                            background: domain.domainColor, color: 'white', fontWeight: 800,
-                            fontSize: '.75rem', textAlign: 'center', padding: '.5rem .6rem',
-                            verticalAlign: 'middle', whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {domain.domain}
-                        </td>
-                      )}
-                      <td style={{ padding: '.55rem .75rem', borderBottom: '1px solid #e5e7eb', verticalAlign: 'top' }}>
-                        {row.std68 && <Tag type="std68" text={row.std68} />}
-                      </td>
-                      {ri === 0 && (
-                        <td
-                          rowSpan={domain.rows.length}
-                          style={{ padding: '.55rem .75rem', borderBottom: '1px solid #e5e7eb', verticalAlign: 'top', fontSize: '.72rem', color: '#6b7280' }}
-                        >
-                          {domain.evidence.map((e, i) => <div key={i}>• {e}</div>)}
-                        </td>
-                      )}
-                    </tr>
-                  ))
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* ── กรอบ สมศ. ── */}
-      {activeSection === 'onesqa' && (
-        <div>
-          <div style={{ marginBottom: '.75rem', fontSize: '.82rem', color: 'var(--text-muted)' }}>
-            สำนักงานรับรองมาตรฐานและประเมินคุณภาพการศึกษา — 3 มาตรฐาน 18 ตัวชี้วัด
-          </div>
-          {ONESQA_STANDARDS.map(std => (
-            <div key={std.code} className="glass-card mb-3" style={{ borderLeft: '4px solid #ea580c' }}>
-              <div style={{ fontWeight: 800, color: '#c2410c', marginBottom: '.35rem' }}>
-                มาตรฐานที่ {std.code} — {std.title}
-              </div>
-              <div style={{ fontSize: '.75rem', color: 'var(--text-muted)', marginBottom: '.5rem' }}>{std.desc}</div>
-              {std.subs.map(sub => (
-                <div key={sub.code} style={{ display: 'flex', gap: '.5rem', alignItems: 'flex-start', marginBottom: '.3rem' }}>
-                  <Tag type="onesqa" text={sub.code} />
-                  <span style={{ fontSize: '.78rem', color: '#374151' }}>{sub.desc}</span>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ── มาตรฐาน ดย. ── */}
-      {activeSection === 'dcy' && (
-        <div>
-          <div style={{ marginBottom: '.75rem', fontSize: '.82rem', color: 'var(--text-muted)' }}>
-            กรมกิจการเด็กและเยาวชน — มาตรฐานสถานพัฒนาเด็กปฐมวัยแห่งชาติ พ.ศ. 2561 (3 ด้าน)
-          </div>
-
-          {/* มาตรฐาน 3 คุณภาพเด็ก */}
-          <div className="glass-card mb-3" style={{ borderLeft: '4px solid #1d4ed8' }}>
-            <div style={{ fontWeight: 800, color: '#1e40af', marginBottom: '.35rem' }}>
-              มาตรฐานด้านที่ 3 — คุณภาพเด็กปฐมวัย 3–6 ปี <span style={{ fontSize: '.72rem', fontWeight: 600, color: '#6b7280' }}>(วัดที่ตัวเด็ก)</span>
-            </div>
-            <div style={{ fontSize: '.75rem', color: 'var(--text-muted)', marginBottom: '.6rem' }}>
-              ตัวบ่งชี้ 3.1–6.3 แบ่งตาม 4 ด้านพัฒนาการ — ตรงกับระบบที่ 1 ใน "ตัวบ่งชี้" ของ KinderTrack
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px,1fr))', gap: '.5rem' }}>
-              {[
-                { range: '3.1–3.3', label: '🏃 ร่างกาย', color: '#059669' },
-                { range: '4.1–4.3', label: '❤️ อารมณ์-จิตใจ', color: '#e11d48' },
-                { range: '5.1–5.4', label: '🤝 สังคม', color: '#7c3aed' },
-                { range: '6.1–6.3', label: '💡 สติปัญญา', color: '#b45309' },
-              ].map(d => (
-                <div key={d.range} style={{ background: '#eff6ff', borderRadius: '8px', padding: '.5rem .75rem', border: '1px solid #bfdbfe' }}>
-                  <Tag type="dcy" text={d.range} />
-                  <div style={{ fontWeight: 700, color: d.color, marginTop: '.2rem', fontSize: '.8rem' }}>{d.label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* มาตรฐาน 1-2 */}
-          {DCY_ADMIN.map(d => (
-            <div key={d.code} className="glass-card mb-3" style={{ borderLeft: '4px solid #1d4ed8' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '.5rem' }}>
-                <div>
-                  <div style={{ fontWeight: 800, color: '#1e40af', marginBottom: '.2rem' }}>
-                    <Tag type="dcy" text={d.code} /> {d.title}
-                  </div>
-                  <div style={{ fontSize: '.75rem', color: 'var(--text-muted)' }}>{d.desc}</div>
-                </div>
-                <div style={{ fontSize: '.72rem' }}>
-                  เชื่อมกับ <Tag type="onesqa" text={d.onesqa} />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

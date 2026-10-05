@@ -428,10 +428,10 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
             </>
           )}
 
-          {/* คำเตือน C68 ถ้าห้องไม่ใช่ อ.3 */}
-          {selClass && !DS.allLevels && !selClass.includes('3') && (
+          {/* คำเตือนเมื่อ dataset ที่เลือกไม่ตรงกับระดับชั้นของห้อง */}
+          {selClass && datasetKey !== 'c60' && datasetKey !== autoC68KeyFromClass(selClass) && (
             <span style={{ padding: '.3rem .75rem', borderRadius: '6px', background: '#fffbeb', color: '#92400e', fontSize: '.78rem', fontWeight: 600, border: '1px solid #fde68a', alignSelf: 'flex-end' }}>
-              ⚠️ ชุดนี้ออกแบบสำหรับ อ.3 เท่านั้น
+              ⚠️ ชุดนี้ออกแบบสำหรับ {c68LevelLabel(datasetKey)} — ห้องนี้ควรใช้ชุด {c68LevelLabel(autoC68KeyFromClass(selClass))}
             </span>
           )}
         </div>

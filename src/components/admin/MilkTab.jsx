@@ -217,7 +217,10 @@ export default function MilkTab({ teacherClassFilter = null }) {
         const cls  = wknd ? 'wknd' : isDone(v) ? 'milk' : v === 'X' ? 'abs' : '';
         return `<td class="${cls}">${v}</td>`;
       }).join('');
-      const total = countH(sData.days);
+      // นับเฉพาะวันเรียน (ไม่นับ เสาร์-อาทิตย์ + วันหยุด)
+      const total = Object.entries(sData.days ?? {}).filter(([d, v]) =>
+        isDone(v) && !isSchoolOff(selYear, selMonth, Number(d))
+      ).length;
       const nameShort = s.name.replace('เด็กชาย','ด.ช.').replace('เด็กหญิง','ด.ญ.');
       return `<tr><td class="no">${idx+1}</td><td class="name">${nameShort}</td>${cells}<td class="tot">${total||''}</td></tr>`;
     }).join('');
@@ -410,7 +413,10 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
             <tbody>
               {classStudents.map((s, idx) => {
                 const sData = draft.students[s.id] ?? { days: {} };
-                const total = countH(sData.days);
+                // นับเฉพาะวันเรียน (ไม่นับ เสาร์-อาทิตย์ + วันหยุด)
+                const total = Object.entries(sData.days ?? {}).filter(([d, v]) =>
+                  isDone(v) && !isSchoolOff(selYear, selMonth, Number(d))
+                ).length;
                 return (
                   <tr key={s.id} style={{ background: idx%2===0 ? 'white' : '#f8fbff' }}>
                     <td style={{ textAlign:'center', border:'1px solid #e5e7eb', padding:'2px', color:'#6b7280', fontWeight:700 }}>{idx+1}</td>
@@ -494,8 +500,8 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
         </button>
         {saved && <span style={{ color:'#059669', fontWeight:700, fontSize:'.82rem' }}>✅ บันทึกแล้ว</span>}
         <div style={{ marginLeft:'auto', fontSize:'.72rem', color:'#1e40af', textAlign:'right' }}>
-          ดื่มนมครบ {classStudents.filter(s => countH(draft.students[s.id]?.days) >= schoolDays).length} คน
-          · มีข้อมูล {classStudents.filter(s => countH(draft.students[s.id]?.days) > 0).length} คน
+          ดื่มนมครบ {classStudents.filter(s => Object.entries(draft.students[s.id]?.days ?? {}).filter(([d,v]) => isDone(v) && !isSchoolOff(selYear, selMonth, Number(d))).length >= schoolDays).length} คน
+          · มีข้อมูล {classStudents.filter(s => Object.values(draft.students[s.id]?.days ?? {}).some(v => isDone(v))).length} คน
         </div>
       </div>
 

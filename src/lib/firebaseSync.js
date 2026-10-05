@@ -103,6 +103,50 @@ export async function pushSnapshotToFirebase(payload) {
 }
 
 /**
+ * รายการ daily backup ทั้งหมดใน Firestore (ยกเว้น 'latest')
+ * returns { ok, backups: [{ id, exportedAt, backupDate, studentCount }] }
+ */
+export async function listDailyBackups() {
+  if (!isFirebaseConfigured || !db) return { ok: false, backups: [] };
+  try {
+    const snap = await getDocs(backupColRef());
+    const backups = [];
+    snap.forEach(d => {
+      if (d.id === 'latest') return;
+      const data = d.data();
+      backups.push({
+        id: d.id,
+        exportedAt: data.exportedAt ?? null,
+        backupDate: data.backupDate ?? null,
+        studentCount: Array.isArray(data.students) ? data.students.length : 0,
+        attendanceCount: data.dailyRecords ? Object.keys(data.dailyRecords).length : 0,
+      });
+    });
+    backups.sort((a, b) => (b.exportedAt ?? '').localeCompare(a.exportedAt ?? ''));
+    return { ok: true, backups };
+  } catch (e) {
+    return { ok: false, backups: [], message: e.message };
+  }
+}
+
+/**
+ * ดึง daily backup ตาม doc ID
+ * returns { ok, payload }
+ */
+export async function pullDailyBackupById(docId) {
+  if (!isFirebaseConfigured || !db) return { ok: false };
+  try {
+    const ref = doc(db, 'schools', SCHOOL_ID, 'snapshots', docId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) return { ok: false, message: 'ไม่พบ backup นี้' };
+    const { updatedAt, ...payload } = snap.data();
+    return { ok: true, payload };
+  } catch (e) {
+    return { ok: false, message: e.message };
+  }
+}
+
+/**
  * ดึงข้อมูลล่าสุดจาก Firestore
  */
 export async function pullSnapshotFromFirebase() {

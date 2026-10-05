@@ -36,7 +36,8 @@ function AppShell() {
     selectedStudent, setSelectedStudent,
     isAdding, setIsAdding,
     handleSaveEvaluation, assessmentTopics, addStudent,
-    autoSyncStatus, autoSyncError, pullSyncStatus, isFirebaseConfigured,
+    autoSyncStatus, autoSyncError, lastSyncFailed, snapshotSizeKB,
+    pullSyncStatus, isFirebaseConfigured,
     syncPushToFirebase, syncPullFromFirebase,
     schools, schoolLogo,
   } = useApp();
@@ -274,6 +275,26 @@ function AppShell() {
           </div>
         </div>
       </header>
+
+      {/* ── แบนเนอร์เตือนถาวร: บันทึกลงระบบไม่สำเร็จ ── */}
+      {isFirebaseConfigured && lastSyncFailed && (
+        <div style={{
+          background: '#fef2f2', borderBottom: '2px solid #fca5a5',
+          padding: '.55rem 1.2rem', display: 'flex', alignItems: 'center',
+          gap: '.6rem', fontSize: '.8rem', fontWeight: 700, color: '#991b1b',
+          zIndex: 100,
+        }}>
+          <span style={{ fontSize: '1.1rem' }}>⚠️</span>
+          <span>
+            <strong>ข้อมูลในเครื่องนี้อาจยังไม่ถูกบันทึกลงระบบ Cloud</strong>
+            {snapshotSizeKB > 0 && ` (ขนาด ${snapshotSizeKB} KB)`}
+            {' '}— กรุณากด <strong>บันทึก↑</strong> ในแถบด้านบน หรือติดต่อผู้ดูแลระบบ
+          </span>
+          <span style={{ marginLeft: 'auto', fontSize: '.72rem', fontWeight: 400, opacity: .7 }}>
+            {autoSyncError || 'ข้อมูลบันทึกเฉพาะในเครื่องนี้ ถ้าเปลี่ยน browser หรือเครื่อง ข้อมูลอาจหาย'}
+          </span>
+        </div>
+      )}
 
       <main>
         {evaluatingStudent ? (

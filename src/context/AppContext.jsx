@@ -23,6 +23,7 @@ import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firesto
 import {
   pushSnapshotToFirebase, pullSnapshotFromFirebase,
   pushClassAssessments, pullClassAssessments, pullAllClassAssessments,
+  listDailyBackups, pullDailyBackupById,
 } from '../lib/firebaseSync';
 import { firebaseLogin, firebaseLogout, onFirebaseAuthChange } from '../lib/firebaseAuth';
 import {
@@ -618,6 +619,18 @@ export function AppProvider({ children }) {
     return { ok: true, updatedAt: result.updatedAt };
   }, [restoreSnapshotData]);
 
+  // ─── Daily Backup Restore ──────────────────────────────
+  const getDailyBackupList = useCallback(() => listDailyBackups(), []);
+
+  const restoreFromDailyBackup = useCallback(async (docId) => {
+    const result = await pullDailyBackupById(docId);
+    if (!result.ok) return result;
+    const check = validateSnapshot(result.payload);
+    if (!check.ok) return { ok: false, message: 'รูปแบบ backup ไม่ถูกต้อง' };
+    restoreSnapshotData(check.snapshot);
+    return { ok: true };
+  }, [restoreSnapshotData]);
+
   // ─── Auto-pull จาก Firebase เมื่อ login (parent + teacher + admin) ──
   // ป้องกันครูที่เปิด browser ใหม่/อุปกรณ์ใหม่ push localStorage ว่างเปล่าทับข้อมูลจริงใน Firebase
   const [pullSyncStatus, setPullSyncStatus] = useState('idle'); // 'idle' | 'pulling' | 'done' | 'error'
@@ -721,6 +734,9 @@ export function AppProvider({ children }) {
   // ─── Auto-sync to Firebase (debounced 4s) ──────────────
   const [autoSyncStatus, setAutoSyncStatus] = useState('idle'); // 'idle' | 'pending' | 'syncing' | 'done' | 'error'
   const [autoSyncError,  setAutoSyncError]  = useState('');
+  // lastSyncFailed: คงอยู่จนกว่า push จะสำเร็จ — ใช้แสดง banner เตือนถาวร
+  const [lastSyncFailed, setLastSyncFailed] = useState(false);
+  const [snapshotSizeKB, setSnapshotSizeKB] = useState(0);
   const autoSyncTimer  = useRef(null);
   const isMounted      = useRef(false);   // skip initial mount
 
@@ -747,34 +763,61 @@ export function AppProvider({ children }) {
         // (firebaseSync ใช้ merge:true ดังนั้น field ที่ไม่ส่งจะคงอยู่ใน Firestore)
         if (!snapData.activities?.length) delete snapData.activities;
 
-        // ── Strip assessments.indicators ออกจาก students ก่อน push snapshot หลัก ──
-        // คะแนนประเมินถูกเก็บแยกใน classAssessments (push โดย EvaluationTab โดยตรง)
-        // ไม่รวมใน snapshot หลัก เพื่อป้องกัน race condition ข้ามเครื่อง
+        // ── Strip ข้อมูลขนาดใหญ่ออกจาก students ก่อน push ──
+        // 1) base64 photos (data: URL) — อาจใหญ่ 100–300KB ต่อรูป → เกิน Firestore 1MB limit ทำให้ push ล้มเหลว
+        //    รูปที่อัปโหลดผ่าน ImgBB จะเป็น https:// URL → ไม่ถูก strip
+        // 2) assessments.indicators — เก็บแยกใน classAssessments
         if (snapData.students?.length) {
           snapData.students = snapData.students.map(s => {
-            if (!s.assessments?.indicators) return s;
-            const { indicators: _removed, ...restAssess } = s.assessments;
-            return { ...s, assessments: restAssess };
+            let out = { ...s };
+            // Strip base64 photo
+            if (out.photo?.startsWith('data:')) {
+              const { photo: _p, ...rest } = out;
+              out = rest;
+            }
+            // Strip assessments.indicators
+            if (out.assessments?.indicators) {
+              const { indicators: _removed, ...restAssess } = out.assessments;
+              out = { ...out, assessments: restAssess };
+            }
+            return out;
           });
         }
 
         const payload = buildAppSnapshot(snapData);
+
+        // ── ตรวจขนาด snapshot ก่อน push ──
+        // Firestore document limit = 1MB (1,048,576 bytes)
+        // ถ้า JSON > 900KB มีความเสี่ยงสูงที่จะ push ล้มเหลว
+        const payloadSizeKB = Math.round(JSON.stringify(payload).length / 1024);
+        setSnapshotSizeKB(payloadSizeKB);
+        if (payloadSizeKB > 900) {
+          const msg = `ข้อมูลขนาดใหญ่เกินไป (${payloadSizeKB} KB) — อาจไม่ถูกบันทึกลงระบบ กรุณาแจ้งผู้ดูแลระบบ`;
+          setAutoSyncError(msg);
+          setAutoSyncStatus('error');
+          setLastSyncFailed(true);
+          return;
+        }
+
         const result  = await pushSnapshotToFirebase(payload);
         if (result.ok) localStorage.setItem('kt_lastPushAt', Date.now().toString());
         if (result.ok) {
           setAutoSyncError('');
           setAutoSyncStatus('done');
+          setLastSyncFailed(false);
         } else {
           setAutoSyncError(result.message ?? '');
           setAutoSyncStatus('error');
+          setLastSyncFailed(true);
         }
       } catch (e) {
         setAutoSyncError(e?.message ?? 'unknown error');
         setAutoSyncStatus('error');
+        setLastSyncFailed(true);
       }
-      // reset กลับ idle หลัง 3 วินาที
+      // reset status กลับ idle หลัง 3 วินาที (lastSyncFailed ยังคงอยู่จนกว่าจะ push สำเร็จ)
       setTimeout(() => setAutoSyncStatus('idle'), 3000);
-    }, 4000);   // debounce 4 วินาที
+    }, 1500);   // debounce 1.5 วินาที (ลดจาก 4 วินาที เพื่อป้องกันข้อมูลหายเมื่อปิด browser เร็ว)
 
     return () => clearTimeout(autoSyncTimer.current);
   }, [
@@ -1623,6 +1666,8 @@ export function AppProvider({ children }) {
     deleteStudentAndSync,
     autoSyncStatus,
     autoSyncError,
+    lastSyncFailed,
+    snapshotSizeKB,
     pullSyncStatus,
     // Activity Log (evaluation-specific)
     activityLogs,

@@ -8,7 +8,7 @@
  *     { className, updatedAt, students: { [studentId]: { indicators: {...} } } }
  */
 import {
-  doc, setDoc, getDoc, getDocs, serverTimestamp, collection, addDoc,
+  doc, setDoc, getDoc, getDocFromServer, getDocs, serverTimestamp, collection, addDoc,
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
 
@@ -154,7 +154,7 @@ export async function pullSnapshotFromFirebase() {
     return { ok: false, message: 'Firebase ยังไม่ได้ตั้งค่า — กรุณาสร้าง .env' };
   }
   try {
-    const snap = await getDoc(snapshotRef());
+    const snap = await getDocFromServer(snapshotRef()); // force server — ข้าม browser cache
     if (!snap.exists()) {
       return { ok: false, message: 'ยังไม่มีข้อมูลบน Cloud — อัปโหลดก่อน' };
     }

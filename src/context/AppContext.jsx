@@ -648,49 +648,15 @@ export function AppProvider({ children }) {
         const check = validateSnapshot(result.payload);
         if (check.ok) {
           const cloudStudentCount = check.snapshot.students?.length ?? 0;
-          const localHasData = students.length > 0;
 
-          if (localHasData) {
-            // Local มีข้อมูลแล้ว → ใช้ timestamp เปรียบเทียบ
-            // ถ้า Firebase ใหม่กว่า local อย่างชัดเจน (เช่น sync จากเครื่องอื่น) ค่อย restore
-            // แต่ถ้า Firebase เก่ากว่าหรือเท่ากัน → ข้ามเพื่อป้องกัน rollback
-            const cloudTime   = check.snapshot.exportedAt ? new Date(check.snapshot.exportedAt).getTime() : 0;
-            const localPushTs = parseInt(localStorage.getItem('kt_lastPushAt') ?? '0', 10);
-
-            if (cloudTime > localPushTs + 60_000) {
-              // Firebase ใหม่กว่า local push ล่าสุดมากกว่า 1 นาที → เป็น sync จากเครื่องอื่น
-              // ป้องกัน: ถ้า Firebase มีนักเรียนน้อยกว่าหรือเท่ากับ local
-              // แสดงว่าเครื่องนี้มีข้อมูลใหม่กว่า (เช่น เพิ่งเพิ่มนักเรียน แต่ปิดแอปก่อน push)
-              // → ข้ามเพื่อป้องกันนักเรียนและข้อมูลการมาเรียนหาย
-              const localStudentCount = students.length;
-              if (cloudStudentCount < localStudentCount) {
-                console.warn(
-                  `[KinderTrack] Pull blocked — cloud has ${cloudStudentCount} students` +
-                  ` but local has ${localStudentCount}. Local data is newer, skipping pull to prevent data loss.`
-                );
-                setPullSyncStatus('done');
-              } else {
-                restoreSnapshotData(check.snapshot);
-                setPullSyncStatus('done');
-              }
-            } else {
-              // Firebase เก่ากว่าหรือเท่ากับ local → ข้ามป้องกัน rollback
-              // แต่ถ้า cloud มี activities มากกว่า local (admin เพิ่งเพิ่มจากเครื่องอื่น) → restore เฉพาะ activities
-              const cloudActs = check.snapshot.activities;
-              const localActs = activities ?? [];
-              if (Array.isArray(cloudActs) && cloudActs.length > localActs.length) {
-                setActivities(cloudActs);
-                if (Array.isArray(check.snapshot.activityLogs)) setActivityLogs(check.snapshot.activityLogs);
-                console.info(`[KinderTrack] Partial pull — activities restored (cloud:${cloudActs.length} > local:${localActs.length})`);
-              }
-              console.info(`[KinderTrack] Pull skipped (local is up-to-date): cloud=${new Date(cloudTime).toLocaleString('th-TH')}`);
-              setPullSyncStatus('done');
-            }
-          } else if (cloudStudentCount > 0) {
-            // Local ว่างเปล่า (device ใหม่) → restore จาก Firebase
+          if (cloudStudentCount > 0) {
+            // Firebase มีข้อมูล → restore เสมอ (Firebase คือ source of truth)
+            console.info(`[KinderTrack] Auto-pull from Firebase: ${cloudStudentCount} students`);
             restoreSnapshotData(check.snapshot);
             setPullSyncStatus('done');
           } else {
+            // Firebase ว่างเปล่า → ข้ามเพื่อรักษา local data (ยังไม่ได้ push ครั้งแรก)
+            console.info('[KinderTrack] Firebase empty — keeping local data');
             setPullSyncStatus('done');
           }
         } else {

@@ -151,7 +151,7 @@ export default function SettingsPage({ onBack }) {
           <button
             key={tab.key}
             type="button"
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => { setActiveTab(tab.key); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             style={{
               padding:'.45rem 1.1rem',
               borderRadius:'8px',

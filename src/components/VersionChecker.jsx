@@ -63,10 +63,12 @@ const INSTRUCTIONS = {
 };
 
 export default function VersionChecker() {
-  const [outdated, setOutdated]     = useState(false);
-  const [serverVer, setServerVer]   = useState('');
-  const [dismissed, setDismissed]   = useState(false);
-  const [device]                    = useState(detectDevice);
+  const [outdated, setOutdated]         = useState(false);
+  const [serverVer, setServerVer]       = useState('');
+  const [dismissed, setDismissed]       = useState(false);
+  const [isLatest, setIsLatest]         = useState(false);
+  const [latestDismissed, setLatestDismissed] = useState(false);
+  const [device]                        = useState(detectDevice);
 
   useEffect(() => {
     // fetch /version.json พร้อม no-cache เพื่อดึงล่าสุดเสมอ
@@ -76,10 +78,59 @@ export default function VersionChecker() {
         if (data.version && data.version !== CURRENT_VERSION) {
           setServerVer(data.version);
           setOutdated(true);
+        } else if (data.version) {
+          // version ตรงกัน → แสดง toast เขียว แล้ว auto-dismiss ใน 5 วินาที
+          setIsLatest(true);
+          setTimeout(() => setLatestDismissed(true), 5000);
         }
       })
       .catch(() => {/* ถ้า fetch ไม่ได้ → ไม่แสดง */});
   }, []);
+
+  // ── Toast เขียว: เวอร์ชั่นล่าสุด ──
+  if (isLatest && !latestDismissed && !outdated) {
+    return (
+      <div style={{
+        position: 'fixed',
+        bottom: '1.25rem',
+        right: '1.25rem',
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '.6rem',
+        background: '#f0fdf4',
+        border: '1.5px solid #86efac',
+        borderRadius: '10px',
+        padding: '.5rem 1rem',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+        fontSize: '.82rem',
+        fontWeight: 600,
+        color: '#166534',
+        animation: 'slideInRight .3s ease',
+      }}>
+        <span style={{ fontSize: '1rem' }}>✅</span>
+        <span>เวอร์ชั่นล่าสุด</span>
+        <span style={{
+          background: '#dcfce7', color: '#15803d',
+          borderRadius: '6px', padding: '.1rem .5rem',
+          fontFamily: 'monospace', fontSize: '.8rem', fontWeight: 700,
+        }}>
+          v{CURRENT_VERSION}
+        </span>
+        <button
+          onClick={() => setLatestDismissed(true)}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: '#86efac', fontSize: '1rem', lineHeight: 1,
+            padding: '0 .1rem', marginLeft: '.25rem',
+            fontFamily: 'inherit',
+          }}
+        >
+          ×
+        </button>
+      </div>
+    );
+  }
 
   if (!outdated || dismissed) return null;
 

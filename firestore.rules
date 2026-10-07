@@ -7,6 +7,11 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // ข้อมูลรายวัน (volatile) — แยกจาก snapshots เพื่อ dot-notation merge
+    match /schools/{schoolId}/dailyData/{docId} {
+      allow read, write: if true;
+    }
+
     // ตารางกิจกรรมภายใน-นอกห้องเรียน
     match /activitySchedule/{docId} {
       allow read, write: if true;

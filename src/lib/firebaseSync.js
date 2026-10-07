@@ -8,7 +8,7 @@
  *     { className, updatedAt, students: { [studentId]: { indicators: {...} } } }
  */
 import {
-  doc, setDoc, getDoc, getDocFromServer, getDocs, serverTimestamp, collection, addDoc,
+  doc, setDoc, getDoc, getDocFromServer, getDocs, serverTimestamp, collection, addDoc, updateDoc,
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
 
@@ -16,6 +16,16 @@ const SCHOOL_ID = 'default'; // เปลี่ยนได้ถ้ามีห
 
 function snapshotRef()  { return doc(db, 'schools', SCHOOL_ID, 'snapshots', 'latest'); }
 function backupColRef() { return collection(db, 'schools', SCHOOL_ID, 'snapshots'); }
+function dailyDataRef() { return doc(db, 'schools', SCHOOL_ID, 'dailyData', 'latest'); }
+
+// ข้อมูลที่ครูบันทึกรายวัน — push ด้วย dot-notation updateDoc (key-level merge)
+// แต่ละ device เขียนเฉพาะ key ของตัวเอง ไม่ทับ key ที่ device อื่นเขียนไว้
+const DAILY_FIELDS = [
+  'dailyRecords', 'nutritionRecords', 'milkRecords', 'lunchRecords',
+  'toothBrushRecords', 'healthCheckRecords', 'illnessCheckRecords',
+  'dailyRoutineRecords', 'cornerRecords', 'innerCornerRecords',
+  'studentReportRecords', 'specialEvents', 'pickupRecords',
+];
 
 // ชื่อห้องอาจมี "/" เช่น อ.1/1 → ใช้เป็น Firestore doc id ไม่ได้ → แปลงเป็น อ.1_1
 function classKey(className) {
@@ -143,6 +153,63 @@ export async function pullDailyBackupById(docId) {
     return { ok: true, payload };
   } catch (e) {
     return { ok: false, message: e.message };
+  }
+}
+
+/**
+ * Push ข้อมูลรายวัน (volatile) ไปยัง dailyData/latest ด้วย dot-notation merge
+ * ใช้ updateDoc เพื่อ merge ระดับ key — Device A เขียน key ของตัวเอง
+ * ไม่ลบ key ที่ Device B เขียนไว้ (ต่างจาก setDoc ที่ replace ทั้ง field)
+ */
+export async function pushDailyDataToFirebase(dailyData) {
+  if (!isFirebaseConfigured || !db) return { ok: false };
+  try {
+    // Flatten เป็น dot-notation: { 'dailyRecords.2024-05-01_อ.1_1': {...} }
+    const updates = { updatedAt: serverTimestamp() };
+    let hasData = false;
+    for (const field of DAILY_FIELDS) {
+      const val = dailyData[field];
+      if (val && typeof val === 'object' && Object.keys(val).length > 0) {
+        Object.entries(val).forEach(([k, v]) => { updates[`${field}.${k}`] = v; });
+        hasData = true;
+      }
+    }
+    if (!hasData) return { ok: true }; // ไม่มีข้อมูลใหม่ — ข้าม
+
+    try {
+      // updateDoc ทำ key-level merge — ล้มเหลวถ้า doc ยังไม่มี
+      await updateDoc(dailyDataRef(), updates);
+    } catch (e) {
+      if (e.code === 'not-found') {
+        // สร้าง doc ใหม่ครั้งแรก — ใช้ setDoc แทน
+        const nested = { updatedAt: serverTimestamp() };
+        for (const field of DAILY_FIELDS) {
+          const val = dailyData[field];
+          if (val && typeof val === 'object' && Object.keys(val).length > 0) nested[field] = val;
+        }
+        await setDoc(dailyDataRef(), nested);
+      } else {
+        throw e;
+      }
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: e.message };
+  }
+}
+
+/**
+ * ดึงข้อมูลรายวัน (volatile) จาก Firestore โดยตรง (bypass cache)
+ */
+export async function pullDailyDataFromFirebase() {
+  if (!isFirebaseConfigured || !db) return { ok: true, payload: {} };
+  try {
+    const snap = await getDocFromServer(dailyDataRef());
+    if (!snap.exists()) return { ok: true, payload: {} };
+    const { updatedAt, ...payload } = snap.data();
+    return { ok: true, payload };
+  } catch (e) {
+    return { ok: false, payload: {}, message: e.message };
   }
 }
 

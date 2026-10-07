@@ -24,7 +24,17 @@ import {
   pushSnapshotToFirebase, pullSnapshotFromFirebase,
   pushClassAssessments, pullClassAssessments, pullAllClassAssessments,
   listDailyBackups, pullDailyBackupById,
+  pushDailyDataToFirebase, pullDailyDataFromFirebase,
 } from '../lib/firebaseSync';
+
+// ข้อมูลรายวันที่ครูบันทึก — เก็บแยกใน dailyData/latest (dot-notation merge)
+// ไม่รวมใน main snapshot เพื่อป้องกัน device อื่น push ทับ
+const VOLATILE_KEYS = [
+  'dailyRecords', 'nutritionRecords', 'milkRecords', 'lunchRecords',
+  'toothBrushRecords', 'healthCheckRecords', 'illnessCheckRecords',
+  'dailyRoutineRecords', 'cornerRecords', 'innerCornerRecords',
+  'studentReportRecords', 'specialEvents', 'pickupRecords',
+];
 import { firebaseLogin, firebaseLogout, onFirebaseAuthChange } from '../lib/firebaseAuth';
 import {
   readWorkbookFromFile,
@@ -294,7 +304,8 @@ export function AppProvider({ children }) {
       currentTerm,
       measurementDates,
       parentCommentDeadlines,
-      dailyRecords,
+      // ── volatile fields ถูกตัดออกจาก main snapshot ──
+      // push แยกไปยัง dailyData/latest ด้วย dot-notation merge (ดู getDailyData)
       qaData,
       indicators,
       activities,
@@ -303,23 +314,10 @@ export function AppProvider({ children }) {
       mediaBorrowRecords,
       imgbbApiKey,
       abilityAssessments,
-      // บันทึกรายเดือน/รายวัน
-      nutritionRecords,
-      milkRecords,
-      lunchRecords,
-      toothBrushRecords,
-      healthCheckRecords,
-      illnessCheckRecords,
-      dailyRoutineRecords,
-      cornerRecords,
-      innerCornerRecords,
       cornerDefs,
       innerCornerDefs,
       classInnerCornerKeys,
       classOuterCornerKeys,
-      studentReportRecords,
-      specialEvents,
-      pickupRecords,
     }),
     [
       students,
@@ -345,7 +343,6 @@ export function AppProvider({ children }) {
       currentTerm,
       measurementDates,
       parentCommentDeadlines,
-      dailyRecords,
       qaData,
       indicators,
       activities,
@@ -354,21 +351,10 @@ export function AppProvider({ children }) {
       mediaBorrowRecords,
       imgbbApiKey,
       abilityAssessments,
-      nutritionRecords,
-      milkRecords,
-      lunchRecords,
-      toothBrushRecords,
-      healthCheckRecords,
-      illnessCheckRecords,
-      dailyRoutineRecords,
-      cornerRecords,
-      innerCornerRecords,
       cornerDefs,
       innerCornerDefs,
       classInnerCornerKeys,
       classOuterCornerKeys,
-      studentReportRecords,
-      specialEvents,
       pickupRecords,
     ],
   );
@@ -610,12 +596,40 @@ export function AppProvider({ children }) {
     return result;
   }, [students, setStudents, getSnapshotData]);
 
+  // getDailyData: รวบรวม volatile fields สำหรับ push ไปยัง dailyData/latest
+  const getDailyData = useCallback(() => ({
+    dailyRecords,
+    nutritionRecords,
+    milkRecords,
+    lunchRecords,
+    toothBrushRecords,
+    healthCheckRecords,
+    illnessCheckRecords,
+    dailyRoutineRecords,
+    cornerRecords,
+    innerCornerRecords,
+    studentReportRecords,
+    specialEvents,
+    pickupRecords,
+  }), [
+    dailyRecords, nutritionRecords, milkRecords, lunchRecords,
+    toothBrushRecords, healthCheckRecords, illnessCheckRecords,
+    dailyRoutineRecords, cornerRecords, innerCornerRecords,
+    studentReportRecords, specialEvents, pickupRecords,
+  ]);
+
   const syncPullFromFirebase = useCallback(async () => {
+    // Pull main snapshot (stable data)
     const result = await pullSnapshotFromFirebase();
     if (!result.ok) return result;
     const check = validateSnapshot(result.payload);
     if (!check.ok) return check;
     restoreSnapshotData(check.snapshot);
+    // Pull daily data (volatile) แยก — merge กลับเข้า state
+    const daily = await pullDailyDataFromFirebase();
+    if (daily.ok && Object.keys(daily.payload).length > 0) {
+      restoreSnapshotData(daily.payload); // restoreSnapshotData มี if-guard ทุก field
+    }
     return { ok: true, updatedAt: result.updatedAt };
   }, [restoreSnapshotData]);
 
@@ -691,9 +705,17 @@ export function AppProvider({ children }) {
           }
         }).catch(() => {});
 
-        // อนุญาตให้ auto-sync push ได้หลังจาก pull เสร็จ (หรือ fail)
-        initialPullDone.current = true;
-        setTimeout(() => setPullSyncStatus('idle'), 3000);
+        // ── หลัง pull snapshot + assessments → pull daily data (volatile) แยก ──
+        pullDailyDataFromFirebase().then(daily => {
+          if (daily.ok && Object.keys(daily.payload).length > 0) {
+            console.info('[KinderTrack] Auto-pull daily data from Firebase');
+            restoreSnapshotData(daily.payload);
+          }
+        }).catch(() => {}).finally(() => {
+          // อนุญาตให้ auto-sync push ได้หลังจาก pull เสร็จ (หรือ fail)
+          initialPullDone.current = true;
+          setTimeout(() => setPullSyncStatus('idle'), 3000);
+        });
       });
   }, [role]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -766,6 +788,8 @@ export function AppProvider({ children }) {
         }
 
         const result  = await pushSnapshotToFirebase(payload);
+        // push daily data (volatile) แยก — dot-notation merge ป้องกัน overwrite
+        pushDailyDataToFirebase(getDailyData()).catch(() => {});
         if (result.ok) localStorage.setItem('kt_lastPushAt', Date.now().toString());
         if (result.ok) {
           setAutoSyncError('');
@@ -797,6 +821,7 @@ export function AppProvider({ children }) {
     specialEvents, specialHolidays, abilityAssessments,
     cornerDefs, innerCornerDefs,
     imgbbApiKey,   // ← ต้องอยู่ใน dep เพื่อให้ push ขึ้น Firebase ทันทีที่ตั้งค่า
+    getDailyData,  // ← volatile fields wrapper
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Firebase Auth login (async, admin/teacher) ─────────
@@ -1629,6 +1654,7 @@ export function AppProvider({ children }) {
     loginWithFirebase,
     syncPushToFirebase,
     syncPullFromFirebase,
+    getDailyData,
     deleteStudentAndSync,
     autoSyncStatus,
     autoSyncError,

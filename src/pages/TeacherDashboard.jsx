@@ -528,7 +528,18 @@ export default function TeacherDashboard() {
     handleImport, announcements, setAnnouncements, dailyRecords,
     saveDailyAttendance, saveDailyHygiene,
     user, teachers, setTeachers,
+    menuPermissions,
   } = useApp();
+
+  // ── กรอง tab ตาม menuPermissions ของ user ที่ login อยู่ ──
+  const userId = String(user?.teacherId ?? user?.id ?? '');
+  const userPerm = menuPermissions?.[userId] ?? {};
+  const visibleTabGroups = useMemo(() =>
+    TEACHER_TAB_GROUPS
+      .map(g => ({ ...g, tabs: g.tabs.filter(t => userPerm[t.id] !== false) }))
+      .filter(g => g.tabs.length > 0),
+    [userPerm]
+  );
 
   const [activeTab,  setActiveTab]  = useState(() => localStorage.getItem('kt_teacherTab') || 'main');
   const [activeView, setActiveView] = useState('main');
@@ -727,7 +738,7 @@ export default function TeacherDashboard() {
 
       {/* ── Left sidebar ── */}
       <DashboardSidebar
-        groups={TEACHER_TAB_GROUPS}
+        groups={visibleTabGroups}
         activeTab={activeTab}
         onTabChange={(tab) => { setActiveTab(tab); localStorage.setItem('kt_teacherTab', tab); }}
         badge={myClass ? `🏫 ห้อง ${myClass}` : undefined}

@@ -50,6 +50,7 @@ export const STORAGE_KEYS = {
   specialEvents:        'kt_specialEvents',           // กิจกรรมวันสำคัญ พร้อมรายชื่อผู้เข้าร่วมและตัวบ่งชี้ที่เชื่อมโยง
   lockedTerms:          'kt_lockedTerms',             // ภาคเรียนที่ถูกล็อก { "2567-0": true, "2567-1": true }
   specialHolidays:     'kt_specialHolidays',          // วันหยุดพิเศษ + วันเรียนทดแทน
+  menuPermissions:      'kt_menuPermissions',          // { [userId]: { [tabId]: false } } — tab ที่ admin ซ่อนให้ user
   role:                 'kt_role',                    // บทบาทผู้ใช้ (admin/teacher/parent)
   sessionUser:          'kt_sessionUser',             // ข้อมูลผู้ใช้ที่ login อยู่ (name, email, className ฯลฯ)
 };

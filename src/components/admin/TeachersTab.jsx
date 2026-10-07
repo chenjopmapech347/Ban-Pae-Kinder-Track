@@ -34,12 +34,162 @@ const POSITION_OPTIONS = [
   'อื่นๆ',
 ];
 
+// รายการ tab ทั้งหมดใน TeacherDashboard แยกตามกลุ่ม
+const TEACHER_TAB_GROUPS = [
+  {
+    label: 'ทั่วไป',
+    tabs: [
+      { id: 'main',            label: '🏠 หน้าหลัก' },
+      { id: 'students',        label: '👨‍🎓 นักเรียน' },
+      { id: 'pins',            label: '🔑 PIN ผู้ปกครอง' },
+      { id: 'teacherannounce', label: '📢 ประกาศ' },
+      { id: 'aichat',          label: '🤖 AI ผู้ช่วย' },
+    ],
+  },
+  {
+    label: 'บันทึกประจำวัน',
+    tabs: [
+      { id: 'overview',     label: '📊 ภาพรวมวันนี้' },
+      { id: 'attendance',   label: '✅ การมาเรียน' },
+      { id: 'healthcheck',  label: '🏥 ตรวจสุขภาพ' },
+      { id: 'illnesscheck', label: '🤒 คัดกรองอาการป่วย' },
+      { id: 'milk',         label: '🥛 ดื่มนม' },
+      { id: 'dailyroutine', label: '🗓️ กิจกรรมประจำวัน' },
+      { id: 'lunch',        label: '🍱 อาหารกลางวัน' },
+      { id: 'toothbrush',   label: '🪥 แปรงฟัน' },
+      { id: 'pickup',       label: '🚗 รับกลับบ้าน' },
+    ],
+  },
+  {
+    label: 'บันทึกประจำสัปดาห์',
+    tabs: [
+      { id: 'innercorner', label: '🏡 มุมประสบการณ์ในห้อง' },
+      { id: 'corner',      label: '🌿 แหล่งเรียนรู้นอกห้อง' },
+    ],
+  },
+  {
+    label: 'สุขภาพ & กิจกรรม',
+    tabs: [
+      { id: 'nutrition',    label: '⚖️ ภาวะโภชนาการ' },
+      { id: 'specialevent', label: '🎉 กิจกรรมวันสำคัญ' },
+    ],
+  },
+  {
+    label: 'ประเมิน',
+    tabs: [
+      { id: 'evaluation',    label: '✏️ ประเมินพัฒนาการ' },
+      { id: 'abilityassess', label: '🎯 ประเมินความสามารถผู้เรียน' },
+      { id: 'activitylog',   label: '📜 ประวัติการประเมิน' },
+      { id: 'devreport',     label: '📑 ผลการประเมินพัฒนาการ' },
+      { id: 'formreports',   label: '📄 รายงานสรุป' },
+      { id: 'studentreport', label: '📒 สมุดรายงาน อ.01' },
+    ],
+  },
+  {
+    label: 'สื่อการสอน',
+    tabs: [
+      { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ' },
+      { id: 'mediaborrow', label: '🔄 รายการยืม-คืนสื่อ' },
+    ],
+  },
+  {
+    label: 'มาตรฐาน & โปรไฟล์',
+    tabs: [
+      { id: 'profile',     label: '👤 โปรไฟล์ของฉัน' },
+      { id: 'std2self',    label: '👩‍🏫 มาตรฐานที่ 2' },
+      { id: 'standards',   label: '🗺️ มาตรฐานปฐมวัย' },
+      { id: 'nationalstd', label: '🏛 มาตรฐานแห่งชาติ' },
+    ],
+  },
+  {
+    label: 'อื่นๆ',
+    tabs: [
+      { id: 'help', label: '📖 คู่มือการใช้งาน' },
+    ],
+  },
+];
+
+// Modal จัดการเมนูของครูแต่ละคน
+function MenuPermModal({ teacher, permissions, onSave, onClose }) {
+  // permissions = { [tabId]: false } — เฉพาะที่ซ่อน (ไม่มี key = แสดง)
+  const [draft, setDraft] = useState(permissions ?? {});
+
+  const isEnabled = (id) => draft[id] !== false;
+  const toggle = (id) => {
+    setDraft(prev => {
+      const next = { ...prev };
+      if (next[id] === false) {
+        delete next[id]; // ลบ key = กลับมาแสดง
+      } else {
+        next[id] = false; // ซ่อน
+      }
+      return next;
+    });
+  };
+
+  const enabledCount = TEACHER_TAB_GROUPS.reduce((n, g) => n + g.tabs.filter(t => draft[t.id] !== false).length, 0);
+  const totalCount   = TEACHER_TAB_GROUPS.reduce((n, g) => n + g.tabs.length, 0);
+
+  return (
+    <Modal isOpen onClose={onClose} title={`จัดการเมนู — ${teacher.name}`} subtitle={`แสดง ${enabledCount}/${totalCount} เมนู`} size="lg">
+      <div style={{ padding: '1rem 1.25rem', overflowY: 'auto', maxHeight: '60vh', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {TEACHER_TAB_GROUPS.map(group => (
+          <div key={group.label}>
+            <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '.08em', marginBottom: '.4rem' }}>
+              {group.label}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '.35rem' }}>
+              {group.tabs.map(tab => {
+                const on = isEnabled(tab.id);
+                return (
+                  <label key={tab.id} style={{
+                    display: 'flex', alignItems: 'center', gap: '.55rem',
+                    padding: '.4rem .7rem', borderRadius: '8px', cursor: 'pointer',
+                    background: on ? '#f0fdf4' : '#f9fafb',
+                    border: `1.5px solid ${on ? '#86efac' : '#e5e7eb'}`,
+                    transition: 'all .15s',
+                  }}>
+                    <input
+                      type="checkbox"
+                      checked={on}
+                      onChange={() => toggle(tab.id)}
+                      style={{ accentColor: '#059669', width: '15px', height: '15px', cursor: 'pointer' }}
+                    />
+                    <span style={{ fontSize: '.83rem', fontWeight: on ? 600 : 400, color: on ? '#065f46' : '#9ca3af' }}>
+                      {tab.label}
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ padding: '.75rem 1.25rem', borderTop: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <button
+          type="button"
+          onClick={() => setDraft({})}
+          style={{ fontSize: '.82rem', color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+        >
+          เปิดทั้งหมด
+        </button>
+        <div style={{ display: 'flex', gap: '.5rem' }}>
+          <ModalCancelBtn onClick={onClose} />
+          <ModalConfirmBtn label="💾 บันทึก" onClick={() => onSave(draft)} />
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 export default function TeachersTab() {
-  const { teachers, setTeachers, handleImport, classMap, allClassNames, addSystemLog, user } = useApp();
+  const { teachers, setTeachers, handleImport, classMap, allClassNames, addSystemLog, user,
+          menuPermissions, setMenuPermissions } = useApp();
   const CLASS_OPTIONS = classMap; // dynamic จาก AppContext (ใช้สำหรับ auto-default เมื่อเปลี่ยน level)
-  const [isModal, setIsModal] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [form, setForm]       = useState({});
+  const [isModal, setIsModal]       = useState(false);
+  const [editing, setEditing]       = useState(null);
+  const [form, setForm]             = useState({});
+  const [menuTarget, setMenuTarget] = useState(null); // teacher ที่กำลังแก้ไข menuPerm
 
   const openNew  = () => {
     setEditing(null);
@@ -49,13 +199,11 @@ export default function TeachersTab() {
   const openEdit = t => { setEditing(t); setForm(t); setIsModal(true); };
 
   const handleLevelChange = lv => {
-    // เปลี่ยนแค่ level — ไม่ reset className เพราะห้องเรียนแสดงทั้งหมดไม่ได้กรองตาม level
     setForm(f => ({ ...f, level: lv }));
   };
 
   const handleSave = e => {
     e.preventDefault();
-    // Build display name from firstName + lastName
     const displayName = [form.firstName, form.lastName].filter(Boolean).join(' ');
     const saved = { ...form, name: displayName || form.name || '' };
     if (editing) {
@@ -66,6 +214,19 @@ export default function TeachersTab() {
       addSystemLog?.('add_teacher', `เพิ่มครูใหม่: ${saved.name} — ${saved.className ?? ''}`, user?.name ?? 'admin');
     }
     setIsModal(false);
+  };
+
+  const handleSaveMenuPerm = (draft) => {
+    const uid = String(menuTarget.id);
+    setMenuPermissions(prev => ({ ...prev, [uid]: draft }));
+    addSystemLog?.('menu_perm', `แก้ไขเมนู: ${menuTarget.name}`, user?.name ?? 'admin');
+    setMenuTarget(null);
+  };
+
+  // นับเมนูที่ซ่อนต่อ user
+  const hiddenCount = (t) => {
+    const perm = menuPermissions?.[String(t.id)] ?? {};
+    return Object.values(perm).filter(v => v === false).length;
   };
 
   return (
@@ -82,7 +243,7 @@ export default function TeachersTab() {
       </div>
 
       <div className="table-wrap" style={{ overflowX: 'auto' }}>
-        <table className="table" style={{ minWidth: '860px' }}>
+        <table className="table" style={{ minWidth: '900px' }}>
           <thead>
             <tr>
               <th>ชื่อ-นามสกุล</th>
@@ -120,6 +281,24 @@ export default function TeachersTab() {
                 <td style={{ position:'sticky', right:0, background:'white', zIndex:1, boxShadow:'-2px 0 6px rgba(0,0,0,0.06)' }}>
                   <div className="row-actions">
                     <button className="btn btn-sm" onClick={() => openEdit(t)}>แก้ไข</button>
+                    <button
+                      className="btn btn-sm"
+                      style={{ background: '#f0fdf4', color: '#065f46', border: '1px solid #86efac', position: 'relative' }}
+                      onClick={() => setMenuTarget(t)}
+                      title="จัดการเมนูที่มองเห็น"
+                    >
+                      🗂️ เมนู
+                      {hiddenCount(t) > 0 && (
+                        <span style={{
+                          position: 'absolute', top: '-6px', right: '-6px',
+                          background: '#ef4444', color: 'white', borderRadius: '999px',
+                          fontSize: '.65rem', fontWeight: 700, minWidth: '16px', height: '16px',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px',
+                        }}>
+                          {hiddenCount(t)}
+                        </span>
+                      )}
+                    </button>
                     <button className="btn btn-sm" style={{ color:'var(--danger)' }}
                       onClick={() => {
                         setTeachers(teachers.filter(x => x.id !== t.id));
@@ -133,6 +312,7 @@ export default function TeachersTab() {
         </table>
       </div>
 
+      {/* Modal แก้ไขข้อมูลครู */}
       <Modal
         isOpen={isModal}
         onClose={() => setIsModal(false)}
@@ -254,6 +434,16 @@ export default function TeachersTab() {
               </div>
             </form>
       </Modal>
+
+      {/* Modal จัดการเมนู */}
+      {menuTarget && (
+        <MenuPermModal
+          teacher={menuTarget}
+          permissions={menuPermissions?.[String(menuTarget.id)] ?? {}}
+          onSave={handleSaveMenuPerm}
+          onClose={() => setMenuTarget(null)}
+        />
+      )}
     </div>
   );
 }

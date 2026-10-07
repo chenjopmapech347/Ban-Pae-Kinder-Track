@@ -130,6 +130,7 @@ export function AppProvider({ children }) {
   const [schools, setSchools] = useLocalStorage(STORAGE_KEYS.schools, INITIAL_SCHOOLS);
   const [holidays, setHolidays] = useLocalStorage(STORAGE_KEYS.holidays, INITIAL_HOLIDAYS);
   const [specialHolidays, setSpecialHolidays] = useLocalStorage(STORAGE_KEYS.specialHolidays, []);
+  const [menuPermissions, setMenuPermissions] = useLocalStorage(STORAGE_KEYS.menuPermissions, {}); // { [userId]: { [tabId]: false } }
 
   // ── ตารางกิจกรรม (Firestore-backed) ──────────────────────────────────────
   const [activitySchedule, setActivitySchedule] = useState([]);
@@ -304,6 +305,7 @@ export function AppProvider({ children }) {
       currentTerm,
       measurementDates,
       parentCommentDeadlines,
+      menuPermissions,
       // ── volatile fields ถูกตัดออกจาก main snapshot ──
       // push แยกไปยัง dailyData/latest ด้วย dot-notation merge (ดู getDailyData)
       qaData,
@@ -343,6 +345,7 @@ export function AppProvider({ children }) {
       currentTerm,
       measurementDates,
       parentCommentDeadlines,
+      menuPermissions,
       qaData,
       indicators,
       activities,
@@ -382,6 +385,7 @@ export function AppProvider({ children }) {
     if (payload.currentTerm) setCurrentTerm(payload.currentTerm);
     if (payload.measurementDates) setMeasurementDates(payload.measurementDates);
     if (payload.parentCommentDeadlines) setParentCommentDeadlines(payload.parentCommentDeadlines);
+    if (payload.menuPermissions) setMenuPermissions(payload.menuPermissions);
     if (payload.dailyRecords) setDailyRecords(payload.dailyRecords);
     if (payload.qaData) setQaData(payload.qaData);
     if (payload.indicators) {
@@ -1733,6 +1737,8 @@ export function AppProvider({ children }) {
     // Parent comment deadline (วันปิดรับความคิดเห็นผู้ปกครอง)
     parentCommentDeadlines,
     setParentCommentDeadlines,
+    menuPermissions,
+    setMenuPermissions,
     // ประเมินความสามารถผู้เรียน หลักสูตรปฐมวัย 2560
     abilityAssessments,    setAbilityAssessments,
   };

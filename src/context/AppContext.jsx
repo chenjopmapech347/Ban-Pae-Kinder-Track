@@ -355,7 +355,6 @@ export function AppProvider({ children }) {
       innerCornerDefs,
       classInnerCornerKeys,
       classOuterCornerKeys,
-      pickupRecords,
     ],
   );
 
@@ -789,7 +788,9 @@ export function AppProvider({ children }) {
 
         const result  = await pushSnapshotToFirebase(payload);
         // push daily data (volatile) แยก — dot-notation merge ป้องกัน overwrite
-        pushDailyDataToFirebase(getDailyData()).catch(() => {});
+        pushDailyDataToFirebase(getDailyData()).catch((e) => {
+          console.warn('[KinderTrack] dailyData push failed:', e?.message);
+        });
         if (result.ok) localStorage.setItem('kt_lastPushAt', Date.now().toString());
         if (result.ok) {
           setAutoSyncError('');

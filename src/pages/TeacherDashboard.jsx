@@ -61,7 +61,7 @@ const TEACHER_TAB_GROUPS = [
       { id: 'dailyroutine', label: '🗓️ กิจกรรมประจำวัน'  },  // ระหว่างวัน
       { id: 'lunch',        label: '🍱 อาหารกลางวัน'     },  // กลางวัน
       { id: 'toothbrush',   label: '🪥 แปรงฟัน'          },  // หลังอาหาร
-      { id: 'pickup',       label: '🚗 รับกลับบ้าน'     },  // บ่าย — รับกลับ
+      // { id: 'pickup',       label: '🚗 รับกลับบ้าน'     },  // บ่าย — รับกลับ (ซ่อนชั่วคราว)
     ],
   },
   {

@@ -33,6 +33,7 @@ const ActivityLogTab         = lazy(() => import('../components/admin/ActivityLo
 const QaStandardView         = lazy(() => import('../components/QaStandardView'));
 const Std2SelfTab            = lazy(() => import('../components/teacher/Std2SelfTab'));
 const NationalStandardsTab   = lazy(() => import('../components/admin/NationalStandardsTab'));
+const IndicatorsTab          = lazy(() => import('../components/admin/IndicatorsTab'));
 const AIChatTab              = lazy(() => import('../components/AIChatTab'));
 const HelpTab                = lazy(() => import('../components/admin/HelpTab'));
 
@@ -109,6 +110,7 @@ const TEACHER_TAB_GROUPS = [
       { id: 'std2self',    label: '👩‍🏫 มาตรฐานที่ 2'      },  // มาตรฐานครู
       { id: 'standards',   label: '🗺️ มาตรฐานปฐมวัย'     },  // มาตรฐานเด็ก
       { id: 'nationalstd', label: '🏛 มาตรฐานแห่งชาติ'   },  // ระดับชาติ
+      { id: 'indicators',  label: '🔬 ตัวบ่งชี้'          },  // ดูเท่านั้น
     ],
   },
   {
@@ -790,6 +792,7 @@ export default function TeacherDashboard() {
           {/* ── Standards ── */}
           {activeTab === 'std2self'    && <Std2SelfTab />}
           {activeTab === 'nationalstd' && <NationalStandardsTab />}
+          {activeTab === 'indicators'  && <IndicatorsTab readOnly={true} />}
           {activeTab === 'aichat'      && <AIChatTab />}
           {activeTab === 'help'        && <HelpTab />}
           {activeTab === 'standards'   && (

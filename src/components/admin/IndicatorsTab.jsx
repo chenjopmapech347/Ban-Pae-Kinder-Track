@@ -341,7 +341,7 @@ function IndicatorModal({ isOpen, onClose, onSave, editing, domains }) {
 }
 
 // ── Main IndicatorsTab ────────────────────────────────────────────────────────
-export default function IndicatorsTab() {
+export default function IndicatorsTab({ readOnly = false }) {
   const { indicators, setIndicators, activities, setActivities } = useApp();
   const [activeDomain, setActiveDomain] = useState(INDICATORS_DATA_68[0]?.id ?? 'physical');
   const [isModal,      setIsModal]      = useState(false);
@@ -446,16 +446,20 @@ export default function IndicatorsTab() {
             ⬆️ ส่งออก
           </button>
 
-          {/* Import CSV */}
-          <button className="btn" style={{ background: '#faf5ff', color: '#7c3aed', border: '1.5px solid #c4b5fd' }}
-            onClick={() => setIsCsvModal(true)}>
-            📥 นำเข้า CSV
-          </button>
+          {/* Import CSV — admin only */}
+          {!readOnly && (
+            <button className="btn" style={{ background: '#faf5ff', color: '#7c3aed', border: '1.5px solid #c4b5fd' }}
+              onClick={() => setIsCsvModal(true)}>
+              📥 นำเข้า CSV
+            </button>
+          )}
 
-          {/* Add */}
-          <button className="btn btn-primary" onClick={() => { setEditing(null); setIsModal(true); }}>
-            + เพิ่มตัวบ่งชี้
-          </button>
+          {/* Add — admin only */}
+          {!readOnly && (
+            <button className="btn btn-primary" onClick={() => { setEditing(null); setIsModal(true); }}>
+              + เพิ่มตัวบ่งชี้
+            </button>
+          )}
         </div>
       </div>
 
@@ -516,9 +520,9 @@ export default function IndicatorsTab() {
                     color: aCnt > 0 ? domain?.color ?? '#7c3aed' : '#9ca3af',
                     borderRadius: '999px', padding: '0 .55rem', fontSize: '.72rem', fontWeight: 700,
                   }}>{aCnt} กิจกรรม</span>
-                  <button className="btn btn-sm" onClick={() => { setEditing(ind); setIsModal(true); }}>แก้ไข</button>
-                  <button className="btn btn-sm" style={{ color: 'var(--danger)' }}
-                    onClick={() => handleDelete(ind.id)}>ลบ</button>
+                  {!readOnly && <button className="btn btn-sm" onClick={() => { setEditing(ind); setIsModal(true); }}>แก้ไข</button>}
+                  {!readOnly && <button className="btn btn-sm" style={{ color: 'var(--danger)' }}
+                    onClick={() => handleDelete(ind.id)}>ลบ</button>}
                 </div>
               </div>
             );
@@ -528,7 +532,10 @@ export default function IndicatorsTab() {
 
       {domainIndicators.length === 0 && !search && (
         <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-          ไม่มีตัวบ่งชี้ในด้านนี้ — กด <strong>+ เพิ่มตัวบ่งชี้</strong> หรือ <strong>📥 นำเข้า CSV</strong>
+          {readOnly
+          ? 'ไม่มีตัวบ่งชี้ในด้านนี้'
+          : <>ไม่มีตัวบ่งชี้ในด้านนี้ — กด <strong>+ เพิ่มตัวบ่งชี้</strong> หรือ <strong>📥 นำเข้า CSV</strong></>
+        }
         </div>
       )}
 

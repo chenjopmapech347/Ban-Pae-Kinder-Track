@@ -2055,3 +2055,5 @@ console.log('');
 console.log('🔵 Import done — รอ 4-5 วินาทีให้ AppContext sync ไป Firebase');
 console.log('📊 Nutrition keys:', Object.keys(nutMerged));
 console.log('📊 Illness months:', Object.keys(illMerged).filter(k => k.startsWith('อ.2/2')).length, 'months');
+console.log('🔄 Reloading page in 1s...');
+setTimeout(() => location.reload(), 1000);

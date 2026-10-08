@@ -117,22 +117,34 @@ const TAB_GROUPS = [
     label: 'ตั้งค่าระบบ',
     color: '#6b7280',
     tabs: [
-      { id: 'syssettings',       label: '🔧 ระบบและความปลอดภัย'         },  // ย้ายมาจากปุ่ม header
-      { id: 'schools',           label: '🏛️ โรงเรียน'                  },  // ตั้งค่าพื้นฐาน
-      { id: 'terms',             label: '📅 ภาคเรียน'                   },  // กรอบเวลา
-      { id: 'holidays',          label: '🏖️ วันหยุดราชการ'               },  // ปฏิทิน
-      { id: 'specialholidays',   label: '📵 วันหยุดพิเศษ'                },  // หยุดพิเศษ+ทดแทน
-      { id: 'activities',        label: '🎯 กิจกรรม'                    },  // กิจกรรม
-      { id: 'activityschedule',      label: '🗓️ กิจกรรมภายใน-นอกห้องเรียน'       },  // ตารางกิจกรรม
-      { id: 'manageinnercorners',   label: '🏡 จัดการกิจกรรมภายในห้องเรียน'    },  // นิยามมุมใน
-      { id: 'manageoutercorners',   label: '🌿 จัดการกิจกรรมภายนอกห้องเรียน'  },  // นิยามมุมนอก
-      { id: 'assigninnercorners',   label: '🏡 กำหนดกิจกรรมภายในห้องเรียน'     },  // กำหนดต่อห้อง
-      { id: 'assignoutercorners',   label: '🌿 กำหนดกิจกรรมภายนอกห้องเรียน'   },  // กำหนดต่อห้อง
-      { id: 'topics',            label: '📝 หัวข้อประเมิน'             },  // กรอบการประเมิน
-      { id: 'indicators',        label: '🔬 ตัวบ่งชี้'                  },  // ตัวบ่งชี้
-      { id: 'standards',         label: '🗺️ มาตรฐานปฐมวัย'            },  // มาตรฐาน
-      { id: 'measurementdates',  label: '📏 เดือนวัดน้ำหนัก/ส่วนสูง'  },  // วัดผล
-      { id: 'systemlog',         label: '📋 บันทึกการใช้งานระบบ'        },  // ติดตาม
+      { id: 'schools',           label: '🏛️ โรงเรียน'                  },
+      { id: 'terms',             label: '📅 ภาคเรียน'                   },
+      { id: 'holidays',          label: '🏖️ วันหยุดราชการ'               },
+      { id: 'specialholidays',   label: '📵 วันหยุดพิเศษ'                },
+      { id: 'measurementdates',  label: '📏 เดือนวัดน้ำหนัก/ส่วนสูง'  },
+      { id: 'systemlog',         label: '📋 บันทึกการใช้งานระบบ'        },
+      { id: 'syssettings',       label: '🔧 ระบบและความปลอดภัย'         },
+    ],
+  },
+  {
+    label: 'ตั้งค่ากิจกรรม',
+    color: '#0891b2',
+    tabs: [
+      { id: 'activityschedule',    label: '🗓️ กิจกรรมภายใน-นอกห้องเรียน'     },
+      { id: 'manageinnercorners',  label: '🏡 จัดการกิจกรรมภายในห้องเรียน'   },
+      { id: 'assigninnercorners',  label: '🏡 กำหนดกิจกรรมภายในห้องเรียน'    },
+      { id: 'manageoutercorners',  label: '🌿 จัดการกิจกรรมภายนอกห้องเรียน'  },
+      { id: 'assignoutercorners',  label: '🌿 กำหนดกิจกรรมภายนอกห้องเรียน'   },
+    ],
+  },
+  {
+    label: 'ตั้งค่าหลักสูตรและประเมิน',
+    color: '#7c3aed',
+    tabs: [
+      { id: 'standards',    label: '🗺️ มาตรฐานปฐมวัย'    },
+      { id: 'topics',       label: '📝 หัวข้อประเมิน'     },
+      { id: 'indicators',   label: '🔬 ตัวบ่งชี้'          },
+      { id: 'activities',   label: '🎯 กิจกรรมตัวบ่งชี้'  },
     ],
   },
   {

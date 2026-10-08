@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────
 //  KinderTrack — Seed Data
-//  150 นักเรียน (K1×47, K2×40, K3×53) รวมสล็อตว่าง 14 ที่ | 10 ครู | 1 Admin | ผู้ปกครอง 136 คน (PIN)
+//  150 นักเรียน (K1×45, K2×38, K3×53) รวมสล็อตว่าง 14 ที่ | 7 ครู | 1 Admin | ผู้ปกครอง 136 คน (PIN)
 //  ปีการศึกษา 2569 โรงเรียนเทศบาลบ้านเพ ๑
 // ─────────────────────────────────────────────────────────
 
@@ -71,7 +71,7 @@ export const INITIAL_STUDENTS = [
   { id:1366, name:'เด็กชายอาณันย์ ไพศาลภูมิ', level:'K2', className:'อ.2/1', studentCode:'69059', age:5, weight:0, height:0, nationalId:'1-2199-01806-33-6', parentPin:'1059' },
   { id:1454, name:'เด็กชายศุภวิชญ์ บุญแสง', level:'K2', className:'อ.2/1', studentCode:'69060', age:5, weight:0, height:0, nationalId:'1-2199-01873-04-1', parentPin:'1060' },
   { id:1455, name:'เด็กหญิงณัฐริกา บุญจือ', level:'K2', className:'อ.2/1', studentCode:'69061', age:5, weight:0, height:0, nationalId:'1-2199-01867-15-7', parentPin:'1061' },
-  { id:1463, name:'เด็กหญิงพัณณ์พิกา พงศ์ภวัตรณกร', level:'K2', className:'อ.2/1', studentCode:'69062', age:5, weight:0, height:0, nationalId:'1-1045-00194-96-4', parentPin:'1062' },
+  { id:1485, name:'เด็กหญิงพัณณ์พิกา พงศ์ภวัตรณกร', level:'K2', className:'อ.2/1', studentCode:'69062', age:5, weight:0, height:0, nationalId:'1-1045-00194-96-4', parentPin:'1062' },
   { id:1465, name:'เด็กหญิงกุลภัสสร เจริญพานิช', level:'K2', className:'อ.2/1', studentCode:'69063', age:5, weight:0, height:0, nationalId:'1-2199-01858-12-3', parentPin:'1063' },
   { id:1466, name:'เด็กชายนาเดีย', level:'K2', className:'อ.2/1', studentCode:'69064', age:5, weight:0, height:0, nationalId:'', parentPin:'1064' },
   { id:1374, name:'เด็กชายยุรนันท์ นวลจันทร์', level:'K2', className:'อ.2/2', studentCode:'69065', age:5, weight:0, height:0, nationalId:'1-3396-00463-11-1', parentPin:'1065' },
@@ -124,7 +124,7 @@ export const INITIAL_STUDENTS = [
   { id:1372, name:'เด็กหญิงปัณณพร คุณเอนก', level:'K3', className:'อ.3/2', studentCode:'69111', age:6, weight:0, height:0, nationalId:'1-2199-01815-38-6', parentPin:'1111' },
   { id:1373, name:'เด็กชายนนท์นภัทร กังวาล', level:'K3', className:'อ.3/2', studentCode:'69112', age:6, weight:0, height:0, nationalId:'1-2199-01833-15-5', parentPin:'1112' },
   { id:1411, name:'เด็กหญิงฟ้าใส สติมั่น', level:'K3', className:'อ.3/2', studentCode:'69113', age:6, weight:0, height:0, nationalId:'1-1299-02678-14-6', parentPin:'1113' },
-  { id:1457, name:'เด็กหญิงพลอยชมพู บัวแก้ว', level:'K3', className:'อ.3/2', studentCode:'69114', age:6, weight:0, height:0, nationalId:'1-2299-01790-28-6', parentPin:'1114' },
+  { id:1486, name:'เด็กหญิงพลอยชมพู บัวแก้ว', level:'K3', className:'อ.3/2', studentCode:'69114', age:6, weight:0, height:0, nationalId:'1-2299-01790-28-6', parentPin:'1114' },
   { id:1456, name:'เด็กชายสรวิศ ทรัพย์ดี', level:'K3', className:'อ.3/2', studentCode:'69115', age:6, weight:0, height:0, nationalId:'1-2199-01808-97-6', parentPin:'1115' },
   { id:1360, name:'เด็กชายพชรพล เจนจัดการ', level:'K3', className:'อ.3/2', studentCode:'69116', age:6, weight:0, height:0, nationalId:'1-2198-00642-59-1', parentPin:'1116' },
   { id:1288, name:'เด็กชายวรรณชนะ สายศรี', level:'K3', className:'อ.3/3', studentCode:'69117', age:6, weight:0, height:0, nationalId:'1-6294-00128-11-1', parentPin:'1117' },
@@ -144,7 +144,7 @@ export const INITIAL_STUDENTS = [
   { id:1349, name:'เด็กหญิงปรียาภรณ์ บุญสม', level:'K3', className:'อ.3/3', studentCode:'69131', age:6, weight:0, height:0, nationalId:'1-2199-01814-69-0', parentPin:'1131' },
   { id:1351, name:'เด็กหญิงคินวินวา', level:'K3', className:'อ.3/3', studentCode:'69132', age:6, weight:0, height:0, nationalId:'G-672100-001234', parentPin:'1132' },
   { id:1361, name:'เด็กหญิงวาสนา โพธิ์วะรีย์', level:'K3', className:'อ.3/3', studentCode:'69133', age:6, weight:0, height:0, nationalId:'2-2199-00034-75-3', parentPin:'1133' },
-  { id:1366, name:'เด็กชายกวิน นัสบุสย์', level:'K3', className:'อ.3/3', studentCode:'69134', age:6, weight:0, height:0, nationalId:'1-2199-01829-36-1', parentPin:'1134' },
+  { id:1487, name:'เด็กชายกวิน นัสบุสย์', level:'K3', className:'อ.3/3', studentCode:'69134', age:6, weight:0, height:0, nationalId:'1-2199-01829-36-1', parentPin:'1134' },
   { id:1371, name:'เด็กหญิงณัฐฐนันท์ รัตนภัคดี', level:'K3', className:'อ.3/3', studentCode:'69135', age:6, weight:0, height:0, nationalId:'1-2199-01825-43-8', parentPin:'1135' },
   { id:1346, name:'เด็กหญิงญาดา คัทจันทร์', level:'K3', className:'อ.3/3', studentCode:'69136', age:6, weight:0, height:0, nationalId:'1-2799-00696-10-3', parentPin:'1136' },
 

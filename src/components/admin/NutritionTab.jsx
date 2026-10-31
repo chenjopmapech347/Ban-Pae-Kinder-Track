@@ -6,6 +6,7 @@ import {
   AlignmentType, WidthType, BorderStyle, ShadingType, VerticalAlign,
   PageOrientation,
 } from 'docx';
+import { ui } from '../../ui/ui';
 
 // ── ตัวเลือกผลประเมิน ────────────────────────────────────────────────────────
 const WEIGHT_AGE_OPTS = [
@@ -378,7 +379,7 @@ export default function NutritionTab({ teacherClassFilter = null }) {
           para('การประเมินภาวะโภชนาการ', { bold: true, size: 32 }),
           para(schoolName || 'โรงเรียน...', { size: 24 }),
           para(
-            `ครู/ผู้ดูแลเด็ก ${teacherName || '.......................'} ชั้น ${selClass} จำนวนเด็กที่รับผิดชอบ ${classStudents.length} คน วันที่ ${thaiDateStr(selDate)}`,
+            `ครู/ผู้ดูแลเด็ก ${teacherName || '.......................'}\u2003ชั้น ${selClass}\u2003จำนวนเด็กที่รับผิดชอบ ${classStudents.length} คน\u2003วันที่ ${thaiDateStr(selDate)}`,
             { size: 22 }
           ),
           new Paragraph({ children: [] }),
@@ -490,8 +491,8 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
 
   // ── UI ────────────────────────────────────────────────────────────────────────
   return (
-    <div className="glass p-6 animate-fade">
-      <div className="page-header mb-4">
+    <div {...ui('glass p-6 animate-fade')}>
+      <div {...ui('page-header mb-4')}>
         <h3>⚖️ การประเมินภาวะโภชนาการ</h3>
       </div>
 
@@ -504,17 +505,15 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
         {!myClass && (
           <div>
             <label style={lbl}>ห้องเรียน</label>
-            <select className="input" value={selClass} onChange={e => handleClassChange(e.target.value)}
-              style={{ fontSize:'.8rem', padding:'.3rem .6rem', minWidth:'120px' }}>
+            <select {...ui('input', { fontSize:'.8rem', padding:'.3rem .6rem', minWidth:'120px' })} value={selClass} onChange={e => handleClassChange(e.target.value)}>
               {classes.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
             </select>
           </div>
         )}
         <div>
           <label style={lbl}>วันที่ประเมิน</label>
-          <input type="date" className="input" value={selDate}
-            onChange={e => handleDateChange(e.target.value)}
-            style={{ fontSize:'.8rem', padding:'.3rem .6rem' }} />
+          <input type="date" {...ui('input', { fontSize:'.8rem', padding:'.3rem .6rem' })} value={selDate}
+            onChange={e => handleDateChange(e.target.value)} />
         </div>
         <div style={{ marginLeft:'auto', textAlign:'right', fontSize:'.72rem', color:'#065f46' }}>
           <div>ห้อง <strong>{selClass}</strong> · {classStudents.length} คน · {thaiDateStr(selDate)}</div>
@@ -660,15 +659,13 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
 
       {/* ── Actions ── */}
       <div style={{ display:'flex', gap:'.6rem', marginTop:'1rem', flexWrap:'wrap', alignItems:'center' }}>
-        <button className="btn btn-primary" onClick={handleSave}>💾 บันทึก</button>
-        <button type="button" className="btn btn-secondary"
-          style={{ background:'#d1fae5', color:'#065f46', borderColor:'#bbf7d0' }}
+        <button {...ui('btn btn-primary')} onClick={handleSave}>💾 บันทึก</button>
+        <button type="button" {...ui('btn btn-secondary', { background:'#d1fae5', color:'#065f46', borderColor:'#bbf7d0' })}
           onClick={recalcAll}>
           🔄 คำนวณทั้งหมด (อัตโนมัติ)
         </button>
-        <button className="btn btn-secondary" onClick={handlePrint}>🖨️ พิมพ์แบบฟอร์ม</button>
-        <button type="button" className="btn btn-secondary"
-          style={{ background:'#ede9fe', color:'#6d28d9', borderColor:'#c4b5fd' }}
+        <button {...ui('btn btn-secondary')} onClick={handlePrint}>🖨️ พิมพ์แบบฟอร์ม</button>
+        <button type="button" {...ui('btn btn-secondary', { background:'#ede9fe', color:'#6d28d9', borderColor:'#c4b5fd' })}
           onClick={handleExportDocx}>
           📄 Export Word (.docx)
         </button>

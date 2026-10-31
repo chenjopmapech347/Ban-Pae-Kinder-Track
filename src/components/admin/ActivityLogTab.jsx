@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { exportActivityLogExcel } from '../../utils/exportExcel';
+import { ui } from '../../ui/ui';
 
 function thaiDateTime(iso) {
   if (!iso) return '—';
@@ -47,8 +48,8 @@ export default function ActivityLogTab() {
 
   if (activityLogs.length === 0) {
     return (
-      <div className="glass p-6 animate-fade">
-        <div className="page-header mb-4">
+      <div {...ui('glass p-6 animate-fade')}>
+        <div {...ui('page-header mb-4')}>
           <h3>📋 ประวัติการประเมิน (Audit Trail)</h3>
         </div>
         <div style={{
@@ -65,16 +66,15 @@ export default function ActivityLogTab() {
   }
 
   return (
-    <div className="glass p-6 animate-fade">
-      <div className="page-header mb-4">
+    <div {...ui('glass p-6 animate-fade')}>
+      <div {...ui('page-header mb-4')}>
         <h3>📋 ประวัติการประเมิน (Audit Trail)</h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>
             ทั้งหมด {filtered.length} รายการ
           </span>
           <button
-            className="btn btn-sm"
-            style={{ background: '#16a34a', color: 'white', border: 'none' }}
+            {...ui('btn btn-sm', { background: '#16a34a', color: 'white', border: 'none' })}
             onClick={() => exportActivityLogExcel(filtered)}
           >
             📥 Export Excel
@@ -90,7 +90,7 @@ export default function ActivityLogTab() {
       }}>
         <div>
           <label style={{ fontSize: '.75rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '.2rem' }}>ห้องเรียน</label>
-          <select className="input" style={{ width: '120px', fontSize: '.82rem' }}
+          <select {...ui('input', { width: '120px', fontSize: '.82rem' })}
             value={filterClass} onChange={handleFilterChange(setFilterClass)}>
             <option value="">ทั้งหมด</option>
             {classes.map(c => <option key={c} value={c}>{c}</option>)}
@@ -98,7 +98,7 @@ export default function ActivityLogTab() {
         </div>
         <div>
           <label style={{ fontSize: '.75rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '.2rem' }}>ผู้ประเมิน</label>
-          <select className="input" style={{ width: '170px', fontSize: '.82rem' }}
+          <select {...ui('input', { width: '170px', fontSize: '.82rem' })}
             value={filterTeacher} onChange={handleFilterChange(setFilterTeacher)}>
             <option value="">ทั้งหมด</option>
             {teachers.map(t => <option key={t} value={t}>{t}</option>)}
@@ -106,7 +106,7 @@ export default function ActivityLogTab() {
         </div>
         <div>
           <label style={{ fontSize: '.75rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '.2rem' }}>ครั้งที่</label>
-          <select className="input" style={{ width: '110px', fontSize: '.82rem' }}
+          <select {...ui('input', { width: '110px', fontSize: '.82rem' })}
             value={filterRound} onChange={handleFilterChange(setFilterRound)}>
             <option value="">ทั้งหมด</option>
             {[1,2,3,4].map(r => <option key={r} value={r}>ครั้งที่ {r}</option>)}
@@ -114,8 +114,7 @@ export default function ActivityLogTab() {
         </div>
         {(filterClass || filterTeacher || filterRound) && (
           <div style={{ alignSelf: 'flex-end' }}>
-            <button className="btn btn-sm" onClick={() => { setFilterClass(''); setFilterTeacher(''); setFilterRound(''); setPage(1); }}
-              style={{ color: 'var(--danger)' }}>✕ ล้างตัวกรอง</button>
+            <button {...ui('btn btn-sm', { color: 'var(--danger)' })} onClick={() => { setFilterClass(''); setFilterTeacher(''); setFilterRound(''); setPage(1); }}>✕ ล้างตัวกรอง</button>
           </div>
         )}
       </div>
@@ -183,11 +182,11 @@ export default function ActivityLogTab() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: '.5rem', marginTop: '1.25rem', flexWrap: 'wrap' }}>
-          <button className="btn btn-sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>‹ ก่อนหน้า</button>
+          <button {...ui('btn btn-sm', undefined, undefined, page <= 1)} disabled={page <= 1} onClick={() => setPage(p => p - 1)}>‹ ก่อนหน้า</button>
           <span style={{ fontSize: '.82rem', fontWeight: 700, alignSelf: 'center', color: 'var(--text-muted)' }}>
             หน้า {page}/{totalPages}
           </span>
-          <button className="btn btn-sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>ถัดไป ›</button>
+          <button {...ui('btn btn-sm', undefined, undefined, page >= totalPages)} disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>ถัดไป ›</button>
         </div>
       )}
     </div>

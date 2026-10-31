@@ -24,7 +24,6 @@ export function calcGrowthLevels(ageYear, ageMonth, weight, height, gender) {
   const isMale = gender === 'male';
   const wl = isMale ? row.bwl : row.gwl;
   const wh = isMale ? row.bwh : row.gwh;
-  const hl = isMale ? row.bhl : row.gwl;  // use height columns
   const hh = isMale ? row.bhh : row.ghh;
   // correct height low for female
   const hLow  = isMale ? row.bhl : row.ghl;

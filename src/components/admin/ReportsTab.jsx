@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { exportClassSummaryExcel, exportActivityDetailExcel, exportActivityLogExcel } from '../../utils/exportExcel';
 import FormReportsTab from './FormReportsTab';
 import { callClaude, buildWeeklySummaryPrompt } from '../../utils/aiHelper';
+import { ui } from '../../ui/ui';
 
 // ── constants ─────────────────────────────────────────────────────────────────
 // CLASS_MAP ดึงจาก AppContext (classMap) ใน each component แบบ dynamic
@@ -84,7 +85,7 @@ function ScoreBar({ s1, s2, s3, assessed }) {
 
 function StatRow({ label, stats, color }) {
   return (
-    <tr className="hover-row">
+    <tr {...ui('hover-row')}>
       <td style={{ fontWeight:700, color: color ?? '#374151' }}>{label}</td>
       <td style={{ textAlign:'center' }}>{stats.total}</td>
       <td style={{ textAlign:'center' }}>{stats.assessed}</td>
@@ -270,8 +271,8 @@ function ViewTopic({ students, assessmentTopics, indicators, activities, allClas
           <div style={{ fontWeight:800, fontSize:'.9rem', color:'#374151', marginBottom:'.6rem' }}>
             {topObj.emoji} สรุปหัวข้อ: {topObj.label} — แยกตามห้องเรียน
           </div>
-          <div className="table-wrap">
-            <table className="table">
+          <div {...ui('table-wrap')}>
+            <table {...ui('table')}>
               <SummaryTableHead />
               <tbody>
                 {ALL_CLASSES.map(cls => {
@@ -312,8 +313,8 @@ function ViewIndicator({ students, assessmentTopics, indicators, activities, all
             }}>
               [{ind.indicatorCode}] {ind.label}
             </div>
-            <div className="table-wrap">
-              <table className="table">
+            <div {...ui('table-wrap')}>
+              <table {...ui('table')}>
                 <SummaryTableHead />
                 <tbody>
                   {ALL_CLASSES.map(cls => {
@@ -375,8 +376,8 @@ function ViewActivity({ students, assessmentTopics, indicators, activities, allC
               <span style={{ background:'#b45309',color:'white',borderRadius:'5px',padding:'0 .4rem',fontSize:'.7rem' }}>{act.no}</span>
               {act.label}
             </div>
-            <div className="table-wrap">
-              <table className="table">
+            <div {...ui('table-wrap')}>
+              <table {...ui('table')}>
                 <SummaryTableHead />
                 <tbody>
                   {ALL_CLASSES.map(cls => {
@@ -422,8 +423,8 @@ function ViewLevel({ students, assessmentTopics, indicators, activities }) {
             }}>
               {lv.label} ({lv.level}) — {sts.length} คน
             </div>
-            <div className="table-wrap">
-              <table className="table">
+            <div {...ui('table-wrap')}>
+              <table {...ui('table')}>
                 <SummaryTableHead />
                 <tbody>
                   {assessmentTopics.map(topic => (
@@ -468,8 +469,8 @@ function ViewClass({ students, assessmentTopics, indicators, activities, allClas
             }}>
               ห้อง {cls} — {sts.length} คน
             </div>
-            <div className="table-wrap">
-              <table className="table">
+            <div {...ui('table-wrap')}>
+              <table {...ui('table')}>
                 <SummaryTableHead />
                 <tbody>
                   {assessmentTopics.map(topic => (
@@ -565,7 +566,7 @@ function ViewStudent({ students, assessmentTopics, indicators, activities, schoo
 
       {/* ปุ่มพิมพ์ทั้งห้อง */}
       <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:'.75rem' }}>
-        <button className="btn btn-primary" onClick={() =>
+        <button {...ui('btn btn-primary')} onClick={() =>
           printClassReport(classStudents, selClass, indicators, activities, assessmentTopics, schoolName, schoolLogo)
         }>
           🖨️ พิมพ์สรุปทั้งห้อง {selClass}
@@ -573,8 +574,8 @@ function ViewStudent({ students, assessmentTopics, indicators, activities, schoo
       </div>
 
       {/* ตาราง */}
-      <div className="table-wrap">
-        <table className="table">
+      <div {...ui('table-wrap')}>
+        <table {...ui('table')}>
           <thead>
             <tr>
               <th style={{ width:'40px' }}>#</th>
@@ -590,7 +591,7 @@ function ViewStudent({ students, assessmentTopics, indicators, activities, schoo
           </thead>
           <tbody>
             {classStudents.map((s, idx) => (
-              <tr key={s.id} className="hover-row">
+              <tr key={s.id} {...ui('hover-row')}>
                 <td style={{ color:'var(--text-muted)', fontSize:'.8rem' }}>{idx+1}</td>
                 <td>
                   <code style={{ fontSize:'.72rem', background:'#f1f5f9', padding:'.1rem .4rem', borderRadius:'4px', fontWeight:700, color:'#475569' }}>
@@ -609,7 +610,7 @@ function ViewStudent({ students, assessmentTopics, indicators, activities, schoo
                   );
                 })}
                 <td style={{ textAlign:'center' }}>
-                  <button className="btn btn-sm" onClick={() =>
+                  <button {...ui('btn btn-sm')} onClick={() =>
                     printStudentReport(s, indicators, activities, assessmentTopics, schoolName, schoolLogo)
                   }>🖨️</button>
                 </td>
@@ -784,8 +785,8 @@ function ViewProgress({ students, assessmentTopics, indicators, activities, allC
           )}
 
           {/* ตารางนักเรียน */}
-          <div className="table-wrap">
-            <table className="table">
+          <div {...ui('table-wrap')}>
+            <table {...ui('table')}>
               <thead>
                 <tr>
                   <th style={{width:'40px'}}>#</th>
@@ -805,7 +806,7 @@ function ViewProgress({ students, assessmentTopics, indicators, activities, allC
                   const prevIdx = rounds.length-1-latestR-1;
                   const prevVal = prevIdx >= 0 ? rounds[prevIdx] : null;
                   return (
-                    <tr key={s.id} className="hover-row">
+                    <tr key={s.id} {...ui('hover-row')}>
                       <td style={{ color:'var(--text-muted)', fontSize:'.8rem' }}>{idx+1}</td>
                       <td><code style={{ fontSize:'.72rem', background:'#f1f5f9', padding:'.1rem .4rem', borderRadius:'4px', fontWeight:700, color:'#475569' }}>{s.id}</code></td>
                       <td style={{ fontWeight:600 }}>{s.name}</td>
@@ -831,8 +832,8 @@ function ViewProgress({ students, assessmentTopics, indicators, activities, allC
 
       {/* ── เปรียบเทียบทุกห้อง ── */}
       {viewMode === 'class' && (
-        <div className="table-wrap">
-          <table className="table">
+        <div {...ui('table-wrap')}>
+          <table {...ui('table')}>
             <thead>
               <tr>
                 <th>ห้องเรียน</th>
@@ -850,7 +851,7 @@ function ViewProgress({ students, assessmentTopics, indicators, activities, allC
                 const lastVal = filled.length ? filled[filled.length-1] : null;
                 const prevVal = filled.length > 1 ? filled[filled.length-2] : null;
                 return (
-                  <tr key={cls} className="hover-row">
+                  <tr key={cls} {...ui('hover-row')}>
                     <td style={{ fontWeight:700, color: lvm?.color }}>ห้อง {cls}</td>
                     <td style={{ textAlign:'center', color:'var(--text-muted)' }}>{sts}</td>
                     {rounds.map((avg, i) => (
@@ -1014,7 +1015,6 @@ function ViewAISummary({ students, assessmentTopics, indicators, activities, aiA
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function ReportsTab({ teacherClassFilter = null }) {
   const { students: allStudents, assessmentTopics, indicators, activities, schools, activityLogs, aiApiKey, allClassNames, schoolLogo } = useApp();
-  const ALL_CLASSES = allClassNames;
   const [subTab, setSubTab] = useState('forms');
   const schoolName = schools?.[0]?.name ?? 'โรงเรียน';
 
@@ -1029,8 +1029,8 @@ export default function ReportsTab({ teacherClassFilter = null }) {
   const props = { students, assessmentTopics, indicators, activities, schoolName, schoolLogo, aiApiKey, allClassNames };
 
   return (
-    <div className="glass p-6 animate-fade">
-      <div className="page-header mb-4">
+    <div {...ui('glass p-6 animate-fade')}>
+      <div {...ui('page-header mb-4')}>
         <div style={{ display:'flex', alignItems:'center', gap:'.75rem' }}>
           {schoolLogo && (
             <img src={schoolLogo} alt="โลโก้โรงเรียน"
@@ -1050,22 +1050,19 @@ export default function ReportsTab({ teacherClassFilter = null }) {
           📥 Export Excel:
         </span>
         <button
-          className="btn btn-sm"
-          style={{ background: '#16a34a', color: 'white', border: 'none' }}
+          {...ui('btn btn-sm', { background: '#16a34a', color: 'white', border: 'none' })}
           onClick={() => exportClassSummaryExcel(students, assessmentTopics, indicators, activities, schoolName)}
         >
           📊 สรุปรายนักเรียน
         </button>
         <button
-          className="btn btn-sm"
-          style={{ background: '#2563eb', color: 'white', border: 'none' }}
+          {...ui('btn btn-sm', { background: '#2563eb', color: 'white', border: 'none' })}
           onClick={() => exportActivityDetailExcel(students, assessmentTopics, indicators, activities, schoolName)}
         >
           📋 รายละเอียดกิจกรรม
         </button>
         <button
-          className="btn btn-sm"
-          style={{ background: '#7c3aed', color: 'white', border: 'none' }}
+          {...ui('btn btn-sm', { background: '#7c3aed', color: 'white', border: 'none' })}
           onClick={() => exportActivityLogExcel(activityLogs ?? [])}
         >
           📜 ประวัติการประเมิน

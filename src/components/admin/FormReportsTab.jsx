@@ -1,6 +1,7 @@
 // FormReportsTab.jsx — แบบฟอร์มพิมพ์ 12 รายการ
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { ui } from '../../ui/ui';
 
 // ── constants ────────────────────────────────────────────────────────────────
 // คำนวณรายชื่อเดือนในปีการศึกษาจากปี พ.ศ. ที่เลือก
@@ -826,17 +827,15 @@ export default function FormReportsTab({ teacherClassFilter = null, defaultRepor
       }}>
         <button
           type="button"
-          className="btn"
+          {...ui('btn', { padding: '.5rem 1.4rem', fontSize: '.9rem', fontWeight: 800, flexShrink: 0 })}
           onClick={handlePreview}
-          style={{ padding: '.5rem 1.4rem', fontSize: '.9rem', fontWeight: 800, flexShrink: 0 }}
         >
           👁️ แสดงตัวอย่างก่อนพิมพ์
         </button>
         <button
           type="button"
-          className="btn btn-primary"
+          {...ui('btn btn-primary', { padding: '.5rem 1.4rem', fontSize: '.9rem', fontWeight: 800, flexShrink: 0 })}
           onClick={handlePrint}
-          style={{ padding: '.5rem 1.4rem', fontSize: '.9rem', fontWeight: 800, flexShrink: 0 }}
         >
           🖨️ พิมพ์แบบฟอร์ม
         </button>

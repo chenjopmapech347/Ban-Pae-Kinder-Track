@@ -5,6 +5,7 @@ import { getMondayOf, getWeekLabel, genUniqueKey } from '../../utils/helpers';
 import { getDayRecord } from '../../utils/attendance';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
+import { ui } from '../../ui/ui';
 
 // ── พิมพ์แบบบันทึก ───────────────────────────────────────────────────────────
 function printInnerCornerSheet(rows, CORNERS, weekNo, weekDate, className, schoolName, teacher, academicYear, schoolLogo) {
@@ -215,7 +216,7 @@ export default function InnerCornerTab({ teacherClassFilter = null }) {
   const thSt = { ...cell, background:'#f0fdf4', fontWeight:700, fontSize:'.78rem', lineHeight:1.3, whiteSpace:'pre-line' };
 
   return (
-    <div className="animate-fade">
+    <div {...ui('animate-fade')}>
       {/* Lock banner */}
       {isLocked && (
         <div style={{ padding:'.6rem 1rem', background:'#fef2f2', border:'1.5px solid #fca5a5',

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
+import { ui } from '../../ui/ui';
 
 function PinCell({ pin }) {
   const [show, setShow] = useState(false);
@@ -230,20 +231,20 @@ export default function TeachersTab() {
   };
 
   return (
-    <div className="glass p-6 animate-fade">
-      <div className="page-header mb-6">
+    <div {...ui('glass p-6 animate-fade')}>
+      <div {...ui('page-header mb-6')}>
         <h3>จัดการรายชื่อคุณครู</h3>
-        <div className="flex gap-2">
-          <button className="btn" style={{ background: '#f0f9ff' }} onClick={() => {
+        <div {...ui('flex gap-2')}>
+          <button {...ui('btn', { background: '#f0f9ff' })} onClick={() => {
             const text = prompt('วาง CSV (ชื่อ, ระดับชั้น)\nเช่น: ครูใจดี, K1');
             if (text) { const r = handleImport('teachers','name,level\n'+text); alert(r.ok?'✅ นำเข้าสำเร็จ!':r.message); }
           }}>📥 CSV</button>
-          <button className="btn btn-primary" onClick={openNew}>+ เพิ่มคุณครู</button>
+          <button {...ui('btn btn-primary')} onClick={openNew}>+ เพิ่มคุณครู</button>
         </div>
       </div>
 
-      <div className="table-wrap" style={{ overflowX: 'auto' }}>
-        <table className="table" style={{ minWidth: '900px' }}>
+      <div {...ui('table-wrap', { overflowX: 'auto' })}>
+        <table {...ui('table', { minWidth: '900px' })}>
           <thead>
             <tr>
               <th>ชื่อ-นามสกุล</th>
@@ -258,13 +259,13 @@ export default function TeachersTab() {
           </thead>
           <tbody>
             {[...teachers].sort((a, b) => (a.className || '').localeCompare(b.className || '') || (a.name || '').localeCompare(b.name || '', 'th')).map(t => (
-              <tr key={t.id} className="hover-row">
+              <tr key={t.id} {...ui('hover-row')}>
                 <td>
-                  <div className="font-bold">{t.name}</div>
+                  <div {...ui('font-bold')}>{t.name}</div>
                   {t.position && <div style={{ fontSize:'.78rem', color:'#7c3aed', fontWeight:600 }}>{t.position}</div>}
                   {t.email && <div style={{ fontSize:'.78rem', color:'#6b7280' }}>{t.email}</div>}
                 </td>
-                <td><span className={'badge badge-' + t.level.toLowerCase()}>{t.level}</span></td>
+                <td><span {...ui('badge badge-' + t.level.toLowerCase())}>{t.level}</span></td>
                 <td>
                   {t.className
                     ? <span style={{ fontWeight: 700, color: 'var(--primary)', background: '#ede9fe', borderRadius: '6px', padding: '.15rem .55rem', fontSize: '.82rem' }}>{t.className}</span>
@@ -277,13 +278,12 @@ export default function TeachersTab() {
                 </td>
                 <td>{t.pin ? <PinCell pin={t.pin} /> : <span style={{ color:'var(--text-muted)' }}>—</span>}</td>
                 <td style={{ fontSize:'.85rem' }}>{t.phone ?? '—'}</td>
-                <td><span className="text-success">● {t.status}</span></td>
+                <td><span {...ui('text-success')}>● {t.status}</span></td>
                 <td style={{ position:'sticky', right:0, background:'white', zIndex:1, boxShadow:'-2px 0 6px rgba(0,0,0,0.06)' }}>
-                  <div className="row-actions">
-                    <button className="btn btn-sm" onClick={() => openEdit(t)}>แก้ไข</button>
+                  <div {...ui('row-actions')}>
+                    <button {...ui('btn btn-sm')} onClick={() => openEdit(t)}>แก้ไข</button>
                     <button
-                      className="btn btn-sm"
-                      style={{ background: '#f0fdf4', color: '#065f46', border: '1px solid #86efac', position: 'relative' }}
+                      {...ui('btn btn-sm', { background: '#f0fdf4', color: '#065f46', border: '1px solid #86efac', position: 'relative' })}
                       onClick={() => setMenuTarget(t)}
                       title="จัดการเมนูที่มองเห็น"
                     >
@@ -299,7 +299,7 @@ export default function TeachersTab() {
                         </span>
                       )}
                     </button>
-                    <button className="btn btn-sm" style={{ color:'var(--danger)' }}
+                    <button {...ui('btn btn-sm', { color:'var(--danger)' })}
                       onClick={() => {
                         setTeachers(teachers.filter(x => x.id !== t.id));
                         addSystemLog?.('delete_teacher', `ลบครู: ${t.name}`, user?.name ?? 'admin');
@@ -325,13 +325,13 @@ export default function TeachersTab() {
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'.75rem' }}>
                 <div>
                   <label style={{ display:'block',marginBottom:'.3rem',fontWeight:600,fontSize:'.85rem' }}>ชื่อ *</label>
-                  <input className="input" required
+                  <input {...ui('input')} required
                     value={form.firstName ?? (editing ? '' : '')}
                     onChange={e => setForm({ ...form, firstName: e.target.value })} />
                 </div>
                 <div>
                   <label style={{ display:'block',marginBottom:'.3rem',fontWeight:600,fontSize:'.85rem' }}>นามสกุล *</label>
-                  <input className="input" required
+                  <input {...ui('input')} required
                     value={form.lastName ?? ''}
                     onChange={e => setForm({ ...form, lastName: e.target.value })} />
                 </div>
@@ -340,7 +340,7 @@ export default function TeachersTab() {
               {/* ตำแหน่ง */}
               <div>
                 <label style={{ display:'block',marginBottom:'.3rem',fontWeight:600,fontSize:'.85rem' }}>ตำแหน่ง</label>
-                <select className="input" value={form.position ?? ''} onChange={e => setForm({ ...form, position: e.target.value })}>
+                <select {...ui('input')} value={form.position ?? ''} onChange={e => setForm({ ...form, position: e.target.value })}>
                   <option value="">— เลือกตำแหน่ง —</option>
                   {POSITION_OPTIONS.map(p => (
                     <option key={p} value={p}>{p}</option>
@@ -352,7 +352,7 @@ export default function TeachersTab() {
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'.75rem' }}>
                 <div>
                   <label style={{ display:'block',marginBottom:'.3rem',fontWeight:600,fontSize:'.85rem' }}>ระดับชั้น</label>
-                  <select className="input" value={form.level||'K1'} onChange={e => handleLevelChange(e.target.value)}>
+                  <select {...ui('input')} value={form.level||'K1'} onChange={e => handleLevelChange(e.target.value)}>
                     <option value="K1">อนุบาล 1 (K1)</option>
                     <option value="K2">อนุบาล 2 (K2)</option>
                     <option value="K3">อนุบาล 3 (K3)</option>
@@ -360,7 +360,7 @@ export default function TeachersTab() {
                 </div>
                 <div>
                   <label style={{ display:'block',marginBottom:'.3rem',fontWeight:600,fontSize:'.85rem' }}>ห้องเรียน</label>
-                  <select className="input" value={form.className||''} onChange={e=>setForm({...form,className:e.target.value})}>
+                  <select {...ui('input')} value={form.className||''} onChange={e=>setForm({...form,className:e.target.value})}>
                     {(allClassNames ?? []).map(c => (
                       <option key={c} value={c}>{c}</option>
                     ))}
@@ -371,7 +371,7 @@ export default function TeachersTab() {
               {/* Email */}
               <div>
                 <label style={{ display:'block',marginBottom:'.3rem',fontWeight:600,fontSize:'.85rem' }}>E-mail *</label>
-                <input className="input" type="email" required
+                <input {...ui('input')} type="email" required
                   value={form.email ?? ''}
                   onChange={e => setForm({ ...form, email: e.target.value })} />
               </div>
@@ -379,7 +379,7 @@ export default function TeachersTab() {
               {/* เบอร์โทร */}
               <div>
                 <label style={{ display:'block',marginBottom:'.3rem',fontWeight:600,fontSize:'.85rem' }}>เบอร์โทรศัพท์ *</label>
-                <input className="input" required placeholder="0xx-xxx-xxxx"
+                <input {...ui('input')} required placeholder="0xx-xxx-xxxx"
                   value={form.phone ?? ''}
                   onChange={e => setForm({ ...form, phone: e.target.value })} />
               </div>
@@ -392,13 +392,13 @@ export default function TeachersTab() {
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'.75rem' }}>
                   <div>
                     <label style={{ display:'block',marginBottom:'.3rem',fontWeight:600,fontSize:'.85rem' }}>Username *</label>
-                    <input className="input" required placeholder="เช่น teacher01"
+                    <input {...ui('input')} required placeholder="เช่น teacher01"
                       value={form.username ?? ''}
                       onChange={e => setForm({ ...form, username: e.target.value.toLowerCase().replace(/\s/g,'') })} />
                   </div>
                   <div>
                     <label style={{ display:'block',marginBottom:'.3rem',fontWeight:600,fontSize:'.85rem' }}>รหัสผ่าน (PIN) *</label>
-                    <input className="input" required placeholder="เช่น kru01"
+                    <input {...ui('input')} required placeholder="เช่น kru01"
                       value={form.pin ?? ''}
                       onChange={e => setForm({ ...form, pin: e.target.value })} />
                   </div>
@@ -420,7 +420,7 @@ export default function TeachersTab() {
                   ].map(s => (
                     <div key={s.key}>
                       <label style={{ display:'block',marginBottom:'.25rem',fontWeight:600,fontSize:'.8rem' }}>{s.label}</label>
-                      <input className="input" style={{ fontSize:'.85rem' }} placeholder={s.ph}
+                      <input {...ui('input', { fontSize:'.85rem' })} placeholder={s.ph}
                         value={form[s.key] ?? ''}
                         onChange={e => setForm({ ...form, [s.key]: e.target.value })} />
                     </div>
@@ -428,7 +428,7 @@ export default function TeachersTab() {
                 </div>
               </div>
 
-              <div className="flex gap-2 mt-2">
+              <div {...ui('flex gap-2 mt-2')}>
                 <ModalCancelBtn onClick={() => setIsModal(false)} />
                 <ModalConfirmBtn type="submit" label="💾 บันทึก" />
               </div>

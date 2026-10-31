@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { version as APP_VERSION } from '../../package.json';
+import { ui } from '../ui/ui';
 
 // ─── Live Feed Ticker ─────────────────────────────────────────────────────────
 function LiveTicker({ items }) {
@@ -39,7 +40,7 @@ function LiveTicker({ items }) {
 }
 
 // ─── Stat Card ────────────────────────────────────────────────────────────────
-function StatCard({ icon, value, label, color = '#7c3aed' }) {
+function StatCard({ icon, value, label }) {
   return (
     <div style={{
       flex: '1 1 0', minWidth: '110px',
@@ -199,7 +200,7 @@ function LoginModal({ onClose }) {
         padding: '1rem', animation: 'fadeIn .2s ease',
       }}
     >
-      <div className="login-card animate-pop" style={{ position: 'relative', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div {...ui('login-card animate-pop', { position: 'relative', maxHeight: '90vh', overflowY: 'auto' })}>
         {/* Close */}
         <button type="button" onClick={onClose} style={{
           position: 'absolute', top: '1rem', right: '1rem',
@@ -209,7 +210,7 @@ function LoginModal({ onClose }) {
         }}>✕</button>
 
         {/* Logo */}
-        <div className="text-center mb-6">
+        <div {...ui('text-center mb-6')}>
           <div style={{ marginBottom: '.75rem' }}>
             <img src="/logo.png" alt="โลโก้" style={{
               width: '64px', height: '64px', borderRadius: '50%', objectFit: 'cover',
@@ -238,7 +239,7 @@ function LoginModal({ onClose }) {
             <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 700 }}>
               👤 ชื่อผู้ใช้ / รหัสประจำตัว
             </label>
-            <input className="input" type="text" value={username}
+            <input {...ui('input')} type="text" value={username}
               onChange={e => { setUsername(e.target.value); setError(''); }}
               placeholder="admin · ชื่อครู · หรือรหัสนักเรียน"
               required autoComplete="username" autoFocus />
@@ -295,7 +296,7 @@ function LoginModal({ onClose }) {
             <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 700 }}>
               🔑 รหัสผ่าน (PIN)
             </label>
-            <input className="input" type="password" value={pin}
+            <input {...ui('input', { fontSize: '1.1rem', letterSpacing: '.15em' })} type="password" value={pin}
               onChange={e => setPin(e.target.value)}
               placeholder={
                 detectedRole === 'admin'   ? 'รหัสแอดมิน' :
@@ -303,29 +304,28 @@ function LoginModal({ onClose }) {
                 detectedRole === 'teacher' ? 'เช่น kru01, kru02' :
                 'รหัสผ่าน / PIN'
               }
-              required style={{ fontSize: '1.1rem', letterSpacing: '.15em' }} />
+              required />
             {detectedRole === 'parent' && (
-              <div className="text-xs text-muted mt-2">
+              <div {...ui('text-xs text-muted mt-2')}>
                 💡 PIN คือรหัสประจำตัวนักเรียน ถ้าไม่ทราบให้ติดต่อครูประจำชั้น
               </div>
             )}
           </div>
 
-          {error && <div className="alert alert-error animate-slide">❌ {error}</div>}
+          {error && <div {...ui('alert alert-error animate-slide')}>❌ {error}</div>}
 
-          <button type="submit" className="btn btn-lg w-full" disabled={loading}
-            style={{
+          <button type="submit" {...ui('btn btn-lg w-full', {
               background: badge?.btnBg ?? 'linear-gradient(135deg,#7c3aed,#8b5cf6)',
               color: 'white',
               boxShadow: `0 6px 20px ${badge?.shadow ?? '#7c3aed40'}`,
               marginTop: '.25rem',
-            }}>
+            }, undefined, loading)} disabled={loading}>
             {loading ? '⏳ กำลังเข้าสู่ระบบ...' : '🚀 เข้าสู่ระบบ'}
           </button>
         </form>
 
         {/* PIN hint */}
-        <details className="mt-5" style={{ fontSize: '.78rem', color: 'var(--text-muted)' }}>
+        <details {...ui('mt-5', { fontSize: '.78rem', color: 'var(--text-muted)' })}>
           <summary style={{ cursor: 'pointer', userSelect: 'none', fontWeight: 600 }}>
             🔑 ข้อมูลสำหรับทดสอบระบบ
           </summary>
@@ -764,12 +764,12 @@ export default function LoginPage() {
           </div>
 
           {/* Stats bar */}
-          <div className="stat-grid" style={{
+          <div {...ui('stat-grid', {
             display: 'grid',
             gridTemplateColumns: 'repeat(4, 1fr)',
             gap: '.6rem',
             padding: '0 1.5rem .85rem',
-          }}>
+          })}>
             <StatCard icon="🏫" value={realClasses.length}   label="ห้องเรียน" />
             <StatCard icon="👶" value={realStudents.length}  label="นักเรียน"  />
             <StatCard icon="👩‍🏫" value={realTeachers.length} label="ครู"       />
@@ -982,7 +982,7 @@ export default function LoginPage() {
           to   { opacity:1; transform:translateY(0); }
         }
         @media (max-width: 480px) {
-          .stat-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          [data-ui~="stat-grid"] { grid-template-columns: repeat(2, 1fr) !important; }
         }
       `}</style>
     </>

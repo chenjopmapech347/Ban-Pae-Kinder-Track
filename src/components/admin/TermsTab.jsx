@@ -1,5 +1,6 @@
 // TermsTab.jsx — ตั้งค่าวันเปิดและปิดเรียนแต่ละภาคเรียน
 import { useApp } from '../../context/AppContext';
+import { ui } from '../../ui/ui';
 
 const TERM_COLORS = [
   { bg: '#eff6ff', border: '#bfdbfe', color: '#1d4ed8', accent: '#3b82f6' },
@@ -53,13 +54,13 @@ export default function TermsTab() {
   };
 
   return (
-    <div className="glass p-6 animate-fade">
-      <div className="page-header mb-6">
+    <div {...ui('glass p-6 animate-fade')}>
+      <div {...ui('page-header mb-6')}>
         <div>
           <h3>📅 วันเปิด-ปิดเรียน ปีการศึกษา {academicYear}</h3>
-          <div className="text-xs text-muted mt-1">ตั้งค่าวันเปิดและปิดเรียนแต่ละภาคเรียน</div>
+          <div {...ui('text-xs text-muted mt-1')}>ตั้งค่าวันเปิดและปิดเรียนแต่ละภาคเรียน</div>
         </div>
-        <button className="btn btn-primary" onClick={addTerm}>+ เพิ่มภาคเรียน</button>
+        <button {...ui('btn btn-primary')} onClick={addTerm}>+ เพิ่มภาคเรียน</button>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -78,12 +79,11 @@ export default function TermsTab() {
                   <span style={{ fontSize: '1.5rem' }}>{idx === 0 ? '🌞' : '🌙'}</span>
                   <div>
                     <input
-                      className="input"
+                      {...ui('input', { fontWeight: 800, fontSize: '1rem', color: c.color,
+                               background: 'transparent', border: 'none', padding: 0,
+                               width: 'auto', minWidth: '120px', outline: 'none' })}
                       value={term.label}
                       onChange={e => updateTerm(idx, 'label', e.target.value)}
-                      style={{ fontWeight: 800, fontSize: '1rem', color: c.color,
-                               background: 'transparent', border: 'none', padding: 0,
-                               width: 'auto', minWidth: '120px', outline: 'none' }}
                     />
                     {days !== null && days > 0 && (
                       <div style={{ fontSize: '.72rem', color: c.color, opacity: .75 }}>
@@ -110,7 +110,7 @@ export default function TermsTab() {
                     {isLocked(idx) ? '🔒 ล็อกอยู่' : '🔓 ปลดล็อก'}
                   </button>
                   {terms.length > 1 && (
-                    <button type="button" className="btn btn-sm" style={{ color: 'var(--danger)' }}
+                    <button type="button" {...ui('btn btn-sm', { color: 'var(--danger)' })}
                       onClick={() => removeTerm(idx)}>ลบ</button>
                   )}
                 </div>
@@ -125,11 +125,10 @@ export default function TermsTab() {
                   </label>
                   <input
                     type="date"
-                    className="input"
+                    {...ui('input', { borderColor: c.border, opacity: isLocked(idx) ? 0.6 : 1 }, undefined, isLocked(idx))}
                     value={term.open}
                     onChange={e => updateTerm(idx, 'open', e.target.value)}
                     disabled={isLocked(idx)}
-                    style={{ borderColor: c.border, opacity: isLocked(idx) ? 0.6 : 1 }}
                   />
                   {term.open && (
                     <div style={{ fontSize: '.72rem', color: c.color, marginTop: '.3rem' }}>
@@ -144,12 +143,11 @@ export default function TermsTab() {
                   </label>
                   <input
                     type="date"
-                    className="input"
+                    {...ui('input', { borderColor: c.border, opacity: isLocked(idx) ? 0.6 : 1 }, undefined, isLocked(idx))}
                     value={term.close}
                     onChange={e => updateTerm(idx, 'close', e.target.value)}
                     min={term.open || undefined}
                     disabled={isLocked(idx)}
-                    style={{ borderColor: c.border, opacity: isLocked(idx) ? 0.6 : 1 }}
                   />
                   {term.close && (
                     <div style={{ fontSize: '.72rem', color: c.color, marginTop: '.3rem' }}>

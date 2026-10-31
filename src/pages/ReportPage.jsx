@@ -2,6 +2,7 @@ import { useApp } from '../context/AppContext';
 import { getQualityText } from '../utils/helpers';
 import { exportStudentReportExcel } from '../utils/exportExcel';
 import { RadarDevChart, AssessmentProgressBars } from '../components/DevelopmentChart';
+import { ui } from '../ui/ui';
 
 function exportStudentCsv(student, topics, schoolName, academicYear) {
   const rows = [
@@ -46,30 +47,28 @@ export default function ReportPage() {
   const summary = student.assessments?.summary ?? {};
 
   return (
-    <div className="animate-fade">
+    <div {...ui('animate-fade')}>
       {/* Toolbar */}
-      <div className="page-header mb-6 no-print">
-        <button type="button" className="btn" onClick={() => setSelectedStudent(null)}>
+      <div {...ui('page-header mb-6 no-print')}>
+        <button type="button" {...ui('btn')} onClick={() => setSelectedStudent(null)}>
           ← ย้อนกลับ
         </button>
-        <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
-          <button type="button" className="btn"
-            style={{ background: '#dcfce7', color: '#166534' }}
+        <div {...ui('flex gap-2', { flexWrap: 'wrap' })}>
+          <button type="button" {...ui('btn', { background: '#dcfce7', color: '#166534' })}
             onClick={() => exportStudentReportExcel(student, assessmentTopics, schoolName, academicYear)}>
             📗 Excel
           </button>
-          <button type="button" className="btn"
-            style={{ background: '#ecfdf5', color: '#047857' }}
+          <button type="button" {...ui('btn', { background: '#ecfdf5', color: '#047857' })}
             onClick={() => exportStudentCsv(student, assessmentTopics, schoolName, academicYear)}>
             CSV
           </button>
-          <button type="button" className="btn btn-primary" onClick={() => window.print()}>
+          <button type="button" {...ui('btn btn-primary')} onClick={() => window.print()}>
             🖨️ พิมพ์
           </button>
         </div>
       </div>
 
-      <div className="report-book mb-8">
+      <div {...ui('report-book mb-8')}>
         {/* Header */}
         <div style={{
           background: 'linear-gradient(135deg,#7c3aed 0%,#a855f7 60%,#ec4899 100%)',
@@ -90,10 +89,10 @@ export default function ReportPage() {
           <div style={{ fontSize: '.85rem', opacity: .8 }}>ปีการศึกษา {academicYear}</div>
         </div>
 
-        <div className="glass" style={{ borderRadius: '0 0 24px 24px', padding: '2rem', borderTop: 'none' }}>
+        <div {...ui('glass', { borderRadius: '0 0 24px 24px', padding: '2rem', borderTop: 'none' })}>
 
           {/* Student Info */}
-          <div className="flex gap-4 mb-6 items-center" style={{ flexWrap: 'wrap' }}>
+          <div {...ui('flex gap-4 mb-6 items-center', { flexWrap: 'wrap' })}>
             <div style={{
               width: 80, height: 80, borderRadius: '50%', flexShrink: 0,
               background: isBoy ? '#dbeafe' : '#fce7f3',
@@ -116,7 +115,7 @@ export default function ReportPage() {
           </div>
 
           {/* Assessment — two-column: bars + radar */}
-          <h4 className="mb-4 border-b pb-2">🌱 สรุปผลการประเมินพัฒนาการ</h4>
+          <h4 {...ui('mb-4 border-b pb-2')}>🌱 สรุปผลการประเมินพัฒนาการ</h4>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
             {/* Left: progress bars */}
             <div>
@@ -129,7 +128,7 @@ export default function ReportPage() {
           </div>
 
           {/* Attendance */}
-          <h4 className="mb-3 border-b pb-2">📅 สถิติการมาเรียน</h4>
+          <h4 {...ui('mb-3 border-b pb-2')}>📅 สถิติการมาเรียน</h4>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '.75rem', marginBottom: '1rem' }}>
             <div style={{ background: '#d1fae5', borderRadius: '12px', padding: '.85rem', textAlign: 'center' }}>
               <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#065f46' }}>{present}</div>
@@ -144,10 +143,10 @@ export default function ReportPage() {
               <div style={{ fontSize: '.75rem', color: '#7c3aed' }}>📊 อัตรามา</div>
             </div>
           </div>
-          <div className="progress-bar">
-            <div className="progress-fill" style={{ width: pct + '%' }} />
+          <div {...ui('progress-bar')}>
+            <div {...ui('progress-fill', { width: pct + '%' })} />
           </div>
-          <div className="text-xs text-muted mt-1 text-right">{present} จาก {total} วัน</div>
+          <div {...ui('text-xs text-muted mt-1 text-right')}>{present} จาก {total} วัน</div>
         </div>
       </div>
     </div>

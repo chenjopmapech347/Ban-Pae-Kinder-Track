@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../../context/AppContext';
+import { ui } from '../../ui/ui';
 
 // ── ประเภทการนำไปใช้ประกอบการสอน ──────────────────────────────────────────
 const CTX_OPTS = [
@@ -450,7 +451,7 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
   const printTeacher = classTeacher ?? (user?.teacherId ? teachers?.find(t => t.id === user.teacherId) : null);
 
   return (
-    <div className="animate-fade">
+    <div {...ui('animate-fade')}>
       {/* ── Header ── */}
       <div style={{
         background: 'linear-gradient(135deg,#0891b2,#06b6d4)',

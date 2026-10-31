@@ -1,0 +1,14 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // รูปภาพสื่อ — อ่าน/เขียนได้ทุกคน
+    // (แอปใช้ custom auth ด้วย PIN ไม่ใช่ Firebase Auth จึงไม่มี request.auth)
+    match /media-images/{imageId} {
+      allow read, write: if true;
+    }
+    // ไฟล์อื่น ๆ ในอนาคต — ต้อง login ทั้ง read และ write
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

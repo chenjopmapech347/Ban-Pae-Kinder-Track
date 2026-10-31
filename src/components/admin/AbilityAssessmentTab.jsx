@@ -738,7 +738,6 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                   <div>
                     {items.map((ind, itemIdx) => {
                       const sc = stuScores[ind.code];
-                      const meta = DS.scale[sc];
                       const passed = sc >= 2;
                       return (
                         <div key={ind.code} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '.625rem .875rem', borderBottom: itemIdx < items.length - 1 ? '1px solid #f1f5f9' : 'none' }}>

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { ui } from '../ui/ui';
 
 export default function ExcelImportPanel() {
   const { importStudentAssessmentExcel, importQaStandardExcel } = useApp();
@@ -33,17 +34,17 @@ export default function ExcelImportPanel() {
   };
 
   return (
-    <div className="glass-card mb-8">
-      <div className="flex justify-between items-center flex-stack mb-4">
+    <div {...ui('glass-card mb-8')}>
+      <div {...ui('flex justify-between items-center flex-stack mb-4')}>
         <div>
-          <h4 className="mb-2">📥 นำเข้า Excel ปี 2568</h4>
-          <p className="text-sm text-muted">
+          <h4 {...ui('mb-2')}>📥 นำเข้า Excel ปี 2568</h4>
+          <p {...ui('text-sm text-muted')}>
         รองรับไฟล์ <strong>สรุปผลการประเมินปฐมวัย_2568</strong> และ <strong>สรุปผลมาตรฐานปฐมวัย_2568</strong>
       </p>
         </div>
       </div>
-      <div className="flex gap-2 flex-wrap">
-        <label className="btn" style={{ background: '#eff6ff', cursor: 'pointer' }}>
+      <div {...ui('flex gap-2 flex-wrap')}>
+        <label {...ui('btn', { background: '#eff6ff', cursor: 'pointer' })}>
           นำเข้าประเมินนักเรียน (.xlsx)
           <input
             ref={studentInputRef}
@@ -53,7 +54,7 @@ export default function ExcelImportPanel() {
             onChange={handleStudentFile}
           />
         </label>
-        <label className="btn" style={{ background: '#fef3c7', cursor: 'pointer' }}>
+        <label {...ui('btn', { background: '#fef3c7', cursor: 'pointer' })}>
           นำเข้ามาตรฐาน QA (.xlsx)
           <input
             ref={qaInputRef}
@@ -65,7 +66,7 @@ export default function ExcelImportPanel() {
         </label>
       </div>
       {msg && (
-        <div className={`mt-4 alert ${msgType === 'error' ? 'alert-error' : 'alert-success'} text-sm`}>
+        <div {...ui(`mt-4 alert ${msgType === 'error' ? 'alert-error' : 'alert-success'} text-sm`)}>
           {msg}
         </div>
       )}

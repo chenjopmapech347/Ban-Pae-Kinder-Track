@@ -2,6 +2,7 @@
 // แต่ละกิจกรรมเลือกได้หลายวัน และแต่ละวันกำหนดเวลาต่างกันได้
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { ui } from '../../ui/ui';
 
 const DAYS = [
   { key: 'จันทร์',    label: 'จ.' },
@@ -125,12 +126,12 @@ export default function AssignOuterCornersTab() {
   ).length;
 
   return (
-    <div className="glass p-6 animate-fade">
+    <div {...ui('glass p-6 animate-fade')}>
       {/* Header */}
-      <div className="page-header mb-4">
+      <div {...ui('page-header mb-4')}>
         <div>
           <h3>🌿 กำหนดกิจกรรมภายนอกห้องเรียน</h3>
-          <p className="text-xs text-muted" style={{ marginTop: '.25rem' }}>
+          <p {...ui('text-xs text-muted', { marginTop: '.25rem' })}>
             เลือกกิจกรรม กำหนด<strong>วันที่ใช้</strong>และ<strong>เวลา</strong>แยกแต่ละวัน — กิจกรรมเดียวกันใช้ได้หลายวัน เวลาต่างกันได้
           </p>
         </div>
@@ -160,7 +161,7 @@ export default function AssignOuterCornersTab() {
             ห้องเรียน
           </div>
           {classNames.length === 0 ? (
-            <p className="text-muted text-sm">ยังไม่มีห้องเรียน</p>
+            <p {...ui('text-muted text-sm')}>ยังไม่มีห้องเรียน</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '.3rem' }}>
               {classNames.map(cls => {
@@ -252,7 +253,7 @@ export default function AssignOuterCornersTab() {
               </div>
 
               {cornerDefs.length === 0 ? (
-                <p className="text-muted text-sm">
+                <p {...ui('text-muted text-sm')}>
                   ยังไม่มีแหล่งเรียนรู้ — กรุณาเพิ่มใน "จัดการกิจกรรมภายนอกห้องเรียน" ก่อน
                 </p>
               ) : (
@@ -382,7 +383,7 @@ export default function AssignOuterCornersTab() {
                 </div>
               )}
 
-              <p className="text-xs text-muted" style={{ marginTop: '.85rem' }}>
+              <p {...ui('text-xs text-muted', { marginTop: '.85rem' })}>
                 💡 ข้อมูลบันทึกทันที — วัน/เวลาที่กำหนดจะใช้ใน "เติมตารางอัตโนมัติ" ในหน้าตารางกิจกรรม
               </p>
             </>

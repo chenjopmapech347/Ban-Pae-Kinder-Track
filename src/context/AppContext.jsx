@@ -20,21 +20,8 @@ import { pullSnapshotFromCloud, pushSnapshotToCloud } from '../lib/cloudSync';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { isFirebaseConfigured, db } from '../lib/firebase';
 import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
-import {
-  pushSnapshotToFirebase, pullSnapshotFromFirebase,
-  pushClassAssessments, pullClassAssessments, pullAllClassAssessments,
-  listDailyBackups, pullDailyBackupById,
-  pushDailyDataToFirebase, pullDailyDataFromFirebase,
-} from '../lib/firebaseSync';
+import { pushSnapshotToFirebase, pullSnapshotFromFirebase, pullClassAssessments, pullAllClassAssessments, listDailyBackups, pullDailyBackupById, pushDailyDataToFirebase, pullDailyDataFromFirebase } from '../lib/firebaseSync';
 
-// ข้อมูลรายวันที่ครูบันทึก — เก็บแยกใน dailyData/latest (dot-notation merge)
-// ไม่รวมใน main snapshot เพื่อป้องกัน device อื่น push ทับ
-const VOLATILE_KEYS = [
-  'dailyRecords', 'nutritionRecords', 'milkRecords', 'lunchRecords',
-  'toothBrushRecords', 'healthCheckRecords', 'illnessCheckRecords',
-  'dailyRoutineRecords', 'cornerRecords', 'innerCornerRecords',
-  'studentReportRecords', 'specialEvents', 'pickupRecords',
-];
 import { firebaseLogin, firebaseLogout, onFirebaseAuthChange } from '../lib/firebaseAuth';
 import {
   readWorkbookFromFile,
@@ -96,7 +83,7 @@ export function AppProvider({ children }) {
     if (!key) return;
     const token = Date.now().toString(36) + Math.random().toString(36).slice(2);
     sessionTokenRef.current = token;
-    try { localStorage.setItem('kt_sessionToken', token); } catch {}
+    try { localStorage.setItem('kt_sessionToken', token); } catch { /* ignore */ }
     setDoc(doc(db, 'sessions', key), { token, loginAt: new Date().toISOString() }).catch(() => {});
   }, []);
 
@@ -995,7 +982,7 @@ export function AppProvider({ children }) {
       if (key) deleteDoc(doc(db, 'sessions', key)).catch(() => {});
     }
     sessionTokenRef.current = null;
-    try { localStorage.removeItem('kt_sessionToken'); } catch {}
+    try { localStorage.removeItem('kt_sessionToken'); } catch { /* ignore */ }
     // บันทึก log ก่อน clear user
     setSystemLogs(prev => [{
       id: Date.now() + Math.random(),
@@ -1020,7 +1007,7 @@ export function AppProvider({ children }) {
       try {
         const stored = localStorage.getItem('kt_sessionToken');
         if (stored) sessionTokenRef.current = stored;
-      } catch {}
+      } catch { /* ignore */ }
     }
     const unsub = onSnapshot(doc(db, 'sessions', key), (snap) => {
       if (!snap.exists()) return;
@@ -1034,7 +1021,7 @@ export function AppProvider({ children }) {
           localStorage.removeItem('kt_role');
           localStorage.removeItem('kt_sessionUser');
           localStorage.removeItem('kt_sessionToken');
-        } catch {}
+        } catch { /* ignore */ }
         alert('⚠️ บัญชีนี้ถูกเข้าสู่ระบบจากอุปกรณ์อื่น\nคุณถูกออกจากระบบโดยอัตโนมัติ');
         window.location.reload();
       }
@@ -1659,6 +1646,8 @@ export function AppProvider({ children }) {
     loginWithFirebase,
     syncPushToFirebase,
     syncPullFromFirebase,
+    getDailyBackupList,
+    restoreFromDailyBackup,
     getDailyData,
     deleteStudentAndSync,
     autoSyncStatus,

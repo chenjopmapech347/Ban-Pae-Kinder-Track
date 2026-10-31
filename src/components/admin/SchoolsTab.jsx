@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
+import { ui } from '../../ui/ui';
 
 const AFFILIATION_OPTIONS = [
   'สังกัดเทศบาล',
@@ -60,36 +61,36 @@ export default function SchoolsTab() {
   };
 
   return (
-    <div className="glass p-6 animate-fade">
-      <div className="page-header mb-6">
+    <div {...ui('glass p-6 animate-fade')}>
+      <div {...ui('page-header mb-6')}>
         <h3>จัดการข้อมูลโรงเรียน</h3>
-        <button className="btn btn-primary" onClick={openNew}>+ เพิ่มโรงเรียน</button>
+        <button {...ui('btn btn-primary')} onClick={openNew}>+ เพิ่มโรงเรียน</button>
       </div>
 
       {/* ── School cards ── */}
-      <div className="grid grid-2" style={{ gap: '1rem' }}>
+      <div {...ui('grid grid-2', { gap: '1rem' })}>
         {schools.map(s => (
-          <div key={s.id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
-            <div className="flex justify-between items-start">
+          <div key={s.id} {...ui('glass-card', { display: 'flex', flexDirection: 'column', gap: '.5rem' })}>
+            <div {...ui('flex justify-between items-start')}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
                 {s.logo && (
                   <img src={s.logo} alt="โลโก้"
                     style={{ width: 48, height: 48, objectFit: 'contain', borderRadius: '8px', border: '1.5px solid #e5e7eb', background: '#fafafa' }} />
                 )}
-                <div className="font-bold text-primary" style={{ fontSize: '1rem' }}>{s.name}</div>
+                <div {...ui('font-bold text-primary', { fontSize: '1rem' })}>{s.name}</div>
               </div>
-              <div className="flex gap-2">
-                <button className="btn btn-sm" onClick={() => openEdit(s)}>แก้ไข</button>
-                <button className="btn btn-sm" style={{ color: 'var(--danger)' }}
+              <div {...ui('flex gap-2')}>
+                <button {...ui('btn btn-sm')} onClick={() => openEdit(s)}>แก้ไข</button>
+                <button {...ui('btn btn-sm', { color: 'var(--danger)' })}
                   onClick={() => handleDelete(s.id)}>ลบ</button>
               </div>
             </div>
-            <div className="text-sm">📍 {s.address}</div>
-            <div className="text-sm">📞 {s.phone}</div>
-            <div className="text-sm text-muted">👤 ผอ. {s.principal}</div>
-            {s.affiliation && <div className="text-sm text-muted">🏢 สังกัด {s.affiliation}</div>}
+            <div {...ui('text-sm')}>📍 {s.address}</div>
+            <div {...ui('text-sm')}>📞 {s.phone}</div>
+            <div {...ui('text-sm text-muted')}>👤 ผอ. {s.principal}</div>
+            {s.affiliation && <div {...ui('text-sm text-muted')}>🏢 สังกัด {s.affiliation}</div>}
             {(s.schoolYear || s.semester) && (
-              <div className="text-sm text-muted">
+              <div {...ui('text-sm text-muted')}>
                 📆{s.schoolYear ? ` ปีการศึกษา ${s.schoolYear}` : ''}{s.semester ? ` · ${s.semester}` : ''}
               </div>
             )}
@@ -111,7 +112,7 @@ export default function SchoolsTab() {
           {FIELDS.map(([key, label]) => (
             <div key={key}>
               <label style={{ display: 'block', marginBottom: '.35rem' }}>{label}</label>
-              <input className="input" value={form[key] || ''}
+              <input {...ui('input')} value={form[key] || ''}
                 onChange={e => handleField(key, e.target.value)} />
             </div>
           ))}
@@ -119,9 +120,8 @@ export default function SchoolsTab() {
           {/* Affiliation select */}
           <div>
             <label style={{ display: 'block', marginBottom: '.35rem' }}>สังกัด</label>
-            <select className="input" value={form.affiliation || ''}
-              onChange={e => handleField('affiliation', e.target.value)}
-              style={{ cursor: 'pointer' }}>
+            <select {...ui('input', { cursor: 'pointer' })} value={form.affiliation || ''}
+              onChange={e => handleField('affiliation', e.target.value)}>
               <option value="">— เลือกสังกัด —</option>
               {AFFILIATION_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
             </select>
@@ -131,13 +131,13 @@ export default function SchoolsTab() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.75rem' }}>
             <div>
               <label style={{ display: 'block', marginBottom: '.35rem' }}>ปีการศึกษา</label>
-              <input className="input" placeholder="เช่น 2568" value={form.schoolYear || ''}
+              <input {...ui('input')} placeholder="เช่น 2568" value={form.schoolYear || ''}
                 onChange={e => handleField('schoolYear', e.target.value)} />
             </div>
             <div>
               <label style={{ display: 'block', marginBottom: '.35rem' }}>ภาคเรียน</label>
-              <select className="input" value={form.semester || ''}
-                onChange={e => handleField('semester', e.target.value)} style={{ cursor: 'pointer' }}>
+              <select {...ui('input', { cursor: 'pointer' })} value={form.semester || ''}
+                onChange={e => handleField('semester', e.target.value)}>
                 <option value="">— เลือก —</option>
                 {SEMESTER_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
@@ -170,7 +170,7 @@ export default function SchoolsTab() {
             </div>
           </div>
 
-          <div className="flex gap-2 mt-2">
+          <div {...ui('flex gap-2 mt-2')}>
             <ModalCancelBtn onClick={closeModal} />
             <ModalConfirmBtn type="submit" label="💾 บันทึก" />
           </div>

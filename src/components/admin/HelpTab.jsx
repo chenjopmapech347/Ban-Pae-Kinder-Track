@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ui } from '../../ui/ui';
 
 const ROLE_FLOWS = [
   {
@@ -546,7 +547,7 @@ export default function HelpTab() {
   const [openId, setOpenId] = useState('overview');
 
   return (
-    <div className="glass animate-fade" style={{ padding: '1.5rem' }}>
+    <div {...ui('glass animate-fade', { padding: '1.5rem' })}>
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: '1rem',

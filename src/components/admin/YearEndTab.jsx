@@ -2,6 +2,7 @@
 // Operations: ย้ายห้องเรียน | เลื่อนชั้น | จบการศึกษา | ลาออก | พักการเรียน
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { ui } from '../../ui/ui';
 
 const LEVEL_LABEL = { K1: 'อ.1', K2: 'อ.2', K3: 'อ.3' };
 const LEVEL_NEXT  = { K1: 'K2', K2: 'K3' };
@@ -28,12 +29,12 @@ export default function YearEndTab() {
   const meta = OP_META.find(m => m.id === op);
 
   return (
-    <div className="glass p-6 animate-fade">
+    <div {...ui('glass p-6 animate-fade')}>
       {/* Header */}
-      <div className="page-header mb-4">
+      <div {...ui('page-header mb-4')}>
         <div>
           <h3>🎓 จัดการสิ้นปีการศึกษา</h3>
-          <p className="text-xs text-muted" style={{ marginTop: '.25rem' }}>
+          <p {...ui('text-xs text-muted', { marginTop: '.25rem' })}>
             ดำเนินการปลายปีการศึกษา — ย้ายห้อง เลื่อนชั้น จบการศึกษา ลาออก พักการเรียน
           </p>
         </div>
@@ -141,15 +142,15 @@ function MovePanel({ students, setStudents, classes, meta }) {
 
       <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
         <div style={{ flex: 1, minWidth: '180px' }}>
-          <label className="text-sm" style={{ fontWeight: 600, display: 'block', marginBottom: '.35rem' }}>ห้องต้นทาง</label>
-          <select className="input" value={srcClass} onChange={e => { setSrcClass(e.target.value); setSelected(new Set()); setDstClass(''); }}>
+          <label {...ui('text-sm', { fontWeight: 600, display: 'block', marginBottom: '.35rem' })}>ห้องต้นทาง</label>
+          <select {...ui('input')} value={srcClass} onChange={e => { setSrcClass(e.target.value); setSelected(new Set()); setDstClass(''); }}>
             <option value="">— เลือกห้อง —</option>
             {allClassNames.map(n => <option key={n}>{n}</option>)}
           </select>
         </div>
         <div style={{ flex: 1, minWidth: '180px' }}>
-          <label className="text-sm" style={{ fontWeight: 600, display: 'block', marginBottom: '.35rem' }}>ห้องปลายทาง</label>
-          <select className="input" value={dstClass} onChange={e => setDstClass(e.target.value)} disabled={!srcClass}>
+          <label {...ui('text-sm', { fontWeight: 600, display: 'block', marginBottom: '.35rem' })}>ห้องปลายทาง</label>
+          <select {...ui('input', undefined, undefined, !srcClass)} value={dstClass} onChange={e => setDstClass(e.target.value)} disabled={!srcClass}>
             <option value="">— เลือกห้อง —</option>
             {dstOptions.map(n => <option key={n}>{n}</option>)}
           </select>
@@ -163,7 +164,7 @@ function MovePanel({ students, setStudents, classes, meta }) {
               checked={selected.size === srcStudents.length && srcStudents.length > 0}
               onChange={toggleAll}
             />
-            <span className="text-sm" style={{ fontWeight: 600 }}>
+            <span {...ui('text-sm', { fontWeight: 600 })}>
               เลือกทั้งหมด ({srcStudents.length} คน)
             </span>
           </div>
@@ -178,7 +179,7 @@ function MovePanel({ students, setStudents, classes, meta }) {
               }}>
                 <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggle(s.id)} />
                 <span style={{ fontWeight: 600, fontSize: '.88rem' }}>{s.name}</span>
-                <span className="text-xs text-muted">{LEVEL_LABEL[s.level] || s.level}</span>
+                <span {...ui('text-xs text-muted')}>{LEVEL_LABEL[s.level] || s.level}</span>
               </label>
             ))}
           </div>
@@ -186,11 +187,11 @@ function MovePanel({ students, setStudents, classes, meta }) {
       )}
 
       {srcClass && srcStudents.length === 0 && (
-        <p className="text-muted text-sm" style={{ marginBottom: '1rem' }}>ไม่มีนักเรียนในห้องนี้</p>
+        <p {...ui('text-muted text-sm', { marginBottom: '1rem' })}>ไม่มีนักเรียนในห้องนี้</p>
       )}
 
       <button
-        className="btn btn-primary"
+        {...ui('btn btn-primary', undefined, undefined, !selected.size || !dstClass)}
         onClick={handleMove}
         disabled={!selected.size || !dstClass}
       >
@@ -255,17 +256,17 @@ function PromotePanel({ students, setStudents, classes, meta }) {
 
       <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
         <div style={{ flex: 1, minWidth: '180px' }}>
-          <label className="text-sm" style={{ fontWeight: 600, display: 'block', marginBottom: '.35rem' }}>ระดับชั้นปัจจุบัน</label>
-          <select className="input" value={fromLevel} onChange={e => { setFromLevel(e.target.value); setSelected(new Set()); setDstClass(''); }}>
+          <label {...ui('text-sm', { fontWeight: 600, display: 'block', marginBottom: '.35rem' })}>ระดับชั้นปัจจุบัน</label>
+          <select {...ui('input')} value={fromLevel} onChange={e => { setFromLevel(e.target.value); setSelected(new Set()); setDstClass(''); }}>
             <option value="K1">อ.1 → อ.2</option>
             <option value="K2">อ.2 → อ.3</option>
           </select>
         </div>
         <div style={{ flex: 1, minWidth: '180px' }}>
-          <label className="text-sm" style={{ fontWeight: 600, display: 'block', marginBottom: '.35rem' }}>
+          <label {...ui('text-sm', { fontWeight: 600, display: 'block', marginBottom: '.35rem' })}>
             ห้องปลายทาง ({LEVEL_LABEL[toLevel]})
           </label>
-          <select className="input" value={dstClass} onChange={e => setDstClass(e.target.value)}>
+          <select {...ui('input')} value={dstClass} onChange={e => setDstClass(e.target.value)}>
             <option value="">— เลือกห้อง —</option>
             {dstOptions.map(n => <option key={n}>{n}</option>)}
           </select>
@@ -279,7 +280,7 @@ function PromotePanel({ students, setStudents, classes, meta }) {
               checked={selected.size === srcStudents.length}
               onChange={toggleAll}
             />
-            <span className="text-sm" style={{ fontWeight: 600 }}>
+            <span {...ui('text-sm', { fontWeight: 600 })}>
               เลือกทั้งหมด ({srcStudents.length} คน {LEVEL_LABEL[fromLevel]})
             </span>
           </div>
@@ -294,19 +295,19 @@ function PromotePanel({ students, setStudents, classes, meta }) {
               }}>
                 <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggle(s.id)} />
                 <span style={{ fontWeight: 600, fontSize: '.88rem' }}>{s.name}</span>
-                <span className="text-xs text-muted">{s.className}</span>
+                <span {...ui('text-xs text-muted')}>{s.className}</span>
               </label>
             ))}
           </div>
         </div>
       ) : (
-        <p className="text-muted text-sm" style={{ marginBottom: '1rem' }}>
+        <p {...ui('text-muted text-sm', { marginBottom: '1rem' })}>
           ไม่มีนักเรียนระดับ {LEVEL_LABEL[fromLevel]} ที่กำลังเรียนอยู่
         </p>
       )}
 
       <button
-        className="btn btn-primary"
+        {...ui('btn btn-primary', undefined, undefined, !selected.size || !dstClass)}
         onClick={handlePromote}
         disabled={!selected.size || !dstClass}
       >
@@ -356,7 +357,7 @@ function GraduatePanel({ students, setStudents, meta }) {
       <div style={{ fontWeight: 700, fontSize: '.95rem', color: meta.color, marginBottom: '.5rem' }}>
         🎓 บันทึกนักเรียนจบการศึกษา (ระดับ อ.3)
       </div>
-      <p className="text-xs text-muted" style={{ marginBottom: '1rem' }}>
+      <p {...ui('text-xs text-muted', { marginBottom: '1rem' })}>
         เฉพาะนักเรียน อ.3 — หลังบันทึกจะไม่แสดงในรายชื่อกำลังเรียนอีก
       </p>
 
@@ -367,7 +368,7 @@ function GraduatePanel({ students, setStudents, meta }) {
               checked={selected.size === k3Students.length && k3Students.length > 0}
               onChange={toggleAll}
             />
-            <span className="text-sm" style={{ fontWeight: 600 }}>
+            <span {...ui('text-sm', { fontWeight: 600 })}>
               เลือกทั้งหมด ({k3Students.length} คน อ.3)
             </span>
           </div>
@@ -382,7 +383,7 @@ function GraduatePanel({ students, setStudents, meta }) {
               }}>
                 <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggle(s.id)} />
                 <span style={{ fontWeight: 600, fontSize: '.88rem' }}>{s.name}</span>
-                <span className="text-xs text-muted">{s.className}</span>
+                <span {...ui('text-xs text-muted')}>{s.className}</span>
               </label>
             ))}
           </div>
@@ -397,10 +398,9 @@ function GraduatePanel({ students, setStudents, meta }) {
 
       {k3Students.length > 0 && (
         <button
-          className="btn btn-primary"
+          {...ui('btn btn-primary', { background: meta.color }, undefined, !selected.size)}
           onClick={handleGraduate}
           disabled={!selected.size}
-          style={{ background: meta.color }}
         >
           บันทึกจบการศึกษา {selected.size > 0 ? `${selected.size} คน` : ''}
         </button>
@@ -453,10 +453,10 @@ function StatusPanel({ students, setStudents, meta, statusVal, opLabel }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '.9rem', maxWidth: '480px' }}>
         <div>
-          <label className="text-sm" style={{ fontWeight: 600, display: 'block', marginBottom: '.35rem' }}>
+          <label {...ui('text-sm', { fontWeight: 600, display: 'block', marginBottom: '.35rem' })}>
             เลือกนักเรียน
           </label>
-          <select className="input" value={studentId} onChange={e => setStudentId(e.target.value)}>
+          <select {...ui('input')} value={studentId} onChange={e => setStudentId(e.target.value)}>
             <option value="">— เลือกนักเรียน —</option>
             {activeStudents.map(s => (
               <option key={s.id} value={String(s.id)}>
@@ -467,32 +467,30 @@ function StatusPanel({ students, setStudents, meta, statusVal, opLabel }) {
         </div>
 
         <div>
-          <label className="text-sm" style={{ fontWeight: 600, display: 'block', marginBottom: '.35rem' }}>
+          <label {...ui('text-sm', { fontWeight: 600, display: 'block', marginBottom: '.35rem' })}>
             วันที่{opLabel}
           </label>
-          <input type="date" className="input" value={date} onChange={e => setDate(e.target.value)} />
+          <input type="date" {...ui('input')} value={date} onChange={e => setDate(e.target.value)} />
         </div>
 
         <div>
-          <label className="text-sm" style={{ fontWeight: 600, display: 'block', marginBottom: '.35rem' }}>
+          <label {...ui('text-sm', { fontWeight: 600, display: 'block', marginBottom: '.35rem' })}>
             หมายเหตุ (ถ้ามี)
           </label>
           <textarea
-            className="input"
+            {...ui('input', { resize: 'vertical' })}
             rows={2}
             value={note}
             onChange={e => setNote(e.target.value)}
             placeholder={`เหตุผลที่${opLabel}...`}
-            style={{ resize: 'vertical' }}
           />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <button
-            className="btn btn-primary"
+            {...ui('btn btn-primary', { background: meta.color }, undefined, !selectedStudent)}
             onClick={handleSave}
             disabled={!selectedStudent}
-            style={{ background: meta.color }}
           >
             บันทึก{opLabel}
           </button>
@@ -522,9 +520,9 @@ function StatusPanel({ students, setStudents, meta, statusVal, opLabel }) {
                   fontSize: '.85rem',
                 }}>
                   <span style={{ fontWeight: 600, flex: 1 }}>{s.name}</span>
-                  <span className="text-muted">{LEVEL_LABEL[s.level] || s.level} / {s.className}</span>
-                  {s.statusDate && <span className="text-muted">{s.statusDate}</span>}
-                  {s.statusNote && <span className="text-muted" style={{ fontStyle: 'italic' }}>"{s.statusNote}"</span>}
+                  <span {...ui('text-muted')}>{LEVEL_LABEL[s.level] || s.level} / {s.className}</span>
+                  {s.statusDate && <span {...ui('text-muted')}>{s.statusDate}</span>}
+                  {s.statusNote && <span {...ui('text-muted', { fontStyle: 'italic' })}>"{s.statusNote}"</span>}
                   <button
                     title="ยกเลิก (คืนสถานะกำลังเรียน)"
                     onClick={() => {

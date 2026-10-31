@@ -1,19 +1,13 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { callClaude, buildActivitySuggestionPrompt } from '../../utils/aiHelper';
-import { isoToThai, todayISO } from '../../utils/helpers';
+import { todayISO } from '../../utils/helpers';
 import { pushClassAssessments } from '../../lib/firebaseSync';
 import { LEVEL_META, SCORES, SOURCE_ACTIVITY_MAP } from '../../data/evaluationConstants';
-import {
-  computeMonthlyStats, computeNutritionStats, computePickupStats,
-  computeHealthCheckStats, computeIllnessStats, computeCornerStats,
-  computeEventStats, computeRoutineStats,
-  pctColor, pctBg, pctToScore,
-} from '../../utils/evaluationHelpers';
 import StepBadge from './evaluation/StepBadge';
 import PillGroup from './evaluation/PillGroup';
 import AISuggestionPanel from './evaluation/AISuggestionPanel';
 import DailyContextPanel from './evaluation/DailyContextPanel';
+import { ui } from '../../ui/ui';
 
 // local format DD/MM/พ.ศ.
 const thaiDate = (iso) => { if (!iso) return '—'; const [y,m,d] = iso.split('-'); return `${d}/${m}/${Number(y)+543}`; };
@@ -292,8 +286,8 @@ export default function EvaluationTab() {
   const stepClass    = !!(selLevel && selClass);
 
   return (
-    <div className="glass p-6 animate-fade">
-      <div className="page-header mb-5">
+    <div {...ui('glass p-6 animate-fade')}>
+      <div {...ui('page-header mb-5')}>
         <h3>📊 ประเมินผลพัฒนาการ</h3>
       </div>
 
@@ -574,7 +568,7 @@ export default function EvaluationTab() {
           }}>
             <div>
               <label style={{ display: 'block', fontSize: '.73rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '.25rem' }}>ครั้งที่ประเมิน</label>
-              <select className="input" style={{ width: '160px' }} value={round} onChange={e => { setRound(Number(e.target.value)); setSaved(false); }}>
+              <select {...ui('input', { width: '160px' })} value={round} onChange={e => { setRound(Number(e.target.value)); setSaved(false); }}>
                 <option value={1}>ภาคเรียน 1 ครั้งที่ 1</option>
                 <option value={2}>ภาคเรียน 1 ครั้งที่ 2</option>
                 <option value={3}>ภาคเรียน 2 ครั้งที่ 1</option>
@@ -583,7 +577,7 @@ export default function EvaluationTab() {
             </div>
             <div>
               <label style={{ display: 'block', fontSize: '.73rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '.25rem' }}>วันที่ประเมิน</label>
-              <input type="date" className="input" style={{ width: '155px' }}
+              <input type="date" {...ui('input', { width: '155px' })}
                 value={assessDate} onChange={e => { setAssessDate(e.target.value); setSaved(false); }} />
             </div>
             <div style={{ fontSize: '.8rem', color: 'var(--text-muted)', alignSelf: 'center' }}>
@@ -618,8 +612,8 @@ export default function EvaluationTab() {
           </div>
 
           {/* Table */}
-          <div className="table-wrap">
-            <table className="table">
+          <div {...ui('table-wrap')}>
+            <table {...ui('table')}>
               <thead>
                 <tr>
                   <th style={{ width: '40px' }}>#</th>
@@ -635,7 +629,7 @@ export default function EvaluationTab() {
                   const isAbsent  = absentStudentIds.has(String(s.id));
                   const showAbsent = isAbsent && score === 0;
                   return (
-                    <tr key={s.id} className="hover-row" style={{ background: showAbsent ? '#fff5f5' : score > 0 ? SCORES.find(sc => sc.value === score)?.bg + '55' : undefined }}>
+                    <tr key={s.id} {...ui('hover-row', { background: showAbsent ? '#fff5f5' : score > 0 ? SCORES.find(sc => sc.value === score)?.bg + '55' : undefined })}>
                       <td style={{ color: 'var(--text-muted)', fontWeight: 600, fontSize: '.8rem' }}>{idx + 1}</td>
                       <td>
                         <code style={{ fontSize: '.72rem', background: '#f1f5f9', padding: '.1rem .4rem', borderRadius: '4px', color: '#475569', fontWeight: 700 }}>
@@ -732,15 +726,14 @@ export default function EvaluationTab() {
                 ✅ บันทึกเรียบร้อย {thaiDate(assessDate)}
               </span>
             )}
-            <button className="btn" onClick={() => {
+            <button {...ui('btn', { color: 'var(--danger)' })} onClick={() => {
               const reset = {};
               classStudents.forEach(s => { reset[s.id] = 0; });
               setResults(reset); setSaved(false);
-            }} style={{ color: 'var(--danger)' }}>
+            }}>
               🔄 รีเซ็ต
             </button>
-            <button className="btn btn-primary" onClick={handleSaveAll}
-              style={{ minWidth: '160px', fontSize: '.9rem', padding: '.55rem 1.2rem' }}>
+            <button {...ui('btn btn-primary', { minWidth: '160px', fontSize: '.9rem', padding: '.55rem 1.2rem' })} onClick={handleSaveAll}>
               💾 บันทึกผลทั้งห้อง ({doneCount}/{total})
             </button>
           </div>

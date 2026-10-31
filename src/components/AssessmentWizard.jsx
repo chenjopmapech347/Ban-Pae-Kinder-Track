@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { INDICATORS_DATA_68 as INDICATORS_DATA } from '../data/indicatorsData_68';
 import { useApp } from '../context/AppContext';
 import { callClaude, buildPostAssessmentPrompt } from '../utils/aiHelper';
+import { ui } from '../ui/ui';
 
 const SCORE_OPTIONS = [
   { value: 3, label: 'ผ่าน',          emoji: '✅', color: '#059669', bg: '#ecfdf5' },
@@ -12,7 +13,7 @@ const SCORE_OPTIONS = [
 // ── Step 1: เลือกด้านพัฒนาการ ──────────────────────────────────────────────
 function StepDomain({ onSelect }) {
   return (
-    <div className="animate-fade">
+    <div {...ui('animate-fade')}>
       <h3 style={{ marginBottom: '1.25rem', color: 'var(--primary)' }}>
         🎯 เลือกด้านที่ต้องการประเมิน
       </h3>
@@ -57,7 +58,7 @@ function StepIndicator({ domain, onSelect, onBack }) {
   const [openStd, setOpenStd] = useState(domain.standards[0]?.id ?? null);
 
   return (
-    <div className="animate-fade">
+    <div {...ui('animate-fade')}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', marginBottom: '1.25rem' }}>
         <button type="button" onClick={onBack}
           style={{ background: '#f3f4f6', border: 'none', borderRadius: '8px',
@@ -149,7 +150,7 @@ function StepActivities({ domain, std, ind, student, onSave, onBack }) {
   const pct    = total ? Math.round((scored / total) * 100) : 0;
 
   return (
-    <div className="animate-fade">
+    <div {...ui('animate-fade')}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', marginBottom: '1rem' }}>
         <button type="button" onClick={onBack}
           style={{ background: '#f3f4f6', border: 'none', borderRadius: '8px',
@@ -283,7 +284,7 @@ function StepAiRecommend({ domain, ind, scores, activities, student, onDone, aiA
   };
 
   return (
-    <div className="animate-fade">
+    <div {...ui('animate-fade')}>
       <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
         <div style={{ fontSize: '2.5rem', marginBottom: '.5rem' }}>🤖</div>
         <h3 style={{ color: '#7c3aed', marginBottom: '.25rem' }}>AI ข้อเสนอแนะ</h3>
@@ -382,11 +383,11 @@ export default function AssessmentWizard({ student, onSave, onCancel }) {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 1000, padding: '1rem',
     }}>
-      <div style={{
+      <div {...ui('animate-pop', {
         background: 'white', borderRadius: '20px', width: '100%', maxWidth: '600px',
         maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column',
         boxShadow: '0 25px 60px rgba(0,0,0,.25)',
-      }} className="animate-pop">
+      })}>
         {/* Modal Header */}
         <div style={{
           padding: '1.25rem 1.5rem', borderBottom: '1px solid #f3f4f6',

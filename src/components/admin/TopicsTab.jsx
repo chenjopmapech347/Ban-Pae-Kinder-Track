@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { DEFAULT_ASSESSMENT_TOPICS } from '../../data/initialData';
+import { ui } from '../../ui/ui';
 
 const FRAME_STYLE = {
   std68: { bg: '#f0fdf4', color: '#15803d', border: '#86efac' },
@@ -54,10 +55,10 @@ export default function TopicsTab() {
   };
 
   return (
-    <div className="glass p-6 animate-fade">
-      <div className="page-header mb-4">
+    <div {...ui('glass p-6 animate-fade')}>
+      <div {...ui('page-header mb-4')}>
         <h3>จัดการหัวข้อการประเมิน</h3>
-        <button className="btn btn-primary" onClick={openNew}>+ เพิ่มหัวข้อ</button>
+        <button {...ui('btn btn-primary')} onClick={openNew}>+ เพิ่มหัวข้อ</button>
       </div>
 
       {/* Legend */}
@@ -68,20 +69,20 @@ export default function TopicsTab() {
         </span>
       </div>
 
-      <div className="grid grid-2" style={{ gap:'1rem' }}>
+      <div {...ui('grid grid-2', { gap:'1rem' })}>
         {assessmentTopics.map(t => (
-          <div key={t.id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+          <div key={t.id} {...ui('glass-card', { display: 'flex', flexDirection: 'column', gap: '.5rem' })}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div className="flex items-center gap-3">
+              <div {...ui('flex items-center gap-3')}>
                 <div style={{ fontSize: '2rem' }}>{t.emoji}</div>
                 <div>
-                  <div className="font-bold">ด้าน{t.label}</div>
-                  <div className="text-xs text-muted">รหัส: {t.id}</div>
+                  <div {...ui('font-bold')}>ด้าน{t.label}</div>
+                  <div {...ui('text-xs text-muted')}>รหัส: {t.id}</div>
                 </div>
               </div>
-              <div className="flex gap-2" style={{ flexShrink: 0 }}>
-                <button className="btn btn-sm" onClick={() => openEdit(t)}>แก้ไข</button>
-                <button className="btn btn-sm" style={{ color:'var(--danger)' }}
+              <div {...ui('flex gap-2', { flexShrink: 0 })}>
+                <button {...ui('btn btn-sm')} onClick={() => openEdit(t)}>แก้ไข</button>
+                <button {...ui('btn btn-sm', { color:'var(--danger)' })}
                   onClick={() => { if(confirm('ลบหัวข้อนี้?')) setAssessmentTopics(assessmentTopics.filter(x => x.id !== t.id)); }}>ลบ</button>
               </div>
             </div>
@@ -98,10 +99,10 @@ export default function TopicsTab() {
       >
         <form onSubmit={handleSave} style={{ display:'flex',flexDirection:'column',gap:'1rem' }}>
           <div><label style={{ display:'block',marginBottom:'.35rem' }}>ชื่อด้านพัฒนาการ</label>
-            <input className="input" value={form.label||''} onChange={e=>setForm({...form,label:e.target.value})} required /></div>
+            <input {...ui('input')} value={form.label||''} onChange={e=>setForm({...form,label:e.target.value})} required /></div>
           <div><label style={{ display:'block',marginBottom:'.35rem' }}>อิโมจิ</label>
-            <input className="input" value={form.emoji||''} onChange={e=>setForm({...form,emoji:e.target.value})} placeholder="เช่น 🏃, ❤️, 🇹🇭, 💡" /></div>
-          <div className="flex gap-2 mt-2">
+            <input {...ui('input')} value={form.emoji||''} onChange={e=>setForm({...form,emoji:e.target.value})} placeholder="เช่น 🏃, ❤️, 🇹🇭, 💡" /></div>
+          <div {...ui('flex gap-2 mt-2')}>
             <ModalCancelBtn onClick={() => setIsModal(false)} />
             <ModalConfirmBtn type="submit" label="💾 บันทึก" />
           </div>

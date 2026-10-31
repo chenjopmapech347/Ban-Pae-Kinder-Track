@@ -70,8 +70,6 @@ const ROUTINE_KEYS = ROUTINE_DEFS.map(d => d.key);
 const DOW_SHORT   = ['อา','จ','อ','พ','พฤ','ศ','ส'];
 const THAI_MONTHS = ['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
   'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-const THAI_MONTHS_SHORT = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.',
-  'ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
 function recKey(className, academicYear, year, month) {
   return `${className}__${academicYear}__${year}-${String(month).padStart(2, '0')}`;
@@ -156,10 +154,6 @@ export default function DailyRoutineTab({ teacherClassFilter = null }) {
     [students, selClass]
   );
 
-  const getDayVal = useCallback((day, routineKey) =>
-    draft.days?.[day]?.[routineKey] ?? null,
-    [draft]
-  );
 
   // Toggle: null → true → false → null
   const toggle = useCallback((day, routineKey) => {
@@ -556,7 +550,6 @@ export default function DailyRoutineTab({ teacherClassFilter = null }) {
               const weekend = isSchoolOff(selYear, selMonth, day);
               const dayData = draft.days?.[day] ?? {};
               const done    = ROUTINE_KEYS.filter(k => dayData[k] === true).length;
-              const pct     = done / ROUTINE_KEYS.length;
               const bg = weekend ? '#f8f9fb'
                 : done === ROUTINE_KEYS.length ? '#10b981'
                 : done >= 4 ? '#6ee7b7'

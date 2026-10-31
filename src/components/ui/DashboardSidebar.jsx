@@ -36,17 +36,14 @@ export default function DashboardSidebar({ groups, activeTab, onTabChange, badge
     return s;
   });
 
+  // แบบ accordion: เปิดกลุ่มหนึ่ง → กลุ่มอื่นย่อให้อัตโนมัติ (กดกลุ่มที่เปิดอยู่ซ้ำ = ย่อ)
   const toggleGroup = (label) =>
-    setExpandedGroups(prev => {
-      const s = new Set(prev);
-      s.has(label) ? s.delete(label) : s.add(label);
-      return s;
-    });
+    setExpandedGroups(prev => (prev.has(label) ? new Set() : new Set([label])));
 
-  /* ── tab click — auto-expand its group ── */
+  /* ── tab click — เปิดกลุ่มของแท็บนั้น และย่อกลุ่มอื่น ── */
   const handleTabChange = (tabId) => {
     const grp = groups.find(g => g.tabs.some(t => t.id === tabId));
-    if (grp) setExpandedGroups(prev => { const s = new Set(prev); s.add(grp.label); return s; });
+    if (grp) setExpandedGroups(new Set([grp.label]));
     onTabChange(tabId);
   };
 

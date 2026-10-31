@@ -6,6 +6,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { db } from '../../lib/firebase';
 import { collection, doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { useApp } from '../../context/AppContext';
+import { ui } from '../../ui/ui';
 
 /* ── Static constants ─────────────────────────────────────────── */
 const DAYS = ['จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์'];
@@ -68,17 +69,6 @@ const SEED_ROOMS = [
   { id:'3_3', levelKey:'3', name:'ห้อง อ.3/3', days:{ จันทร์:[], อังคาร:[], พุธ:[], พฤหัสบดี:[], ศุกร์:[] } },
 ];
 
-/* ── Sample schedule — ใช้ keys จากเมนูจัดการกิจกรรมเป็นหลัก ─────── */
-/* NOTE: Firestore does NOT support nested arrays — must use objects */
-/* inner keys: block,story,lego,creative,roleplay,media              */
-/* outer keys: wasteSort,organicWaste,garden,learningRoom,computerRoom,trafficSign */
-const LEGACY_SAMPLE_DAYS = {
-  จันทร์:    [{type:'garden',      time:'09.00', label:'แปลงปลูกผัก'}],
-  อังคาร:   [{type:'story',       time:'09.00', label:'มุมนิทาน'}],
-  พุธ:      [{type:'creative',    time:'09.30', label:'มุมสร้างสรรค์'}, {type:'computerRoom', time:'10.30', label:'ห้องคอมพิวเตอร์'}],
-  พฤหัสบดี: [{type:'wasteSort',   time:'09.00', label:'คัดแยกขยะ'},    {type:'media',        time:'10.00', label:'มุมสื่อ'}],
-  ศุกร์:    [{type:'learningRoom', time:'09.00', label:'ห้องแหล่งเรียนรู้'}],
-};
 
 /* ── Helpers ──────────────────────────────────────────────────── */
 function computeCounts(days, innerKeySet) {
@@ -500,9 +490,6 @@ export default function ActivityScheduleTab() {
   const [rooms,        setRooms]        = useState([]);
   const [loading,      setLoading]      = useState(true);
   const [editRoom,     setEditRoom]     = useState(null);
-  const [reseeding,    setReseeding]    = useState(false);
-  const [confirmReseed,setConfirmReseed]= useState(false);
-  const [reseedMsg,    setReseedMsg]    = useState(null); // {ok:bool, text:string}
 
   /* ── Auto-fill all rooms from assignments ── */
   const [fillingAll,   setFillingAll]   = useState(false);
@@ -715,26 +702,6 @@ export default function ActivityScheduleTab() {
     [rooms],
   );
 
-  const handleReseedSample = async () => {
-    setReseeding(true);
-    setConfirmReseed(false);
-    setReseedMsg(null);
-    try {
-      const colRef = collection(db, 'activitySchedule');
-      // ใช้ merge:true เหมือน handleSave เขียนแค่ field days
-      await Promise.all(
-        rooms.map(r =>
-          setDoc(doc(colRef, r.id), { days: LEGACY_SAMPLE_DAYS }, { merge: true })
-        )
-      );
-      setReseedMsg({ ok: true, text: `✅ เติมข้อมูลตัวอย่างสำเร็จ ${rooms.length} ห้อง` });
-    } catch(e) {
-      setReseedMsg({ ok: false, text: `❌ เกิดข้อผิดพลาด: ${e?.message ?? e}` });
-    } finally {
-      setReseeding(false);
-    }
-  };
-
   const TH = { padding:'9px 12px', border:'1px solid #cfd8dc', background:'#eceff1',
                 color:'#546e7a', fontWeight:700, textAlign:'center' };
   const TD = { padding:'9px 12px', border:'1px solid #e4e8ec', verticalAlign:'middle' };
@@ -751,13 +718,13 @@ export default function ActivityScheduleTab() {
   ];
 
   return (
-    <div className="animate-fade" style={{ fontSize:'15px' }}>
+    <div {...ui('animate-fade', { fontSize:'15px' })}>
 
       {/* ── Page header ── */}
-      <div className="glass-card mb-4" style={{
+      <div {...ui('glass-card mb-4', {
         background:'linear-gradient(135deg,#EDE7F6,#E3F2FD)',
         border:'1.5px solid #B39DDB', textAlign:'center', padding:'18px',
-      }}>
+      })}>
         <div style={{ fontSize:'1.6em', fontWeight:800, color:'#1a237e' }}>
           ตารางกิจกรรมภายใน-นอกห้องเรียนประจำวัน
         </div>
@@ -830,11 +797,11 @@ export default function ActivityScheduleTab() {
 
       {/* ── Auto-fill all rooms button ── */}
       {rooms.length > 0 && (innerCornerDefs.length > 0 || cornerDefs.length > 0) && (
-        <div className="glass-card mb-4" style={{
+        <div {...ui('glass-card mb-4', {
           background:'#F0FDF4', border:'1.5px solid #6EE7B7',
           padding:'14px 18px', display:'flex', alignItems:'center',
           gap:'12px', flexWrap:'wrap',
-        }}>
+        })}>
           <span style={{ fontSize:'1.2em' }}>📅</span>
           <div style={{ flex:1, minWidth:'200px' }}>
             <div style={{ fontWeight:700, fontSize:'.9em', color:'#065F46' }}>
@@ -874,10 +841,10 @@ export default function ActivityScheduleTab() {
 
       {/* ── Notice when no defs configured ── */}
       {innerCornerDefs.length === 0 && cornerDefs.length === 0 && (
-        <div className="glass-card mb-4" style={{
+        <div {...ui('glass-card mb-4', {
           background:'#FFF3E0', border:'1.5px solid #FFB74D',
           padding:'14px 18px', display:'flex', alignItems:'flex-start', gap:'10px',
-        }}>
+        })}>
           <span style={{ fontSize:'1.3em', flexShrink:0 }}>⚠️</span>
           <div style={{ fontSize:'.88em', color:'#BF360C', lineHeight:1.6 }}>
             <strong>ยังไม่มีกิจกรรมที่กำหนด</strong><br />
@@ -889,7 +856,7 @@ export default function ActivityScheduleTab() {
 
       {/* ── Dynamic legend ── */}
       {allDefs.length > 0 && (
-        <div className="glass-card mb-4">
+        <div {...ui('glass-card mb-4')}>
           <div style={{ display:'flex', flexWrap:'wrap', gap:'6px 0', alignItems:'center' }}>
             {innerCornerDefs.length > 0 && (
               <div style={{ display:'flex', alignItems:'center', gap:'6px 12px', flexWrap:'wrap',
@@ -929,7 +896,7 @@ export default function ActivityScheduleTab() {
       )}
 
       {/* ── Schedule by level (Accordion) ── */}
-      <div className="glass-card mb-4" style={{ padding:0, overflow:'hidden' }}>
+      <div {...ui('glass-card mb-4', { padding:0, overflow:'hidden' })}>
         <button
           onClick={() => setOpenSchedule(v => !v)}
           style={{
@@ -949,7 +916,7 @@ export default function ActivityScheduleTab() {
             {grouped.map(([lk, lvRooms]) => {
               const meta = LEVEL_META[lk] ?? { label:`อนุบาล ${lk}`, hd:'linear-gradient(90deg,#546e7a,#78909c)' };
               return (
-                <div key={lk} className="mb-4" style={{ borderRadius:'14px', overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,0.09)' }}>
+                <div key={lk} {...ui('mb-4', { borderRadius:'14px', overflow:'hidden', boxShadow:'0 2px 12px rgba(0,0,0,0.09)' })}>
                   <div style={{ padding:'10px 18px', fontWeight:700, color:'white', fontSize:'1em', background:meta.hd }}>
                     {meta.label}
                   </div>
@@ -973,7 +940,7 @@ export default function ActivityScheduleTab() {
       </div>
 
       {/* ── Daily summary (Accordion) ── */}
-      <div className="glass-card mb-4" style={{ padding:0, overflow:'hidden' }}>
+      <div {...ui('glass-card mb-4', { padding:0, overflow:'hidden' })}>
         <button
           onClick={() => setOpenSummary(v => !v)}
           style={{
@@ -1057,7 +1024,7 @@ export default function ActivityScheduleTab() {
 
       {/* ── Dynamic activity list for this school (Accordion) ── */}
       {allDefs.length > 0 && (
-        <div className="glass-card mb-4" style={{ padding:0, overflow:'hidden' }}>
+        <div {...ui('glass-card mb-4', { padding:0, overflow:'hidden' })}>
           <button
             onClick={() => setOpenAllDefs(v => !v)}
             style={{
@@ -1105,7 +1072,7 @@ export default function ActivityScheduleTab() {
       )}
 
       {/* ── Ratio table (Accordion) ── */}
-      <div className="glass-card mb-4" style={{ padding:0, overflow:'hidden' }}>
+      <div {...ui('glass-card mb-4', { padding:0, overflow:'hidden' })}>
         <button
           onClick={() => setOpenRatio(v => !v)}
           style={{

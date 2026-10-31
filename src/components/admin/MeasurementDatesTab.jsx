@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { ui } from '../../ui/ui';
 
 /* ── ข้อมูลการวัด 4 ครั้ง ─────────────────────────────────────────────────── */
 const SLOTS = [
@@ -18,7 +19,7 @@ function thaiMonth(iso) {
 }
 
 export default function MeasurementDatesTab() {
-  const { measurementDates, setMeasurementDates, academicYear } = useApp();
+  const { measurementDates, setMeasurementDates } = useApp();
 
   const [form,  setForm]  = useState({ ...measurementDates });
   const [saved, setSaved] = useState(false);
@@ -45,9 +46,9 @@ export default function MeasurementDatesTab() {
   const allConfigured = SLOTS.every(s => form[s.key]);
 
   return (
-    <div className="animate-fade">
+    <div {...ui('animate-fade')}>
       {/* ── Header ── */}
-      <div className="glass-card mb-4" style={{ background: 'linear-gradient(135deg,#f0fdf4,#dcfce7)', border: '1.5px solid #bbf7d0' }}>
+      <div {...ui('glass-card mb-4', { background: 'linear-gradient(135deg,#f0fdf4,#dcfce7)', border: '1.5px solid #bbf7d0' })}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
           <div style={{ fontSize: '2rem' }}>📏</div>
           <div style={{ flex: 1, minWidth: '220px' }}>
@@ -74,7 +75,7 @@ export default function MeasurementDatesTab() {
       </div>
 
       {/* ── Form ── */}
-      <div className="glass-card mb-4">
+      <div {...ui('glass-card mb-4')}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.88rem' }}>
             <thead>
@@ -161,16 +162,14 @@ export default function MeasurementDatesTab() {
         <div style={{ flex: 1 }} />
         <button
           type="button"
-          className="btn"
-          style={{ color: '#ef4444', fontSize: '.85rem' }}
+          {...ui('btn', { color: '#ef4444', fontSize: '.85rem' })}
           onClick={handleClearAll}
         >
           🗑️ ล้างทั้งหมด
         </button>
         <button
           type="button"
-          className="btn btn-primary"
-          style={{ fontSize: '.9rem', padding: '.6rem 1.5rem' }}
+          {...ui('btn btn-primary', { fontSize: '.9rem', padding: '.6rem 1.5rem' })}
           onClick={handleSave}
         >
           💾 บันทึกวันที่
@@ -178,7 +177,7 @@ export default function MeasurementDatesTab() {
       </div>
 
       {/* ── Preview card ── */}
-      <div className="glass-card mt-4" style={{ background: '#fafafa', border: '1.5px dashed #d1d5db' }}>
+      <div {...ui('glass-card mt-4', { background: '#fafafa', border: '1.5px dashed #d1d5db' })}>
         <div style={{ fontWeight: 700, fontSize: '.82rem', color: '#6b7280', marginBottom: '.85rem' }}>
           📋 ตัวอย่าง — วันที่ที่จะแสดงในสมุดรายงาน อ.01 (บันทึกพัฒนาการด้านร่างกาย)
         </div>

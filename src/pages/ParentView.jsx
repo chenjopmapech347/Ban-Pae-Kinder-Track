@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
+import { ui } from '../ui/ui';
 
 export default function ParentView() {
   const { user, students, setSelectedStudent,
@@ -29,9 +30,21 @@ export default function ParentView() {
     .filter(a => !a.target || a.target === 'all' || a.target === student?.className)
     .slice(0, 1);
 
+  // นับสถิติจาก dailyRecords (ที่ครูบันทึก) — ตรงกับข้อมูลจริงใน AttendanceTab
+  const { total, present, absent } = useMemo(() => {
+    let p = 0, ab = 0;
+    Object.values(dailyRecords ?? {}).forEach(day => {
+      const rec = day[String(student?.id)];
+      if (!rec?.attendance) return;
+      if (rec.attendance === 'มา') p++;
+      else ab++;
+    });
+    return { total: p + ab, present: p, absent: ab };
+  }, [dailyRecords, student?.id]);
+
   if (!student) {
     return (
-      <div className="glass p-8 text-center">
+      <div {...ui('glass p-8 text-center')}>
         <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>😅</div>
         <p>ไม่พบข้อมูลนักเรียนที่เชื่อมกับบัญชีผู้ปกครอง</p>
       </div>
@@ -40,33 +53,20 @@ export default function ParentView() {
 
   const isBoy = student.name.includes('ชาย');
 
-  // นับสถิติจาก dailyRecords (ที่ครูบันทึก) — ตรงกับข้อมูลจริงใน AttendanceTab
-  const { total, present, absent } = useMemo(() => {
-    let p = 0, ab = 0;
-    Object.values(dailyRecords ?? {}).forEach(day => {
-      const rec = day[String(student.id)];
-      if (!rec?.attendance) return;
-      if (rec.attendance === 'มา') p++;
-      else ab++;
-    });
-    return { total: p + ab, present: p, absent: ab };
-  }, [dailyRecords, student.id]);
-
   const pct = total ? Math.round((present / total) * 100) : 0;
 
 
   return (
-    <div className="animate-fade" style={{ maxWidth: 600, margin: '0 auto' }}>
+    <div {...ui('animate-fade', { maxWidth: 600, margin: '0 auto' })}>
       {/* Welcome Header */}
       <div
-        className="glass mb-6"
-        style={{
+        {...ui('glass mb-6', {
           background: 'linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #ec4899 100%)',
           color: 'white',
           padding: '2rem',
-        }}
+        })}
       >
-        <div className="flex items-center gap-4" style={{ flexWrap: 'wrap' }}>
+        <div {...ui('flex items-center gap-4', { flexWrap: 'wrap' })}>
           <div style={{
             width: 64, height: 64, borderRadius: '50%',
             background: 'rgba(255,255,255,0.25)',
@@ -129,8 +129,8 @@ export default function ParentView() {
       {parentAnnouncements.length > 0 && (
         <div style={{ display:'flex', flexDirection:'column', gap:'.5rem', marginBottom:'1.25rem' }}>
           {parentAnnouncements.map((a, idx) => (
-            <div key={a.id} className="announce-banner">
-              <span className="announce-icon">📢</span>
+            <div key={a.id} {...ui('announce-banner')}>
+              <span {...ui('announce-icon')}>📢</span>
               <div style={{ flex:1, minWidth:0 }}>
                 <div style={{ display:'flex', gap:'.35rem', alignItems:'center', flexWrap:'wrap', marginBottom:'.12rem' }}>
                   {idx === 0 && <span style={{ background:'#7c3aed', color:'white', fontSize:'.63rem', fontWeight:800, padding:'1px 6px', borderRadius:'999px' }}>ล่าสุด</span>}
@@ -140,9 +140,9 @@ export default function ParentView() {
                     <span style={{ background:'#ede9fe', color:'#7c3aed', fontSize:'.65rem', fontWeight:700, padding:'1px 7px', borderRadius:'999px' }}>ห้อง {a.target}</span>
                   )}
                 </div>
-                <div className="announce-title">{a.title}</div>
+                <div {...ui('announce-title')}>{a.title}</div>
                 {a.body && <div style={{ fontSize:'.78rem', color:'#4b5563', marginTop:'.1rem' }}>{a.body}</div>}
-                <div className="announce-date">📅 {a.date}</div>
+                <div {...ui('announce-date')}>📅 {a.date}</div>
               </div>
             </div>
           ))}
@@ -151,8 +151,8 @@ export default function ParentView() {
 
       {/* Teacher Info */}
       {classTeacher && (
-        <div className="glass-card mb-6">
-          <h3 className="mb-3">👩‍🏫 ครูประจำชั้น</h3>
+        <div {...ui('glass-card mb-6')}>
+          <h3 {...ui('mb-3')}>👩‍🏫 ครูประจำชั้น</h3>
           <div style={{ display:'flex', alignItems:'center', gap:'1rem' }}>
             <div style={{
               width:52, height:52, borderRadius:'50%',
@@ -184,8 +184,8 @@ export default function ParentView() {
       )}
 
       {/* Attendance */}
-      <div className="glass-card mb-6">
-        <h3 className="mb-4">📅 สถิติการมาเรียน</h3>
+      <div {...ui('glass-card mb-6')}>
+        <h3 {...ui('mb-4')}>📅 สถิติการมาเรียน</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.75rem', marginBottom: '1rem' }}>
           <div style={{ textAlign: 'center', background: '#d1fae5', borderRadius: '14px', padding: '1rem' }}>
             <div style={{ fontSize: '1.75rem', fontWeight: 900, color: '#065f46' }}>{present}</div>
@@ -200,27 +200,26 @@ export default function ParentView() {
             <div style={{ fontSize: '0.78rem', color: '#7c3aed', fontWeight: 600 }}>📊 อัตรามา</div>
           </div>
         </div>
-        <div className="progress-bar">
+        <div {...ui('progress-bar')}>
           <div
-            className="progress-fill"
-            style={{
+            {...ui('progress-fill', {
               width: pct + '%',
               background: pct >= 80
                 ? 'linear-gradient(90deg,#10b981,#34d399)'
                 : pct >= 60
                   ? 'linear-gradient(90deg,#f59e0b,#fbbf24)'
                   : 'linear-gradient(90deg,#ef4444,#fb7185)',
-            }}
+            })}
           />
         </div>
-        <div className="text-xs text-muted mt-2 text-right">{present} จาก {total} วัน</div>
+        <div {...ui('text-xs text-muted mt-2 text-right')}>{present} จาก {total} วัน</div>
       </div>
 
 
 
       {/* Physical Info */}
-      <div className="glass-card mb-6">
-        <h3 className="mb-3">📏 ข้อมูลร่างกาย</h3>
+      <div {...ui('glass-card mb-6')}>
+        <h3 {...ui('mb-3')}>📏 ข้อมูลร่างกาย</h3>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
           <div style={{ background: '#dbeafe', borderRadius: '12px', padding: '0.75rem', textAlign: 'center' }}>
             <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1e40af' }}>{student.weight ?? '—'}</div>
@@ -237,8 +236,7 @@ export default function ParentView() {
       {/* CTA */}
       <button
         type="button"
-        className="btn btn-primary w-full"
-        style={{ padding: '1rem', fontSize: '1rem', borderRadius: '16px' }}
+        {...ui('btn btn-primary w-full', { padding: '1rem', fontSize: '1rem', borderRadius: '16px' })}
         onClick={() => setSelectedStudent(student)}
       >
         📖 ดูสมุดรายงานประจำตัวฉบับเต็ม

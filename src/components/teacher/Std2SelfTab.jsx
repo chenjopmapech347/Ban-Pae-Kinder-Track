@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { isFirebaseConfigured, db } from '../../lib/firebase';
 import { useApp } from '../../context/AppContext';
+import { ui } from '../../ui/ui';
 
 const STD2_ITEMS = [
   { id: '2.1', label: 'วางแผนและจัดทำหลักสูตรสถานศึกษาตามหลักสูตรปฐมวัย พ.ศ. 2560' },
@@ -73,9 +74,9 @@ export default function Std2SelfTab() {
   const barColor   = score === null ? '#9ca3af' : score >= 80 ? '#16a34a' : score >= 60 ? '#d97706' : '#dc2626';
 
   return (
-    <div className="glass p-6 animate-fade">
+    <div {...ui('glass p-6 animate-fade')}>
       {/* Header */}
-      <div className="page-header mb-2">
+      <div {...ui('page-header mb-2')}>
         <h3>👩‍🏫 มาตรฐานที่ 2 — ประเมินตนเอง</h3>
       </div>
 

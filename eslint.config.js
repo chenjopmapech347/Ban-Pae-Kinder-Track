@@ -13,8 +13,14 @@ export default defineConfig([
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
     ],
+    rules: {
+      'no-unused-vars': ['error', { ignoreRestSiblings: true }],
+      // กฎใหม่ของ React Compiler — ยังไม่ refactor จึงเตือนไว้ก่อน
+      'react-hooks/set-state-in-effect': 'warn',
+      'react-refresh/only-export-components': 'warn',
+    },
     languageOptions: {
-      globals: globals.browser,
+      globals: { ...globals.browser, __APP_VERSION__: 'readonly' },
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },

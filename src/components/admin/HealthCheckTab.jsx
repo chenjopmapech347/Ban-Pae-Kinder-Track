@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
+import { ui } from '../../ui/ui';
 
 // ── รายการตรวจสุขภาพ 6 หมวด ──────────────────────────────────────────────────
 const CHECK_ITEMS = [
@@ -294,8 +295,8 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:6px"><img src="${sch
 
   // ─── UI ────────────────────────────────────────────────────────────────────
   return (
-    <div className="glass p-6 animate-fade">
-      <div className="page-header mb-4">
+    <div {...ui('glass p-6 animate-fade')}>
+      <div {...ui('page-header mb-4')}>
         <h3>🏥 การตรวจสุขภาพประจำสัปดาห์</h3>
       </div>
 
@@ -327,30 +328,25 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:6px"><img src="${sch
         {!myClass && (
           <div>
             <label style={lbl}>ห้องเรียน</label>
-            <select className="input" value={selClass} onChange={e => handleClassChange(e.target.value)}
-              style={{ fontSize: '.8rem', padding: '.3rem .6rem', minWidth: '120px' }}>
+            <select {...ui('input', { fontSize: '.8rem', padding: '.3rem .6rem', minWidth: '120px' })} value={selClass} onChange={e => handleClassChange(e.target.value)}>
               {classes.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
             </select>
           </div>
         )}
         <div>
           <label style={lbl}>วันที่ตรวจ</label>
-          <input type="date" className="input" value={selDate}
-            onChange={e => handleDateChange(e.target.value)}
-            style={{ fontSize: '.8rem', padding: '.3rem .6rem' }} />
+          <input type="date" {...ui('input', { fontSize: '.8rem', padding: '.3rem .6rem' })} value={selDate}
+            onChange={e => handleDateChange(e.target.value)} />
         </div>
         <div style={{ display: 'flex', gap: '.35rem', alignSelf: 'flex-end' }}>
-          <button type="button" className="btn btn-secondary"
-            style={{ fontSize: '.75rem', padding: '.3rem .65rem' }}
+          <button type="button" {...ui('btn btn-secondary', { fontSize: '.75rem', padding: '.3rem .65rem' })}
             onClick={() => {
               const d = new Date(selDate); d.setDate(d.getDate() - 1);
               handleDateChange(d.toISOString().slice(0, 10));
             }}>◀ วันก่อน</button>
-          <button type="button" className="btn btn-secondary"
-            style={{ fontSize: '.75rem', padding: '.3rem .65rem', background: todayIso === selDate ? '#eff6ff' : undefined }}
+          <button type="button" {...ui('btn btn-secondary', { fontSize: '.75rem', padding: '.3rem .65rem', background: todayIso === selDate ? '#eff6ff' : undefined })}
             onClick={() => handleDateChange(todayIso)}>วันนี้</button>
-          <button type="button" className="btn btn-secondary"
-            style={{ fontSize: '.75rem', padding: '.3rem .65rem' }}
+          <button type="button" {...ui('btn btn-secondary', { fontSize: '.75rem', padding: '.3rem .65rem' })}
             onClick={() => {
               const d = new Date(selDate); d.setDate(d.getDate() + 1);
               handleDateChange(d.toISOString().slice(0, 10));
@@ -551,11 +547,11 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:6px"><img src="${sch
       )}
       {/* ── Actions ── */}
       <div style={{ display: 'flex', gap: '.6rem', marginTop: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-        <button className="btn btn-primary" onClick={handleSave}
-          disabled={isLocked} style={{ opacity: isLocked ? 0.5 : 1, cursor: isLocked ? 'not-allowed' : 'pointer' }}>
+        <button {...ui('btn btn-primary', { opacity: isLocked ? 0.5 : 1, cursor: isLocked ? 'not-allowed' : 'pointer' }, undefined, isLocked)} onClick={handleSave}
+          disabled={isLocked}>
           {isLocked ? '🔒 ล็อกแล้ว' : '💾 บันทึก'}
         </button>
-        <button className="btn btn-secondary" onClick={handlePrint}>🖨️ พิมพ์แบบฟอร์ม</button>
+        <button {...ui('btn btn-secondary')} onClick={handlePrint}>🖨️ พิมพ์แบบฟอร์ม</button>
         <button
           type="button" onClick={handleClear}
           style={{ padding: '.35rem .9rem', borderRadius: '8px', border: '1px solid #fca5a5', background: '#fff5f5', color: '#dc2626', fontFamily: 'inherit', fontSize: '.8rem', cursor: 'pointer' }}>

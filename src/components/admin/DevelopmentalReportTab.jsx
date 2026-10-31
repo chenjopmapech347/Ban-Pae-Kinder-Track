@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { ui } from '../../ui/ui';
 
 // ── คำชี้แจงการประเมินพัฒนาการ ──────────────────────────────────────────────
 const KHAM_CHIAENG = [
@@ -502,7 +503,7 @@ function StandardSummary({ students, indicators, activities, stdDef, domDef }) {
 }
 
 // ── Summary View (สรุปทุกมาตรฐาน) ────────────────────────────────────────────
-function SummaryView({ students, indicators, activities, className, schoolName, academicYear }) {
+function SummaryView({ students, indicators, activities, classroom, schoolName, schoolLogo, academicYear }) {
   const data = useMemo(() => students.map(s => {
     const stds = {};
     STANDARD_DEFS.forEach(sd => {
@@ -543,7 +544,7 @@ function SummaryView({ students, indicators, activities, className, schoolName, 
 </style></head><body>
 ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
 <h3>สรุปผลการประเมินพัฒนาการ เด็กปฐมวัย อายุ ${ageRange}</h3>
-<h3>ห้อง ${className} &nbsp; โรงเรียน${schoolName} &nbsp; ปีการศึกษา ${academicYear}</h3>
+<h3>ห้อง ${classroom} &nbsp; โรงเรียน${schoolName} &nbsp; ปีการศึกษา ${academicYear}</h3>
 <p style="text-align:center;font-size:9pt;color:#555;margin:2px 0 6px">หลักสูตรการศึกษาปฐมวัย พ.ศ. 2568 (มาตรฐานที่ 1–4)</p><br/>
 <table>
 <tr>
@@ -566,7 +567,7 @@ ${rows}
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '.6rem' }}>
-        <button className="btn btn-secondary" onClick={printSummary} style={{ fontSize: '.8rem' }}>🖨️ พิมพ์สรุปผล</button>
+        <button {...ui('btn btn-secondary', { fontSize: '.8rem' })} onClick={printSummary}>🖨️ พิมพ์สรุปผล</button>
       </div>
       <div style={{ overflowX: 'auto' }}>
         <table style={{ borderCollapse: 'collapse', fontSize: '.70rem', width: '100%' }}>
@@ -640,7 +641,7 @@ function hdCell(extra = {}) {
 }
 
 // ── Detail View — ทีละตัวบ่งชี้ ──────────────────────────────────────────────
-function DetailView({ students, indicators, activities, className, schoolName, academicYear }) {
+function DetailView({ students, indicators, activities, classroom, schoolName, schoolLogo, academicYear }) {
   const [selDomain, setSelDomain] = useState('physical');
   const [selStdId, setSelStdId]   = useState('std68-physical');
   const [selIndIdx, setSelIndIdx] = useState(0);
@@ -719,14 +720,14 @@ function DetailView({ students, indicators, activities, className, schoolName, a
 </style></head><body>
 ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${schoolLogo}" style="height:70px;object-fit:contain"/></div>` : ''}
 <h3>แบบบันทึกผลการประเมินพัฒนาการ — ${stdDef.title}</h3>
-<h3>ห้อง ${className} &nbsp; อายุ ${ageRange} &nbsp; โรงเรียน${schoolName} &nbsp; ปีการศึกษา ${academicYear}</h3>
+<h3>ห้อง ${classroom} &nbsp; อายุ ${ageRange} &nbsp; โรงเรียน${schoolName} &nbsp; ปีการศึกษา ${academicYear}</h3>
 <p style="text-align:center;font-size:8pt;color:#555;margin:2px 0 6px">หลักสูตรการศึกษาปฐมวัย พ.ศ. 2568</p><br/>
 <table>
 <tr><th rowspan="3" class="hd">เลขที่</th><th rowspan="3" class="hd">ชื่อ-สกุล</th>${hdr1}<th colspan="2" rowspan="2" class="hd">สรุปมาตรฐาน</th><th rowspan="3" class="hd">หมายเหตุ</th></tr>
 <tr>${hdr2}</tr>
 <tr>${hdr3}<th>ภาค1</th><th>ภาค2</th></tr>
 ${allRows}
-</table><script>setTimeout(()=>window.print(),600)<\/script></body></html>`);
+</table><script>setTimeout(()=>window.print(),600)</script></body></html>`);
     win.document.close();
   }
 
@@ -777,7 +778,7 @@ ${allRows}
             <div style={{ fontSize: '.8rem', fontWeight: 800, color: domDef?.color }}>{stdDef.title}</div>
             <div style={{ fontSize: '.7rem', color: '#6b7280', marginTop: '.15rem' }}>{stdInds.length} ตัวบ่งชี้</div>
           </div>
-          <button className="btn btn-secondary" onClick={printStandard} style={{ fontSize: '.8rem', flexShrink: 0 }}>
+          <button {...ui('btn btn-secondary', { fontSize: '.8rem', flexShrink: 0 })} onClick={printStandard}>
             🖨️ พิมพ์มาตรฐานนี้
           </button>
         </div>
@@ -882,8 +883,8 @@ export default function DevelopmentalReportTab({ teacherClassFilter = null }) {
   const ageRange = classStudents[0] ? LEVEL_AGE[classStudents[0].level] ?? '' : '';
 
   return (
-    <div className="glass p-6 animate-fade">
-      <div className="page-header mb-4">
+    <div {...ui('glass p-6 animate-fade')}>
+      <div {...ui('page-header mb-4')}>
         <h3>📋 รายงานสรุปผลการประเมินพัฒนาการ</h3>
         <p style={{ fontSize: '.75rem', color: '#6b7280', marginTop: '.2rem' }}>
           หลักสูตรการศึกษาปฐมวัย พ.ศ. 2568 · 4 มาตรฐาน 4 ด้าน
@@ -902,8 +903,7 @@ export default function DevelopmentalReportTab({ teacherClassFilter = null }) {
         {!myClass && (
           <div>
             <label style={{ fontSize: '.72rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '.2rem' }}>ห้องเรียน</label>
-            <select className="input" value={selClass} onChange={e => setSelClass(e.target.value)}
-              style={{ fontSize: '.8rem', padding: '.3rem .6rem', minWidth: '120px' }}>
+            <select {...ui('input', { fontSize: '.8rem', padding: '.3rem .6rem', minWidth: '120px' })} value={selClass} onChange={e => setSelClass(e.target.value)}>
               {classes.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
             </select>
           </div>
@@ -960,10 +960,10 @@ export default function DevelopmentalReportTab({ teacherClassFilter = null }) {
         <div style={{ textAlign: 'center', color: '#9ca3af', padding: '3rem' }}>ไม่พบนักเรียนในห้อง {selClass}</div>
       ) : viewMode === 'summary' ? (
         <SummaryView students={classStudents} indicators={indicators} activities={activities}
-          className={selClass} schoolName={schoolName} academicYear={academicYear} />
+          classroom={selClass} schoolName={schoolName} schoolLogo={schoolLogo} academicYear={academicYear} />
       ) : (
         <DetailView students={classStudents} indicators={indicators} activities={activities}
-          className={selClass} schoolName={schoolName} academicYear={academicYear} />
+          classroom={selClass} schoolName={schoolName} schoolLogo={schoolLogo} academicYear={academicYear} />
       )}
     </div>
   );

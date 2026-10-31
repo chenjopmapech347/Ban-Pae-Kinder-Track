@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { ui } from '../../ui/ui';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const ACTION_LABELS = {
@@ -149,21 +150,21 @@ export default function SystemLogTab() {
   };
 
   return (
-    <div className="glass p-6 animate-fade">
+    <div {...ui('glass p-6 animate-fade')}>
       {/* Header */}
-      <div className="page-header mb-5">
+      <div {...ui('page-header mb-5')}>
         <div>
           <h3>📋 บันทึกการใช้งานระบบ</h3>
           <p style={{ fontSize: '.8rem', color: 'var(--text-muted)', marginTop: '.2rem' }}>
             ติดตามกิจกรรมการใช้งาน — เข้าสู่ระบบ, จัดการข้อมูล, พิมพ์รายงาน
           </p>
         </div>
-        <div className="flex gap-2">
-          <button className="btn" style={{ background: '#f0f9ff', color: '#0369a1' }}
+        <div {...ui('flex gap-2')}>
+          <button {...ui('btn', { background: '#f0f9ff', color: '#0369a1' })}
             onClick={() => exportCsv(filtered)}>
             📥 Export CSV
           </button>
-          <button className="btn" style={{ background: '#fff1f2', color: '#be123c' }}
+          <button {...ui('btn', { background: '#fff1f2', color: '#be123c' })}
             onClick={clearAll}>
             🗑️ ล้างบันทึก
           </button>
@@ -184,8 +185,7 @@ export default function SystemLogTab() {
         <div style={{ position: 'relative', flex: '1 1 200px' }}>
           <span style={{ position: 'absolute', left: '.75rem', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', fontSize: '.9rem' }}>🔍</span>
           <input
-            className="input"
-            style={{ paddingLeft: '2.2rem', fontSize: '.85rem' }}
+            {...ui('input', { paddingLeft: '2.2rem', fontSize: '.85rem' })}
             placeholder="ค้นหาผู้ใช้ หรือรายละเอียด..."
             value={search}
             onChange={e => handleSearch(e.target.value)}
@@ -193,7 +193,7 @@ export default function SystemLogTab() {
         </div>
 
         {/* Action type filter */}
-        <select className="input" style={{ flex: '0 1 180px', fontSize: '.85rem' }}
+        <select {...ui('input', { flex: '0 1 180px', fontSize: '.85rem' })}
           value={actionFilter} onChange={e => handleActionFilter(e.target.value)}>
           {ACTION_GROUPS.map(g => (
             <option key={g.value} value={g.value}>{g.label}</option>
@@ -201,12 +201,12 @@ export default function SystemLogTab() {
         </select>
 
         {/* Date filter (YYYY-MM-DD) */}
-        <input type="date" className="input" style={{ flex: '0 1 160px', fontSize: '.85rem' }}
+        <input type="date" {...ui('input', { flex: '0 1 160px', fontSize: '.85rem' })}
           value={dateFilter} onChange={e => handleDateFilter(e.target.value)}
           title="กรองตามวันที่" />
 
         {(search || actionFilter || dateFilter) && (
-          <button className="btn btn-sm" style={{ color: '#dc2626' }}
+          <button {...ui('btn btn-sm', { color: '#dc2626' })}
             onClick={() => { setSearch(''); setActionFilter(''); setDateFilter(''); setPage(1); }}>
             ✕ ล้างตัวกรอง
           </button>
@@ -226,8 +226,8 @@ export default function SystemLogTab() {
             : 'ไม่พบรายการที่ตรงกับเงื่อนไขการค้นหา'}
         </div>
       ) : (
-        <div className="table-wrap">
-          <table className="table">
+        <div {...ui('table-wrap')}>
+          <table {...ui('table')}>
             <thead>
               <tr>
                 <th style={{ width: '170px' }}>วันที่ / เวลา</th>
@@ -240,7 +240,7 @@ export default function SystemLogTab() {
               {paginated.map(log => {
                 const meta = getActionMeta(log.action);
                 return (
-                  <tr key={log.id} className="hover-row">
+                  <tr key={log.id} {...ui('hover-row')}>
                     <td style={{ fontSize: '.78rem', color: '#6b7280', whiteSpace: 'nowrap' }}>
                       {thaiDateTime(log.ts)}
                     </td>
@@ -275,12 +275,12 @@ export default function SystemLogTab() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem', marginTop: '1rem' }}>
-          <button className="btn btn-sm" disabled={page === 1}
+          <button {...ui('btn btn-sm', undefined, undefined, page === 1)} disabled={page === 1}
             onClick={() => setPage(p => Math.max(1, p - 1))}>← ก่อนหน้า</button>
           <span style={{ fontSize: '.82rem', color: '#6b7280' }}>
             หน้า {page} / {totalPages}
           </span>
-          <button className="btn btn-sm" disabled={page === totalPages}
+          <button {...ui('btn btn-sm', undefined, undefined, page === totalPages)} disabled={page === totalPages}
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}>ถัดไป →</button>
         </div>
       )}

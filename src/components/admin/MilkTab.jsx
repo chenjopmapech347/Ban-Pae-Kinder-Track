@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 import { daysInMonth, getDow, isWeekendDay } from '../../utils/helpers';
+import { ui } from '../../ui/ui';
 
 // √  = ดื่มนม (ครูเช็คแล้ว)
 // X  = ยังไม่ดื่ม / ขาด / ไม่เช็ค (ค่าเริ่มต้น)
@@ -19,13 +20,11 @@ function isDone(v) { return v === DONE_SYM || v === 'H'; } // รองรับ
 const DOW_SHORT   = ['อา','จ','อ','พ','พฤ','ศ','ส'];
 const THAI_MONTHS = ['','มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
   'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
-const THAI_MONTHS_SHORT = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
 function recKey(className, academicYear, year, month) {
   return `${className}__${academicYear}__${year}-${String(month).padStart(2, '0')}`;
 }
 function nextSym(cur) { const i = CYCLE.indexOf(cur ?? ''); return CYCLE[(i + 1) % CYCLE.length]; }
-function countH(days) { return Object.values(days ?? {}).filter(v => isDone(v)).length; }
 
 // ไม่ patch อัตโนมัติ — ครูใช้ checkbox เลือกเอง
 function patchCurrentMonth(rec) { return rec; }
@@ -287,8 +286,8 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
   }
 
   return (
-    <div className="glass p-6 animate-fade">
-      <div className="page-header mb-4">
+    <div {...ui('glass p-6 animate-fade')}>
+      <div {...ui('page-header mb-4')}>
         <h3>🥛 บันทึกการดื่มนม</h3>
       </div>
 
@@ -301,30 +300,26 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
         {!myClass && (
           <div>
             <label style={lbl}>ห้องเรียน</label>
-            <select className="input" value={selClass} onChange={e => handleClassChange(e.target.value)}
-              style={{ fontSize:'.8rem', padding:'.3rem .6rem', minWidth:'120px' }}>
+            <select {...ui('input', { fontSize:'.8rem', padding:'.3rem .6rem', minWidth:'120px' })} value={selClass} onChange={e => handleClassChange(e.target.value)}>
               {classes.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
             </select>
           </div>
         )}
         <div>
           <label style={lbl}>ปี พ.ศ.</label>
-          <input type="number" className="input" value={selYear} min={2560} max={2599}
-            onChange={e => handleYearChange(e.target.value)}
-            style={{ fontSize:'.8rem', padding:'.3rem .6rem', width:'90px' }} />
+          <input type="number" {...ui('input', { fontSize:'.8rem', padding:'.3rem .6rem', width:'90px' })} value={selYear} min={2560} max={2599}
+            onChange={e => handleYearChange(e.target.value)} />
         </div>
         <div>
           <label style={lbl}>เดือน</label>
-          <select className="input" value={selMonth} onChange={e => handleMonthChange(e.target.value)}
-            style={{ fontSize:'.8rem', padding:'.3rem .6rem' }}>
+          <select {...ui('input', { fontSize:'.8rem', padding:'.3rem .6rem' })} value={selMonth} onChange={e => handleMonthChange(e.target.value)}>
             {THAI_MONTHS.slice(1).map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
           </select>
         </div>
         <div>
           <label style={lbl}>เวลาเรียนในรอบเดือน (วัน)</label>
-          <input type="number" className="input" value={schoolDays} min={1} max={31}
-            onChange={e => handleSchoolDays(e.target.value)}
-            style={{ fontSize:'.8rem', padding:'.3rem .6rem', width:'70px' }} />
+          <input type="number" {...ui('input', { fontSize:'.8rem', padding:'.3rem .6rem', width:'70px' })} value={schoolDays} min={1} max={31}
+            onChange={e => handleSchoolDays(e.target.value)} />
         </div>
         <div style={{ marginLeft:'auto', textAlign:'right', fontSize:'.72rem', color:'#1e40af' }}>
           <div>ห้อง <strong>{selClass}</strong> · {classStudents.length} คน</div>
@@ -489,11 +484,11 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
       )}
       {/* Actions */}
       <div style={{ display:'flex', gap:'.6rem', marginTop:'1rem', flexWrap:'wrap', alignItems:'center' }}>
-        <button className="btn btn-primary" onClick={handleSave}
-          disabled={isLocked} style={{ opacity: isLocked ? 0.5 : 1, cursor: isLocked ? 'not-allowed' : 'pointer' }}>
+        <button {...ui('btn btn-primary', { opacity: isLocked ? 0.5 : 1, cursor: isLocked ? 'not-allowed' : 'pointer' }, undefined, isLocked)} onClick={handleSave}
+          disabled={isLocked}>
           {isLocked ? '🔒 ล็อกแล้ว' : '💾 บันทึก'}
         </button>
-        <button className="btn btn-secondary" onClick={handlePrint}>🖨️ พิมพ์แบบฟอร์ม</button>
+        <button {...ui('btn btn-secondary')} onClick={handlePrint}>🖨️ พิมพ์แบบฟอร์ม</button>
         <button type="button" onClick={handleClear}
           style={{ padding:'.35rem .9rem', borderRadius:'8px', border:'1px solid #fca5a5', background:'#fff5f5', color:'#dc2626', fontFamily:'inherit', fontSize:'.8rem', cursor:'pointer' }}>
           🗑️ ล้างข้อมูลเดือนนี้

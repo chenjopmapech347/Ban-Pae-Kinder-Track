@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { getDayRecord } from '../../utils/attendance';
 import { todayISO, formatDateThai, isStudentActive } from '../../utils/helpers';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
+import { ui } from '../../ui/ui';
 
 // ALL_CLASSES ดึงจาก AppContext แบบ dynamic ภายในคอมโพเนนต์
 
@@ -224,7 +225,7 @@ export default function AttendanceTab({ defaultClass }) {
   const {
     students, dailyRecords, teachers, saveDailyAttendance,
     schoolName, schoolLogo, allClassNames, schoolTerms, academicYear,
-    dailyRoutineRecords, setDailyRoutineRecords,
+    setDailyRoutineRecords,
     holidays,
     milkRecords, toothBrushRecords, lunchRecords,
   } = useApp();
@@ -492,7 +493,7 @@ export default function AttendanceTab({ defaultClass }) {
       milkRecords, toothBrushRecords, lunchRecords, academicYear]);
 
   return (
-    <div className="animate-fade">
+    <div {...ui('animate-fade')}>
       {/* ── Header ── */}
       <div style={{
         background: 'linear-gradient(135deg,#7c3aed,#a855f7)',
@@ -573,11 +574,10 @@ export default function AttendanceTab({ defaultClass }) {
           {/* Date picker */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
             <span style={{ fontSize: '.8rem', fontWeight: 700, color: '#6b7280' }}>📅 วันที่</span>
-            <input type="date" className="input" style={{ width: '170px', fontSize: '.85rem' }}
+            <input type="date" {...ui('input', { width: '170px', fontSize: '.85rem' })}
               value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
             {!isToday && (
-              <button className="btn btn-sm" onClick={() => setSelectedDate(todayISO())}
-                style={{ fontSize: '.75rem' }}>วันนี้</button>
+              <button {...ui('btn btn-sm', { fontSize: '.75rem' })} onClick={() => setSelectedDate(todayISO())}>วันนี้</button>
             )}
           </div>
         </>) : (<>
@@ -638,7 +638,7 @@ export default function AttendanceTab({ defaultClass }) {
         {/* Class filter (shared) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
           <span style={{ fontSize: '.8rem', fontWeight: 700, color: '#6b7280' }}>🏫 ห้อง</span>
-          <select className="input" style={{ width: '120px', fontSize: '.85rem' }}
+          <select {...ui('input', { width: '120px', fontSize: '.85rem' })}
             value={filterClass} onChange={e => setFilterClass(e.target.value)}>
             <option value="ทั้งหมด">ทั้งหมด</option>
             {ALL_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -701,11 +701,11 @@ export default function AttendanceTab({ defaultClass }) {
       {mainView === 'monthly' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {monthlyData.length === 0 ? (
-            <div className="glass-card text-center text-muted" style={{ padding: '2rem' }}>
+            <div {...ui('glass-card text-center text-muted', { padding: '2rem' })}>
               ยังไม่มีข้อมูลการลงเวลาในเดือนนี้
             </div>
           ) : monthlyData.map(({ cls, teacher, rows, schoolDays }) => (
-            <div key={cls} className="glass-card" style={{ padding: '1rem 1.25rem' }}>
+            <div key={cls} {...ui('glass-card', { padding: '1rem 1.25rem' })}>
               {/* Class header */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', marginBottom: '.85rem', flexWrap: 'wrap' }}>
                 <div style={{
@@ -721,8 +721,8 @@ export default function AttendanceTab({ defaultClass }) {
                 </span>
               </div>
 
-              <div className="table-wrap">
-                <table className="table" style={{ fontSize: '.83rem' }}>
+              <div {...ui('table-wrap')}>
+                <table {...ui('table', { fontSize: '.83rem' })}>
                   <thead>
                     <tr>
                       <th style={{ width: '36px' }}>#</th>
@@ -741,7 +741,7 @@ export default function AttendanceTab({ defaultClass }) {
                       const total = มา + ขาด + ลา + ป่วย;
                       const pct   = total ? Math.round((มา / total) * 100) : 0;
                       return (
-                        <tr key={s.id} className="hover-row">
+                        <tr key={s.id} {...ui('hover-row')}>
                           <td style={{ textAlign: 'center', color: 'var(--text-muted)' }}>{idx + 1}</td>
                           <td style={{ fontWeight: 600 }}>
                             {s.name.replace('เด็กชาย', 'ด.ช.').replace('เด็กหญิง', 'ด.ญ.')}
@@ -794,7 +794,7 @@ export default function AttendanceTab({ defaultClass }) {
       {mainView === 'daily' && (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {classSections.map(({ cls, teacher, rows, counts, total }) => (
-          <div key={cls} className="glass-card" style={{ padding: '1rem 1.25rem' }}>
+          <div key={cls} {...ui('glass-card', { padding: '1rem 1.25rem' })}>
             {/* Class header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem',
               marginBottom: '.85rem', flexWrap: 'wrap' }}>
@@ -925,8 +925,8 @@ export default function AttendanceTab({ defaultClass }) {
 
             {/* TABLE MODE */}
             {viewMode === 'table' && (
-              <div className="table-wrap">
-                <table className="table" style={{ fontSize: '.83rem' }}>
+              <div {...ui('table-wrap')}>
+                <table {...ui('table', { fontSize: '.83rem' })}>
                   <thead>
                     <tr>
                       <th style={{ width: '36px' }}>#</th>
@@ -944,9 +944,8 @@ export default function AttendanceTab({ defaultClass }) {
                       const att = s.draftAtt;
                       const c   = ATT_COLOR[att] ?? ATT_COLOR['-'];
                       return (
-                        <tr key={s.id} className="hover-row"
-                          onClick={() => cycleStudentAtt(cls, s.id)}
-                          style={{ cursor: 'pointer', userSelect: 'none' }}>
+                        <tr key={s.id} {...ui('hover-row', { cursor: 'pointer', userSelect: 'none' })}
+                          onClick={() => cycleStudentAtt(cls, s.id)}>
                           <td style={{ color: 'var(--text-muted)', textAlign: 'center' }}>{idx + 1}</td>
                           <td style={{ fontWeight: 600 }}>
                             {s.name.replace('เด็กชาย', 'ด.ช.').replace('เด็กหญิง', 'ด.ญ.')}
@@ -983,7 +982,7 @@ export default function AttendanceTab({ defaultClass }) {
             )}
 
             {rows.length === 0 && (
-              <div className="text-center text-muted" style={{ padding: '1.5rem' }}>
+              <div {...ui('text-center text-muted', { padding: '1.5rem' })}>
                 ไม่มีนักเรียนในห้องนี้
               </div>
             )}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
+import { ui } from '../../ui/ui';
 
 const EMPTY = { label: '', date: '' };
 
@@ -100,10 +101,10 @@ export default function HolidaysTab() {
   };
 
   return (
-    <div className="glass p-6 animate-fade">
-      <div className="page-header mb-6">
+    <div {...ui('glass p-6 animate-fade')}>
+      <div {...ui('page-header mb-6')}>
         <h3>🏖️ จัดการวันหยุดราชการและกิจกรรมประจำปี</h3>
-        <button type="button" className="btn btn-primary" onClick={openModal}>
+        <button type="button" {...ui('btn btn-primary')} onClick={openModal}>
           + เพิ่มวันหยุด
         </button>
       </div>
@@ -114,8 +115,8 @@ export default function HolidaysTab() {
           .slice()
           .sort((a, b) => (a.date > b.date ? 1 : -1))
           .map(h => (
-            <div key={h.id} className="glass-card flex justify-between items-center" style={{ flexWrap: 'wrap', gap: '.75rem' }}>
-              <div className="flex gap-3 items-center">
+            <div key={h.id} {...ui('glass-card flex justify-between items-center', { flexWrap: 'wrap', gap: '.75rem' })}>
+              <div {...ui('flex gap-3 items-center')}>
                 <div style={{
                   background: 'linear-gradient(135deg,#7c3aed,#a855f7)',
                   color: 'white', borderRadius: '12px', padding: '.5rem .85rem',
@@ -124,18 +125,18 @@ export default function HolidaysTab() {
                   {toThaiDate(h.date) || h.date}
                 </div>
                 <div>
-                  <div className="font-bold">{h.label}</div>
-                  <div className="text-xs text-muted">ประเภท: {h.type}</div>
+                  <div {...ui('font-bold')}>{h.label}</div>
+                  <div {...ui('text-xs text-muted')}>ประเภท: {h.type}</div>
                 </div>
               </div>
-              <button type="button" className="btn btn-sm" style={{ color: 'var(--danger)' }}
+              <button type="button" {...ui('btn btn-sm', { color: 'var(--danger)' })}
                 onClick={() => { if (confirm('ลบวันหยุดนี้?')) setHolidays(holidays.filter(x => x.id !== h.id)); }}>
                 🗑️ ลบ
               </button>
             </div>
           ))}
         {!holidays.length && (
-          <div className="text-center text-muted" style={{ padding: '2rem' }}>ยังไม่มีวันหยุด</div>
+          <div {...ui('text-center text-muted', { padding: '2rem' })}>ยังไม่มีวันหยุด</div>
         )}
       </div>
 
@@ -152,7 +153,7 @@ export default function HolidaysTab() {
             ชื่อวันหยุด / กิจกรรม
           </label>
           <input
-            className="input"
+            {...ui('input')}
             placeholder="เช่น วันสงกรานต์, วันหยุดพิเศษ..."
             value={form.label}
             onChange={e => setForm({ ...form, label: e.target.value })}

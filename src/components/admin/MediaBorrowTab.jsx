@@ -1,6 +1,7 @@
 // MediaBorrowTab.jsx — รายการยืม-คืนสื่อการสอน
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { ui } from '../../ui/ui';
 
 /* ── Thai date helpers ────────────────────────────────────────────────────── */
 const THAI_MONTHS_BORROW = [
@@ -294,7 +295,7 @@ export default function MediaBorrowTab({ teacherClassFilter = null }) {
   const cell = { border: '1px solid #fef3c7', padding: '.4rem .6rem' };
 
   return (
-    <div className="animate-fade">
+    <div {...ui('animate-fade')}>
 
       {/* ── Header ── */}
       <div style={{

@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { INDICATORS_DATA_68 } from '../../data/indicatorsData_68';
 import { INITIAL_INDICATORS, INITIAL_ACTIVITIES } from '../../data/flatIndicators';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
+import { ui } from '../../ui/ui';
 
 // ── helper: รายการ standard ในแต่ละ domain (ใช้ indicatorsData_68) ─────────
 function getStandardsByDomain(domainId) {
@@ -302,14 +303,14 @@ function IndicatorModal({ isOpen, onClose, onSave, editing, domains }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <div>
           <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>ด้านพัฒนาการ</label>
-          <select className="input" value={form.domainId}
+          <select {...ui('input')} value={form.domainId}
             onChange={e => setForm({ ...form, domainId: e.target.value, standardId: '' })}>
             {domains.map(d => <option key={d.id} value={d.id}>{d.emoji} ด้าน{d.label}</option>)}
           </select>
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>มาตรฐาน</label>
-          <select className="input" value={form.standardId}
+          <select {...ui('input')} value={form.standardId}
             onChange={e => setForm({ ...form, standardId: e.target.value })}>
             <option value="">— เลือกมาตรฐาน —</option>
             {getStandardsByDomain(form.domainId).map(s => (
@@ -321,14 +322,14 @@ function IndicatorModal({ isOpen, onClose, onSave, editing, domains }) {
           <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>
             รหัสตัวบ่งชี้ <span style={{ color: 'var(--danger)' }}>*</span>
           </label>
-          <input className="input" placeholder="เช่น 3.1, 5.2" value={form.indicatorCode}
+          <input {...ui('input')} placeholder="เช่น 3.1, 5.2" value={form.indicatorCode}
             onChange={e => setForm({ ...form, indicatorCode: e.target.value })} />
         </div>
         <div>
           <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>
             ชื่อ/คำอธิบายตัวบ่งชี้ <span style={{ color: 'var(--danger)' }}>*</span>
           </label>
-          <input className="input" placeholder="เช่น ตัวบ่งชี้ที่ 3.1 ..." value={form.label}
+          <input {...ui('input')} placeholder="เช่น ตัวบ่งชี้ที่ 3.1 ..." value={form.label}
             onChange={e => setForm({ ...form, label: e.target.value })} />
         </div>
         <div style={{ display: 'flex', gap: '.75rem', marginTop: '.5rem' }}>
@@ -409,7 +410,7 @@ export default function IndicatorsTab({ readOnly = false }) {
   };
 
   return (
-    <div className="glass p-6 animate-fade">
+    <div {...ui('glass p-6 animate-fade')}>
 
       {/* Toast */}
       {toast && (
@@ -426,21 +427,21 @@ export default function IndicatorsTab({ readOnly = false }) {
       )}
 
       {/* Header */}
-      <div className="page-header mb-6">
+      <div {...ui('page-header mb-6')}>
         <h3>📋 ตัวบ่งชี้</h3>
         <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <input className="input" style={{ maxWidth: '160px' }} placeholder="🔍 ค้นหา..."
+          <input {...ui('input', { maxWidth: '160px' })} placeholder="🔍 ค้นหา..."
             value={search} onChange={e => setSearch(e.target.value)} />
 
           {/* Download Template */}
-          <button className="btn" style={{ background: '#f0fdf4', color: '#16a34a', border: '1.5px solid #86efac' }}
+          <button {...ui('btn', { background: '#f0fdf4', color: '#16a34a', border: '1.5px solid #86efac' })}
             onClick={() => downloadTemplate()}
             title="ดาวน์โหลดแม่แบบ CSV">
             📄 แม่แบบ CSV
           </button>
 
           {/* Export */}
-          <button className="btn" style={{ background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe' }}
+          <button {...ui('btn', { background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe' })}
             onClick={() => exportIndicators(indicators)}
             title="ส่งออกข้อมูลทั้งหมดเป็น CSV">
             ⬆️ ส่งออก
@@ -448,7 +449,7 @@ export default function IndicatorsTab({ readOnly = false }) {
 
           {/* Import CSV — admin only */}
           {!readOnly && (
-            <button className="btn" style={{ background: '#faf5ff', color: '#7c3aed', border: '1.5px solid #c4b5fd' }}
+            <button {...ui('btn', { background: '#faf5ff', color: '#7c3aed', border: '1.5px solid #c4b5fd' })}
               onClick={() => setIsCsvModal(true)}>
               📥 นำเข้า CSV
             </button>
@@ -456,7 +457,7 @@ export default function IndicatorsTab({ readOnly = false }) {
 
           {/* Add — admin only */}
           {!readOnly && (
-            <button className="btn btn-primary" onClick={() => { setEditing(null); setIsModal(true); }}>
+            <button {...ui('btn btn-primary')} onClick={() => { setEditing(null); setIsModal(true); }}>
               + เพิ่มตัวบ่งชี้
             </button>
           )}
@@ -520,8 +521,8 @@ export default function IndicatorsTab({ readOnly = false }) {
                     color: aCnt > 0 ? domain?.color ?? '#7c3aed' : '#9ca3af',
                     borderRadius: '999px', padding: '0 .55rem', fontSize: '.72rem', fontWeight: 700,
                   }}>{aCnt} กิจกรรม</span>
-                  {!readOnly && <button className="btn btn-sm" onClick={() => { setEditing(ind); setIsModal(true); }}>แก้ไข</button>}
-                  {!readOnly && <button className="btn btn-sm" style={{ color: 'var(--danger)' }}
+                  {!readOnly && <button {...ui('btn btn-sm')} onClick={() => { setEditing(ind); setIsModal(true); }}>แก้ไข</button>}
+                  {!readOnly && <button {...ui('btn btn-sm', { color: 'var(--danger)' })}
                     onClick={() => handleDelete(ind.id)}>ลบ</button>}
                 </div>
               </div>

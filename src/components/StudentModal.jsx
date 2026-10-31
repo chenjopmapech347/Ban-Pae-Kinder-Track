@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from './Modal';
+import { ui } from '../ui/ui';
 
 // ── Thai date helpers ──────────────────────────────────────────────────────
 const THAI_MONTHS = [
@@ -197,13 +198,12 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
     >
       <div style={{ padding: '1.5rem', overflowY: 'auto' }}>
       {/* ── Sub-tabs ── */}
-      <div className="flex gap-2 mb-6 border-b">
+      <div {...ui('flex gap-2 mb-6 border-b')}>
         {TABS.map(t => (
           <button
             key={t.id}
             type="button"
-            className={`btn ${activeSubTab === t.id ? 'btn-primary' : ''}`}
-            style={{ borderRadius: '8px 8px 0 0', background: activeSubTab === t.id ? '' : 'white', border: '1px solid #eee' }}
+            {...ui(`btn ${activeSubTab === t.id ? 'btn-primary' : ''}`, { borderRadius: '8px 8px 0 0', background: activeSubTab === t.id ? '' : 'white', border: '1px solid #eee' })}
             onClick={() => setActiveSubTab(t.id)}
           >
             {t.label}
@@ -215,7 +215,7 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
 
         {/* ════ Tab 1: ประวัติส่วนตัว ════ */}
         {activeSubTab === 'personal' && (
-          <div className="grid grid-2 gap-4 animate-fade">
+          <div {...ui('grid grid-2 gap-4 animate-fade')}>
 
             {/* ── รูปภาพนักเรียน ── */}
             <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '.25rem' }}>
@@ -287,20 +287,20 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
             </div>
 
             {/* ชื่อ-นามสกุล */}
-            <div className="flex flex-col gap-1" style={{ gridColumn: '1 / -1' }}>
-              <label className="text-xs font-bold">ชื่อ-นามสกุล *</label>
-              <input className="input" {...f('name')} required />
+            <div {...ui('flex flex-col gap-1', { gridColumn: '1 / -1' })}>
+              <label {...ui('text-xs font-bold')}>ชื่อ-นามสกุล *</label>
+              <input {...ui('input')} {...f('name')} required />
             </div>
 
             {/* ชื่อเล่น + เพศ */}
-            <div className="grid grid-2 gap-2">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold">ชื่อเล่น</label>
-                <input className="input" {...f('nickname')} />
+            <div {...ui('grid grid-2 gap-2')}>
+              <div {...ui('flex flex-col gap-1')}>
+                <label {...ui('text-xs font-bold')}>ชื่อเล่น</label>
+                <input {...ui('input')} {...f('nickname')} />
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold">เพศ</label>
-                <select className="input" {...f('gender')}>
+              <div {...ui('flex flex-col gap-1')}>
+                <label {...ui('text-xs font-bold')}>เพศ</label>
+                <select {...ui('input')} {...f('gender')}>
                   <option>ชาย</option>
                   <option>หญิง</option>
                 </select>
@@ -308,12 +308,12 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
             </div>
 
             {/* วันเกิด + อายุอัตโนมัติ */}
-            <div className="flex flex-col gap-1" style={{ gridColumn: '1 / -1' }}>
-              <label className="text-xs font-bold">วัน เดือน ปีเกิด (พ.ศ.)</label>
+            <div {...ui('flex flex-col gap-1', { gridColumn: '1 / -1' })}>
+              <label {...ui('text-xs font-bold')}>วัน เดือน ปีเกิด (พ.ศ.)</label>
               <div style={{ display: 'flex', gap: '.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
 
                 {/* วัน */}
-                <select className="input" style={{ width: '75px' }}
+                <select {...ui('input', { width: '75px' })}
                   value={bDay}
                   onChange={e => handleBirthChange('day', e.target.value)}>
                   <option value="">วัน</option>
@@ -323,7 +323,7 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
                 </select>
 
                 {/* เดือน */}
-                <select className="input" style={{ width: '148px' }}
+                <select {...ui('input', { width: '148px' })}
                   value={bMonth}
                   onChange={e => handleBirthChange('month', e.target.value)}>
                   <option value="">เดือน</option>
@@ -333,7 +333,7 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
                 </select>
 
                 {/* ปี พ.ศ. */}
-                <select className="input" style={{ width: '108px' }}
+                <select {...ui('input', { width: '108px' })}
                   value={bYear}
                   onChange={e => handleBirthChange('yearBE', e.target.value)}>
                   <option value="">ปี พ.ศ.</option>
@@ -356,52 +356,50 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
             </div>
 
             {/* เลขประจำตัวประชาชน */}
-            <div className="flex flex-col gap-1" style={{ gridColumn: '1 / -1' }}>
-              <label className="text-xs font-bold">เลขประจำตัวประชาชน</label>
-              <input className="input" placeholder="x-xxxx-xxxxx-xx-x" {...f('nationalId')} />
+            <div {...ui('flex flex-col gap-1', { gridColumn: '1 / -1' })}>
+              <label {...ui('text-xs font-bold')}>เลขประจำตัวประชาชน</label>
+              <input {...ui('input')} placeholder="x-xxxx-xxxxx-xx-x" {...f('nationalId')} />
             </div>
 
             {/* รหัสประจำตัวนักเรียน + PIN */}
-            <div className="grid grid-2 gap-2">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold">รหัสประจำตัว</label>
-                <input className="input" placeholder="เช่น 001, 2567001" {...f('studentId')} />
+            <div {...ui('grid grid-2 gap-2')}>
+              <div {...ui('flex flex-col gap-1')}>
+                <label {...ui('text-xs font-bold')}>รหัสประจำตัว</label>
+                <input {...ui('input')} placeholder="เช่น 001, 2567001" {...f('studentId')} />
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold">รหัสผู้ปกครอง (PIN)</label>
-                <input className="input" {...f('parentPin')} placeholder="4 หลัก" />
+              <div {...ui('flex flex-col gap-1')}>
+                <label {...ui('text-xs font-bold')}>รหัสผู้ปกครอง (PIN)</label>
+                <input {...ui('input')} {...f('parentPin')} placeholder="4 หลัก" />
               </div>
             </div>
 
             {/* ห้องเรียน + สถานะ */}
-            <div className="grid grid-2 gap-2">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold">ห้องเรียน</label>
-                <select className="input" value={formData.className ?? ''} onChange={e => setFormData(set(formData, 'className', e.target.value))}>
+            <div {...ui('grid grid-2 gap-2')}>
+              <div {...ui('flex flex-col gap-1')}>
+                <label {...ui('text-xs font-bold')}>ห้องเรียน</label>
+                <select {...ui('input')} value={formData.className ?? ''} onChange={e => setFormData(set(formData, 'className', e.target.value))}>
                   <option value="">— ยังไม่กำหนด —</option>
                   {ALL_CLASSES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold">สถานะ</label>
-                <select className="input" value={formData.status ?? 'ปกติ'}
-                  onChange={e => setFormData(set(formData, 'status', e.target.value))}
-                  style={{
+              <div {...ui('flex flex-col gap-1')}>
+                <label {...ui('text-xs font-bold')}>สถานะ</label>
+                <select {...ui('input', {
                     color: (formData.status ?? 'ปกติ') === 'นอกระบบ' ? '#6b7280'
                          : (formData.status ?? 'ปกติ') === 'ลาออก'   ? '#b45309'
                          : '#065f46',
                     fontWeight: 700,
-                  }}>
+                  })} value={formData.status ?? 'ปกติ'}
+                  onChange={e => setFormData(set(formData, 'status', e.target.value))}>
                   <option value="ปกติ">✅ ปกติ</option>
                   <option value="ลาออก">🚪 ลาออก</option>
                   <option value="นอกระบบ">⛔ นอกระบบ</option>
                 </select>
                 {(formData.status ?? 'ปกติ') === 'ลาออก' && (
-                  <div className="flex flex-col gap-1 mt-1">
-                    <label className="text-xs text-amber-700 font-bold">📅 วันที่ลาออก</label>
-                    <input className="input" type="date" {...f('withdrawDate')}
-                      style={{ borderColor: '#f59e0b', color: '#92400e' }} />
-                    <p className="text-xs text-amber-600" style={{ margin: 0 }}>
+                  <div {...ui('flex flex-col gap-1 mt-1')}>
+                    <label {...ui('text-xs text-amber-700 font-bold')}>📅 วันที่ลาออก</label>
+                    <input {...ui('input', { borderColor: '#f59e0b', color: '#92400e' })} type="date" {...f('withdrawDate')} />
+                    <p {...ui('text-xs text-amber-600', { margin: 0 })}>
                       ชื่อยังแสดงในระบบ — กิจกรรมจะหยุดนับตั้งแต่วันนี้
                     </p>
                   </div>
@@ -410,22 +408,22 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
             </div>
 
             {/* ระดับชั้น + น้ำหนัก + ส่วนสูง */}
-            <div className="grid grid-3 gap-2">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold">ระดับชั้น</label>
-                <select className="input" {...f('level')}>
+            <div {...ui('grid grid-3 gap-2')}>
+              <div {...ui('flex flex-col gap-1')}>
+                <label {...ui('text-xs font-bold')}>ระดับชั้น</label>
+                <select {...ui('input')} {...f('level')}>
                   <option value="K1">อ.1 (3 ขวบ)</option>
                   <option value="K2">อ.2 (4 ขวบ)</option>
                   <option value="K3">อ.3 (5 ขวบ)</option>
                 </select>
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold">น้ำหนัก (กก.)</label>
-                <input className="input" type="number" step="0.1" {...f('weight')} />
+              <div {...ui('flex flex-col gap-1')}>
+                <label {...ui('text-xs font-bold')}>น้ำหนัก (กก.)</label>
+                <input {...ui('input')} type="number" step="0.1" {...f('weight')} />
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-bold">ส่วนสูง (ซม.)</label>
-                <input className="input" type="number" {...f('height')} />
+              <div {...ui('flex flex-col gap-1')}>
+                <label {...ui('text-xs font-bold')}>ส่วนสูง (ซม.)</label>
+                <input {...ui('input')} type="number" {...f('height')} />
               </div>
             </div>
           </div>
@@ -433,44 +431,44 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
 
         {/* ════ Tab 2: ครอบครัว ════ */}
         {activeSubTab === 'family' && (
-          <div className="grid grid-1 gap-4 animate-fade">
+          <div {...ui('grid grid-1 gap-4 animate-fade')}>
             {/* บิดา */}
             <div style={{ background: '#f0f9ff', borderRadius: '10px', padding: '.75rem 1rem' }}>
-              <div className="text-xs font-bold mb-3" style={{ color: '#0369a1' }}>👨 บิดา</div>
-              <div className="grid grid-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold">ชื่อ-สกุล</label>
-                  <input className="input" {...f('fatherName')} />
+              <div {...ui('text-xs font-bold mb-3', { color: '#0369a1' })}>👨 บิดา</div>
+              <div {...ui('grid grid-2 gap-3')}>
+                <div {...ui('flex flex-col gap-1')}>
+                  <label {...ui('text-xs font-bold')}>ชื่อ-สกุล</label>
+                  <input {...ui('input')} {...f('fatherName')} />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold">อาชีพ</label>
-                  <input className="input" {...f('fatherOcc')} />
+                <div {...ui('flex flex-col gap-1')}>
+                  <label {...ui('text-xs font-bold')}>อาชีพ</label>
+                  <input {...ui('input')} {...f('fatherOcc')} />
                 </div>
               </div>
             </div>
 
             {/* มารดา */}
             <div style={{ background: '#fdf2f8', borderRadius: '10px', padding: '.75rem 1rem' }}>
-              <div className="text-xs font-bold mb-3" style={{ color: '#9d174d' }}>👩 มารดา</div>
-              <div className="grid grid-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold">ชื่อ-สกุล</label>
-                  <input className="input" {...f('motherName')} />
+              <div {...ui('text-xs font-bold mb-3', { color: '#9d174d' })}>👩 มารดา</div>
+              <div {...ui('grid grid-2 gap-3')}>
+                <div {...ui('flex flex-col gap-1')}>
+                  <label {...ui('text-xs font-bold')}>ชื่อ-สกุล</label>
+                  <input {...ui('input')} {...f('motherName')} />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold">อาชีพ</label>
-                  <input className="input" {...f('motherOcc')} />
+                <div {...ui('flex flex-col gap-1')}>
+                  <label {...ui('text-xs font-bold')}>อาชีพ</label>
+                  <input {...ui('input')} {...f('motherOcc')} />
                 </div>
               </div>
             </div>
 
             {/* 🚌 การรับ-ส่ง (ค่าเริ่มต้น) */}
             <div style={{ background: '#fffbeb', borderRadius: '10px', padding: '.75rem 1rem', border: '1.5px solid #fde68a' }}>
-              <div className="text-xs font-bold mb-3" style={{ color: '#92400e' }}>🚌 การรับ-ส่ง (ผู้ส่ง-รับประจำ)</div>
+              <div {...ui('text-xs font-bold mb-3', { color: '#92400e' })}>🚌 การรับ-ส่ง (ผู้ส่ง-รับประจำ)</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 {/* ผู้ส่ง เช้า */}
                 <div>
-                  <div className="text-xs font-bold mb-2" style={{ color: '#b45309' }}>🌅 ผู้ส่ง (ตอนเช้า)</div>
+                  <div {...ui('text-xs font-bold mb-2', { color: '#b45309' })}>🌅 ผู้ส่ง (ตอนเช้า)</div>
                   <div style={{ display: 'flex', gap: '.3rem', flexWrap: 'wrap', marginBottom: '.5rem' }}>
                     {PICKUP_RELATIONS.map(r => (
                       <button key={r} type="button"
@@ -486,14 +484,13 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
                       </button>
                     ))}
                   </div>
-                  <input className="input" placeholder="ชื่อเพิ่มเติม (กรณีอื่นๆ)"
-                    style={{ fontSize: '.82rem' }}
+                  <input {...ui('input', { fontSize: '.82rem' })} placeholder="ชื่อเพิ่มเติม (กรณีอื่นๆ)"
                     value={formData.defaultDropoffName ?? ''}
                     onChange={e => setFormData(fd => ({ ...fd, defaultDropoffName: e.target.value }))} />
                 </div>
                 {/* ผู้รับ เย็น */}
                 <div>
-                  <div className="text-xs font-bold mb-2" style={{ color: '#166534' }}>🌆 ผู้รับ (ตอนเย็น)</div>
+                  <div {...ui('text-xs font-bold mb-2', { color: '#166534' })}>🌆 ผู้รับ (ตอนเย็น)</div>
                   <div style={{ display: 'flex', gap: '.3rem', flexWrap: 'wrap', marginBottom: '.5rem' }}>
                     {PICKUP_RELATIONS.map(r => (
                       <button key={r} type="button"
@@ -509,8 +506,7 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
                       </button>
                     ))}
                   </div>
-                  <input className="input" placeholder="ชื่อเพิ่มเติม (กรณีอื่นๆ)"
-                    style={{ fontSize: '.82rem' }}
+                  <input {...ui('input', { fontSize: '.82rem' })} placeholder="ชื่อเพิ่มเติม (กรณีอื่นๆ)"
                     value={formData.defaultPickupName ?? ''}
                     onChange={e => setFormData(fd => ({ ...fd, defaultPickupName: e.target.value }))} />
                 </div>
@@ -519,15 +515,15 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
 
             {/* ผู้ปกครอง */}
             <div style={{ background: '#f0fdf4', borderRadius: '10px', padding: '.75rem 1rem' }}>
-              <div className="text-xs font-bold mb-3" style={{ color: '#166534' }}>🏠 ผู้ปกครอง</div>
-              <div className="grid grid-3 gap-3">
-                <div className="flex flex-col gap-1" style={{ gridColumn: '1 / 3' }}>
-                  <label className="text-xs font-bold">ชื่อ-สกุล</label>
-                  <input className="input" {...f('guardianName')} />
+              <div {...ui('text-xs font-bold mb-3', { color: '#166534' })}>🏠 ผู้ปกครอง</div>
+              <div {...ui('grid grid-3 gap-3')}>
+                <div {...ui('flex flex-col gap-1', { gridColumn: '1 / 3' })}>
+                  <label {...ui('text-xs font-bold')}>ชื่อ-สกุล</label>
+                  <input {...ui('input')} {...f('guardianName')} />
                 </div>
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-bold">ความเกี่ยวข้อง</label>
-                  <select className="input" {...f('guardianRelation')}>
+                <div {...ui('flex flex-col gap-1')}>
+                  <label {...ui('text-xs font-bold')}>ความเกี่ยวข้อง</label>
+                  <select {...ui('input')} {...f('guardianRelation')}>
                     <option>มารดา</option>
                     <option>บิดา</option>
                     <option>ปู่/ย่า</option>
@@ -536,9 +532,9 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
                   </select>
                 </div>
               </div>
-              <div className="flex flex-col gap-1 mt-3">
-                <label className="text-xs font-bold">อาชีพ</label>
-                <input className="input" {...f('guardianOcc')} />
+              <div {...ui('flex flex-col gap-1 mt-3')}>
+                <label {...ui('text-xs font-bold')}>อาชีพ</label>
+                <input {...ui('input')} {...f('guardianOcc')} />
               </div>
             </div>
           </div>
@@ -546,46 +542,46 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
 
         {/* ════ Tab 3: ที่อยู่ / ติดต่อ ════ */}
         {activeSubTab === 'address' && (
-          <div className="grid grid-2 gap-4 animate-fade">
+          <div {...ui('grid grid-2 gap-4 animate-fade')}>
             {/* บ้านเลขที่ + หมู่ที่/ซอย */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-bold">บ้านเลขที่</label>
-              <input className="input" placeholder="เช่น 14/1" {...f('houseNo')} />
+            <div {...ui('flex flex-col gap-1')}>
+              <label {...ui('text-xs font-bold')}>บ้านเลขที่</label>
+              <input {...ui('input')} placeholder="เช่น 14/1" {...f('houseNo')} />
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-bold">หมู่ที่ / ตรอก / ซอย</label>
-              <input className="input" {...f('moo')} />
+            <div {...ui('flex flex-col gap-1')}>
+              <label {...ui('text-xs font-bold')}>หมู่ที่ / ตรอก / ซอย</label>
+              <input {...ui('input')} {...f('moo')} />
             </div>
 
             {/* ถนน + ตำบล */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-bold">ถนน</label>
-              <input className="input" {...f('road')} />
+            <div {...ui('flex flex-col gap-1')}>
+              <label {...ui('text-xs font-bold')}>ถนน</label>
+              <input {...ui('input')} {...f('road')} />
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-bold">ตำบล</label>
-              <input className="input" placeholder="เช่น เพ" {...f('subdistrict')} />
+            <div {...ui('flex flex-col gap-1')}>
+              <label {...ui('text-xs font-bold')}>ตำบล</label>
+              <input {...ui('input')} placeholder="เช่น เพ" {...f('subdistrict')} />
             </div>
 
             {/* อำเภอ + จังหวัด */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-bold">อำเภอ</label>
-              <input className="input" placeholder="เช่น เมืองระยอง" {...f('district')} />
+            <div {...ui('flex flex-col gap-1')}>
+              <label {...ui('text-xs font-bold')}>อำเภอ</label>
+              <input {...ui('input')} placeholder="เช่น เมืองระยอง" {...f('district')} />
             </div>
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-bold">จังหวัด</label>
-              <input className="input" {...f('province')} />
+            <div {...ui('flex flex-col gap-1')}>
+              <label {...ui('text-xs font-bold')}>จังหวัด</label>
+              <input {...ui('input')} {...f('province')} />
             </div>
 
             {/* เบอร์โทร */}
-            <div className="flex flex-col gap-1" style={{ gridColumn: '1 / -1' }}>
-              <label className="text-xs font-bold">เบอร์โทรผู้ปกครอง 📞</label>
-              <input className="input" placeholder="0xx-xxx-xxxx" {...f('parentPhone')} />
+            <div {...ui('flex flex-col gap-1', { gridColumn: '1 / -1' })}>
+              <label {...ui('text-xs font-bold')}>เบอร์โทรผู้ปกครอง 📞</label>
+              <input {...ui('input')} placeholder="0xx-xxx-xxxx" {...f('parentPhone')} />
             </div>
           </div>
         )}
 
-        <div className="flex justify-end gap-2 mt-8">
+        <div {...ui('flex justify-end gap-2 mt-8')}>
           <ModalCancelBtn onClick={onClose} />
           <ModalConfirmBtn type="submit" label="💾 บันทึกข้อมูล" />
         </div>

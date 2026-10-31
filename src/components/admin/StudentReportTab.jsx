@@ -1,7 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { INDICATORS_DATA_68 } from '../../data/indicatorsData_68';
-const INDICATORS_DATA = INDICATORS_DATA_68; // alias — ใช้มาตรฐาน 2568 เท่านั้น
 import {
   SCALE_C60, DOMAINS_C60, INDICATORS_C60, LEVEL_TO_KEY,
 } from '../../data/indicatorsData_curriculum60';
@@ -14,28 +13,19 @@ import SubDomainSummaryBox from './report/SubDomainSummaryBox';
 import DomainSummaryBox from './report/DomainSummaryBox';
 import DomainSummarySection from './report/DomainSummarySection';
 import HighlightsSection from './report/HighlightsSection';
-import { isoToThai, todayISO } from '../../utils/helpers';
+import { isoToThai } from '../../utils/helpers';
 import {
   GROWTH_ROWS, PHILOSOPHY_TEXT, VISION_TEXT,
   DEV_ASSESS_DOMAINS,
 } from '../../data/reportConstants';
-import {
-  calcGrowthLevels, levelLabel, levelColor,
-  getActivityTermScore, getIndicatorTermScore,
-  gradeLabelOf, suggestLevelFromIndicator, rawScoreFromIndicator,
-  genderOf, ageAt,
-  PHYS_KEYS, PHYS_LABELS, PHYS_MONTH_HINTS, emptyPhys,
-  GROWTH_MONTHS_T1, GROWTH_MONTHS_T2, GROWTH_MONTHS_ALL,
-  monthRefDate, emptyGrowth,
-  DOMAIN_LABELS, D4_STD_LABELS,
-  domainAllComponents, emptyDevAssess, devAssessDomainAvg,
-} from '../../utils/reportHelpers';
+import { calcGrowthLevels, levelColor, getActivityTermScore, getIndicatorTermScore, gradeLabelOf, suggestLevelFromIndicator, genderOf, ageAt, PHYS_KEYS, PHYS_LABELS, PHYS_MONTH_HINTS, emptyPhys, GROWTH_MONTHS_T1, GROWTH_MONTHS_T2, GROWTH_MONTHS_ALL, monthRefDate, emptyGrowth, domainAllComponents, emptyDevAssess, devAssessDomainAvg } from '../../utils/reportHelpers';
 import { printReport } from '../../utils/printReport';
+import { ui } from '../../ui/ui';
 
 export default function StudentReportTab({ teacherClassFilter = null, initialStudentId = null }) {
   const {
-    role,
-    students, classes, teachers, academicYear, schoolName,
+    
+    students, teachers, academicYear, schoolName,
     schoolPhilosophy, schoolVision, schoolLogo, schoolDirectorName, yearDirectors, schools,
     dailyRecords, schoolTerms,
     studentReportRecords, setStudentReportRecords,
@@ -53,7 +43,6 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
   const [selStudentId, setSelStudentId] = useState(initialStudentId ? String(initialStudentId) : null);
   const [activeSection, setActiveSection] = useState('physical');
   const [devAssessTab, setDevAssessTab] = useState('physical');
-  const [newHs, setNewHs] = useState({ date: todayISO(), service: '', note: '' });
 
   // ── filtered students ─────────────────────────────────────────────────────
   const filteredStudents = useMemo(() => {
@@ -149,11 +138,6 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
     saveRec({ growthRecords: { ...growthData, [key]: { ...current, [field]: value } } });
   }, [growthData, saveRec]);
 
-  // ── dev assess update ─────────────────────────────────────────────────────
-  const updateDevAssess = useCallback((key, field, value) => {
-    const current = devAssessData[key] ?? { t1level: 0, t1highlight: '', t2level: 0, t2highlight: '', summary: 0 };
-    saveRec({ devAssessment: { ...devAssessData, [key]: { ...current, [field]: value } } });
-  }, [devAssessData, saveRec]);
 
   // ── suggest levels from indicator scores for a whole domain ──────────────
   const handleSuggestDomain = useCallback((domain) => {
@@ -359,8 +343,8 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
   const BG     = '#f5f3ff';
 
   return (
-    <div className="glass p-6 animate-fade">
-      <div className="page-header mb-5">
+    <div {...ui('glass p-6 animate-fade')}>
+      <div {...ui('page-header mb-5')}>
         <h3>📒 สมุดรายงานประจำตัวเด็กปฐมวัย (อ.01)</h3>
       </div>
 
@@ -1081,58 +1065,57 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
             const levelLabel = v => v >= 2.5 ? 'ดี' : v >= 1.5 ? 'พอใช้' : v > 0 ? 'ควรส่งเสริม' : '—';
 
             return (
-              <div className="space-y-6 mt-4">
-                <p className="text-xs text-gray-400">
+              <div {...ui('space-y-6 mt-4')}>
+                <p {...ui('text-xs text-gray-400')}>
                   ข้อมูลนี้ดึงจากแท็บ "ประเมินความสามารถ" · ปีการศึกษา {academicYear} · ภาคเรียนที่ 1
                 </p>
 
                 {/* ─── C60: หลักสูตร 2560 ─────────────────────────── */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                  <div className="px-4 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between">
+                <div {...ui('bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden')}>
+                  <div {...ui('px-4 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between')}>
                     <div>
-                      <span className="font-semibold text-sm text-indigo-800">📋 ตัวบ่งชี้หลักสูตร พ.ศ. 2560</span>
-                      <span className="ml-2 text-xs text-indigo-500">4 ด้าน · 23 ตัวบ่งชี้</span>
+                      <span {...ui('font-semibold text-sm text-indigo-800')}>📋 ตัวบ่งชี้หลักสูตร พ.ศ. 2560</span>
+                      <span {...ui('ml-2 text-xs text-indigo-500')}>4 ด้าน · 23 ตัวบ่งชี้</span>
                     </div>
-                    <span className={`text-xs font-medium ${c60Filled > 0 ? 'text-indigo-600' : 'text-gray-400'}`}>
+                    <span {...ui(`text-xs font-medium ${c60Filled > 0 ? 'text-indigo-600' : 'text-gray-400'}`)}>
                       ประเมินแล้ว {c60Filled}/23 ข้อ
                     </span>
                   </div>
                   {c60Filled === 0 ? (
-                    <p className="px-4 py-8 text-center text-gray-400 text-sm">ยังไม่มีข้อมูลการประเมิน</p>
+                    <p {...ui('px-4 py-8 text-center text-gray-400 text-sm')}>ยังไม่มีข้อมูลการประเมิน</p>
                   ) : (
-                    <div className="divide-y divide-gray-50">
+                    <div {...ui('divide-y divide-gray-50')}>
                       {DOMAINS_C60.map(d => {
                         const inds = INDICATORS_C60.filter(i => i.domainId === d.id);
                         const avg = avgOf(c60Scores, inds);
                         return (
-                          <div key={d.id} className="px-4 py-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-semibold" style={{ color: d.color }}>
+                          <div key={d.id} {...ui('px-4 py-3')}>
+                            <div {...ui('flex items-center justify-between mb-2')}>
+                              <span {...ui('text-sm font-semibold', { color: d.color })}>
                                 {d.icon} {d.label}
                               </span>
                               {avg > 0 && (
-                                <span className="text-xs font-bold" style={{ color: labelColor(avg) }}>
+                                <span {...ui('text-xs font-bold', { color: labelColor(avg) })}>
                                   {avg.toFixed(2)} — {levelLabel(avg)}
                                 </span>
                               )}
                             </div>
-                            <div className="flex flex-wrap gap-2">
+                            <div {...ui('flex flex-wrap gap-2')}>
                               {inds.map(ind => {
                                 const sc = c60Scores[ind.code];
                                 const meta = SCALE_C60[sc];
                                 return (
                                   <div key={ind.code} title={ind.label}
-                                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs border"
-                                    style={meta
+                                    {...ui('flex items-center gap-1 px-2 py-1 rounded-lg text-xs border', meta
                                       ? { background: meta.bg, borderColor: meta.border, color: meta.color }
-                                      : { background: '#f9fafb', borderColor: '#e5e7eb', color: '#9ca3af' }}>
-                                    <span className="font-mono font-bold">{ind.code}</span>
+                                      : { background: '#f9fafb', borderColor: '#e5e7eb', color: '#9ca3af' })}>
+                                    <span {...ui('font-mono font-bold')}>{ind.code}</span>
                                     {meta ? <span>{sc} {meta.label}</span> : <span>—</span>}
                                   </div>
                                 );
                               })}
                             </div>
-                            <p className="text-[10px] text-indigo-400 mt-1">เกณฑ์ {levelKey}: {inds[0]?.levelDescriptors?.[levelKey] ?? '—'}</p>
+                            <p {...ui('text-[10px] text-indigo-400 mt-1')}>เกณฑ์ {levelKey}: {inds[0]?.levelDescriptors?.[levelKey] ?? '—'}</p>
                           </div>
                         );
                       })}
@@ -1142,52 +1125,52 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
 
                 {/* ─── C68: ความสามารถสิ้นปี อ.3 ─────────────────── */}
                 {isK3 && (
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="px-4 py-3 bg-purple-50 border-b border-purple-100 flex items-center justify-between">
+                  <div {...ui('bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden')}>
+                    <div {...ui('px-4 py-3 bg-purple-50 border-b border-purple-100 flex items-center justify-between')}>
                       <div>
-                        <span className="font-semibold text-sm text-purple-800">🎯 ความสามารถผู้เรียนสิ้นปี พ.ศ. 2568</span>
-                        <span className="ml-2 text-xs text-purple-500">4 ด้าน · 15 ความสามารถ</span>
+                        <span {...ui('font-semibold text-sm text-purple-800')}>🎯 ความสามารถผู้เรียนสิ้นปี พ.ศ. 2568</span>
+                        <span {...ui('ml-2 text-xs text-purple-500')}>4 ด้าน · 15 ความสามารถ</span>
                       </div>
-                      <span className={`text-xs font-medium ${c68Filled > 0 ? 'text-purple-600' : 'text-gray-400'}`}>
+                      <span {...ui(`text-xs font-medium ${c68Filled > 0 ? 'text-purple-600' : 'text-gray-400'}`)}>
                         ประเมินแล้ว {c68Filled}/15 ข้อ
                       </span>
                     </div>
                     {c68Filled === 0 ? (
-                      <p className="px-4 py-8 text-center text-gray-400 text-sm">ยังไม่มีข้อมูลการประเมิน</p>
+                      <p {...ui('px-4 py-8 text-center text-gray-400 text-sm')}>ยังไม่มีข้อมูลการประเมิน</p>
                     ) : (
-                      <div className="divide-y divide-gray-50">
+                      <div {...ui('divide-y divide-gray-50')}>
                         {DOMAINS_C68.map(d => {
                           const items = getCompetenciesByDomain(d.id);
                           const avg = avgOf(c68Scores, items);
                           const passCount = items.filter(i => c68Scores[i.code] >= 2).length;
                           return (
-                            <div key={d.id} className="px-4 py-3">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm font-semibold" style={{ color: d.color }}>
+                            <div key={d.id} {...ui('px-4 py-3')}>
+                              <div {...ui('flex items-center justify-between mb-2')}>
+                                <span {...ui('text-sm font-semibold', { color: d.color })}>
                                   {d.icon} {d.label}
                                 </span>
                                 {avg > 0 && (
-                                  <span className="text-xs font-bold" style={{ color: labelColor(avg) }}>
+                                  <span {...ui('text-xs font-bold', { color: labelColor(avg) })}>
                                     ผ่าน {passCount}/{items.length} · เฉลี่ย {avg.toFixed(2)}
                                   </span>
                                 )}
                               </div>
-                              <div className="space-y-1.5">
+                              <div {...ui('space-y-1.5')}>
                                 {items.map(ind => {
                                   const sc = c68Scores[ind.code];
                                   const meta = SCALE_C68[sc];
                                   const passed = sc >= 2;
                                   return (
                                     <div key={ind.code}
-                                      className="flex items-start gap-2 text-xs">
-                                      <div className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center font-bold shrink-0 text-[10px] ${
+                                      {...ui('flex items-start gap-2 text-xs')}>
+                                      <div {...ui(`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center font-bold shrink-0 text-[10px] ${
                                         sc === 0 ? 'bg-gray-100 text-gray-300' :
                                         passed ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-500'
-                                      }`}>{sc === 0 ? '—' : passed ? '✓' : '✗'}</div>
-                                      <div className="flex-1">
-                                        <span className="font-mono font-bold" style={{ color: d.color }}>{ind.code}</span>
-                                        <span className="text-gray-700 ml-1">{ind.label}</span>
-                                        {meta && <span className="ml-1 font-semibold" style={{ color: meta.color }}>({meta.label})</span>}
+                                      }`)}>{sc === 0 ? '—' : passed ? '✓' : '✗'}</div>
+                                      <div {...ui('flex-1')}>
+                                        <span {...ui('font-mono font-bold', { color: d.color })}>{ind.code}</span>
+                                        <span {...ui('text-gray-700 ml-1')}>{ind.label}</span>
+                                        {meta && <span {...ui('ml-1 font-semibold', { color: meta.color })}>({meta.label})</span>}
                                       </div>
                                     </div>
                                   );
@@ -1202,7 +1185,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                 )}
 
                 {!isK3 && (
-                  <p className="text-center text-xs text-amber-600 bg-amber-50 rounded-xl py-3 border border-amber-100">
+                  <p {...ui('text-center text-xs text-amber-600 bg-amber-50 rounded-xl py-3 border border-amber-100')}>
                     ⚠️ ชุดความสามารถผู้เรียนสิ้นปี (หลักสูตร พ.ศ. 2568) ใช้สำหรับ อนุบาล 3 เท่านั้น
                   </p>
                 )}

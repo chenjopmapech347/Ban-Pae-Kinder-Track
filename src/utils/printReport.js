@@ -8,16 +8,10 @@ import {
   PHILOSOPHY_TEXT, VISION_TEXT, AIMS, GROWTH_ROWS,
   DEV_ASSESS_DOMAINS, INTRO_LETTER,
 } from '../data/reportConstants';
-import {
-  levelLabel, levelColor,
-  PHYS_KEYS, PHYS_LABELS,
-  GROWTH_MONTHS_T1, GROWTH_MONTHS_T2, GROWTH_MONTHS_ALL,
-  monthRefDate, ageAt,
-} from './reportHelpers';
+import { levelLabel, PHYS_KEYS, PHYS_LABELS, GROWTH_MONTHS_T1, GROWTH_MONTHS_T2, monthRefDate, ageAt } from './reportHelpers';
 
-export function printReport({ student, physData, growthRecords, devAssessment, attendanceSummary, healthServices,
+export function printReport({ student, physData, growthRecords, devAssessment, attendanceSummary,
                        devDomains, teacherComments, parentComments, directorsComment,
-                       highlights = {},
                        academicYear, schoolName, schoolPhilosophy, schoolVision, schoolLogo,
                        teacherName, directorName }) {
   // ── Compute overall yearly level from all term2 indicator scores ──────────
@@ -244,14 +238,6 @@ export function printReport({ student, physData, growthRecords, devAssessment, a
       <td style="padding:3px 6px;border:1px solid #374151;text-align:center;font-size:.8rem">${a.absentDays ?? '—'}</td>
     </tr>${yearly}`;
   }).join('');
-
-  const hsRows = (healthServices ?? []).map(h =>
-    `<tr>
-      <td style="padding:3px 6px;border:1px solid #374151;font-size:.8rem">${isoToThai(h.date) || '—'}</td>
-      <td style="padding:3px 6px;border:1px solid #374151;font-size:.8rem">${h.service || '—'}</td>
-      <td style="padding:3px 6px;border:1px solid #374151;font-size:.8rem">${h.note || ''}</td>
-    </tr>`
-  ).join('') || `<tr><td colspan="3" style="padding:6px;text-align:center;color:#9ca3af;border:1px solid #374151;font-size:.8rem">ไม่มีข้อมูล</td></tr>`;
 
   const devHtml = (() => {
     const allRows = devDomains.map((domain, di) => {
@@ -684,14 +670,14 @@ export function printReport({ student, physData, growthRecords, devAssessment, a
         <div style="border-top:1px solid #000;padding-top:6px;font-size:.85rem;text-align:left">
           ลงชื่อ..................................ครูประจำชั้น
         </div>
-        <div style="font-size:.82rem;color:#374151;margin-top:4px;text-align:left;padding-left:2.5rem">(..................................)</div>
+        <div style="font-size:.82rem;color:#374151;margin-top:4px;text-align:left;padding-left:2.5rem">(${teacherName || '..................................'})</div>
       </div>
       <div style="min-width:200px">
         <div style="height:52px"></div>
         <div style="border-top:1px solid #000;padding-top:6px;font-size:.85rem;text-align:left">
           ลงชื่อ..................................ผู้บริหารสถานศึกษา
         </div>
-        <div style="font-size:.82rem;color:#374151;margin-top:4px;text-align:left;padding-left:2.5rem">(..................................)</div>
+        <div style="font-size:.82rem;color:#374151;margin-top:4px;text-align:left;padding-left:2.5rem">(${directorName || '..................................'})</div>
       </div>
     </div>
   </body></html>`;

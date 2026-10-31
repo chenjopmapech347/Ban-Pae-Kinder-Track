@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ─────────────────────────────────────────────────────────────
+    // DRAFT — "เขียนต้องล็อกอิน" (ยังไม่ได้ใช้งาน / ไม่ได้ deploy)
+    //
+    // หลักการ:
+    //   • อ่านได้ทุกคน  → ผู้ปกครองล็อกอินด้วย PIN (ไม่มี Firebase Auth) ต้องดึง snapshot ได้
+    //   • เขียนได้เฉพาะผู้ที่ล็อกอิน Firebase Auth (อีเมล/รหัสผ่าน ของ Admin/ครู)
+    //   • ห้ามลบเอกสารทุก path
+    //
+    // ⚠️ ข้อควรระวังก่อนใช้จริง:
+    //   1) หน้า Login ยังรองรับ Admin/ครู ผ่าน PIN (ไม่ผ่าน Firebase Auth)
+    //      คนกลุ่มนี้จะเขียน Firestore ไม่ได้ → auto-sync จะล้มเหลว (ข้อมูลค้างแค่ในเครื่อง)
+    //      ต้องให้ Admin/ครูทุกคนเปลี่ยนไปล็อกอินด้วยอีเมลก่อน หรือบังคับให้ PIN login
+    //      ต้องมี Firebase session ด้วย
+    //   2) ผู้ปกครองยังอ่านข้อมูลเด็กได้โดยไม่ล็อกอิน (ปิดไม่ได้ถ้ายังใช้ PIN)
+    //   3) signInAnonymously ไม่ช่วยเรื่องความปลอดภัย — ใครก็ล็อกอินแบบไม่ระบุตัวตนได้
+    //   4) ทดสอบด้วย Firebase Emulator หรือโปรเจกต์ทดสอบก่อน deploy
+    // ─────────────────────────────────────────────────────────────
+
+    function signedIn() { return request.auth != null; }
+
+    // snapshot หลัก + สำรอง
+    match /schools/default/snapshots/{snapshotId} {
+      allow read: if true;
+      allow create, update: if signedIn();
+      allow delete: if false;
+    }
+
+    // ข้อมูลรายวัน (volatile)
+    match /schools/default/dailyData/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn();
+      allow delete: if false;
+    }
+
+    // ผลประเมินรายห้อง (firebaseSync.js: classAssessments) — ไม่มีใน rules เดิม
+    match /schools/default/classAssessments/{classKey} {
+      allow read: if true;
+      allow create, update: if signedIn();
+      allow delete: if false;
+    }
+
+    // ตารางกิจกรรม / มุมกิจกรรม
+    match /activitySchedule/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn();
+      allow delete: if false;
+    }
+    match /cornerAssignments/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn();
+      allow delete: if false;
+    }
+
+    // มาตรฐานที่ 1 / 2 — ไม่มี settings/std1_ratings ใน rules เดิม
+    match /settings/{docId} {
+      allow read: if true;
+      allow create, update: if signedIn();
+      allow delete: if false;
+    }
+    match /std2_ratings/{teacherId} {
+      allow read: if true;
+      allow create, update: if signedIn();
+      allow delete: if false;
+    }
+
+    // session token (ตรวจ login ซ้อน) — ไม่มีใน rules เดิม; ไม่ควรเปิดอ่านสาธารณะ
+    match /sessions/{key} {
+      allow read, create, update, delete: if signedIn();
+    }
+
+    // อื่น ๆ ปิดทั้งหมด (default deny)
+  }
+}

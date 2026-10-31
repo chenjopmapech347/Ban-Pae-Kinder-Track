@@ -9,6 +9,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { doc, collection, onSnapshot, setDoc } from 'firebase/firestore';
 import { isFirebaseConfigured, db } from '../../lib/firebase';
 import { useApp } from '../../context/AppContext';
+import { ui } from '../../ui/ui';
 
 // ─── แมปรหัสตัวบ่งชี้ → ด้านพัฒนาการ ──────────────────────────────────────
 // ระบบเก่า ดย. (3.x–6.x) + หลักสูตรปฐมวัย 2560 (1–12)
@@ -485,9 +486,9 @@ export default function NationalStandardsTab() {
   ];
 
   return (
-    <div className="glass p-6 animate-fade">
+    <div {...ui('glass p-6 animate-fade')}>
       {/* Header */}
-      <div className="page-header mb-4">
+      <div {...ui('page-header mb-4')}>
         <h3>🏛 มาตรฐานสถานพัฒนาเด็กปฐมวัยแห่งชาติ ปี 68</h3>
         <div style={{ fontSize: '.75rem', color: 'var(--text-muted)' }}>
           กลุ่ม ข (อายุ 3 ปีขึ้นไป) · 3 มาตรฐาน · 17 ตัวบ่งชี้ · 59 รายการพิจารณา
@@ -554,8 +555,7 @@ export default function NationalStandardsTab() {
             มาตรฐานที่ 1 — คุณภาพเด็ก ผลรายตัวบ่งชี้
             <span style={{ marginLeft: '.75rem' }}>
               <select
-                className="input"
-                style={{ fontSize: '.75rem', padding: '.2rem .5rem', display: 'inline-block', width: 'auto', marginLeft: '.35rem' }}
+                {...ui('input', { fontSize: '.75rem', padding: '.2rem .5rem', display: 'inline-block', width: 'auto', marginLeft: '.35rem' })}
                 value={filterRound}
                 onChange={e => setFilterRound(e.target.value)}
               >
@@ -578,8 +578,7 @@ export default function NationalStandardsTab() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
             <div style={{ fontWeight: 700, color: '#374151', fontSize: '.88rem' }}>กรองตามครั้งที่ประเมิน</div>
             <select
-              className="input"
-              style={{ fontSize: '.8rem', width: '130px' }}
+              {...ui('input', { fontSize: '.8rem', width: '130px' })}
               value={filterRound}
               onChange={e => setFilterRound(e.target.value)}
             >

@@ -1,4 +1,3 @@
-import React from 'react';
 export default function StepBadge({ n, label, active, done }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '.4rem' }}>

@@ -1,4 +1,3 @@
-import React from 'react';
 export default function PillGroup({ items, selected, onSelect, color = '#7c3aed', bg = '#f5f3ff', getKey, getLabel, getCount }) {
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem' }}>

@@ -12,6 +12,7 @@ import EvaluationForm from './components/EvaluationForm';
 import StudentModal from './components/StudentModal';
 import ChangePasswordModal from './components/ChangePasswordModal';
 import { version as APP_VERSION } from '../package.json';
+import { ui, useViewport } from './ui/ui';
 
 const APP_DEVELOPER = 'นายเจนจบ มาเพ็ชร์';
 
@@ -28,6 +29,7 @@ const ROLE_AVATAR = {
 };
 
 function AppShell() {
+  useViewport(); // re-render เมื่อหน้าจอข้ามจุดตัด media query (ใช้กับ ui())
   const {
     role, user, logout,
     academicYears, academicYear, setAcademicYear,
@@ -100,9 +102,9 @@ function AppShell() {
   if (!role) return <LoginPage />;
 
   return (
-    <div className="container">
+    <div {...ui('container')}>
       {/* ── App Header ── */}
-      <header className="app-header no-print">
+      <header {...ui('app-header no-print')}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '.85rem' }}>
           <img
             src="/logo.png"
@@ -118,13 +120,13 @@ function AppShell() {
             <div style={{ fontSize: '.75rem', color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>
               {schoolName} · KinderTrack
             </div>
-            <div className="subtitle" style={{ fontSize: '.7rem', opacity: .75 }}>
+            <div {...ui('subtitle', { fontSize: '.7rem', opacity: .75 })}>
               {ROLE_LABEL[role] ?? role}
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2" style={{ flexWrap: 'wrap' }}>
+        <div {...ui('flex items-center gap-2', { flexWrap: 'wrap' })}>
           <select value={academicYear} onChange={(e) => setAcademicYear(e.target.value)}>
             {academicYears.map((y) => (
               <option key={y} value={y}>ปีการศึกษา {y}</option>
@@ -238,8 +240,8 @@ function AppShell() {
           )}
 
 
-          <div className="flex items-center gap-2">
-            <div className="user-avatar">{ROLE_AVATAR[role] ?? '?'}</div>
+          <div {...ui('flex items-center gap-2')}>
+            <div {...ui('user-avatar')}>{ROLE_AVATAR[role] ?? '?'}</div>
             <div style={{ lineHeight: 1.4 }}>
               <div style={{ fontWeight: 700, fontSize: '0.85rem', color: 'white' }}>{user?.name}</div>
               <div style={{ display: 'flex', gap: '.35rem', marginTop: '.15rem', flexWrap: 'wrap' }}>
@@ -301,9 +303,9 @@ function AppShell() {
           <EvaluationForm student={evaluatingStudent} onSave={handleSaveEvaluation}
             onCancel={() => setEvaluatingStudent(null)} assessmentTopics={assessmentTopics} />
         ) : selectedStudent && role === 'parent' ? (
-          <div className="animate-fade">
-            <div className="page-header mb-5 no-print">
-              <button type="button" className="btn" onClick={() => setSelectedStudent(null)}>← ย้อนกลับ</button>
+          <div {...ui('animate-fade')}>
+            <div {...ui('page-header mb-5 no-print')}>
+              <button type="button" {...ui('btn')} onClick={() => setSelectedStudent(null)}>← ย้อนกลับ</button>
             </div>
             <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>กำลังโหลด...</div>}>
               <StudentReportTab initialStudentId={selectedStudent.id} />
@@ -337,14 +339,14 @@ function AppShell() {
       )}
 
       {/* ── Footer ── */}
-      <footer className="no-print" style={{
+      <footer {...ui('no-print', {
         textAlign: 'center', padding: '.75rem 1rem',
         fontSize: '.7rem', color: 'rgba(255,255,255,0.6)',
         background: 'linear-gradient(135deg,#5b21b6,#6d28d9)',
         borderTop: '1px solid rgba(255,255,255,0.12)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         gap: '.75rem', flexWrap: 'wrap',
-      }}>
+      })}>
         <span>💻 KinderTrack v{APP_VERSION}</span>
         <span style={{ opacity: .35 }}>|</span>
         <span>{schoolName}</span>

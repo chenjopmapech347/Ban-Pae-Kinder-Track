@@ -1,5 +1,4 @@
 /** evaluationHelpers.js — daily stats & pct helpers */
-import { todayISO } from './helpers';
 // ── Daily stats helpers ───────────────────────────────────────────────────────
 // คำนวณจำนวนวันและอัตรา % จาก records ที่มี structure:
 // { [key]: { className, students: { [sid]: { days: { [day]: value } } } } }

@@ -4,6 +4,7 @@ import AssessmentWizard from '../AssessmentWizard';
 import { exportStudentsListExcel } from '../../utils/exportExcel';
 import { useState, useRef, useEffect } from 'react';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
+import { ui } from '../../ui/ui';
 // wizardRef ใช้ anchor scroll fallback
 
 export default function StudentsTab() {
@@ -157,8 +158,8 @@ export default function StudentsTab() {
           text = new TextDecoder('utf-8').decode(buffer); // lenient fallback
         }
       }
-      // ลบ BOM ถ้ามี (UTF-8 BOM = ﻿)
-      const raw = text.replace(/^﻿/, '');
+      // ลบ BOM ถ้ามี (UTF-8 BOM = U+FEFF)
+      const raw = text.replace(/^\ufeff/, '');
       const r = handleImport('students', raw);
       alert(r.ok ? `✅ นำเข้าสำเร็จ! เพิ่มนักเรียน ${r.count ?? ''} คน` : r.message);
     };
@@ -230,13 +231,13 @@ export default function StudentsTab() {
   }, [openMenuId]);
 
   return (
-    <div className="glass p-6 animate-fade">
-      <div className="page-header mb-6">
+    <div {...ui('glass p-6 animate-fade')}>
+      <div {...ui('page-header mb-6')}>
         <h3>จัดการนักเรียนทั้งหมด</h3>
-        <div className="flex gap-2" style={{ flexWrap: 'wrap', alignItems: 'center' }}>
+        <div {...ui('flex gap-2', { flexWrap: 'wrap', alignItems: 'center' })}>
 
           {/* ── ค้นหา ── */}
-          <input className="input" style={{ maxWidth: '180px' }} placeholder="🔍 ค้นหา..."
+          <input {...ui('input', { maxWidth: '180px' })} placeholder="🔍 ค้นหา..."
             value={search} onChange={e => setSearch(e.target.value)} />
 
           {/* ── สถานะ toggle ── */}
@@ -256,7 +257,7 @@ export default function StudentsTab() {
 
           {/* ── ส่งออก dropdown ── */}
           <div style={{ position: 'relative' }}>
-            <button type="button" className="btn" style={{ background: '#dcfce7', color: '#166534', fontWeight: 700 }}
+            <button type="button" {...ui('btn', { background: '#dcfce7', color: '#166534', fontWeight: 700 })}
               onClick={() => { setExportOpen(o => !o); setImportOpen(false); }}>
               📤 ส่งออก ▾
             </button>
@@ -292,7 +293,7 @@ export default function StudentsTab() {
           />
 
           <div style={{ position: 'relative' }}>
-            <button type="button" className="btn" style={{ background: '#f0f9ff', color: '#0369a1', fontWeight: 700 }}
+            <button type="button" {...ui('btn', { background: '#f0f9ff', color: '#0369a1', fontWeight: 700 })}
               onClick={() => { setImportOpen(o => !o); setExportOpen(false); }}>
               📥 นำเข้า ▾
             </button>
@@ -330,7 +331,7 @@ export default function StudentsTab() {
           </div>
 
           {/* ── เพิ่มนักเรียน ── */}
-          <button className="btn btn-primary" onClick={() => { setEditingItem(null); setIsModalOpen(true); }}>
+          <button {...ui('btn btn-primary')} onClick={() => { setEditingItem(null); setIsModalOpen(true); }}>
             + เพิ่มนักเรียน
           </button>
         </div>
@@ -409,8 +410,8 @@ export default function StudentsTab() {
         )}
       </div>
 
-      <div className="table-wrap">
-        <table className="table">
+      <div {...ui('table-wrap')}>
+        <table {...ui('table')}>
           <thead>
             <tr>
               <th style={{ width: '130px' }}>รหัสประจำตัว</th>
@@ -425,7 +426,7 @@ export default function StudentsTab() {
           <tbody>
             {filtered.map(s => {
               return (
-                <tr key={s.id} className="hover-row">
+                <tr key={s.id} {...ui('hover-row')}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
                       {/* รูปภาพเด็ก */}
@@ -457,7 +458,7 @@ export default function StudentsTab() {
                         textDecoration: 'underline', padding: 0, textAlign: 'left' }}
                     >{s.name}</button>
                   </td>
-                  <td><span className={'badge badge-' + s.level.toLowerCase()}>{s.level}</span></td>
+                  <td><span {...ui('badge badge-' + s.level.toLowerCase())}>{s.level}</span></td>
                   <td>
                     <span style={{ fontSize: '.82rem', color: '#475569', fontWeight: 600, whiteSpace: 'nowrap' }}>
                       {getAgeRange(s)}
@@ -465,33 +466,29 @@ export default function StudentsTab() {
                   </td>
                   <td>
                     {(!s.status || s.status === 'กำลังเรียน' || s.status === 'ปกติ')
-                      ? <span className="badge" style={{ background:'#d1fae5',color:'#065f46' }}>✅ เรียนอยู่</span>
+                      ? <span {...ui('badge', { background:'#d1fae5',color:'#065f46' })}>✅ เรียนอยู่</span>
                       : s.status === 'จบการศึกษา'
-                        ? <span className="badge" style={{ background:'#dbeafe',color:'#1e40af' }}>🎓 จบแล้ว</span>
+                        ? <span {...ui('badge', { background:'#dbeafe',color:'#1e40af' })}>🎓 จบแล้ว</span>
                         : s.status === 'ลาออก'
-                          ? <span className="badge" style={{ background:'#fee2e2',color:'#991b1b' }}>📤 ลาออก</span>
+                          ? <span {...ui('badge', { background:'#fee2e2',color:'#991b1b' })}>📤 ลาออก</span>
                           : s.status === 'พักการเรียน'
-                            ? <span className="badge" style={{ background:'#fef3c7',color:'#92400e' }}>⏸️ พัก</span>
-                            : <span className="badge" style={{ background:'#f3f4f6',color:'#6b7280' }}>{s.status}</span>}
+                            ? <span {...ui('badge', { background:'#fef3c7',color:'#92400e' })}>⏸️ พัก</span>
+                            : <span {...ui('badge', { background:'#f3f4f6',color:'#6b7280' })}>{s.status}</span>}
                   </td>
                   <td><code style={{ background: '#f5f3ff', padding: '.15rem .5rem', borderRadius: '6px', fontSize: '.8rem' }}>{s.parentPin ?? '—'}</code></td>
                   <td style={{ position: 'sticky', right: 0, background: 'white', zIndex: 1, boxShadow: '-3px 0 8px rgba(0,0,0,.06)' }}>
                     <div style={{ display: 'flex', gap: '.3rem', alignItems: 'center' }}>
                       {/* รายงาน */}
-                      <button title="รายงาน" className="btn btn-sm"
-                        style={{ padding: '.3rem .5rem', background: '#ede9fe', color: 'var(--primary)', fontSize: '1rem', lineHeight: 1 }}
+                      <button title="รายงาน" {...ui('btn btn-sm', { padding: '.3rem .5rem', background: '#ede9fe', color: 'var(--primary)', fontSize: '1rem', lineHeight: 1 })}
                         onClick={() => setSelectedStudent(s)}>📄</button>
                       {/* ประเมิน */}
-                      <button title="ประเมินพัฒนาการ" className="btn btn-sm btn-primary"
-                        style={{ padding: '.3rem .5rem', fontSize: '1rem', lineHeight: 1 }}
+                      <button title="ประเมินพัฒนาการ" {...ui('btn btn-sm btn-primary', { padding: '.3rem .5rem', fontSize: '1rem', lineHeight: 1 })}
                         onClick={() => startAssess(s)}>✏️</button>
                       {/* แก้ไขข้อมูล */}
-                      <button title="แก้ไขข้อมูล" className="btn btn-sm"
-                        style={{ padding: '.3rem .5rem', background: '#f0fdf4', color: '#15803d', fontSize: '1rem', lineHeight: 1, border: '1.5px solid #bbf7d0' }}
+                      <button title="แก้ไขข้อมูล" {...ui('btn btn-sm', { padding: '.3rem .5rem', background: '#f0fdf4', color: '#15803d', fontSize: '1rem', lineHeight: 1, border: '1.5px solid #bbf7d0' })}
                         onClick={() => { setEditingItem(s); setIsModalOpen(true); }}>🖊️</button>
                       {/* ลบ */}
-                      <button title="ลบนักเรียน" className="btn btn-sm"
-                        style={{ padding: '.3rem .5rem', background: '#fff1f2', color: '#dc2626', fontSize: '1rem', lineHeight: 1, border: '1.5px solid #fecaca' }}
+                      <button title="ลบนักเรียน" {...ui('btn btn-sm', { padding: '.3rem .5rem', background: '#fff1f2', color: '#dc2626', fontSize: '1rem', lineHeight: 1, border: '1.5px solid #fecaca' })}
                         onClick={() => {
                           if (confirm(`ลบข้อมูลนักเรียน "${s.name}" ?`)) {
                             addSystemLog?.('delete_student', `ลบนักเรียน: ${s.name} — ${s.className ?? ''}`, user?.name ?? 'admin');

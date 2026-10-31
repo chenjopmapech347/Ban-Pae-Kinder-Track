@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
+import { ui } from '../../ui/ui';
 
 // ── Event type definitions ────────────────────────────────────────────────────
 const EVENT_TYPES = {
@@ -130,11 +131,6 @@ const PRESET_EVENTS = [
 ];
 
 function todayISO() { return new Date().toISOString().split('T')[0]; }
-function thaiDate(iso) {
-  if (!iso) return '—';
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${Number(y) + 543}`;
-}
 
 const blankForm = (type = 'school') => ({
   name: '', date: todayISO(), type, scope: 'all',
@@ -291,8 +287,6 @@ function EventModal({ event, allClassNames, students, assessmentTopics, indicato
     scopeStudents.forEach(s => { next[String(s.id)] = val; });
     setParticipants(next);
   }
-
-  const typeMeta = EVENT_TYPES[form.type];
 
   return (
     <Modal
@@ -660,25 +654,25 @@ export default function SpecialEventTab({ teacherClassFilter }) {
   const availableClasses = isTeacher && teacherClassFilter ? [teacherClassFilter] : allClassNames;
 
   return (
-    <div className="animate-fade">
+    <div {...ui('animate-fade')}>
       {/* Page header */}
-      <div className="page-header">
+      <div {...ui('page-header')}>
         <h2>🎉 กิจกรรมวันสำคัญ</h2>
         <div style={{ display: 'flex', gap: '.5rem' }}>
           {!isTeacher && (
-            <button type="button" className="btn btn-secondary" onClick={handleImportPresets}
+            <button type="button" {...ui('btn btn-secondary')} onClick={handleImportPresets}
               title="นำเข้ากิจกรรมตัวอย่างปีการศึกษา 2569 (13 กิจกรรม)">
               📋 นำเข้าตัวอย่าง 2569
             </button>
           )}
-          <button type="button" className="btn btn-primary" onClick={() => setAddModal(true)}>
+          <button type="button" {...ui('btn btn-primary')} onClick={() => setAddModal(true)}>
             ➕ เพิ่มกิจกรรม
           </button>
         </div>
       </div>
 
       {/* Filter bar */}
-      <div className="glass-card" style={{ padding: '.75rem 1rem', marginBottom: '1rem', display: 'flex', gap: '.6rem', flexWrap: 'wrap', alignItems: 'center' }}>
+      <div {...ui('glass-card', { padding: '.75rem 1rem', marginBottom: '1rem', display: 'flex', gap: '.6rem', flexWrap: 'wrap', alignItems: 'center' })}>
         <input
           placeholder="🔍 ค้นหาชื่อกิจกรรม"
           value={search}
@@ -718,7 +712,7 @@ export default function SpecialEventTab({ teacherClassFilter }) {
 
       {/* Event cards / table */}
       {eventList.length === 0 ? (
-        <div className="glass-card" style={{ textAlign: 'center', padding: '3rem', color: '#9ca3af' }}>
+        <div {...ui('glass-card', { textAlign: 'center', padding: '3rem', color: '#9ca3af' })}>
           <div style={{ fontSize: '2.5rem', marginBottom: '.75rem' }}>🎉</div>
           <div style={{ fontWeight: 700, marginBottom: '.4rem', color: '#374151' }}>ยังไม่มีกิจกรรมวันสำคัญ</div>
           <div style={{ fontSize: '.85rem', marginBottom: '1.2rem' }}>กด "เพิ่มกิจกรรม" เพื่อเริ่มต้นบันทึก</div>
@@ -741,7 +735,7 @@ export default function SpecialEventTab({ teacherClassFilter }) {
               : 0;
 
             return (
-              <div key={ev.id} className="glass-card" style={{ padding: '1rem 1.2rem', display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+              <div key={ev.id} {...ui('glass-card', { padding: '1rem 1.2rem', display: 'flex', gap: '1rem', alignItems: 'flex-start', flexWrap: 'wrap' })}>
                 {/* Date column */}
                 <div style={{ minWidth: '72px', textAlign: 'center' }}>
                   <div style={{ fontSize: '.72rem', color: '#9ca3af', fontWeight: 600 }}>
@@ -816,7 +810,7 @@ export default function SpecialEventTab({ teacherClassFilter }) {
 
       {/* Summary stats */}
       {eventList.length > 0 && (
-        <div className="glass-card" style={{ marginTop: '1rem', padding: '.85rem 1.2rem', display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+        <div {...ui('glass-card', { marginTop: '1rem', padding: '.85rem 1.2rem', display: 'flex', gap: '1.5rem', flexWrap: 'wrap' })}>
           {Object.entries(EVENT_TYPES).map(([k, meta]) => {
             const count = eventList.filter(ev => ev.type === k).length;
             if (count === 0) return null;

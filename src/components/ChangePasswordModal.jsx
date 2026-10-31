@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from './Modal';
 import { useApp } from '../context/AppContext';
+import { ui } from '../ui/ui';
 
 // ── field helper ─────────────────────────────────────────────────────────────
 function PinField({ label, value, onChange, placeholder, autoFocus }) {
@@ -16,13 +17,12 @@ function PinField({ label, value, onChange, placeholder, autoFocus }) {
       </label>
       <div style={{ position: 'relative' }}>
         <input
-          className="input"
+          {...ui('input', { paddingRight: '2.5rem', letterSpacing: show ? 'normal' : '.12em' })}
           type={show ? 'text' : 'password'}
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder ?? ''}
           autoFocus={autoFocus}
-          style={{ paddingRight: '2.5rem', letterSpacing: show ? 'normal' : '.12em' }}
         />
         <button
           type="button"

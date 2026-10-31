@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { callClaudeChat, buildChatSystemPrompt } from '../utils/aiHelper';
+import { ui } from '../ui/ui';
 
 // ── ตัวอย่างคำถามด่วน ─────────────────────────────────────────────────────────
 const QUICK_PROMPTS = [
@@ -121,7 +122,7 @@ export default function AIChatTab() {
   }
 
   return (
-    <div className="glass p-6 animate-fade">
+    <div {...ui('glass p-6 animate-fade')}>
       <style>{`
         @keyframes bounce {
           0%, 80%, 100% { transform: scale(0.8); opacity: .5; }
@@ -129,11 +130,10 @@ export default function AIChatTab() {
         }
       `}</style>
 
-      <div className="page-header mb-4" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div {...ui('page-header mb-4', { display: 'flex', alignItems: 'center', justifyContent: 'space-between' })}>
         <h3>🤖 AI ผู้ช่วยครู</h3>
         {messages.length > 0 && (
-          <button type="button" className="btn btn-sm" onClick={clearChat}
-            style={{ color: '#dc2626', fontSize: '.78rem' }}>
+          <button type="button" {...ui('btn btn-sm', { color: '#dc2626', fontSize: '.78rem' })} onClick={clearChat}>
             🗑️ ล้างการสนทนา
           </button>
         )}

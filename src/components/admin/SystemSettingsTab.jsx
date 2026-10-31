@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { exportAttendanceLogExcel } from '../../utils/exportExcel';
 import { firebaseCreateUser, firebaseSendReset } from '../../lib/firebaseAuth';
 import GrowthReferencePanel from '../GrowthReferencePanel';
+import { ui } from '../../ui/ui';
 
 export default function SystemSettingsTab() {
   const {
@@ -94,50 +95,49 @@ export default function SystemSettingsTab() {
   };
 
   return (
-    <div className="animate-fade">
+    <div {...ui('animate-fade')}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
         {/* ─── PIN passwords (fallback) ─── */}
-        <div className="glass p-6">
-          <h3 className="mb-4">🔐 รหัสผ่าน PIN (Fallback)</h3>
+        <div {...ui('glass p-6')}>
+          <h3 {...ui('mb-4')}>🔐 รหัสผ่าน PIN (Fallback)</h3>
           {isFirebaseConfigured && (
-            <div className="alert alert-info mb-4 text-sm">
+            <div {...ui('alert alert-info mb-4 text-sm')}>
               ℹ️ ใช้ Firebase Auth สำหรับ Admin/Teacher แล้ว — PIN ใช้ได้เฉพาะผู้ปกครอง
             </div>
           )}
-          <div className="grid grid-2" style={{ gap: '1rem' }}>
+          <div {...ui('grid grid-2', { gap: '1rem' })}>
             <div><label style={{ display:'block',marginBottom:'.35rem' }}>รหัสผู้ดูแลระบบ</label>
-              <input className="input" type="password" value={adminPin} onChange={e=>setAdminPin(e.target.value)} /></div>
+              <input {...ui('input')} type="password" value={adminPin} onChange={e=>setAdminPin(e.target.value)} /></div>
             <div><label style={{ display:'block',marginBottom:'.35rem' }}>รหัสครู</label>
-              <input className="input" type="password" value={teacherPin} onChange={e=>setTeacherPin(e.target.value)} /></div>
+              <input {...ui('input')} type="password" value={teacherPin} onChange={e=>setTeacherPin(e.target.value)} /></div>
             <div style={{ gridColumn:'1/-1' }}>
               <label style={{ display:'block',marginBottom:'.35rem' }}>ชื่อที่แสดงเมื่อครูล็อกอิน</label>
-              <input className="input" value={teacherName} onChange={e=>setTeacherName(e.target.value)} />
+              <input {...ui('input')} value={teacherName} onChange={e=>setTeacherName(e.target.value)} />
             </div>
           </div>
-          <p className="text-xs text-muted mt-2">รหัสผู้ปกครอง (PIN) ตั้งได้ที่หน้านักเรียน</p>
-          <button type="button" className="btn btn-primary mt-4" onClick={saveAuth}>บันทึกรหัสผ่าน</button>
+          <p {...ui('text-xs text-muted mt-2')}>รหัสผู้ปกครอง (PIN) ตั้งได้ที่หน้านักเรียน</p>
+          <button type="button" {...ui('btn btn-primary mt-4')} onClick={saveAuth}>บันทึกรหัสผ่าน</button>
         </div>
 
         {/* ─── Academic years ─── */}
-        <div className="glass p-6">
-          <h3 className="mb-4">🗓️ จัดการปีการศึกษา</h3>
-          <div className="flex gap-2 mb-4">
-            <input className="input" type="number" placeholder="เพิ่มปีการศึกษา เช่น 2570"
+        <div {...ui('glass p-6')}>
+          <h3 {...ui('mb-4')}>🗓️ จัดการปีการศึกษา</h3>
+          <div {...ui('flex gap-2 mb-4')}>
+            <input {...ui('input')} type="number" placeholder="เพิ่มปีการศึกษา เช่น 2570"
               value={newYear} onChange={e=>setNewYear(e.target.value)} />
-            <button type="button" className="btn btn-primary" onClick={addYear}>เพิ่ม</button>
+            <button type="button" {...ui('btn btn-primary')} onClick={addYear}>เพิ่ม</button>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:'.75rem' }}>
             {academicYears.map(y => (
               <div key={y} style={{ border:'1.5px solid #e9d5ff', borderRadius:'12px', padding:'.75rem 1rem', background:'#faf5ff' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:'.5rem', flexWrap:'wrap', marginBottom:'.6rem' }}>
-                  <div className="badge" style={{ padding:'.4rem .9rem',background:'var(--primary)',color:'white',display:'flex',gap:'.5rem',flexShrink:0 }}>
+                  <div {...ui('badge', { padding:'.4rem .9rem',background:'var(--primary)',color:'white',display:'flex',gap:'.5rem',flexShrink:0 })}>
                     ปีการศึกษา {y}
                     <span style={{ cursor:'pointer' }} onClick={()=>setAcademicYears(academicYears.filter(x=>x!==y))}>×</span>
                   </div>
                   <input
-                    className="input"
-                    style={{ flex:1, minWidth:'200px', fontSize:'.82rem', padding:'.3rem .6rem' }}
+                    {...ui('input', { flex:1, minWidth:'200px', fontSize:'.82rem', padding:'.3rem .6rem' })}
                     placeholder={`ชื่อ ผอ. ปีการศึกษา ${y} (ไม่กรอก = ใช้ค่า default)`}
                     value={yearDirectors?.[y] ?? ''}
                     onChange={e => setYearDirectors(prev => ({ ...prev, [y]: e.target.value }))}
@@ -162,18 +162,18 @@ export default function SystemSettingsTab() {
         </div>
 
         {/* ─── Firebase Sync + Auth ─── */}
-        <div className="glass p-6" style={{ border: '2px solid ' + (isFirebaseConfigured ? '#fbbf24' : '#e8e3f4') }}>
-          <div className="flex items-center gap-2 mb-4">
+        <div {...ui('glass p-6', { border: '2px solid ' + (isFirebaseConfigured ? '#fbbf24' : '#e8e3f4') })}>
+          <div {...ui('flex items-center gap-2 mb-4')}>
             <span style={{ fontSize: '1.5rem' }}>🔥</span>
             <h3 style={{ margin: 0 }}>Firebase (Firestore + Auth)</h3>
-            <span className={'badge ' + (isFirebaseConfigured ? 'badge-success' : 'badge-accent')}>
+            <span {...ui('badge ' + (isFirebaseConfigured ? 'badge-success' : 'badge-accent'))}>
               {isFirebaseConfigured ? 'เชื่อมต่อแล้ว' : 'ยังไม่ได้ตั้งค่า'}
             </span>
           </div>
 
           {!isFirebaseConfigured ? (
             <div>
-              <p className="text-sm text-muted mb-3">สร้างไฟล์ <code>.env</code> ในโฟลเดอร์โปรเจกต์:</p>
+              <p {...ui('text-sm text-muted mb-3')}>สร้างไฟล์ <code>.env</code> ในโฟลเดอร์โปรเจกต์:</p>
               <div style={{
                 background: '#1e1b4b', color: '#c4b5fd', borderRadius: '12px',
                 padding: '1rem', fontFamily: 'monospace', fontSize: '.8rem', lineHeight: 1.8,
@@ -186,7 +186,7 @@ export default function SystemSettingsTab() {
                 <div>VITE_FIREBASE_MESSAGING_SENDER_ID=<span style={{ color: '#fbbf24' }}>123456789</span></div>
                 <div>VITE_FIREBASE_APP_ID=<span style={{ color: '#fbbf24' }}>1:123:web:abc</span></div>
               </div>
-              <p className="text-xs text-muted mt-3">
+              <p {...ui('text-xs text-muted mt-3')}>
                 📋 ดูค่าได้ที่ Firebase Console → Project Settings → Your apps → Web app
               </p>
             </div>
@@ -194,21 +194,19 @@ export default function SystemSettingsTab() {
             <div style={{ display:'flex',flexDirection:'column',gap:'1.25rem' }}>
               {/* Sync buttons */}
               <div>
-                <div className="font-bold text-sm mb-2">☁️ ซิงค์ข้อมูล Firestore</div>
-                <div className="flex gap-2 flex-wrap">
-                  <button type="button" className="btn" disabled={syncing}
-                    style={{ background:'#fef3c7',color:'#92400e' }}
+                <div {...ui('font-bold text-sm mb-2')}>☁️ ซิงค์ข้อมูล Firestore</div>
+                <div {...ui('flex gap-2 flex-wrap')}>
+                  <button type="button" {...ui('btn', { background:'#fef3c7',color:'#92400e' }, undefined, syncing)} disabled={syncing}
                     onClick={() => runFirebaseSync('push')}>
                     🔥 อัปโหลดขึ้น Firebase
                   </button>
-                  <button type="button" className="btn" disabled={syncing}
-                    style={{ background:'#ede9fe',color:'#7c3aed' }}
+                  <button type="button" {...ui('btn', { background:'#ede9fe',color:'#7c3aed' }, undefined, syncing)} disabled={syncing}
                     onClick={() => runFirebaseSync('pull')}>
                     ⬇️ ดึงจาก Firebase
                   </button>
                 </div>
                 {syncMsg && (
-                  <div className={'alert mt-3 text-sm ' + (syncMsg.includes('❌') ? 'alert-error' : 'alert-success')}>
+                  <div {...ui('alert mt-3 text-sm ' + (syncMsg.includes('❌') ? 'alert-error' : 'alert-success'))}>
                     {syncMsg}
                   </div>
                 )}
@@ -216,30 +214,27 @@ export default function SystemSettingsTab() {
 
               {/* Create user */}
               <div style={{ borderTop:'1px solid var(--border-color)',paddingTop:'1rem' }}>
-                <div className="font-bold text-sm mb-2">👤 สร้างบัญชี Admin/Teacher ใหม่</div>
-                <div className="flex gap-2 flex-wrap mb-2">
-                  <input className="input" type="email" placeholder="อีเมล"
-                    value={newEmail} onChange={e=>setNewEmail(e.target.value)}
-                    style={{ maxWidth:'220px' }} />
-                  <input className="input" type="password" placeholder="รหัสผ่าน (6+ ตัว)"
-                    value={newPass} onChange={e=>setNewPass(e.target.value)}
-                    style={{ maxWidth:'180px' }} />
-                  <button type="button" className="btn btn-primary" onClick={createFirebaseUser}
+                <div {...ui('font-bold text-sm mb-2')}>👤 สร้างบัญชี Admin/Teacher ใหม่</div>
+                <div {...ui('flex gap-2 flex-wrap mb-2')}>
+                  <input {...ui('input', { maxWidth:'220px' })} type="email" placeholder="อีเมล"
+                    value={newEmail} onChange={e=>setNewEmail(e.target.value)} />
+                  <input {...ui('input', { maxWidth:'180px' })} type="password" placeholder="รหัสผ่าน (6+ ตัว)"
+                    value={newPass} onChange={e=>setNewPass(e.target.value)} />
+                  <button type="button" {...ui('btn btn-primary', undefined, undefined, !newEmail || !newPass)} onClick={createFirebaseUser}
                     disabled={!newEmail || !newPass}>
                     สร้างบัญชี
                   </button>
                 </div>
-                <p className="text-xs text-muted">หลังสร้างแล้ว ให้แจ้ง email + รหัสผ่านให้ครู/แอดมินที่เกี่ยวข้อง</p>
+                <p {...ui('text-xs text-muted')}>หลังสร้างแล้ว ให้แจ้ง email + รหัสผ่านให้ครู/แอดมินที่เกี่ยวข้อง</p>
               </div>
 
               {/* Password reset */}
               <div style={{ borderTop:'1px solid var(--border-color)',paddingTop:'1rem' }}>
-                <div className="font-bold text-sm mb-2">🔑 ส่งอีเมล Reset รหัสผ่าน</div>
-                <div className="flex gap-2 flex-wrap">
-                  <input className="input" type="email" placeholder="อีเมลที่ต้องการ reset"
-                    value={resetEmail} onChange={e=>setResetEmail(e.target.value)}
-                    style={{ maxWidth:'240px' }} />
-                  <button type="button" className="btn" onClick={sendPasswordReset}
+                <div {...ui('font-bold text-sm mb-2')}>🔑 ส่งอีเมล Reset รหัสผ่าน</div>
+                <div {...ui('flex gap-2 flex-wrap')}>
+                  <input {...ui('input', { maxWidth:'240px' })} type="email" placeholder="อีเมลที่ต้องการ reset"
+                    value={resetEmail} onChange={e=>setResetEmail(e.target.value)} />
+                  <button type="button" {...ui('btn', undefined, undefined, !resetEmail)} onClick={sendPasswordReset}
                     disabled={!resetEmail}>
                     ส่งอีเมล
                   </button>
@@ -247,7 +242,7 @@ export default function SystemSettingsTab() {
               </div>
 
               {fbMsg && (
-                <div className={'alert text-sm ' + (fbMsg.includes('❌') ? 'alert-error' : 'alert-success')}>
+                <div {...ui('alert text-sm ' + (fbMsg.includes('❌') ? 'alert-error' : 'alert-success'))}>
                   {fbMsg}
                 </div>
               )}
@@ -256,16 +251,16 @@ export default function SystemSettingsTab() {
         </div>
 
         {/* ─── Backup ─── */}
-        <div className="glass p-6">
-          <h3 className="mb-4">💾 สำรองและกู้คืนข้อมูล</h3>
-          <p className="text-sm text-muted mb-4">ดาวน์โหลดไฟล์ JSON สำรอง หรือนำเข้าจากไฟล์เดิม</p>
-          <div className="flex gap-2 flex-wrap">
-            <button type="button" className="btn btn-primary" onClick={exportBackupJson}>⬇️ ดาวน์โหลด JSON</button>
-            <label className="btn" style={{ cursor:'pointer' }}>
+        <div {...ui('glass p-6')}>
+          <h3 {...ui('mb-4')}>💾 สำรองและกู้คืนข้อมูล</h3>
+          <p {...ui('text-sm text-muted mb-4')}>ดาวน์โหลดไฟล์ JSON สำรอง หรือนำเข้าจากไฟล์เดิม</p>
+          <div {...ui('flex gap-2 flex-wrap')}>
+            <button type="button" {...ui('btn btn-primary')} onClick={exportBackupJson}>⬇️ ดาวน์โหลด JSON</button>
+            <label {...ui('btn', { cursor:'pointer' })}>
               📂 นำเข้า JSON
               <input type="file" accept=".json,application/json" style={{ display:'none' }} onChange={handleImportFile} />
             </label>
-            <button type="button" className="btn" style={{ background:'#dcfce7',color:'#166634' }}
+            <button type="button" {...ui('btn', { background:'#dcfce7',color:'#166634' })}
               onClick={() => exportAttendanceLogExcel(students, dailyRecords, schoolName)}>
               📗 ส่งออกบันทึกรายวัน
             </button>
@@ -274,22 +269,22 @@ export default function SystemSettingsTab() {
 
         {/* ─── Supabase (legacy) ─── */}
         {isSupabaseConfigured && (
-          <div className="glass p-6">
-            <h3 className="mb-4">☁️ ซิงค์ Supabase (เดิม)</h3>
-            <div className="flex gap-2 flex-wrap">
-              <button type="button" className="btn btn-primary" disabled={syncing}
+          <div {...ui('glass p-6')}>
+            <h3 {...ui('mb-4')}>☁️ ซิงค์ Supabase (เดิม)</h3>
+            <div {...ui('flex gap-2 flex-wrap')}>
+              <button type="button" {...ui('btn btn-primary', undefined, undefined, syncing)} disabled={syncing}
                 onClick={() => runSupabaseSync('push')}>อัปโหลด Supabase</button>
-              <button type="button" className="btn" disabled={syncing}
+              <button type="button" {...ui('btn', undefined, undefined, syncing)} disabled={syncing}
                 onClick={() => runSupabaseSync('pull')}>ดึงจาก Supabase</button>
             </div>
-            {syncMsg && <p className="text-sm mt-3">{syncMsg}</p>}
+            {syncMsg && <p {...ui('text-sm mt-3')}>{syncMsg}</p>}
           </div>
         )}
 
         {/* ─── AI Settings ─── */}
-        <div className="glass p-6" style={{ border: '1.5px solid #e0e7ff' }}>
-          <h3 className="mb-2">🤖 ตั้งค่า AI (Claude API)</h3>
-          <p className="text-sm text-muted mb-4">
+        <div {...ui('glass p-6', { border: '1.5px solid #e0e7ff' })}>
+          <h3 {...ui('mb-2')}>🤖 ตั้งค่า AI (Claude API)</h3>
+          <p {...ui('text-sm text-muted mb-4')}>
             ใส่ API Key จาก{' '}
             <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noreferrer"
               style={{ color: '#7c3aed' }}>console.anthropic.com</a>
@@ -297,14 +292,13 @@ export default function SystemSettingsTab() {
           </p>
           <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <input
-              className="input"
+              {...ui('input', { flex: 1, minWidth: '260px', fontFamily: 'monospace', fontSize: '.85rem' })}
               type="password"
               value={aiApiKey}
               onChange={e => setAiApiKey(e.target.value)}
               placeholder="sk-ant-api03-..."
-              style={{ flex: 1, minWidth: '260px', fontFamily: 'monospace', fontSize: '.85rem' }}
             />
-            <button type="button" className="btn btn-primary"
+            <button type="button" {...ui('btn btn-primary')}
               onClick={() => alert(aiApiKey ? '✅ บันทึก API Key แล้ว' : '⚠️ กรุณาใส่ API Key')}>
               💾 บันทึก
             </button>
@@ -315,15 +309,15 @@ export default function SystemSettingsTab() {
               }}>✅ พร้อมใช้งาน</span>
             )}
           </div>
-          <div className="text-xs text-muted mt-3">
+          <div {...ui('text-xs text-muted mt-3')}>
             🔒 Key เก็บในเครื่องของคุณเท่านั้น ไม่ส่งออกไปไหน · ใช้ claude-haiku (ประหยัด ~$0.001/ครั้ง)
           </div>
         </div>
 
         {/* ─── ImgBB ─── */}
-        <div className="glass p-6" style={{ border: '1.5px solid #bfdbfe' }}>
-          <h3 className="mb-2">🖼️ ตั้งค่า ImgBB (อัปโหลดรูปนักเรียน)</h3>
-          <p className="text-sm text-muted mb-4">
+        <div {...ui('glass p-6', { border: '1.5px solid #bfdbfe' })}>
+          <h3 {...ui('mb-2')}>🖼️ ตั้งค่า ImgBB (อัปโหลดรูปนักเรียน)</h3>
+          <p {...ui('text-sm text-muted mb-4')}>
             ใส่ API Key จาก{' '}
             <a href="https://api.imgbb.com/" target="_blank" rel="noreferrer"
               style={{ color: '#2563eb' }}>api.imgbb.com</a>
@@ -331,15 +325,13 @@ export default function SystemSettingsTab() {
           </p>
           <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <input
-              className="input"
+              {...ui('input', { flex: 1, minWidth: '260px', fontFamily: 'monospace', fontSize: '.85rem' })}
               type="password"
               value={imgbbApiKey}
               onChange={e => setImgbbApiKey(e.target.value)}
               placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-              style={{ flex: 1, minWidth: '260px', fontFamily: 'monospace', fontSize: '.85rem' }}
             />
-            <button type="button" className="btn btn-primary"
-              style={{ background: '#2563eb' }}
+            <button type="button" {...ui('btn btn-primary', { background: '#2563eb' })}
               onClick={() => alert(imgbbApiKey ? '✅ บันทึก ImgBB API Key แล้ว' : '⚠️ กรุณาใส่ API Key')}>
               💾 บันทึก
             </button>
@@ -350,25 +342,25 @@ export default function SystemSettingsTab() {
               }}>✅ พร้อมใช้งาน</span>
             )}
           </div>
-          <div className="text-xs text-muted mt-3">
+          <div {...ui('text-xs text-muted mt-3')}>
             🔒 Key เก็บในเครื่องของคุณเท่านั้น · รูปที่อัปโหลดจะได้ URL ถาวรจาก ImgBB (ฟรี)
           </div>
         </div>
 
         {/* ─── Growth Reference ─── */}
-        <div className="glass p-6" style={{ border:'1.5px solid #bbf7d0' }}>
-          <h3 className="mb-1">📊 เกณฑ์อ้างอิงน้ำหนักและส่วนสูง</h3>
-          <p className="text-sm text-muted mb-4">
+        <div {...ui('glass p-6', { border:'1.5px solid #bbf7d0' })}>
+          <h3 {...ui('mb-1')}>📊 เกณฑ์อ้างอิงน้ำหนักและส่วนสูง</h3>
+          <p {...ui('text-sm text-muted mb-4')}>
             WHO Child Growth Standards 2006 / กรมอนามัย 2563 — อายุ 2–7 ปี (±1SD / ±2SD)
           </p>
           <GrowthReferencePanel />
         </div>
 
         {/* ─── Danger zone ─── */}
-        <div className="glass p-6" style={{ border:'1.5px solid #fee2e2' }}>
-          <h3 className="mb-4" style={{ color:'var(--danger)' }}>⚠️ พื้นที่อันตราย</h3>
-          <p className="text-sm text-muted mb-4">ล้างข้อมูลทั้งหมดในเครื่องนี้ (ไม่สามารถย้อนคืนได้)</p>
-          <button type="button" className="btn" style={{ color:'var(--danger)',border:'1.5px solid var(--danger)' }}
+        <div {...ui('glass p-6', { border:'1.5px solid #fee2e2' })}>
+          <h3 {...ui('mb-4', { color:'var(--danger)' })}>⚠️ พื้นที่อันตราย</h3>
+          <p {...ui('text-sm text-muted mb-4')}>ล้างข้อมูลทั้งหมดในเครื่องนี้ (ไม่สามารถย้อนคืนได้)</p>
+          <button type="button" {...ui('btn', { color:'var(--danger)',border:'1.5px solid var(--danger)' })}
             onClick={() => confirm('ล้างข้อมูลทั้งหมดใช่หรือไม่?') && resetAllData()}>
             🗑️ ล้างข้อมูลทั้งหมดในระบบ
           </button>

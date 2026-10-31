@@ -15,6 +15,7 @@ import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { todayISO, formatDateThai } from '../../utils/helpers';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
+import { ui } from '../../ui/ui';
 
 // ALL_CLASSES ดึงจาก allClassNames ใน AppContext
 
@@ -276,7 +277,7 @@ export default function PickupTab({ defaultClass }) {
   const inp = (extra = {}) => ({ className: 'input', style: { fontSize: '.85rem', ...extra } });
 
   return (
-    <div className="animate-fade">
+    <div {...ui('animate-fade')}>
       {/* ── Header ── */}
       <div style={{
         background: 'linear-gradient(135deg,#f59e0b,#f97316)',
@@ -325,16 +326,15 @@ export default function PickupTab({ defaultClass }) {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
           <span style={{ fontSize: '.8rem', fontWeight: 700, color: '#6b7280' }}>📅 วันที่</span>
-          <input type="date" className="input" style={{ width: '170px', fontSize: '.85rem' }}
+          <input type="date" {...ui('input', { width: '170px', fontSize: '.85rem' })}
             value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
           {!isToday && (
-            <button className="btn btn-sm" onClick={() => setSelectedDate(todayISO())}
-              style={{ fontSize: '.75rem' }}>วันนี้</button>
+            <button {...ui('btn btn-sm', { fontSize: '.75rem' })} onClick={() => setSelectedDate(todayISO())}>วันนี้</button>
           )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
           <span style={{ fontSize: '.8rem', fontWeight: 700, color: '#6b7280' }}>🏫 ห้อง</span>
-          <select className="input" style={{ width: '120px', fontSize: '.85rem' }}
+          <select {...ui('input', { width: '120px', fontSize: '.85rem' })}
             value={filterClass} onChange={e => setFilterClass(e.target.value)}>
             {(classList.length ? classList : ALL_CLASSES).map(c => <option key={c} value={c}>{c}</option>)}
           </select>
@@ -367,9 +367,9 @@ export default function PickupTab({ defaultClass }) {
       )}
 
       {/* ── Table ── */}
-      <div className="glass-card" style={{ padding: '1rem 1.25rem' }}>
-        <div className="table-wrap">
-          <table className="table" style={{ fontSize: '.84rem' }}>
+      <div {...ui('glass-card', { padding: '1rem 1.25rem' })}>
+        <div {...ui('table-wrap')}>
+          <table {...ui('table', { fontSize: '.84rem' })}>
             <thead>
               <tr>
                 <th style={{ width: '36px' }}>#</th>
@@ -433,9 +433,9 @@ export default function PickupTab({ defaultClass }) {
                 };
 
                 return (
-                  <tr key={s.id} className="hover-row" style={{
+                  <tr key={s.id} {...ui('hover-row', {
                     background: (dropJustSaved || pickJustSaved) ? '#f0fdf4' : undefined,
-                  }}>
+                  })}>
                     <td style={{ color: 'var(--text-muted)', textAlign: 'center' }}>{idx + 1}</td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>

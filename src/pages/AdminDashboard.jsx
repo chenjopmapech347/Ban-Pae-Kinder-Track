@@ -1,6 +1,7 @@
 import { useState, lazy, Suspense } from 'react';
 import DashboardSidebar from '../components/ui/DashboardSidebar';
 import ErrorBoundary from '../components/ui/ErrorBoundary';
+import { ui } from '../ui/ui';
 
 const OverviewTab            = lazy(() => import('../components/admin/OverviewTab'));
 const StudentsTab            = lazy(() => import('../components/admin/StudentsTab'));
@@ -160,7 +161,7 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('kt_adminTab') || 'overview');
 
   return (
-    <div className="animate-fade" style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+    <div {...ui('animate-fade', { display: 'flex', gap: '1rem', alignItems: 'flex-start' })}>
 
       {/* ── Left sidebar ── */}
       <DashboardSidebar

@@ -7,6 +7,7 @@ import DashboardSidebar from '../components/ui/DashboardSidebar';
 import ErrorBoundary from '../components/ui/ErrorBoundary';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../lib/firebase';
+import { ui } from '../ui/ui';
 
 const EvaluationTab          = lazy(() => import('../components/admin/EvaluationTab'));
 const AbilityAssessmentTab   = lazy(() => import('../components/admin/AbilityAssessmentTab'));
@@ -25,7 +26,6 @@ const NutritionTab           = lazy(() => import('../components/admin/NutritionT
 const DailyRoutineTab        = lazy(() => import('../components/admin/DailyRoutineTab'));
 const SpecialEventTab        = lazy(() => import('../components/admin/SpecialEventTab'));
 const StudentReportTab       = lazy(() => import('../components/admin/StudentReportTab'));
-const OverviewTab            = lazy(() => import('../components/admin/OverviewTab'));
 const TeacherOverviewTab     = lazy(() => import('../components/teacher/TeacherOverviewTab'));
 const AdminAttTab            = lazy(() => import('../components/admin/AttendanceTab'));
 const PickupTab              = lazy(() => import('../components/admin/PickupTab'));
@@ -149,7 +149,7 @@ function StudentPinRow({ student, onSave }) {
         style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '.8rem', padding: 0 }}>
         {show ? '🙈' : '👁️'}
       </button>
-      <button type="button" className="btn btn-sm"
+      <button type="button" {...ui('btn btn-sm')}
         onClick={() => { setVal(student.parentPin ?? ''); setEditing(true); }}>
         ✏️ แก้ไข
       </button>
@@ -163,9 +163,9 @@ function StudentPinRow({ student, onSave }) {
       <input style={{ width: '110px', padding: '.3rem .5rem', borderRadius: '6px',
         border: '1.5px solid #a78bfa', fontFamily: 'inherit', fontSize: '.85rem' }}
         value={val} onChange={e => setVal(e.target.value)} autoFocus />
-      <button type="button" className="btn btn-sm btn-primary"
+      <button type="button" {...ui('btn btn-sm btn-primary')}
         onClick={() => { onSave(val); setEditing(false); }}>บันทึก</button>
-      <button type="button" className="btn btn-sm"
+      <button type="button" {...ui('btn btn-sm')}
         onClick={() => setEditing(false)}>ยกเลิก</button>
     </div>
   );
@@ -173,19 +173,19 @@ function StudentPinRow({ student, onSave }) {
 
 function AttendanceView({ students, draft, updateDraft, recordDate, loadDraftForDate, isSaved, dateLabel, onSave, onBack }) {
   return (
-    <div className="animate-fade">
-      <div className="page-header">
+    <div {...ui('animate-fade')}>
+      <div {...ui('page-header')}>
         <h2>📝 บันทึกการมาเรียน</h2>
-        <button type="button" className="btn" onClick={onBack}>← ย้อนกลับ</button>
+        <button type="button" {...ui('btn')} onClick={onBack}>← ย้อนกลับ</button>
       </div>
-      <div className="glass-card mb-4" style={{ background: '#faf9ff' }}>
-        <div className="flex gap-2 items-center flex-wrap mb-3">
-          <span className="font-bold text-sm">📅 วันที่:</span>
-          <input type="date" className="input" style={{ width: '180px' }} value={recordDate}
+      <div {...ui('glass-card mb-4', { background: '#faf9ff' })}>
+        <div {...ui('flex gap-2 items-center flex-wrap mb-3')}>
+          <span {...ui('font-bold text-sm')}>📅 วันที่:</span>
+          <input type="date" {...ui('input', { width: '180px' })} value={recordDate}
             onChange={e => loadDraftForDate(e.target.value)} />
-          <span className="text-sm text-muted">({dateLabel})</span>
+          <span {...ui('text-sm text-muted')}>({dateLabel})</span>
         </div>
-        <div className={'alert ' + (isSaved ? 'alert-success' : 'alert-info') + ' text-sm'}>
+        <div {...ui('alert ' + (isSaved ? 'alert-success' : 'alert-info') + ' text-sm')}>
           {isSaved ? '✅ บันทึกแล้วสำหรับวันที่เลือก' : 'ℹ️ ยังไม่ได้บันทึก — กด "บันทึกการมาเรียน" ด้านล่าง'}
         </div>
       </div>
@@ -194,20 +194,17 @@ function AttendanceView({ students, draft, updateDraft, recordDate, loadDraftFor
           const att = draft[s.id]?.attendance ?? 'มา';
           const c   = ATT_COLOR[att] ?? { bg: '#f5f3ff', color: '#6b7280' };
           return (
-            <div key={s.id} className="glass-card"
-              style={{ padding: '.9rem 1.1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <div className="student-avatar"
-                style={{ background: c.bg, color: c.color, fontSize: '1rem', fontWeight: 800 }}>
+            <div key={s.id} {...ui('glass-card', { padding: '.9rem 1.1rem', display: 'flex', alignItems: 'center', gap: '1rem' })}>
+              <div {...ui('student-avatar', { background: c.bg, color: c.color, fontSize: '1rem', fontWeight: 800 })}>
                 {i + 1}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="font-bold" style={{ fontSize: '.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div {...ui('font-bold', { fontSize: '.95rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' })}>
                   {s.name}
                 </div>
-                <span className={'badge badge-' + (s.level?.toLowerCase())} style={{ marginTop: '.2rem' }}>{s.level}</span>
+                <span {...ui('badge badge-' + (s.level?.toLowerCase()), { marginTop: '.2rem' })}>{s.level}</span>
               </div>
-              <select className="input"
-                style={{ width: '110px', fontWeight: 700, background: c.bg, color: c.color, border: 'none' }}
+              <select {...ui('input', { width: '110px', fontWeight: 700, background: c.bg, color: c.color, border: 'none' })}
                 value={att} onChange={e => updateDraft(s.id, { attendance: e.target.value })}>
                 {ATT_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
@@ -215,9 +212,9 @@ function AttendanceView({ students, draft, updateDraft, recordDate, loadDraftFor
           );
         })}
       </div>
-      <div className="flex justify-end gap-2" style={{ position: 'sticky', bottom: 16 }}>
-        <button type="button" className="btn" onClick={onBack}>ยกเลิก</button>
-        <button type="button" className="btn btn-primary" onClick={onSave}>✅ บันทึกการมาเรียน</button>
+      <div {...ui('flex justify-end gap-2', { position: 'sticky', bottom: 16 })}>
+        <button type="button" {...ui('btn')} onClick={onBack}>ยกเลิก</button>
+        <button type="button" {...ui('btn btn-primary')} onClick={onSave}>✅ บันทึกการมาเรียน</button>
       </div>
     </div>
   );
@@ -225,41 +222,37 @@ function AttendanceView({ students, draft, updateDraft, recordDate, loadDraftFor
 
 function HygieneView({ students, draft, updateDraft, recordDate, loadDraftForDate, onSave, onBack }) {
   return (
-    <div className="animate-fade">
-      <div className="page-header">
+    <div {...ui('animate-fade')}>
+      <div {...ui('page-header')}>
         <h2>🥛 บันทึกกิจวัตรประจำวัน</h2>
-        <button type="button" className="btn" onClick={onBack}>← ย้อนกลับ</button>
+        <button type="button" {...ui('btn')} onClick={onBack}>← ย้อนกลับ</button>
       </div>
-      <div className="glass-card mb-4" style={{ background: '#faf9ff' }}>
-        <div className="flex gap-2 items-center flex-wrap">
-          <span className="font-bold text-sm">📅 วันที่:</span>
-          <input type="date" className="input" style={{ width: '180px' }} value={recordDate}
+      <div {...ui('glass-card mb-4', { background: '#faf9ff' })}>
+        <div {...ui('flex gap-2 items-center flex-wrap')}>
+          <span {...ui('font-bold text-sm')}>📅 วันที่:</span>
+          <input type="date" {...ui('input', { width: '180px' })} value={recordDate}
             onChange={e => loadDraftForDate(e.target.value)} />
         </div>
       </div>
       {/* ── ปุ่มเลือกทั้งหมด ── */}
-      <div className="glass-card mb-3" style={{ padding: '.75rem 1rem', background: '#f0fdf4' }}>
+      <div {...ui('glass-card mb-3', { padding: '.75rem 1rem', background: '#f0fdf4' })}>
         <div style={{ fontSize: '.8rem', fontWeight: 800, color: '#166534', marginBottom: '.5rem' }}>
           ⚡ เลือกทั้งหมด
         </div>
         <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
-          <button type="button" className="btn btn-sm"
-            style={{ background: '#d1fae5', color: '#065f46', fontWeight: 700 }}
+          <button type="button" {...ui('btn btn-sm', { background: '#d1fae5', color: '#065f46', fontWeight: 700 })}
             onClick={() => students.forEach(s => updateDraft(s.id, { milk: true, brush: true }))}>
             🥛🪥 เลือกทั้งหมด (นม + แปรงฟัน)
           </button>
-          <button type="button" className="btn btn-sm"
-            style={{ background: '#dcfce7', color: '#166534', fontWeight: 700 }}
+          <button type="button" {...ui('btn btn-sm', { background: '#dcfce7', color: '#166534', fontWeight: 700 })}
             onClick={() => students.forEach(s => updateDraft(s.id, { milk: true }))}>
             🥛 เลือกทั้งหมด (นม)
           </button>
-          <button type="button" className="btn btn-sm"
-            style={{ background: '#dbeafe', color: '#1e40af', fontWeight: 700 }}
+          <button type="button" {...ui('btn btn-sm', { background: '#dbeafe', color: '#1e40af', fontWeight: 700 })}
             onClick={() => students.forEach(s => updateDraft(s.id, { brush: true }))}>
             🪥 เลือกทั้งหมด (แปรงฟัน)
           </button>
-          <button type="button" className="btn btn-sm"
-            style={{ background: '#f3f4f6', color: '#6b7280', fontWeight: 700, marginLeft: 'auto' }}
+          <button type="button" {...ui('btn btn-sm', { background: '#f3f4f6', color: '#6b7280', fontWeight: 700, marginLeft: 'auto' })}
             onClick={() => students.forEach(s => updateDraft(s.id, { milk: false, brush: false }))}>
             ✕ ยกเลิกทั้งหมด
           </button>
@@ -268,12 +261,12 @@ function HygieneView({ students, draft, updateDraft, recordDate, loadDraftForDat
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '.6rem', marginBottom: '5rem' }}>
         {students.map(s => (
-          <div key={s.id} className="glass-card" style={{ padding: '.9rem 1.1rem' }}>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="student-avatar" style={{ background: '#ede9fe', color: '#7c3aed' }}>🧒</div>
+          <div key={s.id} {...ui('glass-card', { padding: '.9rem 1.1rem' })}>
+            <div {...ui('flex items-center gap-3 mb-3')}>
+              <div {...ui('student-avatar', { background: '#ede9fe', color: '#7c3aed' })}>🧒</div>
               <div>
-                <div className="font-bold" style={{ fontSize: '.95rem' }}>{s.name}</div>
-                <span className={'badge badge-' + (s.level?.toLowerCase())}>{s.level}</span>
+                <div {...ui('font-bold', { fontSize: '.95rem' })}>{s.name}</div>
+                <span {...ui('badge badge-' + (s.level?.toLowerCase()))}>{s.level}</span>
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '.5rem' }}>
@@ -316,9 +309,9 @@ function HygieneView({ students, draft, updateDraft, recordDate, loadDraftForDat
           </div>
         ))}
       </div>
-      <div className="flex justify-end gap-2" style={{ position: 'sticky', bottom: 16 }}>
-        <button type="button" className="btn" onClick={onBack}>ยกเลิก</button>
-        <button type="button" className="btn btn-success" onClick={onSave}>✅ บันทึกกิจวัตร</button>
+      <div {...ui('flex justify-end gap-2', { position: 'sticky', bottom: 16 })}>
+        <button type="button" {...ui('btn')} onClick={onBack}>ยกเลิก</button>
+        <button type="button" {...ui('btn btn-success')} onClick={onSave}>✅ บันทึกกิจวัตร</button>
       </div>
     </div>
   );
@@ -354,7 +347,7 @@ function StudentList({ myStudents, filtered, search, setSearch, myClass, today, 
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      const raw = ev.target.result.replace(/^﻿/, '');
+      const raw = ev.target.result.replace(/^\ufeff/, '');
       const r = handleImport('students', raw);
       alert(r.ok ? `✅ นำเข้าสำเร็จ! เพิ่มนักเรียน ${r.count ?? ''} คน` : r.message);
     };
@@ -391,19 +384,18 @@ function StudentList({ myStudents, filtered, search, setSearch, myClass, today, 
     transition: 'background .12s' };
 
   return (
-    <div className="glass" style={{ padding: '1.5rem' }}>
-      <div className="page-header" style={{ marginBottom: '1rem' }}>
+    <div {...ui('glass', { padding: '1.5rem' })}>
+      <div {...ui('page-header', { marginBottom: '1rem' })}>
         <h3>👨‍🎓 รายชื่อนักเรียน{myClass ? ` ห้อง ${myClass}` : ''} ({filtered.length}/{myStudents.length} คน)</h3>
         <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center' }}>
-          <input className="input" style={{ maxWidth: '220px' }} placeholder="🔍 ค้นหาชื่อ..."
+          <input {...ui('input', { maxWidth: '220px' })} placeholder="🔍 ค้นหาชื่อ..."
             value={search} onChange={e => setSearch(e.target.value)} />
           <input ref={fileInputRef} type="file" accept=".csv" style={{ display: 'none' }}
             onChange={handleFileImport} />
 
           {/* ── Dropdown นำเข้าข้อมูล ── */}
           <div ref={dropRef} style={{ position: 'relative' }}>
-            <button type="button" className="btn"
-              style={{ background: '#f0f9ff', color: '#0369a1', fontWeight: 700, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '.35rem' }}
+            <button type="button" {...ui('btn', { background: '#f0f9ff', color: '#0369a1', fontWeight: 700, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '.35rem' })}
               onClick={() => setDropOpen(v => !v)}>
               📥 นำเข้าข้อมูล
               <span style={{ fontSize: '.7rem', opacity: .7 }}>{dropOpen ? '▲' : '▼'}</span>
@@ -455,26 +447,24 @@ function StudentList({ myStudents, filtered, search, setSearch, myClass, today, 
           const pct   = s.attendance?.total
             ? Math.round((s.attendance.present / s.attendance.total) * 100) : 0;
           return (
-            <div key={s.id} className="student-card"
-              style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', opacity: isInactive ? 0.6 : 1 }}>
-              <div className="student-avatar"
-                style={{
+            <div key={s.id} {...ui('student-card', { display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', opacity: isInactive ? 0.6 : 1 })}>
+              <div {...ui('student-avatar', {
                   background: isInactive ? '#f3f4f6' : (isBoy ? '#dbeafe' : '#fce7f3'),
                   color: isInactive ? '#9ca3af' : (isBoy ? '#1e40af' : '#9d174d'),
                   overflow: 'hidden',
-                }}>
+                })}>
                 {isInactive ? '⛔'
                   : s.photo
                     ? <img src={s.photo} alt={s.name} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
                     : (isBoy ? '👦' : '👧')}
               </div>
               <div style={{ flex: 1, minWidth: '130px' }}>
-                <div className="font-bold" style={{ fontSize: '.92rem' }}>{s.name}</div>
-                <div className="flex gap-1 mt-1" style={{ flexWrap: 'wrap' }}>
-                  <span className={'badge badge-' + (s.level?.toLowerCase())}>{s.level}</span>
-                  {isInactive && <span className="badge" style={{ background: '#f3f4f6', color: '#6b7280' }}>นอกระบบ</span>}
-                  {!isInactive && att && <span className="badge" style={{ background: ac?.bg, color: ac?.color }}>{att}</span>}
-                  {!isInactive && hygOk && <><span className="badge badge-success">🥛</span><span className="badge badge-info">🪥</span></>}
+                <div {...ui('font-bold', { fontSize: '.92rem' })}>{s.name}</div>
+                <div {...ui('flex gap-1 mt-1', { flexWrap: 'wrap' })}>
+                  <span {...ui('badge badge-' + (s.level?.toLowerCase()))}>{s.level}</span>
+                  {isInactive && <span {...ui('badge', { background: '#f3f4f6', color: '#6b7280' })}>นอกระบบ</span>}
+                  {!isInactive && att && <span {...ui('badge', { background: ac?.bg, color: ac?.color })}>{att}</span>}
+                  {!isInactive && hygOk && <><span {...ui('badge badge-success')}>🥛</span><span {...ui('badge badge-info')}>🪥</span></>}
                 </div>
               </div>
               {!isInactive && (
@@ -483,7 +473,7 @@ function StudentList({ myStudents, filtered, search, setSearch, myClass, today, 
                     color: pct >= 80 ? 'var(--success)' : pct >= 60 ? 'var(--accent)' : 'var(--danger)' }}>
                     {pct}%
                   </div>
-                  <div className="text-xs text-muted">มาเรียน</div>
+                  <div {...ui('text-xs text-muted')}>มาเรียน</div>
                 </div>
               )}
               {!isInactive && (
@@ -491,29 +481,26 @@ function StudentList({ myStudents, filtered, search, setSearch, myClass, today, 
                   {s.assessments?.summary
                     ? <div style={{ color: 'var(--success)', fontSize: '1.25rem' }}>✅</div>
                     : <div style={{ color: '#d1d5db', fontSize: '1.25rem' }}>○</div>}
-                  <div className="text-xs text-muted">ประเมิน</div>
+                  <div {...ui('text-xs text-muted')}>ประเมิน</div>
                 </div>
               )}
-              <div className="flex gap-1" style={{ flexWrap: 'wrap' }}>
-                <button type="button" className="btn btn-sm"
-                  style={{ background: '#ede9fe', color: 'var(--primary)' }}
+              <div {...ui('flex gap-1', { flexWrap: 'wrap' })}>
+                <button type="button" {...ui('btn btn-sm', { background: '#ede9fe', color: 'var(--primary)' })}
                   onClick={() => setSelectedStudent(s)}>📄</button>
-                <button type="button" className="btn btn-sm"
-                  style={{ background: '#fef9c3', color: '#92400e' }}
+                <button type="button" {...ui('btn btn-sm', { background: '#fef9c3', color: '#92400e' })}
                   onClick={() => setEditingStudentLocal(s)}>✏️</button>
                 {!isInactive && (
-                  <button type="button" className="btn btn-sm btn-primary"
+                  <button type="button" {...ui('btn btn-sm btn-primary')}
                     onClick={() => setEvaluatingStudent(s)}>📊</button>
                 )}
-                <button type="button" className="btn btn-sm"
-                  style={{ color: 'var(--danger)' }}
+                <button type="button" {...ui('btn btn-sm', { color: 'var(--danger)' })}
                   onClick={() => handleDelete(s.id)}>🗑️</button>
               </div>
             </div>
           );
         })}
         {filtered.length === 0 && (
-          <div className="text-center text-muted" style={{ padding: '3rem 1rem' }}>
+          <div {...ui('text-center text-muted', { padding: '3rem 1rem' })}>
             ไม่พบนักเรียนที่ค้นหา
           </div>
         )}
@@ -736,7 +723,7 @@ export default function TeacherDashboard() {
 
   /* ── Main sidebar layout ── */
   return (
-    <div className="animate-fade" style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+    <div {...ui('animate-fade', { display: 'flex', gap: '1rem', alignItems: 'flex-start' })}>
 
       {/* ── Left sidebar ── */}
       <DashboardSidebar
@@ -796,16 +783,16 @@ export default function TeacherDashboard() {
           {activeTab === 'aichat'      && <AIChatTab />}
           {activeTab === 'help'        && <HelpTab />}
           {activeTab === 'standards'   && (
-            <div className="glass p-6">
-              <h3 className="mb-6">🗺️ สรุปมาตรฐานสถานพัฒนาเด็กปฐมวัย (ปี 2569)</h3>
+            <div {...ui('glass p-6')}>
+              <h3 {...ui('mb-6')}>🗺️ สรุปมาตรฐานสถานพัฒนาเด็กปฐมวัย (ปี 2569)</h3>
               <QaStandardView />
             </div>
           )}
 
           {/* ── PIN tab ── */}
           {activeTab === 'pins' && (
-            <div className="glass p-6 animate-fade">
-              <div className="page-header mb-4">
+            <div {...ui('glass p-6 animate-fade')}>
+              <div {...ui('page-header mb-4')}>
                 <h3>🔑 รหัส PIN ผู้ปกครอง</h3>
                 <span style={{
                   background: '#ede9fe', color: '#7c3aed',
@@ -831,8 +818,8 @@ export default function TeacherDashboard() {
 
           {/* ── Announce tab ── */}
           {activeTab === 'teacherannounce' && (
-            <div className="glass p-6 animate-fade">
-              <div className="page-header mb-4">
+            <div {...ui('glass p-6 animate-fade')}>
+              <div {...ui('page-header mb-4')}>
                 <h3>📢 ประกาศ</h3>
                 {myClass && (
                   <span style={{ background: '#ede9fe', color: '#7c3aed', borderRadius: '999px', padding: '.22rem .85rem', fontSize: '.78rem', fontWeight: 800 }}>
@@ -846,15 +833,15 @@ export default function TeacherDashboard() {
                 </div>
                 <div style={{ marginBottom: '.7rem' }}>
                   <label style={{ display: 'block', fontWeight: 700, fontSize: '.82rem', color: '#374151', marginBottom: '.35rem' }}>หัวข้อ *</label>
-                  <input className="input" placeholder="หัวข้อประกาศ..." value={annTitle} onChange={e => setAnnTitle(e.target.value)} />
+                  <input {...ui('input')} placeholder="หัวข้อประกาศ..." value={annTitle} onChange={e => setAnnTitle(e.target.value)} />
                 </div>
                 <div style={{ marginBottom: '1rem' }}>
                   <label style={{ display: 'block', fontWeight: 700, fontSize: '.82rem', color: '#374151', marginBottom: '.35rem' }}>รายละเอียด (ไม่บังคับ)</label>
-                  <textarea className="input" rows={3} placeholder="รายละเอียดเพิ่มเติม..." value={annBody}
-                    onChange={e => setAnnBody(e.target.value)} style={{ resize: 'vertical', fontFamily: 'inherit' }} />
+                  <textarea {...ui('input', { resize: 'vertical', fontFamily: 'inherit' })} rows={3} placeholder="รายละเอียดเพิ่มเติม..." value={annBody}
+                    onChange={e => setAnnBody(e.target.value)} />
                 </div>
-                {annSaved && <div className="alert alert-success mb-3">✅ เพิ่มประกาศเรียบร้อยแล้ว</div>}
-                <button type="button" className="btn btn-primary" disabled={!annTitle.trim()}
+                {annSaved && <div {...ui('alert alert-success mb-3')}>✅ เพิ่มประกาศเรียบร้อยแล้ว</div>}
+                <button type="button" {...ui('btn btn-primary', undefined, undefined, !annTitle.trim())} disabled={!annTitle.trim()}
                   onClick={() => {
                     if (!annTitle.trim()) return;
                     const now  = new Date();
@@ -874,7 +861,7 @@ export default function TeacherDashboard() {
                 📋 ประกาศล่าสุด (ที่เกี่ยวกับห้อง {myClass})
               </div>
               {allMyAnnouncements.length === 0 ? (
-                <div className="text-center text-muted" style={{ padding: '2rem' }}>ยังไม่มีประกาศ</div>
+                <div {...ui('text-center text-muted', { padding: '2rem' })}>ยังไม่มีประกาศ</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '.7rem' }}>
                   {allMyAnnouncements.map((a, idx) => (
@@ -909,8 +896,7 @@ export default function TeacherDashboard() {
           {activeTab === 'students' && (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '.75rem', marginBottom: '1.25rem' }}>
-                <button type="button" className="btn"
-                  style={{ background: '#dbeafe', color: '#1e40af', padding: '.85rem', fontSize: '.9rem', borderRadius: '14px' }}
+                <button type="button" {...ui('btn', { background: '#dbeafe', color: '#1e40af', padding: '.85rem', fontSize: '.9rem', borderRadius: '14px' })}
                   onClick={() => {
                     const text = prompt('วางข้อมูล CSV (ชื่อ, ชั้น, อายุ, น้ำหนัก, ส่วนสูง)\nเช่น: เด็กชายดีใจ, K3, 5, 18.5, 110');
                     if (text) {
@@ -920,8 +906,7 @@ export default function TeacherDashboard() {
                   }}>
                   📥 นำเข้าข้อมูล
                 </button>
-                <button type="button" className="btn btn-primary"
-                  style={{ padding: '.85rem', fontSize: '.9rem', borderRadius: '14px' }}
+                <button type="button" {...ui('btn btn-primary', { padding: '.85rem', fontSize: '.9rem', borderRadius: '14px' })}
                   onClick={() => setIsAddingLocal(true)}>
                   ➕ เพิ่มนักเรียน
                 </button>
@@ -935,17 +920,17 @@ export default function TeacherDashboard() {
 
           {/* ── Profile tab ── */}
           {activeTab === 'profile' && (
-            <div className="glass p-6">
-              <div className="page-header mb-6">
+            <div {...ui('glass p-6')}>
+              <div {...ui('page-header mb-6')}>
                 <h3>👤 ข้อมูลของฉัน</h3>
                 {!profileForm && (
-                  <button type="button" className="btn btn-primary"
+                  <button type="button" {...ui('btn btn-primary')}
                     onClick={() => { setProfileForm({ ...myTeacher }); setProfileSaved(false); }}>
                     ✏️ แก้ไขข้อมูล
                   </button>
                 )}
               </div>
-              {profileSaved && <div className="alert alert-success mb-4">✅ บันทึกข้อมูลเรียบร้อยแล้ว</div>}
+              {profileSaved && <div {...ui('alert alert-success mb-4')}>✅ บันทึกข้อมูลเรียบร้อยแล้ว</div>}
               {!profileForm ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '520px' }}>
                   {/* ── รูปโปรไฟล์ (view) ── */}
@@ -1053,17 +1038,17 @@ export default function TeacherDashboard() {
 
                   <div>
                     <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600, fontSize: '.85rem' }}>ชื่อ-นามสกุล *</label>
-                    <input className="input" required value={profileForm.name ?? ''}
+                    <input {...ui('input')} required value={profileForm.name ?? ''}
                       onChange={e => setProfileForm(f => ({ ...f, name: e.target.value }))} />
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600, fontSize: '.85rem' }}>E-mail *</label>
-                    <input className="input" type="email" required value={profileForm.email ?? ''}
+                    <input {...ui('input')} type="email" required value={profileForm.email ?? ''}
                       onChange={e => setProfileForm(f => ({ ...f, email: e.target.value }))} />
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600, fontSize: '.85rem' }}>เบอร์โทรศัพท์</label>
-                    <input className="input" placeholder="0xx-xxx-xxxx" value={profileForm.phone ?? ''}
+                    <input {...ui('input')} placeholder="0xx-xxx-xxxx" value={profileForm.phone ?? ''}
                       onChange={e => setProfileForm(f => ({ ...f, phone: e.target.value }))} />
                   </div>
                   <div style={{ borderTop: '1.5px solid #e5e7eb', paddingTop: '.75rem', marginTop: '.25rem' }}>
@@ -1073,7 +1058,7 @@ export default function TeacherDashboard() {
                     {SOCIAL.map(s => (
                       <div key={s.key} style={{ marginBottom: '.6rem' }}>
                         <label style={{ display: 'block', marginBottom: '.3rem', fontWeight: 600, fontSize: '.85rem' }}>{s.label}</label>
-                        <input className="input" placeholder={s.placeholder} value={profileForm[s.key] ?? ''}
+                        <input {...ui('input')} placeholder={s.placeholder} value={profileForm[s.key] ?? ''}
                           onChange={e => setProfileForm(f => ({ ...f, [s.key]: e.target.value }))} />
                       </div>
                     ))}
@@ -1085,20 +1070,19 @@ export default function TeacherDashboard() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '.75rem' }}>
                       <div>
                         <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600, fontSize: '.85rem' }}>Username</label>
-                        <input className="input" value={profileForm.username ?? ''} readOnly
-                          style={{ background: '#f9fafb', color: '#6b7280' }} />
+                        <input {...ui('input', { background: '#f9fafb', color: '#6b7280' })} value={profileForm.username ?? ''} readOnly />
                       </div>
                       <div>
                         <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600, fontSize: '.85rem' }}>รหัสผ่านใหม่</label>
-                        <input className="input" placeholder="เว้นว่างถ้าไม่เปลี่ยน"
+                        <input {...ui('input')} placeholder="เว้นว่างถ้าไม่เปลี่ยน"
                           value={profileForm._newPin ?? ''}
                           onChange={e => setProfileForm(f => ({ ...f, _newPin: e.target.value }))} />
                       </div>
                     </div>
                   </div>
-                  <div className="flex gap-2 mt-2">
-                    <button type="button" className="btn flex-1" onClick={() => setProfileForm(null)}>ยกเลิก</button>
-                    <button type="submit" className="btn btn-primary flex-1">💾 บันทึก</button>
+                  <div {...ui('flex gap-2 mt-2')}>
+                    <button type="button" {...ui('btn flex-1')} onClick={() => setProfileForm(null)}>ยกเลิก</button>
+                    <button type="submit" {...ui('btn btn-primary flex-1')}>💾 บันทึก</button>
                   </div>
                 </form>
               )}
@@ -1109,8 +1093,8 @@ export default function TeacherDashboard() {
           {activeTab === 'main' && (
             <>
               {myAnnouncements.map((a, idx) => (
-                <div key={a.id} className="announce-banner mb-3">
-                  <span className="announce-icon">📢</span>
+                <div key={a.id} {...ui('announce-banner mb-3')}>
+                  <span {...ui('announce-icon')}>📢</span>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', gap: '.4rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '.15rem' }}>
                       {(!a.target || a.target === 'all') ? (
@@ -1120,34 +1104,34 @@ export default function TeacherDashboard() {
                       )}
                       {idx === 0 && <span style={{ background: '#7c3aed', color: 'white', fontSize: '.63rem', fontWeight: 800, padding: '1px 6px', borderRadius: '999px' }}>ล่าสุด</span>}
                     </div>
-                    <div className="announce-title">{a.title}</div>
+                    <div {...ui('announce-title')}>{a.title}</div>
                     {a.body && <div style={{ fontSize: '.78rem', color: '#4b5563', marginTop: '.15rem' }}>{a.body}</div>}
-                    <div className="announce-date">📅 {a.date}</div>
+                    <div {...ui('announce-date')}>📅 {a.date}</div>
                   </div>
                 </div>
               ))}
 
               {/* Stats */}
-              <div className="grid grid-4 mb-6" style={{ gap: '.75rem' }}>
-                <div className="stat-card" style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
-                  <span className="stat-icon">👶</span>
-                  <div className="stat-value">{stats.total}</div>
-                  <div className="stat-label">นักเรียน (ปกติ)</div>
+              <div {...ui('grid grid-4 mb-6', { gap: '.75rem' })}>
+                <div {...ui('stat-card', { background: 'linear-gradient(135deg,#7c3aed,#a855f7)' })}>
+                  <span {...ui('stat-icon')}>👶</span>
+                  <div {...ui('stat-value')}>{stats.total}</div>
+                  <div {...ui('stat-label')}>นักเรียน (ปกติ)</div>
                 </div>
-                <div className="stat-card" style={{ background: 'linear-gradient(135deg,#10b981,#34d399)' }}>
-                  <span className="stat-icon">✅</span>
-                  <div className="stat-value">{stats.attend}</div>
-                  <div className="stat-label">มาเรียนวันนี้</div>
+                <div {...ui('stat-card', { background: 'linear-gradient(135deg,#10b981,#34d399)' })}>
+                  <span {...ui('stat-icon')}>✅</span>
+                  <div {...ui('stat-value')}>{stats.attend}</div>
+                  <div {...ui('stat-label')}>มาเรียนวันนี้</div>
                 </div>
-                <div className="stat-card" style={{ background: 'linear-gradient(135deg,#f59e0b,#fbbf24)' }}>
-                  <span className="stat-icon">🥛</span>
-                  <div className="stat-value">{stats.hygiene}</div>
-                  <div className="stat-label">บันทึกกิจวัตรแล้ว</div>
+                <div {...ui('stat-card', { background: 'linear-gradient(135deg,#f59e0b,#fbbf24)' })}>
+                  <span {...ui('stat-icon')}>🥛</span>
+                  <div {...ui('stat-value')}>{stats.hygiene}</div>
+                  <div {...ui('stat-label')}>บันทึกกิจวัตรแล้ว</div>
                 </div>
-                <div className="stat-card" style={{ background: 'linear-gradient(135deg,#3b82f6,#60a5fa)' }}>
-                  <span className="stat-icon">📋</span>
-                  <div className="stat-value">{stats.assessed}</div>
-                  <div className="stat-label">ประเมินแล้ว</div>
+                <div {...ui('stat-card', { background: 'linear-gradient(135deg,#3b82f6,#60a5fa)' })}>
+                  <span {...ui('stat-icon')}>📋</span>
+                  <div {...ui('stat-value')}>{stats.assessed}</div>
+                  <div {...ui('stat-label')}>ประเมินแล้ว</div>
                 </div>
               </div>
 
@@ -1234,18 +1218,15 @@ export default function TeacherDashboard() {
 
               {/* Quick actions */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '.75rem', marginBottom: '1.5rem' }}>
-                <button type="button" className="btn"
-                  style={{ background: '#d1fae5', color: '#065f46', padding: '.85rem', fontSize: '.9rem', borderRadius: '14px' }}
+                <button type="button" {...ui('btn', { background: '#d1fae5', color: '#065f46', padding: '.85rem', fontSize: '.9rem', borderRadius: '14px' })}
                   onClick={() => { loadDraft(today); setActiveView('hygiene'); }}>
                   🥛 บันทึกกิจวัตร
                 </button>
-                <button type="button" className="btn"
-                  style={{ background: '#fef3c7', color: '#92400e', padding: '.85rem', fontSize: '.9rem', borderRadius: '14px' }}
+                <button type="button" {...ui('btn', { background: '#fef3c7', color: '#92400e', padding: '.85rem', fontSize: '.9rem', borderRadius: '14px' })}
                   onClick={() => { loadDraft(today); setActiveView('attendance'); }}>
                   ✅ เช็คชื่อ
                 </button>
-                <button type="button" className="btn"
-                  style={{ background: '#dbeafe', color: '#1e40af', padding: '.85rem', fontSize: '.9rem', borderRadius: '14px' }}
+                <button type="button" {...ui('btn', { background: '#dbeafe', color: '#1e40af', padding: '.85rem', fontSize: '.9rem', borderRadius: '14px' })}
                   onClick={() => {
                     const text = prompt('วางข้อมูล CSV (ชื่อ, ชั้น, อายุ, น้ำหนัก, ส่วนสูง)\nเช่น: เด็กชายดีใจ, K3, 5, 18.5, 110');
                     if (text) {
@@ -1255,8 +1236,7 @@ export default function TeacherDashboard() {
                   }}>
                   📥 นำเข้าข้อมูล
                 </button>
-                <button type="button" className="btn btn-primary"
-                  style={{ padding: '.85rem', fontSize: '.9rem', borderRadius: '14px' }}
+                <button type="button" {...ui('btn btn-primary', { padding: '.85rem', fontSize: '.9rem', borderRadius: '14px' })}
                   onClick={() => setIsAddingLocal(true)}>
                   ➕ เพิ่มนักเรียน
                 </button>

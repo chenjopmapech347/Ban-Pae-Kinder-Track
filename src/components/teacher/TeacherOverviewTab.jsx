@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { todayISO, formatDateThai, getMondayOf, isStudentActive } from '../../utils/helpers';
+import { ui } from '../../ui/ui';
 
 /**
  * TeacherOverviewTab — แสดงรายการกิจกรรมที่ต้องบันทึก จำแนกตามความถี่
@@ -100,13 +101,13 @@ export default function TeacherOverviewTab({ onTabChange }) {
   const allDailyDone = dailyDone === dailyTotal;
 
   return (
-    <div className="animate-fade">
+    <div {...ui('animate-fade')}>
 
       {/* ── Header ── */}
-      <div className="glass-card mb-4" style={{
+      <div {...ui('glass-card mb-4', {
         background: 'linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)',
         color: 'white', padding: '1.25rem 1.5rem',
-      }}>
+      })}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '.5rem' }}>
           <div>
             <div style={{ fontSize: '.78rem', opacity: .85, fontWeight: 600, marginBottom: '.2rem' }}>
@@ -197,7 +198,7 @@ function FreqSection({ label, emoji, color, bg, subtitle, items, onTabChange }) 
   const allDone   = doneCount === items.length;
 
   return (
-    <div className="glass-card mb-4" style={{ padding: '1.1rem 1.25rem' }}>
+    <div {...ui('glass-card mb-4', { padding: '1.1rem 1.25rem' })}>
       {/* Section header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', marginBottom: '.85rem', flexWrap: 'wrap' }}>
         <span style={{

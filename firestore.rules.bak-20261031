@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // แอปใช้ custom PIN auth (ไม่ใช่ Firebase Auth)
+    // อนุญาตให้อ่าน/เขียน snapshots ของโรงเรียน — ไม่เปิดรูทอื่น
+    match /schools/{schoolId}/snapshots/{snapshotId} {
+      allow read, write: if true;
+    }
+
+    // ข้อมูลรายวัน (volatile) — แยกจาก snapshots เพื่อ dot-notation merge
+    match /schools/{schoolId}/dailyData/{docId} {
+      allow read, write: if true;
+    }
+
+    // ตารางกิจกรรมภายใน-นอกห้องเรียน
+    match /activitySchedule/{docId} {
+      allow read, write: if true;
+    }
+
+    // กำหนดกิจกรรมมุมในห้อง / นอกห้อง (ถ้ามีในอนาคต)
+    match /cornerAssignments/{docId} {
+      allow read, write: if true;
+    }
+
+    // มาตรฐานที่ 2 — แบบประเมินตนเองรายครู (Std2SelfTab)
+    match /std2_ratings/{teacherId} {
+      allow read, write: if true;
+    }
+  }
+}

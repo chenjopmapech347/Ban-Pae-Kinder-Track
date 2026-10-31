@@ -1,4 +1,5 @@
-// StandardsMapTab.jsx — ตารางแมปมาตรฐานการศึกษาปฐมวัย (หลักสูตรปฐมวัย 2568)
+
+import { ui } from '../../ui/ui';// StandardsMapTab.jsx — ตารางแมปมาตรฐานการศึกษาปฐมวัย (หลักสูตรปฐมวัย 2568)
 
 const STD68 = { label: 'ปี 68 ม.1', bg: '#fdf4ff', color: '#7e22ce', border: '#e9d5ff' };
 
@@ -89,8 +90,8 @@ const MAP_ROWS = [
 
 export default function StandardsMapTab() {
   return (
-    <div className="glass p-6 animate-fade">
-      <div className="page-header mb-4">
+    <div {...ui('glass p-6 animate-fade')}>
+      <div {...ui('page-header mb-4')}>
         <h3>📋 มาตรฐานการศึกษาปฐมวัย</h3>
       </div>
 

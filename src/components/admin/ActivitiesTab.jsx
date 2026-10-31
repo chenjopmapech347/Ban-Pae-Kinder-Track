@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { INDICATORS_DATA_68 } from '../../data/indicatorsData_68';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
+import { ui } from '../../ui/ui';
 
 // ── Modal เพิ่ม/แก้ไขกิจกรรม ───────────────────────────────────────────────
 function ActivityModal({ isOpen, onClose, onSave, editing, indicators, presetIndicatorId }) {
@@ -50,7 +51,7 @@ function ActivityModal({ isOpen, onClose, onSave, editing, indicators, presetInd
           <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>
             ตัวบ่งชี้ที่เชื่อมโยง <span style={{ color: 'var(--danger)' }}>*</span>
           </label>
-          <select className="input" value={form.indicatorId}
+          <select {...ui('input')} value={form.indicatorId}
             onChange={e => setForm({ ...form, indicatorId: e.target.value })}>
             <option value="">— เลือกตัวบ่งชี้ —</option>
             {Object.entries(byDomain).map(([domainId, dom]) => (
@@ -69,7 +70,7 @@ function ActivityModal({ isOpen, onClose, onSave, editing, indicators, presetInd
           <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>
             รายการพิจารณา (ไม่บังคับ)
           </label>
-          <input className="input" placeholder="เช่น รายการพิจารณาที่ 3.1.1"
+          <input {...ui('input')} placeholder="เช่น รายการพิจารณาที่ 3.1.1"
             value={form.itemLabel}
             onChange={e => setForm({ ...form, itemLabel: e.target.value })} />
         </div>
@@ -79,14 +80,14 @@ function ActivityModal({ isOpen, onClose, onSave, editing, indicators, presetInd
             <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>
               หมายเลข <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
-            <input className="input" placeholder="เช่น 8" value={form.no}
+            <input {...ui('input')} placeholder="เช่น 8" value={form.no}
               onChange={e => setForm({ ...form, no: e.target.value })} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '.35rem', fontWeight: 600 }}>
               ชื่อกิจกรรม <span style={{ color: 'var(--danger)' }}>*</span>
             </label>
-            <input className="input" placeholder="เช่น ยืนขาเดียว 3 วินาที (GM)"
+            <input {...ui('input')} placeholder="เช่น ยืนขาเดียว 3 วินาที (GM)"
               value={form.label}
               onChange={e => setForm({ ...form, label: e.target.value })} />
           </div>
@@ -159,14 +160,14 @@ export default function ActivitiesTab() {
   };
 
   return (
-    <div className="glass p-6 animate-fade">
+    <div {...ui('glass p-6 animate-fade')}>
       {/* Header */}
-      <div className="page-header mb-6">
+      <div {...ui('page-header mb-6')}>
         <h3>🎯 กิจกรรม</h3>
         <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <input className="input" style={{ maxWidth: '180px' }} placeholder="🔍 ค้นหา..."
+          <input {...ui('input', { maxWidth: '180px' })} placeholder="🔍 ค้นหา..."
             value={search} onChange={e => setSearch(e.target.value)} />
-          <button className="btn btn-primary" onClick={() => openModal()}>
+          <button {...ui('btn btn-primary')} onClick={() => openModal()}>
             + เพิ่มกิจกรรม
           </button>
         </div>
@@ -294,8 +295,8 @@ export default function ActivitiesTab() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '.4rem', flexShrink: 0 }}>
-                      <button className="btn btn-sm" onClick={() => openModal(act)}>แก้ไข</button>
-                      <button className="btn btn-sm" style={{ color: 'var(--danger)' }}
+                      <button {...ui('btn btn-sm')} onClick={() => openModal(act)}>แก้ไข</button>
+                      <button {...ui('btn btn-sm', { color: 'var(--danger)' })}
                         onClick={() => handleDelete(act.id)}>ลบ</button>
                     </div>
                   </div>

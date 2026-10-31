@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
+import { ui } from '../../ui/ui';
 
 // แปลง YYYY-MM-DD (ค.ศ.) → วัน เดือน ปีพ.ศ.
 function toThaiDate(iso) {
@@ -126,30 +127,29 @@ export default function SpecialHolidaysTab() {
   const canSave  = canNext && form.makeupDate;
 
   return (
-    <div className="glass p-6 animate-fade">
+    <div {...ui('glass p-6 animate-fade')}>
       {/* Header */}
-      <div className="page-header mb-6">
+      <div {...ui('page-header mb-6')}>
         <div>
           <h3>📵 วันหยุดพิเศษ</h3>
-          <p className="text-xs text-muted" style={{ marginTop: '.25rem' }}>
+          <p {...ui('text-xs text-muted', { marginTop: '.25rem' })}>
             กำหนดวันหยุดพิเศษ (วันจันทร์–ศุกร์) พร้อมวันเปิดเรียนทดแทน (เสาร์–อาทิตย์)
           </p>
         </div>
-        <button type="button" className="btn btn-primary" onClick={openAdd}>
+        <button type="button" {...ui('btn btn-primary')} onClick={openAdd}>
           + เพิ่มวันหยุดพิเศษ
         </button>
       </div>
 
       {/* Table */}
       {sorted.length === 0 ? (
-        <div className="text-center text-muted" style={{ padding:'2.5rem' }}>
+        <div {...ui('text-center text-muted', { padding:'2.5rem' })}>
           ยังไม่มีวันหยุดพิเศษ
         </div>
       ) : (
         <div style={{ display:'flex', flexDirection:'column', gap:'.75rem' }}>
           {sorted.map(h => (
-            <div key={h.id} className="glass-card"
-              style={{ display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'.75rem' }}>
+            <div key={h.id} {...ui('glass-card', { display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'.75rem' })}>
               <div style={{ display:'flex', gap:'1rem', alignItems:'center', flexWrap:'wrap' }}>
                 {/* วันหยุด */}
                 <div style={{ display:'flex', flexDirection:'column', alignItems:'center',
@@ -168,10 +168,10 @@ export default function SpecialHolidaysTab() {
                   <span style={{ fontSize:'.82rem', fontWeight:800 }}>{toThaiDate(h.makeupDate)}</span>
                 </div>
                 <div>
-                  <div className="font-bold">{h.offLabel}</div>
+                  <div {...ui('font-bold')}>{h.offLabel}</div>
                 </div>
               </div>
-              <button type="button" className="btn btn-sm" style={{ color:'var(--danger)' }}
+              <button type="button" {...ui('btn btn-sm', { color:'var(--danger)' })}
                 onClick={() => handleDelete(h.id)}>🗑️ ลบ</button>
             </div>
           ))}
@@ -193,7 +193,7 @@ export default function SpecialHolidaysTab() {
                 ชื่อวันหยุดพิเศษ <span style={{ color:'var(--danger)' }}>*</span>
               </label>
               <input
-                className="input"
+                {...ui('input')}
                 placeholder="เช่น หยุดชดเชยวันพ่อ, หยุดโรคระบาด..."
                 value={form.offLabel}
                 onChange={e => setForm({ ...form, offLabel: e.target.value })}
@@ -251,7 +251,7 @@ export default function SpecialHolidaysTab() {
             </div>
 
             <div style={{ display:'flex', gap:'.6rem' }}>
-              <button type="button" className="btn" onClick={() => setStep(1)}>← ย้อนกลับ</button>
+              <button type="button" {...ui('btn')} onClick={() => setStep(1)}>← ย้อนกลับ</button>
               <ModalConfirmBtn
                 onClick={handleSave}
                 label="💾 บันทึก"

@@ -2,13 +2,13 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { AttendanceBarChart, ClassRadarChart } from '../DevelopmentChart';
 import { exportDailyAttendanceSummaryExcel } from '../../utils/exportExcel';
+import { ui } from '../../ui/ui';
 
-const ROUNDS = [1, 2, 3, 4];
 
 export default function OverviewTab() {
   const {
     students, teachers, assessmentTopics, announcements, setAnnouncements, allClassNames,
-    activities, indicators, dailyRecords, schoolName, academicYear,
+    dailyRecords, schoolName, academicYear,
   } = useApp();
   const ALL_CLASSES = allClassNames;
 
@@ -43,60 +43,6 @@ export default function OverviewTab() {
     { tB:0,tG:0,pB:0,pG:0,aB:0,aG:0 }
   ), [dailySummary]);
 
-  // ── สถานะการประเมินแยกตามห้อง × ครั้ง ──────────────────────────────────────
-  // นับจำนวน "ตัวบ่งชี้" ที่ประเมินแล้ว (distinct indicatorId ที่มี activity ≥ 1 ตัวได้รับคะแนน)
-  // เทียบกับจำนวนตัวบ่งชี้ทั้งหมดในระบบ (50)
-  // ตรวจว่า actMap value มีคะแนนหรือไม่ — รองรับ 2 format:
-  // 1) EvaluationTab:    actMap[actId] = { r1: score, r2: score, ... }
-  // 2) AssessmentWizard: actMap[actNo] = score (number)
-  function hasScoreInRound(scores, rKey) {
-    if (scores == null) return false;
-    if (typeof scores === 'number') return scores > 0;          // Wizard flat format
-    if (typeof scores === 'object') return scores[rKey] != null; // EvaluationTab format
-    return false;
-  }
-  function hasScoreAnyRound(scores) {
-    if (scores == null) return false;
-    if (typeof scores === 'number') return scores > 0;           // Wizard flat format
-    if (typeof scores === 'object') return ROUNDS.some(r => scores[`r${r}`] != null);
-    return false;
-  }
-
-  const pendingMatrix = useMemo(() => {
-    const totalInds = indicators.length;
-    return ALL_CLASSES.map(cls => {
-      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'));
-      if (!sts.length) return null;
-      const rounds = ROUNDS.map(r => {
-        const rKey = `r${r}`;
-        // รวบรวม indicatorId ที่มีนักเรียนอย่างน้อย 1 คนได้รับคะแนนใน indicator นั้น ในรอบนี้
-        const doneInds = new Set();
-        sts.forEach(s => {
-          Object.entries(s.assessments?.indicators ?? {}).forEach(([indId, actMap]) => {
-            if (!actMap || typeof actMap !== 'object') return;
-            const hasScore = Object.values(actMap).some(scores => hasScoreInRound(scores, rKey));
-            if (hasScore) doneInds.add(indId);
-          });
-        });
-        return doneInds.size;
-      });
-      return { cls, studentCount: sts.length, total: totalInds, rounds };
-    }).filter(Boolean);
-  }, [students, indicators, ALL_CLASSES]);
-
-  // นับตัวบ่งชี้ที่ยังไม่เคยถูกประเมินเลย (ไม่มี score ใน round ใดเลย ในห้องใดเลย)
-  const pendingActCount = useMemo(() => {
-    const evaluated = new Set();
-    students.forEach(s => {
-      Object.entries(s.assessments?.indicators ?? {}).forEach(([indId, actMap]) => {
-        if (!actMap || typeof actMap !== 'object') return;
-        const hasAnyScore = Object.values(actMap).some(scores => hasScoreAnyRound(scores));
-        if (hasAnyScore) evaluated.add(indId);
-      });
-    });
-    return indicators.length - evaluated.size;
-  }, [students, indicators]);
-
   // ── Attendance chart — class selector + auto-cycle ───────────────────────
   const classNames = useMemo(() =>
     [...new Set(students.filter(s => !s.name.startsWith('(ว่าง)')).map(s => s.className))].sort(),
@@ -105,7 +51,7 @@ export default function OverviewTab() {
   const [selAttClass, setSelAttClass] = useState(null);
   const [autoPlay, setAutoPlay] = useState(true);
   const autoPlayRef = useRef(autoPlay);
-  autoPlayRef.current = autoPlay;
+  useEffect(() => { autoPlayRef.current = autoPlay; }, [autoPlay]);
 
   // เมื่อ classNames เปลี่ยน ตั้งค่าเริ่มต้น
   useEffect(() => {
@@ -152,35 +98,35 @@ export default function OverviewTab() {
   const tdNum   = { ...tdStyle, textAlign:'center' };
 
   return (
-    <div className="animate-fade">
+    <div {...ui('animate-fade')}>
 
       {/* Stat Cards */}
-      <div className="grid grid-4 mb-6" style={{ gap: '.75rem' }}>
-        <div className="stat-card" style={{ background: 'linear-gradient(135deg,#3b82f6,#60a5fa)' }}>
-          <span className="stat-icon">👨‍🏫</span>
-          <div className="stat-value">{stats.teachers}</div>
-          <div className="stat-label">จำนวนคุณครู</div>
+      <div {...ui('grid grid-4 mb-6', { gap: '.75rem' })}>
+        <div {...ui('stat-card', { background: 'linear-gradient(135deg,#3b82f6,#60a5fa)' })}>
+          <span {...ui('stat-icon')}>👨‍🏫</span>
+          <div {...ui('stat-value')}>{stats.teachers}</div>
+          <div {...ui('stat-label')}>จำนวนคุณครู</div>
         </div>
-        <div className="stat-card" style={{ background: 'linear-gradient(135deg,#10b981,#34d399)' }}>
-          <span className="stat-icon">👶</span>
-          <div className="stat-value">{stats.total}</div>
-          <div className="stat-label">นักเรียนทั้งหมด · ชาย {stats.boys} หญิง {stats.girls}</div>
+        <div {...ui('stat-card', { background: 'linear-gradient(135deg,#10b981,#34d399)' })}>
+          <span {...ui('stat-icon')}>👶</span>
+          <div {...ui('stat-value')}>{stats.total}</div>
+          <div {...ui('stat-label')}>นักเรียนทั้งหมด · ชาย {stats.boys} หญิง {stats.girls}</div>
         </div>
-        <div className="stat-card" style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)' }}>
-          <span className="stat-icon">📋</span>
-          <div className="stat-value">{stats.assessed}</div>
-          <div className="stat-label">ประเมินแล้ว · รอ {stats.pending} คน</div>
+        <div {...ui('stat-card', { background: 'linear-gradient(135deg,#7c3aed,#a855f7)' })}>
+          <span {...ui('stat-icon')}>📋</span>
+          <div {...ui('stat-value')}>{stats.assessed}</div>
+          <div {...ui('stat-label')}>ประเมินแล้ว · รอ {stats.pending} คน</div>
         </div>
-        <div className="stat-card" style={{ background: 'linear-gradient(135deg,#f59e0b,#fbbf24)' }}>
-          <span className="stat-icon">📅</span>
-          <div className="stat-value">{stats.rate}%</div>
-          <div className="stat-label">การมาเรียนภาพรวม</div>
+        <div {...ui('stat-card', { background: 'linear-gradient(135deg,#f59e0b,#fbbf24)' })}>
+          <span {...ui('stat-icon')}>📅</span>
+          <div {...ui('stat-value')}>{stats.rate}%</div>
+          <div {...ui('stat-label')}>การมาเรียนภาพรวม</div>
         </div>
       </div>
 
       {/* Charts row */}
-      <div className="grid grid-2 mb-6" style={{ gap: '1.25rem' }}>
-        <div className="glass-card">
+      <div {...ui('grid grid-2 mb-6', { gap: '1.25rem' })}>
+        <div {...ui('glass-card')}>
           {/* Header + class tabs */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'.6rem', flexWrap:'wrap', gap:'.4rem' }}>
             <h4 style={{ margin:0 }}>📊 การมาเรียน</h4>
@@ -217,17 +163,17 @@ export default function OverviewTab() {
           {attStudents.length ? (
             <AttendanceBarChart students={attStudents} dailyRecords={dailyRecords} />
           ) : (
-            <div className="text-center text-muted" style={{ padding: '2rem' }}>ยังไม่มีข้อมูล</div>
+            <div {...ui('text-center text-muted', { padding: '2rem' })}>ยังไม่มีข้อมูล</div>
           )}
         </div>
-        <div className="glass-card">
-          <h4 className="mb-3">🌱 พัฒนาการเฉลี่ยแต่ละชั้น</h4>
+        <div {...ui('glass-card')}>
+          <h4 {...ui('mb-3')}>🌱 พัฒนาการเฉลี่ยแต่ละชั้น</h4>
           <ClassRadarChart students={students} topics={assessmentTopics} />
         </div>
       </div>
 
       {/* ── สถิติการมาเรียนรายวัน ── */}
-      <div className="glass-card" style={{ marginBottom: '1.25rem' }}>
+      <div {...ui('glass-card', { marginBottom: '1.25rem' })}>
         <div style={{ display:'flex', alignItems:'center', gap:'.75rem', marginBottom:'1rem', flexWrap:'wrap' }}>
           <h4 style={{ margin:0 }}>📅 สถิติการมาเรียนรายวัน</h4>
           <input
@@ -253,7 +199,7 @@ export default function OverviewTab() {
           </button>
         </div>
 
-        <div className="table-wrap">
+        <div {...ui('table-wrap')}>
           <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'.82rem' }}>
             <thead>
               <tr>
@@ -311,10 +257,10 @@ export default function OverviewTab() {
       </div>
 
       {/* Announcements */}
-      <div className="glass-card">
-        <div className="flex justify-between items-center mb-4">
+      <div {...ui('glass-card')}>
+        <div {...ui('flex justify-between items-center mb-4')}>
           <h4>📢 ข่าวสารและประกาศล่าสุด</h4>
-          <button className="btn btn-sm btn-primary" onClick={() => {
+          <button {...ui('btn btn-sm btn-primary')} onClick={() => {
             const title = prompt('หัวข้อประกาศ:');
             if (title) setAnnouncements([
               { id: Date.now(), title, date: new Date().toLocaleDateString('th-TH') },
@@ -333,11 +279,11 @@ export default function OverviewTab() {
                 <div style={{ fontWeight: 600, fontSize: '.9rem', marginBottom: '.15rem' }}>{n.title}</div>
                 <div style={{ fontSize: '.72rem', color: 'var(--text-muted)' }}>{n.date}</div>
               </div>
-              <span className="badge badge-info" style={{ fontSize: '.6rem', flexShrink: 0 }}>NEWS</span>
+              <span {...ui('badge badge-info', { fontSize: '.6rem', flexShrink: 0 })}>NEWS</span>
             </div>
           ))}
           {!announcements.length && (
-            <div className="text-center text-muted" style={{ padding: '1.5rem' }}>ยังไม่มีประกาศ</div>
+            <div {...ui('text-center text-muted', { padding: '1.5rem' })}>ยังไม่มีประกาศ</div>
           )}
         </div>
       </div>

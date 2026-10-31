@@ -2,6 +2,7 @@
 // ระบบประกาศ — Admin สร้าง/ลบประกาศ เลือกเป้าหมาย (ทั้งหมด / เฉพาะห้อง)
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { ui } from '../../ui/ui';
 
 const TARGET_ALL = 'all';
 
@@ -67,8 +68,8 @@ export default function AnnouncementsTab() {
   };
 
   return (
-    <div className="glass p-6 animate-fade">
-      <div className="page-header mb-6">
+    <div {...ui('glass p-6 animate-fade')}>
+      <div {...ui('page-header mb-6')}>
         <h3>📢 จัดการประกาศ</h3>
       </div>
 
@@ -126,7 +127,7 @@ export default function AnnouncementsTab() {
             หัวข้อประกาศ *
           </label>
           <input
-            className="input"
+            {...ui('input')}
             placeholder="หัวข้อ..."
             value={title}
             onChange={e => setTitle(e.target.value)}
@@ -139,22 +140,21 @@ export default function AnnouncementsTab() {
             รายละเอียด (ไม่บังคับ)
           </label>
           <textarea
-            className="input"
+            {...ui('input', { resize: 'vertical', fontFamily: 'inherit' })}
             rows={3}
             placeholder="รายละเอียดเพิ่มเติม..."
             value={body}
             onChange={e => setBody(e.target.value)}
-            style={{ resize: 'vertical', fontFamily: 'inherit' }}
           />
         </div>
 
         {saved && (
-          <div className="alert alert-success mb-3">✅ เพิ่มประกาศเรียบร้อยแล้ว</div>
+          <div {...ui('alert alert-success mb-3')}>✅ เพิ่มประกาศเรียบร้อยแล้ว</div>
         )}
 
         <button
           type="button"
-          className="btn btn-primary"
+          {...ui('btn btn-primary', undefined, undefined, !title.trim())}
           onClick={handleAdd}
           disabled={!title.trim()}
         >
@@ -172,7 +172,7 @@ export default function AnnouncementsTab() {
         </div>
 
         {announcements.length === 0 ? (
-          <div className="text-center text-muted" style={{ padding: '2.5rem' }}>
+          <div {...ui('text-center text-muted', { padding: '2.5rem' })}>
             ยังไม่มีประกาศ
           </div>
         ) : (

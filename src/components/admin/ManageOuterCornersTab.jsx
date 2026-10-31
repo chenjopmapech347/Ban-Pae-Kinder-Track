@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { genUniqueKey } from '../../utils/helpers';
+import { ui } from '../../ui/ui';
 
 export default function ManageOuterCornersTab() {
   const { cornerDefs, setCornerDefs } = useApp();
@@ -56,12 +57,12 @@ export default function ManageOuterCornersTab() {
   });
 
   return (
-    <div className="glass p-6 animate-fade">
+    <div {...ui('glass p-6 animate-fade')}>
       {/* Header */}
-      <div className="page-header mb-6">
+      <div {...ui('page-header mb-6')}>
         <div>
           <h3>🌿 จัดการกิจกรรมภายนอกห้องเรียน</h3>
-          <p className="text-xs text-muted" style={{ marginTop: '.25rem' }}>
+          <p {...ui('text-xs text-muted', { marginTop: '.25rem' })}>
             กำหนดชื่อแหล่งเรียนรู้นอกห้องเรียน — แก้ไข เรียงลำดับ และลบได้ตามต้องการ
           </p>
         </div>
@@ -73,7 +74,7 @@ export default function ManageOuterCornersTab() {
 
       {/* รายการปัจจุบัน */}
       {cornerDefs.length === 0 ? (
-        <div className="text-center text-muted" style={{ padding: '2.5rem', fontSize: '.9rem' }}>
+        <div {...ui('text-center text-muted', { padding: '2.5rem', fontSize: '.9rem' })}>
           ยังไม่มีแหล่งเรียนรู้ กรุณาเพิ่มด้านล่าง
         </div>
       ) : (
@@ -123,7 +124,7 @@ export default function ManageOuterCornersTab() {
         </div>
         <div style={{ display: 'flex', gap: '.5rem' }}>
           <input
-            className="input"
+            {...ui('input')}
             value={newLabel}
             onChange={e => setNewLabel(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && addNew()}
@@ -131,14 +132,14 @@ export default function ManageOuterCornersTab() {
           />
           <button
             type="button"
-            className="btn btn-primary"
+            {...ui('btn btn-primary', undefined, undefined, !newLabel.trim())}
             onClick={addNew}
             disabled={!newLabel.trim()}
           >
             เพิ่ม
           </button>
         </div>
-        <p className="text-xs text-muted" style={{ marginTop: '.5rem' }}>
+        <p {...ui('text-xs text-muted', { marginTop: '.5rem' })}>
           💡 การเปลี่ยนแปลงจะบันทึกทันที และส่งผลต่อแบบบันทึกแหล่งเรียนรู้นอกห้องเรียน
         </p>
       </div>

@@ -5,6 +5,7 @@
 
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { ui } from '../../ui/ui';
 
 const LEVEL_LABEL = { K1: 'อนุบาล 1', K2: 'อนุบาล 2', K3: 'อนุบาล 3' };
 const LEVEL_COLOR = { K1: '#7c3aed', K2: '#0891b2', K3: '#059669' };
@@ -98,9 +99,9 @@ export default function ClassAssignTab() {
   const canAssign   = selectedIds.size > 0 && selectedClass;
 
   return (
-    <div className="glass p-6 animate-fade">
+    <div {...ui('glass p-6 animate-fade')}>
       {/* ── Header ─────────────────────────────────────────── */}
-      <div className="page-header mb-4">
+      <div {...ui('page-header mb-4')}>
         <h3>🏫 จัดนักเรียนเข้าห้องเรียน</h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', flexWrap: 'wrap' }}>
           {selectedIds.size > 0 && (
@@ -120,9 +121,8 @@ export default function ClassAssignTab() {
             </span>
           )}
           <button
-            className="btn btn-primary"
+            {...ui('btn btn-primary', { opacity: canAssign ? 1 : .45 }, undefined, !canAssign)}
             disabled={!canAssign}
-            style={{ opacity: canAssign ? 1 : .45 }}
             onClick={handleAssign}
           >
             ✅ กำหนดห้องเรียน
@@ -199,7 +199,7 @@ export default function ClassAssignTab() {
               </div>
 
               {/* Search */}
-              <input className="input" style={{ fontSize: '.82rem' }}
+              <input {...ui('input', { fontSize: '.82rem' })}
                 placeholder="🔍 ค้นหาชื่อ / ห้อง..."
                 value={search}
                 onChange={e => { setSearch(e.target.value); setSelectedIds(new Set()); }}
@@ -416,15 +416,14 @@ export default function ClassAssignTab() {
             {' '}(ครู: {selectedClass.teacherNameResolved})
           </div>
           <button
-            className="btn"
-            onClick={handleAssign}
-            style={{
+            {...ui('btn', {
               background: 'white', color: '#7c3aed',
               fontWeight: 800, fontSize: '.9rem',
               padding: '.5rem 1.5rem', borderRadius: '10px',
               border: 'none', cursor: 'pointer',
               boxShadow: '0 2px 8px rgba(0,0,0,.15)',
-            }}>
+            })}
+            onClick={handleAssign}>
             ✅ กำหนดห้องเรียน
           </button>
         </div>

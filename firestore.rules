@@ -1,30 +1,40 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // แอปใช้ custom PIN auth (ไม่ใช่ Firebase Auth)
-    // อนุญาตให้อ่าน/เขียน snapshots ของโรงเรียน — ไม่เปิดรูทอื่น
-    match /schools/{schoolId}/snapshots/{snapshotId} {
-      allow read, write: if true;
+    // แอปใช้ custom PIN auth (ไม่ใช่ Firebase Auth) จึงยังตรวจตัวตนฝั่ง rules ไม่ได้
+    // มาตรการชั่วคราว: จำกัดเฉพาะ path ที่แอปใช้จริง, ห้ามลบ, ห้าม list ข้ามโรงเรียน
+    // TODO: ย้ายไปใช้ Firebase Auth (custom token จาก Cloud Function ตรวจ PIN) แล้วเปลี่ยนเป็น request.auth != null
+
+    // snapshot หลัก + สำรองรายวัน — อ่าน/สร้าง/แก้ได้ แต่ห้ามลบ
+    match /schools/default/snapshots/{snapshotId} {
+      allow read, create, update: if true;
+      allow delete: if false;
     }
 
-    // ข้อมูลรายวัน (volatile) — แยกจาก snapshots เพื่อ dot-notation merge
-    match /schools/{schoolId}/dailyData/{docId} {
-      allow read, write: if true;
+    // ข้อมูลรายวัน (volatile)
+    match /schools/default/dailyData/{docId} {
+      allow read, create, update: if true;
+      allow delete: if false;
     }
 
     // ตารางกิจกรรมภายใน-นอกห้องเรียน
     match /activitySchedule/{docId} {
-      allow read, write: if true;
+      allow read, create, update: if true;
+      allow delete: if false;
     }
 
     // กำหนดกิจกรรมมุมในห้อง / นอกห้อง (ถ้ามีในอนาคต)
     match /cornerAssignments/{docId} {
-      allow read, write: if true;
+      allow read, create, update: if true;
+      allow delete: if false;
     }
 
     // มาตรฐานที่ 2 — แบบประเมินตนเองรายครู (Std2SelfTab)
     match /std2_ratings/{teacherId} {
-      allow read, write: if true;
+      allow read, create, update: if true;
+      allow delete: if false;
     }
+
+    // อย่างอื่นทั้งหมดปิด (default deny)
   }
 }

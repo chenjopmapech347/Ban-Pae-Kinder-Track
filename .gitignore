@@ -39,3 +39,6 @@ serviceAccount.json
 
 # Large files
 *.pdf
+_to_delete/
+src-before-classname-*.tgz
+*.bak-*

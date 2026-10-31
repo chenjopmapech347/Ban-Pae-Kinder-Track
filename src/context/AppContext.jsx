@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useLocalStorage } from '../hooks/useLocalStorage';
 import { STORAGE_KEYS, clearAllStorage } from '../constants/storageKeys';
-import { DEFAULT_AUTH_CONFIG, TEST_ACCOUNTS } from '../constants/auth';
+import { DEFAULT_AUTH_CONFIG, TEST_ACCOUNTS, TEST_ACCOUNTS_ENABLED } from '../constants/auth';
 import {
   INITIAL_STUDENTS,
   INITIAL_TEACHERS,
@@ -20,9 +20,10 @@ import { pullSnapshotFromCloud, pushSnapshotToCloud } from '../lib/cloudSync';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { isFirebaseConfigured, db } from '../lib/firebase';
 import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
-import { pushSnapshotToFirebase, pullSnapshotFromFirebase, pullClassAssessments, pullAllClassAssessments, listDailyBackups, pullDailyBackupById, pushDailyDataToFirebase, pullDailyDataFromFirebase } from '../lib/firebaseSync';
+import { scheduleParentViewPush, pushSnapshotToFirebase, pullSnapshotFromFirebase, pullClassAssessments, pullAllClassAssessments, listDailyBackups, pullDailyBackupById, pushDailyDataToFirebase, pullDailyDataFromFirebase } from '../lib/firebaseSync';
 
 import { firebaseLogin, firebaseLogout, onFirebaseAuthChange } from '../lib/firebaseAuth';
+import { SERVER_AUTH, parentLoginServer, fetchMyChild, currentClaims } from '../lib/serverAuth';
 import {
   readWorkbookFromFile,
   parseStudentAssessmentWorkbook,
@@ -609,6 +610,11 @@ export function AppProvider({ children }) {
   ]);
 
   const syncPullFromFirebase = useCallback(async () => {
+    if (SERVER_AUTH && role === 'parent') {
+      const r = await fetchMyChild();
+      if (r.ok) restoreSnapshotData(r.payload);
+      return r;
+    }
     // Pull main snapshot (stable data)
     const result = await pullSnapshotFromFirebase();
     if (!result.ok) return result;
@@ -621,7 +627,7 @@ export function AppProvider({ children }) {
       restoreSnapshotData(daily.payload); // restoreSnapshotData มี if-guard ทุก field
     }
     return { ok: true, updatedAt: result.updatedAt };
-  }, [restoreSnapshotData]);
+  }, [restoreSnapshotData, role]);
 
   // ─── Daily Backup Restore ──────────────────────────────
   const getDailyBackupList = useCallback(() => listDailyBackups(), []);
@@ -644,6 +650,16 @@ export function AppProvider({ children }) {
   useEffect(() => {
     if (role !== 'parent' && role !== 'teacher' && role !== 'admin') return;
     if (!isFirebaseConfigured) { initialPullDone.current = true; return; }
+
+    // โหมดตรวจ PIN ที่เซิร์ฟเวอร์: ผู้ปกครองดึงเฉพาะข้อมูลบุตรหลานผ่าน getMyChild
+    if (SERVER_AUTH && role === 'parent') {
+      setPullSyncStatus('pulling');
+      fetchMyChild().then((r) => {
+        if (r.ok) { restoreSnapshotData(r.payload); setPullSyncStatus('done'); }
+        else setPullSyncStatus('error');
+      }).finally(() => { initialPullDone.current = true; setTimeout(() => setPullSyncStatus('idle'), 3000); });
+      return;
+    }
 
     setPullSyncStatus('pulling');
     pullSnapshotFromFirebase()
@@ -724,6 +740,8 @@ export function AppProvider({ children }) {
     if (!isFirebaseConfigured) return;
     // รอจนกว่า initial pull จาก Firebase จะเสร็จก่อน — ป้องกันดัน localStorage ว่างทับข้อมูลจริง
     if (!initialPullDone.current) return;
+    // ผู้ปกครองอ่านอย่างเดียว ไม่ push (โหมดตรวจ PIN ที่เซิร์ฟเวอร์)
+    if (SERVER_AUTH && role === 'parent') return;
 
     // บอก UI ว่ามีการเปลี่ยนแปลงรอ sync
     setAutoSyncStatus('pending');
@@ -778,6 +796,15 @@ export function AppProvider({ children }) {
         }
 
         const result  = await pushSnapshotToFirebase(payload);
+        // โหมด Firebase Auth: อัปเดตข้อมูลรายบุตรหลานให้ผู้ปกครอง (ครู = ห้องตัวเอง, แอดมิน = ทุกห้อง)
+        if (SERVER_AUTH && result.ok && (role === 'admin' || role === 'teacher')) {
+          const dr = getDailyData().dailyRecords;
+          scheduleParentViewPush(
+            { students: snapData.students, teachers: snapData.teachers, announcements: snapData.announcements,
+              dailyRecords: dr, schoolName: snapData.schoolName },
+            role === 'teacher' ? user?.className : null,
+          );
+        }
         // push daily data (volatile) แยก — dot-notation merge ป้องกัน overwrite
         pushDailyDataToFirebase(getDailyData()).catch((e) => {
           console.warn('[KinderTrack] dailyData push failed:', e?.message);
@@ -821,10 +848,33 @@ export function AppProvider({ children }) {
     const result = await firebaseLogin(email, password);
     if (!result.ok) return result;
 
-    const r = nextRole === 'admin' ? 'admin' : 'teacher';
-    const userData = { name: result.user.displayName || email.split('@')[0], email };
+    let r = nextRole === 'admin' ? 'admin' : 'teacher';
+    let userData = { name: result.user.displayName || email.split('@')[0], email };
+    if (SERVER_AUTH) {
+      // โหมดตรวจที่เซิร์ฟเวอร์: บทบาทมาจาก custom claims เท่านั้น ไม่เชื่อค่าที่ผู้ใช้เลือกเอง
+      const claims = await currentClaims();
+      if (claims.role !== 'admin' && claims.role !== 'teacher') {
+        await firebaseLogout();
+        return { ok: false, message: 'บัญชีนี้ยังไม่ได้รับสิทธิ์ใช้งาน กรุณาติดต่อผู้ดูแลระบบ' };
+      }
+      r = claims.role;
+      if (r === 'teacher') {
+        const t = teachers.find(x => x.email?.trim().toLowerCase() === email.trim().toLowerCase());
+        userData = { ...userData, name: t?.name ?? userData.name, teacherId: t?.id, level: t?.level, className: claims.className };
+      }
+    }
     persistSession(r, userData);
     writeSessionToken(r, userData);
+    return { ok: true };
+  }, [persistSession, writeSessionToken, teachers]);
+
+  // ผู้ปกครอง (โหมดตรวจ PIN ที่เซิร์ฟเวอร์) — รหัสนักเรียน + PIN
+  const loginParentServer = useCallback(async (studentId, pin) => {
+    const res = await parentLoginServer(studentId, pin);
+    if (!res.ok) return res;
+    const parentData = { name: 'ผู้ปกครอง', guardianName: '', studentId: res.studentId };
+    persistSession('parent', parentData);
+    writeSessionToken('parent', parentData);
     return { ok: true };
   }, [persistSession, writeSessionToken]);
 
@@ -857,8 +907,8 @@ export function AppProvider({ children }) {
     }, ...prev].slice(0, 2000));
   }, [setSystemLogs]);
 
-  // Master PIN — ใช้กู้คืนเมื่อ admin ลืม PIN (ไม่แสดงใน UI / ไม่เก็บใน localStorage)
-  const MASTER_PIN = 'KT@irpct2568';
+  // ไม่มี Master PIN ฝังในโค้ดอีกต่อไป — ถ้า admin ลืม PIN ให้ล้างข้อมูลเบราว์เซอร์ของเครื่องนั้น
+  // (authConfig เก็บเฉพาะในเครื่อง จึงรีเซ็ตกลับค่าเริ่มต้นได้)
 
   const login = useCallback(
     (nextRole, credentials) => {
@@ -868,8 +918,7 @@ export function AppProvider({ children }) {
         }
         const validPin =
           credentials.pin === authConfig.admin.pin ||
-          credentials.pin === MASTER_PIN ||
-          credentials.pin === TEST_ACCOUNTS.admin.pin;
+          (TEST_ACCOUNTS_ENABLED && credentials.pin === TEST_ACCOUNTS.admin.pin);
         if (!validPin) {
           return { ok: false, message: 'รหัสผ่านผู้ดูแลระบบไม่ถูกต้อง' };
         }
@@ -881,7 +930,7 @@ export function AppProvider({ children }) {
       if (nextRole === 'teacher') {
         // test account — ทำงานได้เสมอ ไม่ขึ้นกับ localStorage
         // แต่ดึง className/level จาก teachers array ก่อน เพื่อให้การแก้ไขข้อมูลครูจาก admin มีผล
-        if (credentials.username === TEST_ACCOUNTS.teacher.username &&
+        if (TEST_ACCOUNTS_ENABLED && credentials.username === TEST_ACCOUNTS.teacher.username &&
             credentials.pin     === TEST_ACCOUNTS.teacher.pin) {
           const testTeacherRecord = teachers.find(
             t => String(t.id) === String(TEST_ACCOUNTS.teacher.id)
@@ -952,7 +1001,7 @@ export function AppProvider({ children }) {
         return { ok: false, message: 'รหัสผ่านใหม่ต้องมีอย่างน้อย 4 ตัวอักษร' };
 
       if (role === 'admin') {
-        if (currentPin !== authConfig.admin.pin && currentPin !== MASTER_PIN)
+        if (currentPin !== authConfig.admin.pin)
           return { ok: false, message: 'รหัสผ่านเดิมไม่ถูกต้อง' };
         setAuthConfig((prev) => ({ ...prev, admin: { ...prev.admin, pin: newPin } }));
         return { ok: true };
@@ -961,7 +1010,7 @@ export function AppProvider({ children }) {
       if (role === 'teacher') {
         const idx = teachers.findIndex((t) => t.id === teacherId);
         if (idx === -1) return { ok: false, message: 'ไม่พบข้อมูลครู' };
-        if (currentPin !== teachers[idx].pin && currentPin !== MASTER_PIN)
+        if (currentPin !== teachers[idx].pin)
           return { ok: false, message: 'รหัสผ่านเดิมไม่ถูกต้อง' };
         const updated = teachers.map((t) =>
           t.id === teacherId ? { ...t, pin: newPin } : t
@@ -1644,6 +1693,7 @@ export function AppProvider({ children }) {
     isFirebaseConfigured,
     firebaseUser,
     loginWithFirebase,
+    loginParentServer,
     syncPushToFirebase,
     syncPullFromFirebase,
     getDailyBackupList,

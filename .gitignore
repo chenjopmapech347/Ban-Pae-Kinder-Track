@@ -42,3 +42,5 @@ serviceAccount.json
 _to_delete/
 src-before-classname-*.tgz
 *.bak-*
+functions/node_modules
+parent-pins-*.csv

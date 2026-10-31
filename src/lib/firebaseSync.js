@@ -8,14 +8,13 @@
  *     { className, updatedAt, students: { [studentId]: { indicators: {...} } } }
  */
 import {
-  doc, setDoc, getDoc, getDocFromServer, getDocs, serverTimestamp, collection, addDoc, updateDoc,
+  doc, setDoc, getDoc, getDocFromServer, getDocs, serverTimestamp, collection, updateDoc, deleteField,
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
 
 const SCHOOL_ID = 'default'; // เปลี่ยนได้ถ้ามีหลายโรงเรียน
 
 function snapshotRef()  { return doc(db, 'schools', SCHOOL_ID, 'snapshots', 'latest'); }
-function backupColRef() { return collection(db, 'schools', SCHOOL_ID, 'snapshots'); }
 function dailyDataRef() { return doc(db, 'schools', SCHOOL_ID, 'dailyData', 'latest'); }
 
 // ข้อมูลที่ครูบันทึกรายวัน — push ด้วย dot-notation updateDoc (key-level merge)
@@ -90,6 +89,36 @@ export async function pullAllClassAssessments() {
   }
 }
 
+// ความลับที่ห้ามอยู่บน Firebase (เอกสารอ่านได้สาธารณะ) — เก็บเฉพาะในเครื่อง
+const LOCAL_ONLY_KEYS = ['authConfig', 'imgbbApiKey'];
+function stripSecrets(obj) {
+  const out = { ...obj };
+  LOCAL_ONLY_KEYS.forEach(k => { delete out[k]; });
+  return out;
+}
+
+const BACKUP_INDEX_ID = 'backupIndex';
+const BACKUP_MIN_INTERVAL_MS = 30 * 60 * 1000; // เขียน backup ซ้ำไม่เกินทุก 30 นาที/เครื่อง
+let lastBackupAt = 0;
+
+function backupIndexRef() { return doc(db, 'schools', SCHOOL_ID, 'dailyData', BACKUP_INDEX_ID); }
+
+function writeDailyBackup(data, payload) {
+  const now = Date.now();
+  if (now - lastBackupAt < BACKUP_MIN_INTERVAL_MS) return;
+  lastBackupAt = now;
+  const dateKey = new Date().toISOString().slice(0, 10);
+  const meta = {
+    exportedAt: payload.exportedAt ?? new Date().toISOString(),
+    backupDate: dateKey,
+    studentCount: Array.isArray(payload.students) ? payload.students.length : 0,
+    attendanceCount: payload.dailyRecords ? Object.keys(payload.dailyRecords).length : 0,
+  };
+  setDoc(doc(db, 'schools', SCHOOL_ID, 'snapshots', dateKey), { ...data, backupDate: dateKey })
+    .then(() => setDoc(backupIndexRef(), { [dateKey]: meta }, { merge: true }))
+    .catch(() => { lastBackupAt = 0; });
+}
+
 /**
  * อัปโหลดข้อมูลทั้งหมดขึ้น Firestore
  */
@@ -98,13 +127,16 @@ export async function pushSnapshotToFirebase(payload) {
     return { ok: false, message: 'Firebase ยังไม่ได้ตั้งค่า — กรุณาสร้าง .env' };
   }
   try {
-    const data = { ...payload, updatedAt: serverTimestamp() };
+    const data = { ...stripSecrets(payload), updatedAt: serverTimestamp() };
     // merge: true — field ที่ไม่ได้ส่ง (เช่น activities ว่างเปล่า) จะคงอยู่ใน Firestore ไม่ถูกลบ
-    await setDoc(snapshotRef(), data, { merge: true });
+    // ยกเว้นความลับ: สั่งลบของเดิมที่เคยอัปไว้ด้วย deleteField()
+    const latestData = { ...data };
+    LOCAL_ONLY_KEYS.forEach(k => { latestData[k] = deleteField(); });
+    await setDoc(snapshotRef(), latestData, { merge: true });
 
-    // สำรองรายวัน — non-blocking เพื่อไม่ให้ backup failure ทำให้ sync แสดงเป็น error
-    const dateKey = new Date().toISOString().slice(0, 10);
-    addDoc(backupColRef(), { ...data, backupDate: dateKey }).catch(() => {});
+    // สำรองรายวัน — 1 เอกสารต่อวัน (id = YYYY-MM-DD) เขียนทับด้วยสถานะล่าสุดของวันนั้น
+    // non-blocking เพื่อไม่ให้ backup failure ทำให้ sync แสดงเป็น error
+    writeDailyBackup(data, stripSecrets(payload));
 
     return { ok: true, message: 'อัปโหลดสำเร็จ ✅' };
   } catch (e) {
@@ -119,20 +151,19 @@ export async function pushSnapshotToFirebase(payload) {
 export async function listDailyBackups() {
   if (!isFirebaseConfigured || !db) return { ok: false, backups: [] };
   try {
-    const snap = await getDocs(backupColRef());
-    const backups = [];
-    snap.forEach(d => {
-      if (d.id === 'latest') return;
-      const data = d.data();
-      backups.push({
-        id: d.id,
-        exportedAt: data.exportedAt ?? null,
-        backupDate: data.backupDate ?? null,
-        studentCount: Array.isArray(data.students) ? data.students.length : 0,
-        attendanceCount: data.dailyRecords ? Object.keys(data.dailyRecords).length : 0,
-      });
-    });
-    backups.sort((a, b) => (b.exportedAt ?? '').localeCompare(a.exportedAt ?? ''));
+    // อ่านเฉพาะเอกสาร index เล็ก ๆ 1 ตัว — ไม่ดึง backup ทั้งคอลเลกชัน
+    const snap = await getDoc(backupIndexRef());
+    const idx = snap.exists() ? snap.data() : {};
+    const backups = Object.entries(idx)
+      .filter(([k, v]) => /^\d{4}-\d{2}-\d{2}$/.test(k) && v && typeof v === 'object')
+      .map(([id, v]) => ({
+        id,
+        exportedAt: v.exportedAt ?? null,
+        backupDate: v.backupDate ?? id,
+        studentCount: v.studentCount ?? 0,
+        attendanceCount: v.attendanceCount ?? 0,
+      }));
+    backups.sort((x, y) => y.id.localeCompare(x.id));
     return { ok: true, backups };
   } catch (e) {
     return { ok: false, backups: [], message: e.message };
@@ -149,7 +180,8 @@ export async function pullDailyBackupById(docId) {
     const ref = doc(db, 'schools', SCHOOL_ID, 'snapshots', docId);
     const snap = await getDoc(ref);
     if (!snap.exists()) return { ok: false, message: 'ไม่พบ backup นี้' };
-    const { updatedAt, ...payload } = snap.data();
+    const { updatedAt, ...raw } = snap.data();
+    const payload = stripSecrets(raw);
     return { ok: true, payload };
   } catch (e) {
     return { ok: false, message: e.message };
@@ -206,7 +238,8 @@ export async function pullDailyDataFromFirebase() {
   try {
     const snap = await getDocFromServer(dailyDataRef());
     if (!snap.exists()) return { ok: true, payload: {} };
-    const { updatedAt, ...payload } = snap.data();
+    const { updatedAt, ...raw } = snap.data();
+    const payload = stripSecrets(raw);
     return { ok: true, payload };
   } catch (e) {
     return { ok: false, payload: {}, message: e.message };
@@ -225,10 +258,75 @@ export async function pullSnapshotFromFirebase() {
     if (!snap.exists()) {
       return { ok: false, message: 'ยังไม่มีข้อมูลบน Cloud — อัปโหลดก่อน' };
     }
-    const { updatedAt, ...payload } = snap.data();
+    const { updatedAt, ...raw } = snap.data();
+    const payload = stripSecrets(raw);
     const ts = updatedAt?.toDate?.()?.toLocaleString('th-TH') ?? '—';
     return { ok: true, payload, updatedAt: ts };
   } catch (e) {
     return { ok: false, message: 'ดึงข้อมูลไม่สำเร็จ: ' + e.message };
+  }
+}
+
+// ── parentView: ข้อมูลรายบุตรหลานสำหรับผู้ปกครอง (เขียนโดยแอปของครู/แอดมิน) ──
+// schools/default/parentView/{studentId} — rules ให้ผู้ปกครองอ่านได้เฉพาะเอกสารของตัวเอง
+function parentViewRef(sid) { return doc(db, 'schools', SCHOOL_ID, 'parentView', String(sid)); }
+
+const pvHash = new Map();   // studentId -> JSON ล่าสุดที่เขียนแล้ว (เขียนเฉพาะที่เปลี่ยน)
+let pvTimer = null;
+let pvLastRun = 0;
+let pvPending = null;
+const PV_MIN_INTERVAL_MS = 60 * 1000;
+
+async function runParentViews({ students, teachers, announcements, dailyRecords, schoolName }, className) {
+  const teachersLite = (teachers || []).map(t => ({ id: t.id, name: t.name, className: t.className, level: t.level }));
+  const list = (students || []).filter(s => !className || s.className === className);
+  const jobs = [];
+  for (const s of list) {
+    const sid = String(s.id);
+    const { parentPin: _p, nationalId: _n, ...safe } = s;
+    const dr = {};
+    Object.entries(dailyRecords || {}).forEach(([date, byStudent]) => {
+      if (byStudent && byStudent[sid] !== undefined) dr[date] = { [sid]: byStudent[sid] };
+    });
+    const view = {
+      student: safe,
+      teachers: teachersLite.filter(t => t.className === s.className),
+      announcements: announcements || [],
+      dailyRecords: dr,
+      schoolName: schoolName || '',
+    };
+    const str = JSON.stringify(view);
+    if (pvHash.get(sid) === str) continue;
+    jobs.push(() => setDoc(parentViewRef(sid), { ...view, updatedAt: serverTimestamp() })
+      .then(() => { pvHash.set(sid, str); }));
+  }
+  for (let i = 0; i < jobs.length; i += 20) {
+    await Promise.allSettled(jobs.slice(i, i + 20).map(j => j()));
+  }
+}
+
+/** เรียกหลัง sync ปกติ — จำกัดไม่เกินนาทีละครั้ง ครูเขียนเฉพาะห้องตัวเอง (className) แอดมินเขียนทุกห้อง */
+export function scheduleParentViewPush(source, className = null) {
+  if (!isFirebaseConfigured || !db) return;
+  pvPending = { source, className };
+  if (pvTimer) return;
+  const wait = Math.max(0, PV_MIN_INTERVAL_MS - (Date.now() - pvLastRun));
+  pvTimer = setTimeout(() => {
+    pvTimer = null; pvLastRun = Date.now();
+    const job = pvPending; pvPending = null;
+    if (job) runParentViews(job.source, job.className).catch(() => {});
+  }, wait);
+}
+
+/** ผู้ปกครอง: อ่านเอกสารของบุตรหลานตัวเอง */
+export async function pullParentView(studentId) {
+  if (!isFirebaseConfigured || !db) return { ok: false, message: 'Firebase ยังไม่ได้ตั้งค่า' };
+  try {
+    const snap = await getDocFromServer(parentViewRef(studentId));
+    if (!snap.exists()) return { ok: false, message: 'ยังไม่มีข้อมูล กรุณาให้ครูเปิดแอปเพื่อซิงก์ก่อน' };
+    const { updatedAt: _u, student, ...rest } = snap.data();
+    return { ok: true, payload: { ...rest, students: [student] } };
+  } catch (e) {
+    return { ok: false, message: e.message };
   }
 }

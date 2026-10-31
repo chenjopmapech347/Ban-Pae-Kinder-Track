@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from './Modal';
 import { ui } from '../ui/ui';
+import { SERVER_AUTH } from '../lib/serverAuth';
 
 // ── Thai date helpers ──────────────────────────────────────────────────────
 const THAI_MONTHS = [
@@ -211,7 +212,12 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
         ))}
       </div>
 
-      <form onSubmit={(e) => { e.preventDefault(); onSave(formData); }}>
+      <form onSubmit={(e) => {
+        e.preventDefault();
+        // โหมด Firebase Auth: PIN ไม่เก็บในข้อมูลนักเรียน (ตั้ง/รีเซ็ตด้วยสคริปต์บนเครื่องผู้ดูแล)
+        if (SERVER_AUTH) { const { parentPin: _pin, ...rest } = formData; onSave(rest); return; }
+        onSave(formData);
+      }}>
 
         {/* ════ Tab 1: ประวัติส่วนตัว ════ */}
         {activeSubTab === 'personal' && (
@@ -369,7 +375,9 @@ export default function StudentModal({ isOpen, onClose, onSave, editingStudent }
               </div>
               <div {...ui('flex flex-col gap-1')}>
                 <label {...ui('text-xs font-bold')}>รหัสผู้ปกครอง (PIN)</label>
-                <input {...ui('input')} {...f('parentPin')} placeholder="4 หลัก" />
+                {SERVER_AUTH
+                  ? <div style={{ fontSize: '.78rem', color: 'var(--text-muted)' }}>ตั้ง/รีเซ็ต PIN ด้วยสคริปต์ reset-parent-pin.cjs (ไม่เก็บในข้อมูลนักเรียน)</div>
+                  : <input {...ui('input')} {...f('parentPin')} placeholder="4 หลัก" />}
               </div>
             </div>
 

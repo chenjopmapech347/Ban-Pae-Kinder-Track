@@ -24,11 +24,12 @@ export const isFirebaseConfigured = Boolean(
 );
 
 // Init เฉพาะเมื่อ config ครบ
-let _db = null, _auth = null, _storage = null;
+let _app = null, _db = null, _auth = null, _storage = null;
 
 if (isFirebaseConfigured) {
   try {
     const app  = initializeApp(firebaseConfig);
+    _app       = app;
     _db        = getFirestore(app);
     _auth      = getAuth(app);
     _storage   = getStorage(app);
@@ -37,6 +38,7 @@ if (isFirebaseConfigured) {
   }
 }
 
+export const firebaseApp = _app;
 export const db      = _db;
 export const auth    = _auth;
 export const storage = _storage;

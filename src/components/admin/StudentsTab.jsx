@@ -1,3 +1,4 @@
+import { SERVER_AUTH } from '../../lib/serverAuth';
 import { useApp } from '../../context/AppContext';
 import StudentModal from '../StudentModal';
 import AssessmentWizard from '../AssessmentWizard';
@@ -168,6 +169,7 @@ export default function StudentsTab() {
   };
 
   const autoSetPin = () => {
+    if (SERVER_AUTH) { alert('โหมดตรวจ PIN ที่เซิร์ฟเวอร์: ตั้ง/รีเซ็ต PIN ด้วยสคริปต์ create-parent-accounts.cjs / reset-parent-pin.cjs'); return; }
     const updated = students.map(s => ({ ...s, parentPin: s.studentId ?? s.code ?? String(s.id) }));
     setStudents(updated);
     alert(`✅ ตั้ง PIN ให้นักเรียน ${updated.length} คน เรียบร้อยแล้ว`);

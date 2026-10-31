@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { version as APP_VERSION } from '../../package.json';
 import { ui } from '../ui/ui';
+import { TEST_ACCOUNTS_ENABLED } from '../constants/auth';
+import { SERVER_AUTH } from '../lib/serverAuth';
 
 // ─── Live Feed Ticker ─────────────────────────────────────────────────────────
 function LiveTicker({ items }) {
@@ -105,7 +107,7 @@ const ROLE_BADGE = {
 };
 
 function LoginModal({ onClose }) {
-  const { login, students, teachers, authConfig, isFirebaseConfigured } = useApp();
+  const { login, loginWithFirebase, loginParentServer, students, teachers, authConfig, isFirebaseConfigured } = useApp();
 
   const [username, setUsername] = useState('');
   const [pin, setPin]           = useState('');
@@ -160,6 +162,16 @@ function LoginModal({ onClose }) {
     setError('');
     setLoading(true);
     const u = username.trim();
+
+    // โหมดตรวจ PIN ที่เซิร์ฟเวอร์: อีเมล = แอดมิน/ครู (Firebase Auth), อย่างอื่น = รหัสนักเรียน (ผู้ปกครอง)
+    if (SERVER_AUTH) {
+      const result = u.includes('@')
+        ? await loginWithFirebase('teacher', u, pin)
+        : await loginParentServer(u, pin);
+      setLoading(false);
+      if (!result.ok) setError(result.message || 'เข้าสู่ระบบไม่สำเร็จ');
+      return;
+    }
 
     // Try admin
     if (u.toLowerCase() === 'admin') {
@@ -324,7 +336,8 @@ function LoginModal({ onClose }) {
           </button>
         </form>
 
-        {/* PIN hint */}
+        {/* PIN hint — แสดงเฉพาะโหมดพัฒนา/เปิดบัญชีทดสอบ เพื่อไม่เปิดเผยรหัสผ่านจริงในหน้า login สาธารณะ */}
+        {TEST_ACCOUNTS_ENABLED && (
         <details {...ui('mt-5', { fontSize: '.78rem', color: 'var(--text-muted)' })}>
           <summary style={{ cursor: 'pointer', userSelect: 'none', fontWeight: 600 }}>
             🔑 ข้อมูลสำหรับทดสอบระบบ
@@ -351,6 +364,7 @@ function LoginModal({ onClose }) {
             </div>
           </div>
         </details>
+        )}
       </div>
     </div>
   );

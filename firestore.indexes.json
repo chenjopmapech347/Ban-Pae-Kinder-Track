@@ -1,0 +1,135 @@
+{
+  "indexes": [],
+  "fieldOverrides": [
+    {
+      "collectionGroup": "snapshots",
+      "fieldPath": "dailyRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "snapshots",
+      "fieldPath": "nutritionRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "snapshots",
+      "fieldPath": "milkRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "snapshots",
+      "fieldPath": "lunchRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "snapshots",
+      "fieldPath": "toothBrushRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "snapshots",
+      "fieldPath": "healthCheckRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "snapshots",
+      "fieldPath": "illnessCheckRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "snapshots",
+      "fieldPath": "dailyRoutineRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "snapshots",
+      "fieldPath": "cornerRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "snapshots",
+      "fieldPath": "innerCornerRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "snapshots",
+      "fieldPath": "studentReportRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "snapshots",
+      "fieldPath": "specialEvents",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "snapshots",
+      "fieldPath": "pickupRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dailyData",
+      "fieldPath": "dailyRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dailyData",
+      "fieldPath": "nutritionRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dailyData",
+      "fieldPath": "milkRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dailyData",
+      "fieldPath": "lunchRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dailyData",
+      "fieldPath": "toothBrushRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dailyData",
+      "fieldPath": "healthCheckRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dailyData",
+      "fieldPath": "illnessCheckRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dailyData",
+      "fieldPath": "dailyRoutineRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dailyData",
+      "fieldPath": "cornerRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dailyData",
+      "fieldPath": "innerCornerRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dailyData",
+      "fieldPath": "studentReportRecords",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dailyData",
+      "fieldPath": "specialEvents",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "dailyData",
+      "fieldPath": "pickupRecords",
+      "indexes": []
+    }
+  ]
+}

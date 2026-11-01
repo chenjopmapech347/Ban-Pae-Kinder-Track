@@ -7,7 +7,7 @@ import { ui } from '../../ui/ui';
  * TeacherOverviewTab — แสดงรายการกิจกรรมที่ต้องบันทึก จำแนกตามความถี่
  * ประจำวัน / ประจำสัปดาห์ / ประจำเดือน / ตามโอกาส
  */
-export default function TeacherOverviewTab({ onTabChange }) {
+export default function TeacherOverviewTab({ onTabChange, className: classOverride }) {
   const {
     user, students,
     academicYear,
@@ -25,7 +25,7 @@ export default function TeacherOverviewTab({ onTabChange }) {
     specialEvents,
   } = useApp();
 
-  const myClass = user?.className;
+  const myClass = classOverride ?? user?.className;
   const today   = todayISO();
   const todayTH = formatDateThai(today);
 

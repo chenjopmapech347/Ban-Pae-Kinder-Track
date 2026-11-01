@@ -1,4 +1,5 @@
 import { useState, lazy, Suspense } from 'react';
+import { useApp } from '../context/AppContext';
 import DashboardSidebar from '../components/ui/DashboardSidebar';
 import ErrorBoundary from '../components/ui/ErrorBoundary';
 import { ui } from '../ui/ui';
@@ -14,6 +15,7 @@ const SchoolsTab             = lazy(() => import('../components/admin/SchoolsTab
 const ReportsTab             = lazy(() => import('../components/admin/ReportsTab'));
 const IndicatorsTab          = lazy(() => import('../components/admin/IndicatorsTab'));
 const ActivitiesTab          = lazy(() => import('../components/admin/ActivitiesTab'));
+const TeacherOverviewTab     = lazy(() => import('../components/teacher/TeacherOverviewTab'));
 const StandardsMapTab        = lazy(() => import('../components/admin/StandardsMapTab'));
 const TermsTab               = lazy(() => import('../components/admin/TermsTab'));
 const EvaluationTab          = lazy(() => import('../components/admin/EvaluationTab'));
@@ -63,6 +65,7 @@ const TAB_GROUPS = [
     label: 'บันทึกประจำวัน',
     color: '#0891b2',
     tabs: [
+      { id: 'todayoverview', label: '📊 ภาพรวมวันนี้'     },
       { id: 'attendance',   label: '✅ การมาเรียน'        },
       { id: 'healthcheck',  label: '🏥 ตรวจสุขภาพ'        },
       { id: 'illnesscheck', label: '🤒 คัดกรองอาการป่วย'  },
@@ -157,6 +160,33 @@ const TAB_GROUPS = [
   },
 ];
 
+// ภาพรวมวันนี้ของแอดมิน — เลือกห้องแล้วดูรายการที่ต้องบันทึกเหมือนฝั่งครู
+function TodayOverview({ onTabChange, validTabs }) {
+  const { allClassNames } = useApp();
+  const [cls, setCls] = useState(() => {
+    try { return localStorage.getItem('kt_adminOverviewClass') || ''; } catch { return ''; }
+  });
+  const current = allClassNames.includes(cls) ? cls : (allClassNames[0] ?? '');
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem' }}>
+        <label style={{ fontWeight: 700, fontSize: '.85rem' }}>ห้องเรียน</label>
+        <select
+          value={current}
+          onChange={e => { setCls(e.target.value); try { localStorage.setItem('kt_adminOverviewClass', e.target.value); } catch { /* ignore */ } }}
+          {...ui('input', { width: 'auto', minWidth: '8rem' })}
+        >
+          {allClassNames.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+      <TeacherOverviewTab
+        className={current}
+        onTabChange={tab => { if (validTabs.includes(tab)) onTabChange(tab); }}
+      />
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('kt_adminTab') || 'overview');
 
@@ -179,6 +209,12 @@ export default function AdminDashboard() {
           </div>
         }>
           {activeTab === 'overview'       && <OverviewTab />}
+          {activeTab === 'todayoverview'  && (
+            <TodayOverview
+              validTabs={TAB_GROUPS.flatMap(g => g.tabs.map(t => t.id))}
+              onTabChange={(tab) => { setActiveTab(tab); localStorage.setItem('kt_adminTab', tab); }}
+            />
+          )}
           {activeTab === 'announcements'  && <AnnouncementsTab />}
           {activeTab === 'aichat'         && <AIChatTab />}
           {activeTab === 'attendance'     && <AttendanceTab />}

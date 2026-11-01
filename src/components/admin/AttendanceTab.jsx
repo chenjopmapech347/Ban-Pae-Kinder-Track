@@ -415,7 +415,6 @@ export default function AttendanceTab({ defaultClass }) {
 
   const monthlyData = useMemo(() => {
     const targetDates = Object.keys(dailyRecords).filter(d => d.startsWith(selMonth));
-    const schoolDays  = targetDates.length;
     const targetClasses = filterClass === 'ทั้งหมด' ? ALL_CLASSES : [filterClass];
     return targetClasses.map(cls => {
       const teacher = teachers?.find(t => t.className === cls);
@@ -432,6 +431,8 @@ export default function AttendanceTab({ defaultClass }) {
         });
         return { ...s, counts, dailyAtt };
       });
+      // นับเฉพาะวันที่ห้องนี้มีการบันทึกการมาเรียนจริง (ไม่ใช่วันที่มีข้อมูลของห้องอื่น)
+      const schoolDays = targetDates.filter(d => sts.some(s => dailyRecords[d]?.[String(s.id)]?.attendance)).length;
       return { cls, teacher, rows, schoolDays };
     }).filter(sec => sec.rows.length > 0);
   }, [dailyRecords, selMonth, filterClass, students, teachers]);

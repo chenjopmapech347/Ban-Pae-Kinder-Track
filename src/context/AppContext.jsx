@@ -33,6 +33,15 @@ import {
 
 const AppContext = createContext(null);
 
+// รวมแมปซ้อนแบบลึก — ค่าใน b ทับค่าใน a ที่ใบเดียวกัน ส่วนที่มีแต่ใน a ยังอยู่ (ใช้รวมข้อมูลรายวันจากเมฆกับในเครื่อง)
+function deepMergeObjects(a, b) {
+  if (!b || typeof b !== 'object' || Array.isArray(b)) return b === undefined ? a : b;
+  if (!a || typeof a !== 'object' || Array.isArray(a)) return b;
+  const out = { ...a };
+  Object.keys(b).forEach((k) => { out[k] = deepMergeObjects(a[k], b[k]); });
+  return out;
+}
+
 export function AppProvider({ children }) {
   // อ่านจาก localStorage ใน lazy initializer (synchronous → ไม่มี flash of login page)
   const [role, setRole] = useState(() => {
@@ -349,7 +358,7 @@ export function AppProvider({ children }) {
     ],
   );
 
-  const restoreSnapshotData = useCallback((payload) => {
+  const restoreSnapshotData = useCallback((payload, { mergeDaily = false } = {}) => {
     if (payload.students) setStudents(payload.students);
     if (payload.teachers) setTeachers(payload.teachers);
     if (payload.classes) setClasses(payload.classes);
@@ -374,7 +383,7 @@ export function AppProvider({ children }) {
     if (payload.measurementDates) setMeasurementDates(payload.measurementDates);
     if (payload.parentCommentDeadlines) setParentCommentDeadlines(payload.parentCommentDeadlines);
     if (payload.menuPermissions) setMenuPermissions(payload.menuPermissions);
-    if (payload.dailyRecords) setDailyRecords(payload.dailyRecords);
+    if (payload.dailyRecords) setDailyRecords(mergeDaily ? (prev) => deepMergeObjects(prev, payload.dailyRecords) : payload.dailyRecords);
     if (payload.qaData) setQaData(payload.qaData);
     if (payload.indicators) {
       // ── ป้องกัน snapshot เก่าที่มี domainId รูปแบบ 'd1'/'d2' แทน 'physical'/'emotional' ──
@@ -397,22 +406,22 @@ export function AppProvider({ children }) {
     if (payload.imgbbApiKey) setImgbbApiKey(payload.imgbbApiKey);
     if (payload.abilityAssessments) setAbilityAssessments(payload.abilityAssessments);
     // บันทึกรายเดือน/รายวัน
-    if (payload.nutritionRecords) setNutritionRecords(payload.nutritionRecords);
-    if (payload.milkRecords) setMilkRecords(payload.milkRecords);
-    if (payload.lunchRecords) setLunchRecords(payload.lunchRecords);
-    if (payload.toothBrushRecords) setToothBrushRecords(payload.toothBrushRecords);
-    if (payload.healthCheckRecords) setHealthCheckRecords(payload.healthCheckRecords);
-    if (payload.illnessCheckRecords) setIllnessCheckRecords(payload.illnessCheckRecords);
-    if (payload.dailyRoutineRecords) setDailyRoutineRecords(payload.dailyRoutineRecords);
-    if (payload.cornerRecords) setCornerRecords(payload.cornerRecords);
-    if (payload.innerCornerRecords) setInnerCornerRecords(payload.innerCornerRecords);
+    if (payload.nutritionRecords) setNutritionRecords(mergeDaily ? (prev) => deepMergeObjects(prev, payload.nutritionRecords) : payload.nutritionRecords);
+    if (payload.milkRecords) setMilkRecords(mergeDaily ? (prev) => deepMergeObjects(prev, payload.milkRecords) : payload.milkRecords);
+    if (payload.lunchRecords) setLunchRecords(mergeDaily ? (prev) => deepMergeObjects(prev, payload.lunchRecords) : payload.lunchRecords);
+    if (payload.toothBrushRecords) setToothBrushRecords(mergeDaily ? (prev) => deepMergeObjects(prev, payload.toothBrushRecords) : payload.toothBrushRecords);
+    if (payload.healthCheckRecords) setHealthCheckRecords(mergeDaily ? (prev) => deepMergeObjects(prev, payload.healthCheckRecords) : payload.healthCheckRecords);
+    if (payload.illnessCheckRecords) setIllnessCheckRecords(mergeDaily ? (prev) => deepMergeObjects(prev, payload.illnessCheckRecords) : payload.illnessCheckRecords);
+    if (payload.dailyRoutineRecords) setDailyRoutineRecords(mergeDaily ? (prev) => deepMergeObjects(prev, payload.dailyRoutineRecords) : payload.dailyRoutineRecords);
+    if (payload.cornerRecords) setCornerRecords(mergeDaily ? (prev) => deepMergeObjects(prev, payload.cornerRecords) : payload.cornerRecords);
+    if (payload.innerCornerRecords) setInnerCornerRecords(mergeDaily ? (prev) => deepMergeObjects(prev, payload.innerCornerRecords) : payload.innerCornerRecords);
     if (payload.cornerDefs) setCornerDefs(payload.cornerDefs);
     if (payload.innerCornerDefs) setInnerCornerDefs(payload.innerCornerDefs);
     if (payload.classInnerCornerKeys) setClassInnerCornerKeys(payload.classInnerCornerKeys);
     if (payload.classOuterCornerKeys) setClassOuterCornerKeys(payload.classOuterCornerKeys);
-    if (payload.studentReportRecords) setStudentReportRecords(payload.studentReportRecords);
-    if (payload.specialEvents) setSpecialEvents(payload.specialEvents);
-    if (payload.pickupRecords) setPickupRecords(payload.pickupRecords);
+    if (payload.studentReportRecords) setStudentReportRecords(mergeDaily ? (prev) => deepMergeObjects(prev, payload.studentReportRecords) : payload.studentReportRecords);
+    if (payload.specialEvents) setSpecialEvents(mergeDaily ? (prev) => deepMergeObjects(prev, payload.specialEvents) : payload.specialEvents);
+    if (payload.pickupRecords) setPickupRecords(mergeDaily ? (prev) => deepMergeObjects(prev, payload.pickupRecords) : payload.pickupRecords);
   }, [
     setStudents,
     setTeachers,
@@ -624,7 +633,7 @@ export function AppProvider({ children }) {
     // Pull daily data (volatile) แยก — merge กลับเข้า state
     const daily = await pullDailyDataFromFirebase();
     if (daily.ok && Object.keys(daily.payload).length > 0) {
-      restoreSnapshotData(daily.payload); // restoreSnapshotData มี if-guard ทุก field
+      restoreSnapshotData(daily.payload, { mergeDaily: true }); // รวมกับข้อมูลที่มีอยู่ ไม่ทับทั้งก้อน
     }
     return { ok: true, updatedAt: result.updatedAt };
   }, [restoreSnapshotData, role]);
@@ -715,7 +724,7 @@ export function AppProvider({ children }) {
         pullDailyDataFromFirebase().then(daily => {
           if (daily.ok && Object.keys(daily.payload).length > 0) {
             console.info('[KinderTrack] Auto-pull daily data from Firebase');
-            restoreSnapshotData(daily.payload);
+            restoreSnapshotData(daily.payload, { mergeDaily: true });
           }
         }).catch(() => {}).finally(() => {
           // อนุญาตให้ auto-sync push ได้หลังจาก pull เสร็จ (หรือ fail)
@@ -1611,9 +1620,25 @@ export function AppProvider({ children }) {
     return map;
   }, [classes, students]);
 
+  // ครู: ห้อง/ระดับ/ชื่อ ใช้ค่าล่าสุดจากทะเบียนครู (teachers) เสมอ
+  // เพราะ session เก็บค่า ณ ตอนล็อกอิน ถ้า admin ย้ายห้องภายหลัง ค่าใน session จะค้างเป็นห้องเดิม
+  const effectiveUser = useMemo(() => {
+    if (role !== 'teacher' || !user) return user;
+    const rec = (teachers ?? []).find(
+      t => String(t.id) === String(user.teacherId ?? user.id),
+    );
+    if (!rec) return user;
+    return {
+      ...user,
+      name:      rec.name      ?? user.name,
+      level:     rec.level     ?? user.level,
+      className: rec.className ?? user.className,
+    };
+  }, [role, user, teachers]);
+
   const value = {
     role,
-    user,
+    user: effectiveUser,
     login,
     logout,
     changePassword,

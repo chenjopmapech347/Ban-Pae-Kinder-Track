@@ -30,8 +30,7 @@ const TeacherOverviewTab     = lazy(() => import('../components/teacher/TeacherO
 const AdminAttTab            = lazy(() => import('../components/admin/AttendanceTab'));
 const PickupTab              = lazy(() => import('../components/admin/PickupTab'));
 const ActivityLogTab         = lazy(() => import('../components/admin/ActivityLogTab'));
-const QaStandardView         = lazy(() => import('../components/QaStandardView'));
-const Std2SelfTab            = lazy(() => import('../components/teacher/Std2SelfTab'));
+const StandardsMapTab        = lazy(() => import('../components/admin/StandardsMapTab'));
 const NationalStandardsTab   = lazy(() => import('../components/admin/NationalStandardsTab'));
 const IndicatorsTab          = lazy(() => import('../components/admin/IndicatorsTab'));
 const AIChatTab              = lazy(() => import('../components/AIChatTab'));
@@ -44,8 +43,6 @@ const TEACHER_TAB_GROUPS = [
     color: '#7c3aed',
     tabs: [
       { id: 'main',            label: '🏠 หน้าหลัก'      },
-      { id: 'students',        label: '👨‍🎓 นักเรียน'      },
-      { id: 'pins',            label: '🔑 PIN ผู้ปกครอง' },
       { id: 'teacherannounce', label: '📢 ประกาศ'         },
       { id: 'aichat',          label: '🤖 AI ผู้ช่วย'    },
     ],
@@ -77,7 +74,6 @@ const TEACHER_TAB_GROUPS = [
     label: 'บันทึกตามโอกาส',
     color: '#7c3aed',
     tabs: [
-      { id: 'healthcheck',  label: '🏥 ตรวจสุขภาพ'       },  // ตรวจสุขภาพตามโอกาส
       { id: 'nutrition',    label: '⚖️ ภาวะโภชนาการ'   },  // ประเมินสุขภาพ
       { id: 'specialevent', label: '🎉 กิจกรรมวันสำคัญ' },  // กิจกรรมพิเศษ
     ],
@@ -90,14 +86,16 @@ const TEACHER_TAB_GROUPS = [
       { id: 'abilityassess', label: '🎯 ประเมินความสามารถผู้เรียน' },  // 2. หลักสูตร 2560
       { id: 'activitylog',   label: '📜 ประวัติการประเมิน' },  // 2. ดูประวัติ
       { id: 'devreport',     label: '📑 ผลการประเมินพัฒนาการ' },  // 3. ผลการประเมินพัฒนาการ
-      { id: 'formreports',   label: '📄 รายงานสรุป'       },  // 4. รายงานสรุป
+      { id: 'formreports',   label: '📄 รายงานสรุปผลการประเมินพัฒนาการ' },  // 4. รายงานสรุป
       { id: 'studentreport', label: '📒 สมุดรายงาน อ.01' },  // 5. ผลลัพธ์สุดท้าย
     ],
   },
   {
-    label: 'สื่อและสภาพแวดล้อม',
+    label: 'บุคลากรและสื่อ',
     color: '#d97706',
     tabs: [
+      { id: 'students',        label: '👨‍🎓 นักเรียน'      },
+      { id: 'pins',            label: '🔑 PIN ผู้ปกครอง' },
       { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ'  },  // ขึ้นทะเบียนก่อน
       { id: 'mediaborrow', label: '🔄 รายการยืม-คืนสื่อ' },  // แล้วจึงยืม-คืน
     ],
@@ -107,7 +105,6 @@ const TEACHER_TAB_GROUPS = [
     color: '#6b7280',
     tabs: [
       { id: 'profile',     label: '👤 โปรไฟล์ของฉัน'     },  // ข้อมูลส่วนตัว
-      { id: 'std2self',    label: '👩‍🏫 มาตรฐานที่ 2'      },  // มาตรฐานครู
       { id: 'standards',   label: '🗺️ มาตรฐานปฐมวัย'     },  // มาตรฐานเด็ก
       { id: 'nationalstd', label: '🏛 มาตรฐานแห่งชาติ'   },  // ระดับชาติ
       { id: 'indicators',  label: '🔬 ตัวบ่งชี้'          },  // ดูเท่านั้น
@@ -777,17 +774,11 @@ export default function TeacherDashboard() {
           {activeTab === 'devreport'   && <DevelopmentalReportTab teacherClassFilter={myClass} />}
 
           {/* ── Standards ── */}
-          {activeTab === 'std2self'    && <Std2SelfTab />}
           {activeTab === 'nationalstd' && <NationalStandardsTab />}
           {activeTab === 'indicators'  && <IndicatorsTab readOnly={true} />}
           {activeTab === 'aichat'      && <AIChatTab />}
           {activeTab === 'help'        && <HelpTab />}
-          {activeTab === 'standards'   && (
-            <div {...ui('glass p-6')}>
-              <h3 {...ui('mb-6')}>🗺️ สรุปมาตรฐานสถานพัฒนาเด็กปฐมวัย (ปี 2569)</h3>
-              <QaStandardView />
-            </div>
-          )}
+          {activeTab === 'standards'   && <StandardsMapTab />}
 
           {/* ── PIN tab ── */}
           {activeTab === 'pins' && (

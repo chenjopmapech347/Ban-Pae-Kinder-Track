@@ -44,3 +44,5 @@ src-before-classname-*.tgz
 *.bak-*
 functions/node_modules
 parent-pins-*.csv
+all-pins-*.csv
+backup-latest-stale-*.json

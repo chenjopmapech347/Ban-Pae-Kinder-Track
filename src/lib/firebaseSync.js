@@ -8,7 +8,7 @@
  *     { className, updatedAt, students: { [studentId]: { indicators: {...} } } }
  */
 import {
-  doc, setDoc, getDoc, getDocFromServer, getDocs, serverTimestamp, collection, updateDoc, deleteField,
+  doc, setDoc, getDoc, getDocFromServer, getDocs, serverTimestamp, collection, deleteField,
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
 
@@ -196,34 +196,20 @@ export async function pullDailyBackupById(docId) {
 export async function pushDailyDataToFirebase(dailyData) {
   if (!isFirebaseConfigured || !db) return { ok: false };
   try {
-    // Flatten เป็น dot-notation: { 'dailyRecords.2024-05-01_อ.1_1': {...} }
-    const updates = { updatedAt: serverTimestamp() };
+    // setDoc + merge:true = merge ระดับ key ของแมป (Device A ไม่ลบ key ของ Device B)
+    // ห้ามใช้ updateDoc + dot-notation: key เช่น 'อ.1/1__2569__2026-11-01' มี '.' และ '/'
+    // ทำให้ path ผิดรูป (SDK โยน error) และทั้งการเขียนล้มเหลวเงียบ ๆ
+    const data = { updatedAt: serverTimestamp() };
     let hasData = false;
     for (const field of DAILY_FIELDS) {
       const val = dailyData[field];
       if (val && typeof val === 'object' && Object.keys(val).length > 0) {
-        Object.entries(val).forEach(([k, v]) => { updates[`${field}.${k}`] = v; });
+        data[field] = val;
         hasData = true;
       }
     }
     if (!hasData) return { ok: true }; // ไม่มีข้อมูลใหม่ — ข้าม
-
-    try {
-      // updateDoc ทำ key-level merge — ล้มเหลวถ้า doc ยังไม่มี
-      await updateDoc(dailyDataRef(), updates);
-    } catch (e) {
-      if (e.code === 'not-found') {
-        // สร้าง doc ใหม่ครั้งแรก — ใช้ setDoc แทน
-        const nested = { updatedAt: serverTimestamp() };
-        for (const field of DAILY_FIELDS) {
-          const val = dailyData[field];
-          if (val && typeof val === 'object' && Object.keys(val).length > 0) nested[field] = val;
-        }
-        await setDoc(dailyDataRef(), nested);
-      } else {
-        throw e;
-      }
-    }
+    await setDoc(dailyDataRef(), data, { merge: true });
     return { ok: true };
   } catch (e) {
     return { ok: false, message: e.message };

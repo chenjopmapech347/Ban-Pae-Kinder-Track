@@ -5,6 +5,7 @@ import FormReportsTab from './FormReportsTab';
 import { callClaude, buildWeeklySummaryPrompt } from '../../utils/aiHelper';
 import { ui } from '../../ui/ui';
 
+import { compareStudents } from '../../utils/helpers';
 // ── constants ─────────────────────────────────────────────────────────────────
 // CLASS_MAP ดึงจาก AppContext (classMap) ใน each component แบบ dynamic
 const LEVEL_META  = [
@@ -502,7 +503,7 @@ function ViewStudent({ students, assessmentTopics, indicators, activities, schoo
 
   const classStudents = useMemo(() =>
     students.filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
-            .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
+            .sort(compareStudents),
     [students, selClass]
   );
 
@@ -666,7 +667,7 @@ function ViewProgress({ students, assessmentTopics, indicators, activities, allC
 
   const classStudents = useMemo(() =>
     students.filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
-            .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
+            .sort(compareStudents),
     [students, selClass]
   );
 

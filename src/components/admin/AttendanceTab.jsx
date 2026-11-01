@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { getDayRecord } from '../../utils/attendance';
-import { todayISO, formatDateThai, isStudentActive } from '../../utils/helpers';
+import { todayISO, formatDateThai, isStudentActive, compareStudents, isWeekendISO } from '../../utils/helpers';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 import { ui } from '../../ui/ui';
 
@@ -265,7 +265,7 @@ export default function AttendanceTab({ defaultClass }) {
     const isToday  = selectedDate === todayISO;
     const newDrafts = {};
     ALL_CLASSES.forEach(cls => {
-      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)') && isStudentActive(s, selectedDate)).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
+      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)') && isStudentActive(s, selectedDate)).sort(compareStudents);
       const draft = {};
       sts.forEach(s => {
         const rec = getDayRecord(dailyRecords, selectedDate, s.id);
@@ -291,7 +291,7 @@ export default function AttendanceTab({ defaultClass }) {
 
   // รีเซ็ตทั้งห้องเป็น "มา"
   function resetAllPresent(cls) {
-    const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)') && isStudentActive(s, selectedDate)).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
+    const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)') && isStudentActive(s, selectedDate)).sort(compareStudents);
     const draft = {};
     sts.forEach(s => { draft[s.id] = 'มา'; });
     setClassDrafts(prev => ({ ...prev, [cls]: draft }));
@@ -414,11 +414,15 @@ export default function AttendanceTab({ defaultClass }) {
   }, [availableMonths, schoolTerms, academicYear]);
 
   const monthlyData = useMemo(() => {
-    const targetDates = Object.keys(dailyRecords).filter(d => d.startsWith(selMonth));
+    // เสาร์–อาทิตย์เป็นวันหยุดปกติ ไม่นับเป็นวันเรียน แม้จะมีข้อมูลบันทึกไว้ก็ตาม
+    const targetDates = Object.keys(dailyRecords).filter(d => {
+      if (!d.startsWith(selMonth)) return false;
+      return !isWeekendISO(d); // เสาร์–อาทิตย์เป็นวันหยุด ยกเว้นวันเรียนชดเชย
+    });
     const targetClasses = filterClass === 'ทั้งหมด' ? ALL_CLASSES : [filterClass];
     return targetClasses.map(cls => {
       const teacher = teachers?.find(t => t.className === cls);
-      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)')).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
+      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)')).sort(compareStudents);
       const rows = sts.map(s => {
         const counts = { มา: 0, ขาด: 0, ลา: 0, ป่วย: 0 };
         const dailyAtt = {};
@@ -476,7 +480,7 @@ export default function AttendanceTab({ defaultClass }) {
   // ── ข้อมูลรายห้อง ─────────────────────────────────────────────────
   const classSections = useMemo(() => {
     return displayClasses.map(cls => {
-      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)') && isStudentActive(s, selectedDate)).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
+      const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)') && isStudentActive(s, selectedDate)).sort(compareStudents);
       const teacher = teachers?.find(t => t.className === cls);
       const rows = sts.map(s => {
         const rec = getDayRecord(dailyRecords, selectedDate, s.id);
@@ -508,6 +512,7 @@ export default function AttendanceTab({ defaultClass }) {
           </div>
           <div style={{ opacity: .9, fontSize: '.83rem', display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
             {isToday && <span style={{ background: 'rgba(255,255,255,.18)', borderRadius: '6px', padding: '1px 8px', fontWeight: 700 }}>🟢 วันนี้</span>}
+            {!todayHoliday && isWeekendISO(selectedDate) && <span style={{ background: 'rgba(255,255,255,.22)', borderRadius: '6px', padding: '1px 8px', fontWeight: 700 }}>🏖️ วันหยุดสุดสัปดาห์</span>}
             {todayHoliday && <span style={{ background: 'rgba(255,255,255,.22)', borderRadius: '6px', padding: '1px 8px', fontWeight: 700 }}>🏖️ {todayHoliday.label}</span>}
             <span style={{ fontWeight: 700 }}>{thaiDayName}</span>
             <span style={{ opacity: .75 }}>{dateLabel}</span>

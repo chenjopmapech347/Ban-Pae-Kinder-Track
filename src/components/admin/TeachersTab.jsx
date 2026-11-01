@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
+import { parseCsvRows, downloadCsv } from '../../utils/csv';
 
 function PinCell({ pin }) {
   const [show, setShow] = useState(false);
@@ -16,6 +17,41 @@ function PinCell({ pin }) {
       </button>
     </span>
   );
+}
+
+// ── CSV ครู ──────────────────────────────────────────────────────────────
+// หัวตารางที่ส่งออก (ไม่รวมรหัสผ่าน เพื่อความปลอดภัย — ตอนนำเข้ามีคอลัมน์ "รหัสผ่าน (PIN)" ได้ถ้าต้องการตั้งให้)
+const CSV_HEADERS = ['ชื่อ', 'นามสกุล', 'ตำแหน่ง', 'ระดับชั้น', 'ห้องเรียน', 'E-mail', 'เบอร์โทร', 'Username', 'LINE', 'Facebook', 'Instagram', 'TikTok', 'YouTube'];
+
+// ชื่อคอลัมน์ที่รองรับ (ตัวพิมพ์เล็ก) → key ในข้อมูลครู
+const CSV_ALIASES = {
+  firstName: ['ชื่อ', 'firstname', 'first name'],
+  lastName:  ['นามสกุล', 'lastname', 'last name'],
+  name:      ['ชื่อ-นามสกุล', 'ชื่อ-สกุล', 'name', 'fullname'],
+  position:  ['ตำแหน่ง', 'position'],
+  level:     ['ระดับชั้น', 'ระดับ', 'level'],
+  className: ['ห้องเรียน', 'ห้อง', 'classname', 'class'],
+  email:     ['e-mail', 'email', 'อีเมล'],
+  phone:     ['เบอร์โทร', 'เบอร์โทรศัพท์', 'โทรศัพท์', 'phone'],
+  username:  ['username', 'ชื่อผู้ใช้'],
+  pin:       ['รหัสผ่าน (pin)', 'รหัสผ่าน', 'pin', 'password'],
+  line:      ['line'],
+  facebook:  ['facebook'],
+  instagram: ['instagram'],
+  tiktok:    ['tiktok'],
+  youtube:   ['youtube'],
+};
+
+function splitThaiName(full) {
+  const parts = String(full ?? '').trim().split(/\s+/);
+  return { firstName: parts[0] ?? '', lastName: parts.slice(1).join(' ') };
+}
+
+function normalizeLevel(raw, className) {
+  const v = String(raw ?? '').trim().toUpperCase();
+  if (['K1', 'K2', 'K3'].includes(v)) return v;
+  const m = v.match(/([123])/) ?? String(className ?? '').match(/อ\.?\s*([123])/);
+  return m ? `K${m[1]}` : 'K1';
 }
 
 // CLASS_OPTIONS ดึงจาก classMap ใน AppContext (dynamic)
@@ -184,8 +220,9 @@ function MenuPermModal({ teacher, permissions, onSave, onClose }) {
 }
 
 export default function TeachersTab() {
-  const { teachers, setTeachers, handleImport, classMap, allClassNames, addSystemLog, user,
+  const { teachers, setTeachers, deleteTeacherAndSync, classMap, allClassNames, addSystemLog, user,
           menuPermissions, setMenuPermissions } = useApp();
+  const fileRef = useRef(null);
   const CLASS_OPTIONS = classMap; // dynamic จาก AppContext (ใช้สำหรับ auto-default เมื่อเปลี่ยน level)
   const [isModal, setIsModal]       = useState(false);
   const [editing, setEditing]       = useState(null);
@@ -217,6 +254,110 @@ export default function TeachersTab() {
     setIsModal(false);
   };
 
+  // ── ส่งออก CSV ──
+  const handleExportCsv = () => {
+    const rows = [CSV_HEADERS, ...teachers.map(t => {
+      const nm = (t.firstName || t.lastName) ? { firstName: t.firstName ?? '', lastName: t.lastName ?? '' } : splitThaiName(t.name);
+      return [nm.firstName, nm.lastName, t.position ?? '', t.level ?? '', t.className ?? '', t.email ?? '', t.phone ?? '',
+              t.username ?? '', t.line ?? '', t.facebook ?? '', t.instagram ?? '', t.tiktok ?? '', t.youtube ?? ''];
+    })];
+    downloadCsv(`teachers_${new Date().toISOString().slice(0, 10)}.csv`, rows);
+  };
+
+  // ── นำเข้า CSV ── (ถ้า Username/E-mail ตรงกับครูเดิม = อัปเดต, ไม่ตรง = เพิ่มใหม่)
+  const handleImportFile = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const rows = parseCsvRows(ev.target.result);
+      if (rows.length < 2) { alert('ไฟล์ไม่มีข้อมูล (ต้องมีหัวตาราง และอย่างน้อย 1 แถว)'); return; }
+      const header = rows[0].map(h => h.toLowerCase().trim());
+      const hasLast = header.some(h => CSV_ALIASES.lastName.includes(h));
+      const col = {};
+      Object.entries(CSV_ALIASES).forEach(([key, names]) => {
+        col[key] = header.findIndex(h => names.includes(h));
+      });
+      // ถ้ามีคอลัมน์ "นามสกุล" ให้ "ชื่อ" เป็นชื่อจริง ไม่ใช่ชื่อเต็ม
+      if (!hasLast && col.name < 0) { col.name = col.firstName; col.firstName = -1; }
+      if (col.name < 0 && col.firstName < 0) {
+        alert('ไม่พบคอลัมน์ "ชื่อ" — กรุณาใช้ไฟล์ที่ส่งออกจากระบบเป็นแม่แบบ');
+        return;
+      }
+      const get = (r, k) => (col[k] >= 0 ? (r[col[k]] ?? '').trim() : '');
+
+      let list = [...teachers];
+      let added = 0, updated = 0;
+      const problems = [];
+      const stamp = Date.now();
+      rows.slice(1).forEach((r, i) => {
+        const line = i + 2;
+        let firstName = get(r, 'firstName'), lastName = get(r, 'lastName');
+        let name = get(r, 'name');
+        if (!name) name = [firstName, lastName].filter(Boolean).join(' ');
+        if (!name) { problems.push(`แถว ${line}: ไม่มีชื่อ`); return; }
+        if (!firstName && !lastName) ({ firstName, lastName } = splitThaiName(name));
+
+        const username = get(r, 'username').toLowerCase().replace(/\s/g, '');
+        const email = get(r, 'email');
+        const className = get(r, 'className');
+        const incoming = {
+          name, firstName, lastName,
+          position: get(r, 'position'),
+          className,
+          level: normalizeLevel(get(r, 'level'), className),
+          email, phone: get(r, 'phone'),
+          line: get(r, 'line'), facebook: get(r, 'facebook'), instagram: get(r, 'instagram'),
+          tiktok: get(r, 'tiktok'), youtube: get(r, 'youtube'),
+        };
+        const pin = get(r, 'pin');
+
+        const idx = list.findIndex(t =>
+          (username && t.username?.toLowerCase() === username) ||
+          (email && t.email?.toLowerCase() === email.toLowerCase()));
+        if (idx >= 0) {
+          // อัปเดต: เฉพาะช่องที่ใน CSV มีค่า (ช่องว่าง = คงค่าเดิม) และไม่เปลี่ยน PIN ถ้าไม่ได้ใส่มา
+          const merged = { ...list[idx] };
+          Object.entries(incoming).forEach(([k, v]) => { if (v) merged[k] = v; });
+          if (username) merged.username = username;
+          if (pin) merged.pin = pin;
+          list[idx] = merged;
+          updated++;
+        } else {
+          list.push({
+            ...incoming,
+            id: stamp + i,
+            status: 'Active',
+            username: username || (email ? email.split('@')[0].toLowerCase().replace(/\s/g, '') : ''),
+            pin: pin || String(Math.floor(100000 + Math.random() * 900000)),
+          });
+          added++;
+        }
+      });
+
+      if (!added && !updated) { alert('ไม่มีรายการที่นำเข้าได้\n' + problems.slice(0, 8).join('\n')); return; }
+      const msg = `พบ ${added + updated} รายการ — เพิ่มใหม่ ${added}, อัปเดตครูเดิม ${updated}` +
+        (problems.length ? `\nข้าม ${problems.length} แถว:\n${problems.slice(0, 5).join('\n')}` : '') +
+        (added ? '\n\n(ครูที่เพิ่มใหม่โดยไม่ระบุรหัสผ่านจะได้รหัส 6 หลักสุ่ม ดูได้ในคอลัมน์ "รหัสผ่าน")' : '') +
+        '\n\nยืนยันนำเข้า?';
+      if (!window.confirm(msg)) return;
+      setTeachers(list);
+      addSystemLog?.('import_teachers', `นำเข้าครูจาก CSV: เพิ่ม ${added}, อัปเดต ${updated}`, user?.name ?? 'admin');
+    };
+    reader.readAsText(file, 'UTF-8');
+  };
+
+  // ── ลบครู (ยืนยัน + บันทึกขึ้นระบบทันที) ──
+  const handleDelete = async (t) => {
+    if (!window.confirm(`ลบ "${t.name}" ออกจากระบบ?`)) return;
+    const result = await deleteTeacherAndSync(t.id);
+    addSystemLog?.('delete_teacher', `ลบครู: ${t.name}`, user?.name ?? 'admin');
+    if (!result.ok) {
+      alert(`ลบในเครื่องนี้แล้ว แต่ยังบันทึกขึ้นระบบไม่สำเร็จ\n(${result.message ?? 'ไม่ทราบสาเหตุ'})\n\nกรุณากดปุ่ม "บันทึก" ด้านบนซ้ำ ไม่เช่นนั้นรายชื่อจะกลับมาเมื่อโหลดหน้าใหม่`);
+    }
+  };
+
   const handleSaveMenuPerm = (draft) => {
     const uid = String(menuTarget.id);
     setMenuPermissions(prev => ({ ...prev, [uid]: draft }));
@@ -235,10 +376,11 @@ export default function TeachersTab() {
       <div {...ui('page-header mb-6')}>
         <h3>จัดการรายชื่อคุณครู</h3>
         <div {...ui('flex gap-2')}>
-          <button {...ui('btn', { background: '#f0f9ff' })} onClick={() => {
-            const text = prompt('วาง CSV (ชื่อ, ระดับชั้น)\nเช่น: ครูใจดี, K1');
-            if (text) { const r = handleImport('teachers','name,level\n'+text); alert(r.ok?'✅ นำเข้าสำเร็จ!':r.message); }
-          }}>📥 CSV</button>
+          <input ref={fileRef} type="file" accept=".csv,text/csv" onChange={handleImportFile} style={{ display: 'none' }} />
+          <button {...ui('btn', { background: '#f0f9ff' })} onClick={() => fileRef.current?.click()}
+            title="นำเข้ารายชื่อครูจากไฟล์ CSV (ใช้ไฟล์ที่ส่งออกจากระบบเป็นแม่แบบ)">📥 นำเข้า CSV</button>
+          <button {...ui('btn', { background: '#f0fdf4' })} onClick={handleExportCsv}
+            title="ส่งออกรายชื่อครูเป็นไฟล์ CSV (ไม่รวมรหัสผ่าน)">📤 ส่งออก CSV</button>
           <button {...ui('btn btn-primary')} onClick={openNew}>+ เพิ่มคุณครู</button>
         </div>
       </div>
@@ -300,10 +442,7 @@ export default function TeachersTab() {
                       )}
                     </button>
                     <button {...ui('btn btn-sm', { color:'var(--danger)' })}
-                      onClick={() => {
-                        setTeachers(teachers.filter(x => x.id !== t.id));
-                        addSystemLog?.('delete_teacher', `ลบครู: ${t.name}`, user?.name ?? 'admin');
-                      }}>ลบ</button>
+                      onClick={() => handleDelete(t)}>ลบ</button>
                   </div>
                 </td>
               </tr>

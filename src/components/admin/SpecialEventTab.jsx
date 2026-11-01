@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
 
+import { compareStudents } from '../../utils/helpers';
 // ── Event type definitions ────────────────────────────────────────────────────
 const EVENT_TYPES = {
   school:   { label: '🏫 กิจกรรมโรงเรียน',         color: '#1d4ed8', bg: '#dbeafe' },
@@ -270,7 +271,7 @@ function EventModal({ event, allClassNames, students, assessmentTopics, indicato
   const scopeStudents = useMemo(() => {
     const base = students.filter(s => !s.name.startsWith('(ว่าง)'));
     if (form.scope === 'all') return base.sort((a, b) => String(a.className).localeCompare(String(b.className), 'th') || (a.name ?? '').localeCompare(b.name ?? '', 'th'));
-    return base.filter(s => s.className === form.scope).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
+    return base.filter(s => s.className === form.scope).sort(compareStudents);
   }, [students, form.scope]);
 
   function handleSave() {
@@ -407,7 +408,7 @@ function ParticipantModal({ event, students, isTeacher, teacherClassFilter, allC
     (event.scope === 'all' || s.className === event.scope)
   ).sort((a, b) => {
     if (a.className !== b.className) return a.className.localeCompare(b.className);
-    return a.name.localeCompare(b.name, 'th');
+    return compareStudents(a, b);
   });
 
   // Which class tabs to show

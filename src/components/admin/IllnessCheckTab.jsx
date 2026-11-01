@@ -4,6 +4,7 @@ import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
 
+import { compareStudents, isWeekendISO } from '../../utils/helpers';
 // ── ฟังก์ชันคำนวณโภชนาการ (กรมอนามัย ±1.5SD) ────────────────────────────────
 
 // ── สัญลักษณ์การบันทึก ────────────────────────────────────────────────────────
@@ -211,13 +212,15 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
   const firstDow = useMemo(() => new Date(selYear - 543, selMonth - 1, 1).getDay(), [selYear, selMonth]);
   const isWeekend = (day) => {
     const dow = (firstDow + day - 1) % 7;
-    return dow === 0 || dow === 6;
+    if (dow !== 0 && dow !== 6) return false;
+    // วันเรียนชดเชยไม่ถือเป็นวันหยุด
+    return isWeekendISO(`${selYear - 543}-${String(selMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
   };
 
   const classStudents = useMemo(() =>
     students
       .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
-      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
+      .sort(compareStudents),
     [students, selClass]
   );
 

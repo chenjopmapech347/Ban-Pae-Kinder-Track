@@ -7,6 +7,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { compareStudents } from '../../utils/helpers';
 import {
   SCALE_C60, DOMAINS_C60, INDICATORS_C60,
   getIndicatorsByDomain, LEVEL_TO_KEY, calcAvgScore,
@@ -228,7 +229,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
   // ─── derived ─────────────────────────────────────────────────────────────────
   const classStudents = useMemo(
     () => students.filter(s => s.className === selClass && s.status !== 'inactive')
-                  .sort((a, b) => (a.studentCode ?? a.name).localeCompare(b.studentCode ?? b.name, 'th')),
+                  .sort(compareStudents),
     [students, selClass]
   );
 

@@ -6,6 +6,7 @@ import { exportStudentsListExcel } from '../../utils/exportExcel';
 import { useState, useRef, useEffect } from 'react';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
+import { compareStudents } from '../../utils/helpers';
 // wizardRef ใช้ anchor scroll fallback
 
 export default function StudentsTab() {
@@ -31,7 +32,7 @@ export default function StudentsTab() {
     const pages = CLASS_ORDER.map(cls => {
       const list = students
         .filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'))
-        .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
+        .sort(compareStudents);
       if (!list.length) return '';
       const levelLabel = cls.replace('อ.', 'อนุบาล ');
       const rows = list.map((s, i) => `

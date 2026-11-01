@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { ui } from '../../ui/ui';
 
+import { compareStudents } from '../../utils/helpers';
 const LEVEL_LABEL = { K1: 'อ.1', K2: 'อ.2', K3: 'อ.3' };
 const LEVEL_NEXT  = { K1: 'K2', K2: 'K3' };
 
@@ -418,7 +419,7 @@ function GraduatePanel({ students, setStudents, meta }) {
 // ─── ลาออก / พักการเรียน (ใช้ component เดียวกัน) ─────────────────────────
 function StatusPanel({ students, setStudents, meta, statusVal, opLabel }) {
   const activeStudents = useMemo(
-    () => students.filter(isActive).sort((a, b) => a.name.localeCompare(b.name, 'th')),
+    () => students.filter(isActive).sort(compareStudents),
     [students],
   );
 

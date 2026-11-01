@@ -3,7 +3,7 @@
  * ทั้ง Firestore (ฐานข้อมูล) และ Auth (ล็อกอิน)
  */
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getStorage } from 'firebase/storage';
 
@@ -30,7 +30,8 @@ if (isFirebaseConfigured) {
   try {
     const app  = initializeApp(firebaseConfig);
     _app       = app;
-    _db        = getFirestore(app);
+    // ignoreUndefinedProperties: ฟิลด์ที่เป็น undefined จะถูกข้าม แทนที่จะทำให้การบันทึกทั้งก้อนล้มเหลว
+    _db        = initializeFirestore(app, { ignoreUndefinedProperties: true });
     _auth      = getAuth(app);
     _storage   = getStorage(app);
   } catch (e) {

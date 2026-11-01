@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react';
 import { useApp } from '../context/AppContext';
-import { todayISO, formatDateThai, isStudentActive } from '../utils/helpers';
+import { todayISO, formatDateThai, isStudentActive, compareStudents, isWeekendISO } from '../utils/helpers';
 import { getDayRecord, hasHygieneToday } from '../utils/attendance';
 import StudentModal from '../components/StudentModal';
 import DashboardSidebar from '../components/ui/DashboardSidebar';
@@ -569,7 +569,7 @@ export default function TeacherDashboard() {
   const myStudents = useMemo(
     () => students
       .filter(s => s.className === myClass && !s.name.startsWith('(ว่าง)'))
-      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
+      .sort(compareStudents),
     [students, myClass],
   );
   const activeStudents = useMemo(
@@ -627,8 +627,7 @@ export default function TeacherDashboard() {
       for (let day = 1; day <= daysInMon; day++) {
         const dateISO = `${monthISO}-${String(day).padStart(2, '0')}`;
         if (dateISO > todayS) break;
-        const dow = new Date(dateISO).getDay();
-        if (dow === 0 || dow === 6) continue;
+        if (isWeekendISO(dateISO)) continue;
 
         const activeOnDay = myStudents.filter(s => isStudentActive(s, dateISO));
         if (activeOnDay.length === 0) continue;

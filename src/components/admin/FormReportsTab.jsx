@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { ui } from '../../ui/ui';
 
+import { compareStudents } from '../../utils/helpers';
 // ── constants ────────────────────────────────────────────────────────────────
 // คำนวณรายชื่อเดือนในปีการศึกษาจากปี พ.ศ. ที่เลือก
 // ปีการศึกษา ay (เช่น 2568) เริ่มพ.ค. CE (ay-543) สิ้นสุดมี.ค. CE (ay-542)
@@ -182,7 +183,7 @@ function teacherName(teachers, className) {
 function realSts(students, className) {
   return (students ?? [])
     .filter(s => s.className === className && !String(s.name).startsWith('(ว่าง)'))
-    .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
+    .sort(compareStudents);
 }
 
 function getDOW(ce, mo, day) { return new Date(ce, mo - 1, day).getDay(); }

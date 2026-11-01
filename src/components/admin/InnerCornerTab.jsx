@@ -1,7 +1,7 @@
 // InnerCornerTab.jsx — แบบบันทึกการเล่นตามมุมประสบการณ์ภายในห้องเรียนรายสัปดาห์
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
-import { getMondayOf, getWeekLabel, genUniqueKey } from '../../utils/helpers';
+import { getMondayOf, getWeekLabel, genUniqueKey, compareStudents } from '../../utils/helpers';
 import { getDayRecord } from '../../utils/attendance';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
@@ -176,7 +176,7 @@ export default function InnerCornerTab({ teacherClassFilter = null }) {
   );
 
   const classStudents = useMemo(
-    () => (students ?? []).filter(s => s.className === cn && !s.name.startsWith('(ว่าง)')).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
+    () => (students ?? []).filter(s => s.className === cn && !s.name.startsWith('(ว่าง)')).sort(compareStudents),
     [students, cn]
   );
 

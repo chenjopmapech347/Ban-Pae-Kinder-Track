@@ -21,6 +21,7 @@ export default function ClassAssignTab() {
   // ── Selection state ──────────────────────────────────────
   const [selectedIds, setSelectedIds]   = useState(new Set());  // student IDs
   const [selectedClass, setSelectedClass] = useState(null);     // class object
+  const [doneMsg, setDoneMsg]           = useState('');
 
   // ── Derive filtered student list ─────────────────────────
   const filteredStudents = useMemo(() => {
@@ -42,9 +43,14 @@ export default function ClassAssignTab() {
   // ── Derive class list with live student count ─────────────
   const enrichedClasses = useMemo(() => {
     return classes.map(cls => {
-      const teacher = teachers.find(t => String(t.id) === String(cls.teacherId));
+      // ครูประจำห้อง: จับจาก teacherId ก่อน ถ้าไม่มี (ห้องที่เพิ่มใหม่) จับจากห้องที่ระบุในข้อมูลครู
+      const teacher = teachers.find(t => String(t.id) === String(cls.teacherId))
+        ?? teachers.find(t => t.className === cls.name);
       const count   = students.filter(s => s.className === cls.name && !s.name?.startsWith('(ว่าง)')).length;
-      return { ...cls, teacherNameResolved: teacher?.name ?? cls.teacherName ?? '—', liveCount: count };
+      // ห้องที่เพิ่มใหม่อาจไม่มี level → เดาจากชื่อ เช่น อ.1/4 → K1
+      const m = String(cls.name ?? '').match(/อ\.?\s*([123])/);
+      const level = cls.level ?? (m ? `K${m[1]}` : undefined);
+      return { ...cls, level, teacherNameResolved: teacher?.name ?? cls.teacherName ?? '—', liveCount: count };
     });
   }, [classes, teachers, students]);
 
@@ -84,8 +90,10 @@ export default function ClassAssignTab() {
         ? { ...s, className: selectedClass.name, level: selectedClass.level }
         : s
     ));
+    // เก็บห้องปลายทางที่เลือกไว้ เพื่อกำหนดนักเรียนคนถัดไปเข้าห้องเดิมได้ทันที (เลือกแค่นักเรียน)
+    setDoneMsg(`✅ กำหนดห้อง ${selectedClass.name} ให้นักเรียน ${selectedIds.size} คนแล้ว`);
+    setTimeout(() => setDoneMsg(''), 5000);
     setSelectedIds(new Set());
-    setSelectedClass(null);
   };
 
   const handleRemoveClass = (studentId) => {
@@ -110,6 +118,14 @@ export default function ClassAssignTab() {
               padding: '.25rem .85rem', fontSize: '.82rem', fontWeight: 700,
             }}>
               เลือกแล้ว {selectedIds.size} คน
+            </span>
+          )}
+          {doneMsg && (
+            <span style={{
+              background: '#dcfce7', color: '#166534', borderRadius: '20px',
+              padding: '.25rem .85rem', fontSize: '.82rem', fontWeight: 700,
+            }}>
+              {doneMsg}
             </span>
           )}
           {selectedClass && (

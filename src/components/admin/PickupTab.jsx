@@ -13,7 +13,7 @@
 //   otherName/otherPhone/otherId: string [backward compat กรณีผู้รับอื่นๆ]
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
-import { todayISO, formatDateThai } from '../../utils/helpers';
+import { todayISO, formatDateThai, compareStudents } from '../../utils/helpers';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
 
@@ -144,7 +144,7 @@ export default function PickupTab({ defaultClass }) {
   const teacher = teachers?.find(t => t.className === filterClass);
 
   const classStudents = useMemo(
-    () => students.filter(s => s.className === filterClass && !s.name.startsWith('(ว่าง)')).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
+    () => students.filter(s => s.className === filterClass && !s.name.startsWith('(ว่าง)')).sort(compareStudents),
     [students, filterClass]
   );
 

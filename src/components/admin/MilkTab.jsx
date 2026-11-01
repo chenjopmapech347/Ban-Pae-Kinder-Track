@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
-import { daysInMonth, getDow, isWeekendDay } from '../../utils/helpers';
+import { daysInMonth, getDow, isWeekendDay, compareStudents } from '../../utils/helpers';
 import { ui } from '../../ui/ui';
 
 // √  = ดื่มนม (ครูเช็คแล้ว)
@@ -81,14 +81,14 @@ export default function MilkTab({ teacherClassFilter = null }) {
   const classStudents = useMemo(() =>
     students
       .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
-      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
+      .sort(compareStudents),
     [students, selClass]
   );
 
   const [draft, setDraft] = useState(() => {
     const ex = milkRecords[key];
     if (ex) return patchCurrentMonth(ex, selYear, selMonth);
-    const initStuds = students.filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)')).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
+    const initStuds = students.filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)')).sort(compareStudents);
     return makeDefaultRecord(key, selClass, academicYear, selYear, selMonth, 20, initStuds);
   });
 
@@ -126,7 +126,7 @@ export default function MilkTab({ teacherClassFilter = null }) {
       setDraft(patchCurrentMonth(ex, yr, mo));
       setSchoolDays(ex.schoolDays ?? 20);
     } else {
-      const studs = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)')).sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
+      const studs = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)')).sort(compareStudents);
       setDraft(makeDefaultRecord(k, cls, academicYear, yr, mo, 20, studs));
       setSchoolDays(20);
     }

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
-import { todayISO, formatDateThai, getMondayOf, isStudentActive } from '../../utils/helpers';
+import { todayISO, formatDateThai, getMondayOf, isStudentActive, isWeekendISO } from '../../utils/helpers';
 import { ui } from '../../ui/ui';
 
 /**
@@ -48,8 +48,7 @@ export default function TeacherOverviewTab({ onTabChange, className: classOverri
   const weekKey  = `${myClass}||${getMondayOf(today)}`;            // corner / innerCorner
 
   // วันในสัปดาห์ (0=อาทิตย์ ข้ามได้ในระบบโรงเรียน)
-  const todayDay = new Date(today).getDay();
-  const isWeekend = todayDay === 0 || todayDay === 6;
+  const isWeekend = isWeekendISO(today); // ไม่นับวันเรียนชดเชย
 
   // ── ตรวจสอบสถานะแต่ละกิจกรรม ────────────────────────────────────────────
   const status = useMemo(() => {

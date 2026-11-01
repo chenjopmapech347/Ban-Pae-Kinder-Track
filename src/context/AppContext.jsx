@@ -13,8 +13,9 @@ import {
   DEFAULT_ACADEMIC_YEARS,
 } from '../data/initialData';
 import { INITIAL_INDICATORS, INITIAL_ACTIVITIES } from '../data/flatIndicators';
+import { mergeById, indexById, MERGE_FIELDS } from '../lib/mergeById';
 import { mergeDayRecords, recomputeAttendanceFromDailyRecords } from '../utils/attendance';
-import { getMondayOf } from '../utils/helpers';
+import { getMondayOf, compareStudents, registerMakeupDates } from '../utils/helpers';
 import { buildAppSnapshot, validateSnapshot } from '../utils/appSnapshot';
 import { pullSnapshotFromCloud, pushSnapshotToCloud } from '../lib/cloudSync';
 import { isSupabaseConfigured } from '../lib/supabase';
@@ -34,6 +35,17 @@ import {
 const AppContext = createContext(null);
 
 // รวมแมปซ้อนแบบลึก — ค่าใน b ทับค่าใน a ที่ใบเดียวกัน ส่วนที่มีแต่ใน a ยังอยู่ (ใช้รวมข้อมูลรายวันจากเมฆกับในเครื่อง)
+// ตัดข้อมูลหนักออกจากนักเรียนก่อนส่ง/เทียบ (รูป base64 + คะแนน indicators ที่เก็บแยกใน classAssessments)
+function stripStudentForSync(s) {
+  let out = { ...s };
+  if (out.photo?.startsWith('data:')) { const { photo: _p, ...rest } = out; out = rest; }
+  if (out.assessments?.indicators) {
+    const { indicators: _i, ...restA } = out.assessments;
+    out = { ...out, assessments: restA };
+  }
+  return out;
+}
+
 function deepMergeObjects(a, b) {
   if (!b || typeof b !== 'object' || Array.isArray(b)) return b === undefined ? a : b;
   if (!a || typeof a !== 'object' || Array.isArray(a)) return b;
@@ -127,6 +139,15 @@ export function AppProvider({ children }) {
   const [schools, setSchools] = useLocalStorage(STORAGE_KEYS.schools, INITIAL_SCHOOLS);
   const [holidays, setHolidays] = useLocalStorage(STORAGE_KEYS.holidays, INITIAL_HOLIDAYS);
   const [specialHolidays, setSpecialHolidays] = useLocalStorage(STORAGE_KEYS.specialHolidays, []);
+  // วันหยุดที่ทุกหน้าใช้ = วันหยุดราชการ + วันหยุดพิเศษของโรงเรียน (ข้อมูลดิบ holidays ยังแก้ไขแยกได้ที่หน้าวันหยุดราชการ)
+  // และลงทะเบียนวันเรียนชดเชยให้ฟังก์ชันตรวจเสาร์–อาทิตย์รู้ (เขียนซ้ำได้ ไม่มีผลข้างเคียง)
+  const holidaysEffective = useMemo(() => {
+    registerMakeupDates((specialHolidays ?? []).map(h => h.makeupDate).filter(Boolean));
+    const extra = (specialHolidays ?? [])
+      .filter(h => h.offDate)
+      .map(h => ({ id: `sp-${h.id}`, date: h.offDate, label: h.offLabel, type: 'Special' }));
+    return [...(holidays ?? []), ...extra];
+  }, [holidays, specialHolidays]);
   const [menuPermissions, setMenuPermissions] = useLocalStorage(STORAGE_KEYS.menuPermissions, {}); // { [userId]: { [tabId]: false } }
 
   // ── ตารางกิจกรรม (Firestore-backed) ──────────────────────────────────────
@@ -577,13 +598,76 @@ export function AppProvider({ children }) {
     return { ok: true, updatedAt: result.updatedAt };
   }, [restoreSnapshotData]);
 
+  // ─── ฐานอ้างอิงสำหรับรวมข้อมูลก่อนส่ง (ฉบับที่ดึง/ส่งสำเร็จครั้งล่าสุด) ───
+  const syncBaseRef = useRef(null);
+  const rememberBase = useCallback((payload) => {
+    if (!payload) return;
+    const base = {};
+    MERGE_FIELDS.forEach((f) => {
+      const list = Array.isArray(payload[f]) ? payload[f] : [];
+      base[f] = f === 'students' ? list.map(stripStudentForSync) : list;
+    });
+    syncBaseRef.current = base;
+  }, []);
+
+  // ส่งขึ้น Firebase แบบ "ตรวจก่อน รวมก่อน": ดึงฉบับล่าสุดบนเซิร์ฟเวอร์มาเทียบ
+  // รายการ (นักเรียน/ครู/ห้อง/ประกาศ) ที่เครื่องนี้ไม่ได้แก้ จะใช้ฉบับบนเซิร์ฟเวอร์ → ไม่ทับงานของคนอื่น
+  const pushReconciled = useCallback(async (payload) => {
+    let toPush = payload;
+    let merged = null;
+    const base = syncBaseRef.current;
+    if (base) {
+      try {
+        const remote = await pullSnapshotFromFirebase();
+        if (remote.ok) {
+          const next = { ...payload };
+          merged = {};
+          MERGE_FIELDS.forEach((f) => {
+            if (!Array.isArray(remote.payload[f]) || !Array.isArray(payload[f])) return;
+            const local = f === 'students' ? payload[f].map(stripStudentForSync) : payload[f];
+            const res = mergeById(base[f], local, remote.payload[f]);
+            next[f] = res.merged;
+            if (res.changedFromLocal) merged[f] = res.merged;
+          });
+          toPush = next;
+        }
+      } catch { /* ดึงไม่ได้ → ส่งแบบเดิม */ }
+    }
+    const result = await pushSnapshotToFirebase(toPush);
+    if (result.ok) {
+      rememberBase(toPush);
+      // เอาของใหม่ที่ได้จากคนอื่นมาแสดงในเครื่องนี้ด้วย
+      if (merged) {
+        Object.entries(merged).forEach(([f, list]) => {
+          if (f === 'students') {
+            setStudents((prev) => {
+              const pm = indexById(prev);
+              return list.map((m) => {
+                const p = pm.get(String(m.id));
+                if (!p) return m;
+                if (JSON.stringify(stripStudentForSync(p)) === JSON.stringify(m)) return p;
+                const out = { ...m };
+                if (p.photo?.startsWith('data:')) out.photo = p.photo;
+                if (p.assessments?.indicators) out.assessments = { ...(m.assessments ?? {}), indicators: p.assessments.indicators };
+                return out;
+              });
+            });
+          } else if (f === 'teachers') setTeachers(list);
+          else if (f === 'classes') setClasses(list);
+          else if (f === 'announcements') setAnnouncements(list);
+        });
+      }
+    }
+    return result;
+  }, [rememberBase, setStudents, setTeachers, setClasses, setAnnouncements]);
+
   // ─── Firebase Sync ──────────────────────────────────────
   const syncPushToFirebase = useCallback(async () => {
     const payload = buildAppSnapshot(getSnapshotData());
-    const result  = await pushSnapshotToFirebase(payload);
+    const result  = await pushReconciled(payload);
     if (result.ok) localStorage.setItem('kt_lastPushAt', Date.now().toString());
     return result;
-  }, [getSnapshotData]);
+  }, [getSnapshotData, pushReconciled]);
 
   // ลบนักเรียนแล้ว push ทันที (ไม่รอ debounce) — ป้องกันนักเรียนกลับมาถ้าปิด browser ก่อน 4 วินาที
   const deleteStudentAndSync = useCallback(async (studentId) => {
@@ -591,10 +675,32 @@ export function AppProvider({ children }) {
     setStudents(newStudents);
     // Build snapshot ด้วย newStudents โดยตรง ไม่รอ React state update
     const payload = buildAppSnapshot({ ...getSnapshotData(), students: newStudents });
-    const result  = await pushSnapshotToFirebase(payload);
+    const result  = await pushReconciled(payload);
     if (result.ok) localStorage.setItem('kt_lastPushAt', Date.now().toString());
     return result;
-  }, [students, setStudents, getSnapshotData]);
+  }, [students, setStudents, getSnapshotData, pushReconciled]);
+
+  // ลบครูแล้ว push ทันที (ไม่รอ debounce) — ถ้าบันทึกขึ้นระบบไม่สำเร็จ รายชื่อจะกลับมาเมื่อโหลดหน้าใหม่
+  // เพราะระบบถือข้อมูลบน Firebase เป็นหลัก จึงคืนผลลัพธ์ให้หน้าจอแจ้งผู้ใช้
+  const deleteTeacherAndSync = useCallback(async (teacherId) => {
+    const newTeachers = teachers.filter(t => String(t.id) !== String(teacherId));
+    setTeachers(newTeachers);
+    if (!isFirebaseConfigured) return { ok: true, local: true };
+    localStorage.setItem('kt_lastPushAt', Date.now().toString()); // กัน pull เขียนทับก่อนส่งเสร็จ
+    const snap = getSnapshotData();
+    const payload = buildAppSnapshot({
+      ...snap,
+      teachers: newTeachers,
+      students: (snap.students ?? []).map(stripStudentForSync),
+    });
+    const result = await Promise.race([
+      pushReconciled(payload),
+      new Promise((resolve) => setTimeout(
+        () => resolve({ ok: false, message: 'ฐานข้อมูลไม่ตอบสนองภายใน 25 วินาที' }), 25000)),
+    ]);
+    if (result.ok) localStorage.setItem('kt_lastPushAt', Date.now().toString());
+    return result;
+  }, [teachers, setTeachers, getSnapshotData, pushReconciled]);
 
   // getDailyData: รวบรวม volatile fields สำหรับ push ไปยัง dailyData/latest
   const getDailyData = useCallback(() => ({
@@ -630,13 +736,14 @@ export function AppProvider({ children }) {
     const check = validateSnapshot(result.payload);
     if (!check.ok) return check;
     restoreSnapshotData(check.snapshot);
+    rememberBase(check.snapshot);
     // Pull daily data (volatile) แยก — merge กลับเข้า state
     const daily = await pullDailyDataFromFirebase();
     if (daily.ok && Object.keys(daily.payload).length > 0) {
       restoreSnapshotData(daily.payload, { mergeDaily: true }); // รวมกับข้อมูลที่มีอยู่ ไม่ทับทั้งก้อน
     }
     return { ok: true, updatedAt: result.updatedAt };
-  }, [restoreSnapshotData, role]);
+  }, [restoreSnapshotData, rememberBase, role]);
 
   // ─── Daily Backup Restore ──────────────────────────────
   const getDailyBackupList = useCallback(() => listDailyBackups(), []);
@@ -682,6 +789,7 @@ export function AppProvider({ children }) {
             // Firebase มีข้อมูล → restore เสมอ (Firebase คือ source of truth)
             console.info(`[KinderTrack] Auto-pull from Firebase: ${cloudStudentCount} students`);
             restoreSnapshotData(check.snapshot);
+            rememberBase(check.snapshot);
             setPullSyncStatus('done');
           } else {
             // Firebase ว่างเปล่า → ข้ามเพื่อรักษา local data (ยังไม่ได้ push ครั้งแรก)
@@ -742,6 +850,7 @@ export function AppProvider({ children }) {
   const [snapshotSizeKB, setSnapshotSizeKB] = useState(0);
   const autoSyncTimer  = useRef(null);
   const isMounted      = useRef(false);   // skip initial mount
+  const lastPushedSig  = useRef('');      // ลายนิ้วมือข้อมูลที่ส่งสำเร็จล่าสุด
 
   useEffect(() => {
     // ครั้งแรกที่ mount ข้าม — ไม่ต้องการ overwrite Firebase ด้วยข้อมูลเริ่มต้น
@@ -791,6 +900,19 @@ export function AppProvider({ children }) {
 
         const payload = buildAppSnapshot(snapData);
 
+        // ข้อมูลเหมือนที่ส่งสำเร็จครั้งล่าสุดทุกประการ (เช่น effect ทำงานซ้ำโดยผู้ใช้ไม่ได้แก้อะไร) → ไม่ต้องส่งซ้ำ
+        // ตัด exportedAt ออกก่อนเทียบ เพราะเป็นเวลาที่เปลี่ยนทุกครั้ง
+        const sig = (() => {
+          const s = JSON.stringify({ ...payload, exportedAt: null }) + JSON.stringify(getDailyData());
+          let h = 5381;
+          for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+          return `${s.length}:${h}`;
+        })();
+        if (sig === lastPushedSig.current) {
+          setAutoSyncStatus('idle');
+          return;
+        }
+
         // ── ตรวจขนาด snapshot ก่อน push ──
         // Firestore document limit = 1MB (1,048,576 bytes)
         // ถ้า JSON > 900KB มีความเสี่ยงสูงที่จะ push ล้มเหลว
@@ -804,7 +926,20 @@ export function AppProvider({ children }) {
           return;
         }
 
-        const result  = await pushSnapshotToFirebase(payload);
+        // Firestore setDoc จะรอเซิร์ฟเวอร์ตอบรับ ถ้าเครือข่ายสะดุด/เอกสารถูกปฏิเสธช้า สัญลักษณ์จะหมุนค้างไม่จบ
+        // → จำกัดเวลา 25 วินาที แล้วแจ้งเป็น error (ข้อมูลยังอยู่ในเครื่อง และจะลองส่งใหม่เมื่อมีการแก้ไขครั้งถัดไป)
+        const SYNC_TIMEOUT_MS = 25000;
+        let timeoutId;
+        const result = await Promise.race([
+          pushReconciled(payload),
+          new Promise((resolve) => {
+            timeoutId = setTimeout(() => resolve({
+              ok: false,
+              message: 'ฐานข้อมูลไม่ตอบสนองภายใน 25 วินาที — ตรวจอินเทอร์เน็ต แล้วกดปุ่ม "บันทึก" อีกครั้ง',
+            }), SYNC_TIMEOUT_MS);
+          }),
+        ]);
+        clearTimeout(timeoutId);
         // โหมด Firebase Auth: อัปเดตข้อมูลรายบุตรหลานให้ผู้ปกครอง (ครู = ห้องตัวเอง, แอดมิน = ทุกห้อง)
         if (SERVER_AUTH && result.ok && (role === 'admin' || role === 'teacher')) {
           const dr = getDailyData().dailyRecords;
@@ -820,6 +955,7 @@ export function AppProvider({ children }) {
         });
         if (result.ok) localStorage.setItem('kt_lastPushAt', Date.now().toString());
         if (result.ok) {
+          lastPushedSig.current = sig;
           setAutoSyncError('');
           setAutoSyncStatus('done');
           setLastSyncFailed(false);
@@ -1360,7 +1496,7 @@ export function AppProvider({ children }) {
       (() => {
         // ฟังก์ชันตรวจสอบว่า ISO date ตรงกับวันหยุดใน holidays หรือไม่
         // รองรับทั้ง YYYY-MM-DD (ค.ศ.) และ DD/MM/YYYY (พ.ศ. เดิม)
-        const isHoliday = (isoDate) => holidays.some(h => {
+        const isHoliday = (isoDate) => holidaysEffective.some(h => {
           if (!h.date) return false;
           if (h.date.includes('/')) {
             const [dd, mm, bYear] = h.date.split('/');
@@ -1489,7 +1625,7 @@ export function AppProvider({ children }) {
       healthCheckRecords, setHealthCheckRecords,
       cornerRecords,      setCornerRecords,      cornerDefs,      classOuterCornerKeys,
       innerCornerRecords, setInnerCornerRecords, innerCornerDefs, classInnerCornerKeys,
-      holidays, activitySchedule,
+      holidaysEffective, activitySchedule,
     ],
   );
 
@@ -1498,7 +1634,7 @@ export function AppProvider({ children }) {
   // ใช้ค่า 3 สำหรับนักเรียนที่มา, null สำหรับขาด/ลา/ป่วย (ไม่ overwrite ข้อมูลที่มีอยู่แล้ว)
   // คืนค่าจำนวนวัน health check ที่พบใน dailyRecords ทั้งหมด
   const backfillHealthCheckRecords = useCallback(() => {
-    const isHolidayFn = (isoDate) => holidays.some(h => {
+    const isHolidayFn = (isoDate) => holidaysEffective.some(h => {
       if (!h.date) return false;
       if (h.date.includes('/')) {
         const [dd, mm, bYear] = h.date.split('/');
@@ -1567,7 +1703,7 @@ export function AppProvider({ children }) {
       return next;
     });
     return daysProcessed;
-  }, [dailyRecords, students, holidays, academicYear, setHealthCheckRecords]);
+  }, [dailyRecords, students, holidaysEffective, academicYear, setHealthCheckRecords]);
 
   const saveDailyHygiene = useCallback(
     (date, recordsByStudentId) => {
@@ -1608,7 +1744,9 @@ export function AppProvider({ children }) {
     const map = { K1: [], K2: [], K3: [] };
     (classes ?? []).forEach(c => {
       const name = c.name ?? c.id;
-      if (name && map[c.level]) map[c.level].push(name);
+      // ห้องที่เพิ่มจากหน้า "จัดการห้องเรียน" อาจไม่มี level → เดาจากชื่อ เช่น อ.1/4 → K1
+      const level = map[c.level] ? c.level : (String(name).match(/อ\.?\s*([123])/) ? `K${String(name).match(/อ\.?\s*([123])/)[1]}` : null);
+      if (name && level && map[level] && !map[level].includes(name)) map[level].push(name);
     });
     // เพิ่มห้องที่นักเรียนมีอยู่จริงแต่ไม่ได้ลงทะเบียนใน classes
     (students ?? []).forEach(s => {
@@ -1636,6 +1774,9 @@ export function AppProvider({ children }) {
     };
   }, [role, user, teachers]);
 
+  // รายชื่อนักเรียนที่หน้าจอทุกหน้าใช้ — เรียงตามเลขประจำตัวเสมอ (ข้อมูลดิบยังเก็บตามเดิม)
+  const studentsSorted = useMemo(() => [...(students ?? [])].sort(compareStudents), [students]);
+
   const value = {
     role,
     user: effectiveUser,
@@ -1644,7 +1785,7 @@ export function AppProvider({ children }) {
     changePassword,
     authConfig,
     updateAuthConfig,
-    students,
+    students: studentsSorted,
     setStudents,
     teachers,
     setTeachers,
@@ -1652,7 +1793,8 @@ export function AppProvider({ children }) {
     setClasses,
     schools,
     setSchools,
-    holidays,
+    holidays: holidaysEffective,
+    rawHolidays: holidays,
     setHolidays,
     assessmentTopics,
     setAssessmentTopics,
@@ -1725,6 +1867,7 @@ export function AppProvider({ children }) {
     restoreFromDailyBackup,
     getDailyData,
     deleteStudentAndSync,
+    deleteTeacherAndSync,
     autoSyncStatus,
     autoSyncError,
     lastSyncFailed,

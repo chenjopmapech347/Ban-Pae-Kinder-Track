@@ -88,7 +88,7 @@ function MiniCalendar({ value, onChange }) {
 }
 
 export default function HolidaysTab() {
-  const { holidays, setHolidays } = useApp();
+  const { rawHolidays: holidays, setHolidays } = useApp();
   const [isOpen, setIsOpen] = useState(false);
   const [form, setForm]     = useState(EMPTY);
 

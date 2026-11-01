@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { todayISO } from '../../utils/helpers';
+import { todayISO, compareStudents } from '../../utils/helpers';
 import { pushClassAssessments } from '../../lib/firebaseSync';
 import { LEVEL_META, SCORES, SOURCE_ACTIVITY_MAP } from '../../data/evaluationConstants';
 import StepBadge from './evaluation/StepBadge';
@@ -97,7 +97,7 @@ export default function EvaluationTab() {
   const classStudents = useMemo(() =>
     students
       .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
-      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
+      .sort(compareStudents),
     [students, selClass]
   );
 

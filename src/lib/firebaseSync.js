@@ -127,7 +127,9 @@ export async function pushSnapshotToFirebase(payload) {
     return { ok: false, message: 'Firebase ยังไม่ได้ตั้งค่า — กรุณาสร้าง .env' };
   }
   try {
-    const data = { ...stripSecrets(payload), updatedAt: serverTimestamp() };
+    // JSON round-trip: ตัดค่า undefined ออก (Firestore ไม่รับ undefined) — ข้อมูลทั้งหมดเป็น JSON ล้วนอยู่แล้ว
+    const clean = JSON.parse(JSON.stringify(stripSecrets(payload)));
+    const data = { ...clean, updatedAt: serverTimestamp() };
     // merge: true — field ที่ไม่ได้ส่ง (เช่น activities ว่างเปล่า) จะคงอยู่ใน Firestore ไม่ถูกลบ
     // ยกเว้นความลับ: สั่งลบของเดิมที่เคยอัปไว้ด้วย deleteField()
     const latestData = { ...data };
@@ -136,7 +138,7 @@ export async function pushSnapshotToFirebase(payload) {
 
     // สำรองรายวัน — 1 เอกสารต่อวัน (id = YYYY-MM-DD) เขียนทับด้วยสถานะล่าสุดของวันนั้น
     // non-blocking เพื่อไม่ให้ backup failure ทำให้ sync แสดงเป็น error
-    writeDailyBackup(data, stripSecrets(payload));
+    writeDailyBackup(data, clean);
 
     return { ok: true, message: 'อัปโหลดสำเร็จ ✅' };
   } catch (e) {
@@ -204,7 +206,7 @@ export async function pushDailyDataToFirebase(dailyData) {
     for (const field of DAILY_FIELDS) {
       const val = dailyData[field];
       if (val && typeof val === 'object' && Object.keys(val).length > 0) {
-        data[field] = val;
+        data[field] = JSON.parse(JSON.stringify(val));
         hasData = true;
       }
     }

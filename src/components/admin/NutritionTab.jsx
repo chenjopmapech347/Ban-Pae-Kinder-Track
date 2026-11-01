@@ -8,6 +8,7 @@ import {
 } from 'docx';
 import { ui } from '../../ui/ui';
 
+import { compareStudents } from '../../utils/helpers';
 // ── ตัวเลือกผลประเมิน ────────────────────────────────────────────────────────
 const WEIGHT_AGE_OPTS = [
   'น้ำหนักตามเกณฑ์',
@@ -138,7 +139,7 @@ export default function NutritionTab({ teacherClassFilter = null }) {
   const classStudents = useMemo(() =>
     students
       .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
-      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
+      .sort(compareStudents),
     [students, selClass]
   );
 
@@ -171,7 +172,7 @@ export default function NutritionTab({ teacherClassFilter = null }) {
     const k = recKey(cls, academicYear, date);
     const sList = students
       .filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'))
-      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
+      .sort(compareStudents);
     setDraft(buildDraft(nutritionRecords[k], sList, date));
     setSaved(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps

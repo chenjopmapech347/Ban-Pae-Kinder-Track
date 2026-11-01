@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { ui } from '../../ui/ui';
 
+import { compareStudents } from '../../utils/helpers';
 // ── คำชี้แจงการประเมินพัฒนาการ ──────────────────────────────────────────────
 const KHAM_CHIAENG = [
   {
@@ -876,7 +877,7 @@ export default function DevelopmentalReportTab({ teacherClassFilter = null }) {
   const classStudents = useMemo(() =>
     students
       .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
-      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
+      .sort(compareStudents),
     [students, selClass]
   );
 

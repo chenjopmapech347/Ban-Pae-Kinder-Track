@@ -4,18 +4,22 @@ import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
 
 export default function ClassesTab() {
-  const { classes, setClasses } = useApp();
+  const { classes, setClasses, students } = useApp();
+  // จำนวนนักเรียนจริงของแต่ละห้อง (นับจากรายชื่อนักเรียน ไม่ใช่ตัวเลขที่พิมพ์เอง)
+  const realCount = (name) => (students ?? []).filter(s => s.className === name && !s.name?.startsWith('(ว่าง)')).length;
+  const guessLevel = (name) => { const m = String(name ?? '').match(/อ\.?\s*([123])/); return m ? `K${m[1]}` : 'K1'; };
   const [isModal, setIsModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm]       = useState({});
 
-  const openNew  = () => { setEditing(null); setForm({ name:'', count:0 }); setIsModal(true); };
+  const openNew  = () => { setEditing(null); setForm({ name:'', level:'K1' }); setIsModal(true); };
   const openEdit = c => { setEditing(c); setForm(c); setIsModal(true); };
 
   const handleSave = e => {
     e.preventDefault();
-    if (editing) setClasses(classes.map(c => c.id === editing.id ? { ...c, ...form } : c));
-    else setClasses([...classes, { ...form, id: Date.now() }]);
+    const saved = { ...form, level: form.level || guessLevel(form.name) };
+    if (editing) setClasses(classes.map(c => c.id === editing.id ? { ...c, ...saved } : c));
+    else setClasses([...classes, { ...saved, id: Date.now() }]);
     setIsModal(false);
   };
 
@@ -31,7 +35,7 @@ export default function ClassesTab() {
           <div key={c.id} {...ui('glass-card flex justify-between items-center')}>
             <div>
               <div {...ui('font-bold')}>{c.name}</div>
-              <div {...ui('text-sm text-muted')}>จำนวนนักเรียน: {c.count} คน</div>
+              <div {...ui('text-sm text-muted')}>จำนวนนักเรียน: {realCount(c.name)} คน</div>
             </div>
             <div {...ui('flex gap-2')}>
               <button {...ui('btn btn-sm')} onClick={() => openEdit(c)}>แก้ไข</button>
@@ -51,8 +55,12 @@ export default function ClassesTab() {
         <form onSubmit={handleSave} style={{ display:'flex',flexDirection:'column',gap:'1rem' }}>
           <div><label style={{ display:'block',marginBottom:'.35rem' }}>ชื่อห้องเรียน</label>
             <input {...ui('input')} value={form.name||''} onChange={e=>setForm({...form,name:e.target.value})} required /></div>
-          <div><label style={{ display:'block',marginBottom:'.35rem' }}>จำนวนนักเรียน</label>
-            <input {...ui('input')} type="number" value={form.count||0} onChange={e=>setForm({...form,count:Number(e.target.value)})} /></div>
+          <div><label style={{ display:'block',marginBottom:'.35rem' }}>ระดับชั้น</label>
+            <select {...ui('input')} value={form.level || guessLevel(form.name)} onChange={e=>setForm({...form,level:e.target.value})}>
+              <option value="K1">อนุบาล 1 (K1)</option>
+              <option value="K2">อนุบาล 2 (K2)</option>
+              <option value="K3">อนุบาล 3 (K3)</option>
+            </select></div>
           <div {...ui('flex gap-2 mt-2')}>
             <ModalCancelBtn onClick={() => setIsModal(false)} />
             <ModalConfirmBtn type="submit" label="💾 บันทึก" />

@@ -131,9 +131,9 @@ export default function SpecialHolidaysTab() {
       {/* Header */}
       <div {...ui('page-header mb-6')}>
         <div>
-          <h3>📵 วันหยุดพิเศษ</h3>
+          <h3>📵 วันหยุดพิเศษและวันชดเชย</h3>
           <p {...ui('text-xs text-muted', { marginTop: '.25rem' })}>
-            กำหนดวันหยุดพิเศษ (วันจันทร์–ศุกร์) พร้อมวันเปิดเรียนทดแทน (เสาร์–อาทิตย์)
+            กำหนดวันหยุดพิเศษที่โรงเรียนกำหนด พร้อมวันเรียนชดเชย (เสาร์–อาทิตย์) — วันหยุดพิเศษจะถูกนับเป็นวันหยุดในทุกหน้า และวันเรียนชดเชยจะนับเป็นวันเรียนปกติ
           </p>
         </div>
         <button type="button" {...ui('btn btn-primary')} onClick={openAdd}>
@@ -144,7 +144,7 @@ export default function SpecialHolidaysTab() {
       {/* Table */}
       {sorted.length === 0 ? (
         <div {...ui('text-center text-muted', { padding:'2.5rem' })}>
-          ยังไม่มีวันหยุดพิเศษ
+          ยังไม่มีวันหยุดพิเศษและวันชดเชย
         </div>
       ) : (
         <div style={{ display:'flex', flexDirection:'column', gap:'.75rem' }}>
@@ -155,7 +155,7 @@ export default function SpecialHolidaysTab() {
                 <div style={{ display:'flex', flexDirection:'column', alignItems:'center',
                   background:'linear-gradient(135deg,#dc2626,#f87171)', color:'white',
                   borderRadius:'12px', padding:'.5rem .85rem', minWidth:'130px', textAlign:'center' }}>
-                  <span style={{ fontSize:'.68rem', fontWeight:700, opacity:.85 }}>🚫 หยุดพิเศษ</span>
+                  <span style={{ fontSize:'.68rem', fontWeight:700, opacity:.85 }}>🚫 วันหยุดพิเศษ</span>
                   <span style={{ fontSize:'.82rem', fontWeight:800 }}>{toThaiDate(h.offDate)}</span>
                 </div>
                 {/* ลูกศร */}
@@ -164,7 +164,7 @@ export default function SpecialHolidaysTab() {
                 <div style={{ display:'flex', flexDirection:'column', alignItems:'center',
                   background:'linear-gradient(135deg,#16a34a,#4ade80)', color:'white',
                   borderRadius:'12px', padding:'.5rem .85rem', minWidth:'130px', textAlign:'center' }}>
-                  <span style={{ fontSize:'.68rem', fontWeight:700, opacity:.85 }}>📚 เรียนทดแทน</span>
+                  <span style={{ fontSize:'.68rem', fontWeight:700, opacity:.85 }}>📚 วันเรียนชดเชย</span>
                   <span style={{ fontSize:'.82rem', fontWeight:800 }}>{toThaiDate(h.makeupDate)}</span>
                 </div>
                 <div>
@@ -182,7 +182,7 @@ export default function SpecialHolidaysTab() {
       <Modal
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
-        title={step === 1 ? '📵 วันหยุดพิเศษ' : '📚 วันเปิดเรียนทดแทน'}
+        title={step === 1 ? '📵 วันหยุดพิเศษ' : '📚 วันเรียนชดเชย'}
         size="sm"
       >
         {step === 1 ? (
@@ -234,7 +234,7 @@ export default function SpecialHolidaysTab() {
 
             <div>
               <label style={{ display:'block', fontWeight:700, fontSize:'.83rem', marginBottom:'.5rem', color:'#4b5563' }}>
-                เลือกวันเปิดเรียนทดแทน <span style={{ color:'var(--danger)' }}>*</span>
+                เลือกวันเรียนชดเชย (เสาร์หรืออาทิตย์) <span style={{ color:'var(--danger)' }}>*</span>
               </label>
               <div style={{ background:'#f8fafc', border:'1.5px solid #e2e8f0', borderRadius:'12px', padding:'.85rem' }}>
                 <MiniCalendar

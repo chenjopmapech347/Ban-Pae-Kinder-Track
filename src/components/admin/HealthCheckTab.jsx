@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 import { ui } from '../../ui/ui';
 
+import { compareStudents } from '../../utils/helpers';
 // ── รายการตรวจสุขภาพ 6 หมวด ──────────────────────────────────────────────────
 const CHECK_ITEMS = [
   { id: 'body',  label: 'ร่างกาย',  emoji: '🧍' },
@@ -105,7 +106,7 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
   const classStudents = useMemo(() =>
     students
       .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
-      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th')),
+      .sort(compareStudents),
     [students, selClass]
   );
 
@@ -114,7 +115,7 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
     if (existing) return existing;
     const initStuds = students
       .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
-      .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
+      .sort(compareStudents);
     return makeDefaultRecord(key, selClass, academicYear, selDate, initStuds);
   });
 
@@ -125,7 +126,7 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
     } else {
       const studs = students
         .filter(s => s.className === newClass && !s.name.startsWith('(ว่าง)'))
-        .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'th'));
+        .sort(compareStudents);
       setDraft(makeDefaultRecord(newKey, newClass, academicYear, newDate, studs));
     }
     setSaved(false);

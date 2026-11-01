@@ -7,7 +7,7 @@
 // ── ข้อมูลนักเรียน 136 คน ──────────────────────────────────
 export const INITIAL_STUDENTS = [
   // ── Test account ──
-  { id:9999, name:'เด็กทดสอบระบบ', level:'K1', className:'อ.1/1', code:'test001', studentCode:'test001', age:5, weight:0, height:0, nationalId:'', parentPin:'test1234' },
+  { id:9999, name:'เด็กทดสอบระบบ', level:'K1', className:'อ.1/4', code:'test001', studentCode:'test001', age:5, weight:0, height:0, nationalId:'', parentPin:'test1234' },
   // ── อนุบาล 1 (K1) — 45 คน ──
   { id:1420, name:'เด็กชายกฤติเดช แก้วคำ', level:'K1', className:'อ.1/1', studentCode:'69001', age:4, weight:0, height:0, nationalId:'1-2199-01866-03-7', parentPin:'1001' },
   { id:1421, name:'เด็กชายพัชรพงษ์ ลิ้มกลาง', level:'K1', className:'อ.1/1', studentCode:'69002', age:4, weight:0, height:0, nationalId:'1-2199-01898-68-1', parentPin:'1002' },
@@ -179,16 +179,18 @@ export const INITIAL_STUDENTS = [
   attendance:  { present: 0, absent: 0, total: 0 },
 }));
 
-// ── ข้อมูลครู 7 คน (1 ครูต่อ 1 ห้อง) ────────────────────────
+// ── ข้อมูลครูตั้งต้น (ข้อมูลจริงอยู่บน Firebase — ส่วนนี้ใช้เฉพาะตอนติดตั้งใหม่/ล้างระบบ)  ────────────────────────
 export const INITIAL_TEACHERS = [
-  { id: 9999, name: 'ครูทดสอบระบบ', level:'K1', className:'อ.1/1', status:'Active', email:'test@test.com', pin:'test1234', username:'test_teacher' },
-  { id: 1, name: 'คุณครูรำภา สุขอยู่',           level:'K1', className:'อ.1/1', status:'Active', email:'rumpa.sukyu@gmail.com',        pin:'kru01', username:'rumpa.sukyu'        },
+  { id: 9999, name: 'ครูทดสอบระบบ', level:'K1', className:'อ.1/4', status:'Active', email:'test@test.com', pin:'test1234', username:'test_teacher' },
+  { id: 1, name: 'คุณครูรำภา สุขอยู่',           level:'K1', className:'อ.1/6', status:'Active', email:'rumpa.sukyu@gmail.com',        pin:'kru01', username:'rumpa.sukyu'        },
   { id: 2, name: 'คุณครูลักษณา ฤกษ์มี',          level:'K1', className:'อ.1/2', status:'Active', email:'laksanalerkme@gmail.com',      pin:'kru02', username:'laksanalerkme'      },
   { id: 3, name: 'คุณครูชลดา ภู่เฟี้ยม',         level:'K2', className:'อ.2/1', status:'Active', email:'faichonlada181243@gmail.com',  pin:'kru03', username:'faichonlada181243'  },
   { id: 4, name: 'คุณครูวรพรรณ เจนการกิจ',        level:'K2', className:'อ.2/2', status:'Active', email:'angrypaan@gmail.com',          pin:'kru04', username:'angrypaan'          },
   { id: 5, name: 'คุณครูปนัดดา สาลา',            level:'K3', className:'อ.3/1', status:'Active', email:'Panaddasala@gmail.com',        pin:'kru05', username:'panaddasala'        },
   { id: 6, name: 'คุณครูไอรินลดา วราหิรัญกุล',   level:'K3', className:'อ.3/2', status:'Active', email:'loeywiie@gmail.com',           pin:'kru06', username:'loeywiie'           },
   { id: 7, name: 'คุณครูศิวาพร แก้วหนูนวล',      level:'K3', className:'อ.3/3', status:'Active', email:'Siwapon231022@gmail.com',      pin:'kru07', username:'siwapon231022'      },
+  { id: 8, name: 'คุณครูอินทิพร แก้วประโคน',     firstName:'อินทิพร', lastName:'แก้วประโคน', position:'ผู้ช่วยครูผู้ช่วย', level:'K1', className:'อ.1/1', status:'Active', email:'inthiporn160841@gmail.com', username:'inthiporn' },
+  { id: 9, name: 'คุณครูกมลวรรณ อัมวัฒน์',        firstName:'กมลวรรณ', lastName:'อัมวัฒน์',   level:'K1', className:'อ.1/3', status:'Active' },
 ];
 
 // ── โรงเรียน ──────────────────────────────────────────────
@@ -205,8 +207,12 @@ export const INITIAL_SCHOOLS = [
 
 // ── ห้องเรียน 7 ห้อง (พร้อม teacherId) ──────────────────────
 export const INITIAL_CLASSES = [
-  { id: 1, name: 'อ.1/1', level: 'K1', count: 25, teacherId: 1, teacherName: 'คุณครูรำภา สุขอยู่'       },
+  { id: 1, name: 'อ.1/1', level: 'K1', count: 25, teacherId: 8, teacherName: 'คุณครูอินทิพร แก้วประโคน'  },
   { id: 2, name: 'อ.1/2', level: 'K1', count: 24, teacherId: 2, teacherName: 'คุณครูลักษณา ฤกษ์มี'      },
+  { id: 8, name: 'อ.1/3', level: 'K1', count: 0,  teacherId: 9, teacherName: 'คุณครูกมลวรรณ อัมวัฒน์'    },
+  { id: 9, name: 'อ.1/4', level: 'K1', count: 0,  teacherId: 9999, teacherName: 'ครูทดสอบระบบ'          },
+  { id: 10, name: 'อ.1/5', level: 'K1', count: 0 },
+  { id: 11, name: 'อ.1/6', level: 'K1', count: 0,  teacherId: 1, teacherName: 'คุณครูรำภา สุขอยู่'       },
   { id: 3, name: 'อ.2/1', level: 'K2', count: 21, teacherId: 3, teacherName: 'คุณครูชลดา ภู่เฟี้ยม'     },
   { id: 4, name: 'อ.2/2', level: 'K2', count: 21, teacherId: 4, teacherName: 'คุณครูวรพรรณ เจนการกิจ'   },
   { id: 5, name: 'อ.3/1', level: 'K3', count: 17, teacherId: 5, teacherName: 'คุณครูปนัดดา สาลา'        },

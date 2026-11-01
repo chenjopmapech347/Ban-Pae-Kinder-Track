@@ -124,7 +124,7 @@ const TAB_GROUPS = [
       { id: 'schools',           label: '🏛️ โรงเรียน'                  },
       { id: 'terms',             label: '📅 ภาคเรียน'                   },
       { id: 'holidays',          label: '🏖️ วันหยุดราชการ'               },
-      { id: 'specialholidays',   label: '📵 วันหยุดพิเศษ'                },
+      { id: 'specialholidays',   label: '📵 วันหยุดพิเศษและวันชดเชย'      },
       { id: 'measurementdates',  label: '📏 เดือนวัดน้ำหนัก/ส่วนสูง'  },
       { id: 'systemlog',         label: '📋 บันทึกการใช้งานระบบ'        },
       { id: 'syssettings',       label: '🔧 ระบบและความปลอดภัย'         },

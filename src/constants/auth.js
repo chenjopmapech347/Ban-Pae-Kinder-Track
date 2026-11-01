@@ -6,8 +6,8 @@ export const DEFAULT_AUTH_CONFIG = {
 // ── Test accounts (ใช้ทดสอบระบบ — ทำงานได้เสมอ ไม่ขึ้นกับ localStorage) ──
 export const TEST_ACCOUNTS = {
   admin:   { username: 'admin',        pin: 'test1234' },
-  teacher: { username: 'test_teacher', pin: 'test1234', name: 'ครูทดสอบระบบ', level: 'K1', className: 'อ.1/1', id: 9999 },
-  parent:  { studentCode: 'test001',   pin: 'test1234', studentName: 'เด็กทดสอบ', className: 'อ.1/1' },
+  teacher: { username: 'test_teacher', pin: 'test1234', name: 'ครูทดสอบระบบ', level: 'K1', className: 'อ.1/4', id: 9999 },
+  parent:  { studentCode: 'test001',   pin: 'test1234', studentName: 'เด็กทดสอบ', className: 'อ.1/4' },
 };
 
 // บัญชีทดสอบเปิดเฉพาะตอนพัฒนา (npm run dev) หรือเมื่อตั้ง VITE_ENABLE_TEST_ACCOUNTS=true ตอน build

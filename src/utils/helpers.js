@@ -117,5 +117,39 @@ export function getDow(buddhistYear, month, day) {
 /** ตรวจว่าวันนั้นเป็นวันหยุดสุดสัปดาห์ (รับ พ.ศ.) */
 export function isWeekendDay(buddhistYear, month, day) {
   const dow = getDow(buddhistYear, month, day);
-  return dow === 0 || dow === 6;
+  if (dow !== 0 && dow !== 6) return false;
+  // เสาร์–อาทิตย์ที่ตั้งเป็น "วันเรียนชดเชย" ถือเป็นวันเรียนปกติ
+  const iso = `${buddhistYear - 543}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  return !isMakeupDate(iso);
+}
+
+// ── วันเรียนชดเชย (ตั้งค่าจากเมนู "วันหยุดพิเศษและวันชดเชย") ──
+// เก็บเป็นตัวแปรกลางของโมดูล เพื่อให้ฟังก์ชันตรวจวันหยุดทุกหน้าเรียกใช้ได้โดยไม่ต้องส่งค่าต่อกันหลายชั้น
+let _makeupDates = new Set();
+export function registerMakeupDates(isoList) { _makeupDates = new Set(isoList ?? []); }
+export function isMakeupDate(iso) { return _makeupDates.has(iso); }
+
+/** วันหยุดสุดสัปดาห์จริงหรือไม่ (รับ ISO ค.ศ.) — ไม่นับวันเรียนชดเชย */
+export function isWeekendISO(iso) {
+  const dow = new Date(iso).getDay();
+  return (dow === 0 || dow === 6) && !isMakeupDate(iso);
+}
+
+/** เลขประจำตัวนักเรียน (รองรับชื่อฟิลด์เก่า) */
+export function studentCodeOf(s) {
+  return String(s?.studentCode ?? s?.code ?? s?.studentId ?? '').trim();
+}
+
+/**
+ * เปรียบเทียบนักเรียนเพื่อเรียงตามเลขประจำตัว (เรียงแบบตัวเลข: 69002 ก่อน 69010)
+ * คนที่ไม่มีเลขประจำตัวไปอยู่ท้าย แล้วเรียงตามชื่อ
+ */
+export function compareStudents(a, b) {
+  const ca = studentCodeOf(a), cb = studentCodeOf(b);
+  if (ca && cb) {
+    const r = ca.localeCompare(cb, 'th', { numeric: true });
+    if (r) return r;
+  } else if (ca) return -1;
+  else if (cb) return 1;
+  return (a?.name ?? '').localeCompare(b?.name ?? '', 'th');
 }

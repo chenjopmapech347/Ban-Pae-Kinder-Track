@@ -13,7 +13,8 @@
 //   otherName/otherPhone/otherId: string [backward compat กรณีผู้รับอื่นๆ]
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
-import { todayISO, formatDateThai, compareStudents } from '../../utils/helpers';
+import { todayISO, formatDateThai, compareStudents, compareClassNames } from '../../utils/helpers';
+import { useTermRange, OUT_OF_TERM_MSG } from '../../hooks/useTermRange';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
 
@@ -129,7 +130,7 @@ export default function PickupTab({ defaultClass }) {
   const ALL_CLASSES = allClassNames;
 
   const classList = useMemo(
-    () => (classes ?? []).map(c => c.name ?? c.id).filter(Boolean).sort(),
+    () => (classes ?? []).map(c => c.name ?? c.id).filter(Boolean).sort(compareClassNames),
     [classes]
   );
   const defaultCls = defaultClass ?? classList[0] ?? ALL_CLASSES[0];
@@ -141,6 +142,8 @@ export default function PickupTab({ defaultClass }) {
   const [saved, setSaved] = useState(null);
 
   const isToday = selectedDate === todayISO();
+  const { isInTerm } = useTermRange();
+  const outOfTerm = !isInTerm(selectedDate); // นอกช่วงเปิด–ปิดเรียน → บันทึกไม่ได้
   const teacher = teachers?.find(t => t.className === filterClass);
 
   const classStudents = useMemo(
@@ -163,6 +166,7 @@ export default function PickupTab({ defaultClass }) {
 
   // ── quick-save: บันทึกผู้ส่ง (เช้า) จาก defaultDropoff ──
   function saveDropoffDefault(student) {
+    if (outOfTerm) return; // นอกช่วงเปิด–ปิดเรียน
     const rel  = student.defaultDropoffRelation || '';
     const name = student.defaultDropoffName || '';
     setPickupRecords(prev => ({
@@ -184,6 +188,7 @@ export default function PickupTab({ defaultClass }) {
 
   // ── quick-save: บันทึกผู้รับ (เย็น) จาก defaultPickup ──
   function savePickupDefault(student) {
+    if (outOfTerm) return; // นอกช่วงเปิด–ปิดเรียน
     const rel  = student.defaultPickupRelation || 'บิดา';
     const name = student.defaultPickupName || '';
     const existing = dayRecords[student.id] ?? {};
@@ -222,6 +227,7 @@ export default function PickupTab({ defaultClass }) {
   }
 
   function saveRecord() {
+    if (outOfTerm) return; // นอกช่วงเปิด–ปิดเรียน
     if (form.relation === 'อื่นๆ') {
       if (!form.otherName.trim() && !form.otherPhone.trim() && !form.otherId.trim()) {
         alert('กรุณาระบุชื่อ / เบอร์โทร / หมายเลขบัตรประชาชนของผู้รับอย่างใดอย่างหนึ่ง');
@@ -254,6 +260,7 @@ export default function PickupTab({ defaultClass }) {
   }
 
   function deleteRecord(studentId) {
+    if (outOfTerm) return; // นอกช่วงเปิด–ปิดเรียน
     setPickupRecords(prev => {
       const day = { ...(prev[selectedDate] ?? {}) };
       delete day[studentId];
@@ -292,6 +299,12 @@ export default function PickupTab({ defaultClass }) {
           <div style={{ opacity: .88, fontSize: '.83rem' }}>
             {isToday ? '🟢 วันนี้ — ' : ''}{formatDateThai(selectedDate)}
           </div>
+          {outOfTerm && (
+            <div style={{ marginTop: '.5rem', background: 'rgba(254,226,226,.95)', color: '#b91c1c', fontWeight: 700,
+              fontSize: '.78rem', borderRadius: '8px', padding: '.4rem .7rem' }}>
+              ⛔ {OUT_OF_TERM_MSG}
+            </div>
+          )}
         </div>
         {/* summary */}
         <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap', alignItems: 'center' }}>

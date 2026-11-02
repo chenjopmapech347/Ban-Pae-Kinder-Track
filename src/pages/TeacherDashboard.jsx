@@ -1,12 +1,10 @@
 import { useState, useMemo, useEffect, useRef, lazy, Suspense } from 'react';
 import { useApp } from '../context/AppContext';
-import { todayISO, formatDateThai, isStudentActive, compareStudents, isWeekendISO } from '../utils/helpers';
+import { todayISO, formatDateThai, isStudentActive, compareStudents, isWeekendISO, isAssessed } from '../utils/helpers';
 import { getDayRecord, hasHygieneToday } from '../utils/attendance';
 import StudentModal from '../components/StudentModal';
 import DashboardSidebar from '../components/ui/DashboardSidebar';
 import ErrorBoundary from '../components/ui/ErrorBoundary';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../lib/firebase';
 import { ui } from '../ui/ui';
 
 const EvaluationTab          = lazy(() => import('../components/admin/EvaluationTab'));
@@ -16,6 +14,8 @@ const MediaTab               = lazy(() => import('../components/admin/MediaTab')
 const MediaBorrowTab         = lazy(() => import('../components/admin/MediaBorrowTab'));
 const CornerTab              = lazy(() => import('../components/admin/CornerTab'));
 const InnerCornerTab         = lazy(() => import('../components/admin/InnerCornerTab'));
+const AssignInnerCornersTab  = lazy(() => import('../components/admin/AssignInnerCornersTab'));
+const AssignOuterCornersTab  = lazy(() => import('../components/admin/AssignOuterCornersTab'));
 const DevelopmentalReportTab = lazy(() => import('../components/admin/DevelopmentalReportTab'));
 const HealthCheckTab         = lazy(() => import('../components/admin/HealthCheckTab'));
 const IllnessCheckTab        = lazy(() => import('../components/admin/IllnessCheckTab'));
@@ -32,6 +32,7 @@ const PickupTab              = lazy(() => import('../components/admin/PickupTab'
 const ActivityLogTab         = lazy(() => import('../components/admin/ActivityLogTab'));
 const StandardsMapTab        = lazy(() => import('../components/admin/StandardsMapTab'));
 const NationalStandardsTab   = lazy(() => import('../components/admin/NationalStandardsTab'));
+const ActivitiesTab          = lazy(() => import('../components/admin/ActivitiesTab'));
 const IndicatorsTab          = lazy(() => import('../components/admin/IndicatorsTab'));
 const AIChatTab              = lazy(() => import('../components/AIChatTab'));
 const HelpTab                = lazy(() => import('../components/admin/HelpTab'));
@@ -68,6 +69,8 @@ const TEACHER_TAB_GROUPS = [
     tabs: [
       { id: 'innercorner', label: '🏡 มุมประสบการณ์ในห้อง'  },  // ในห้องก่อน
       { id: 'corner',      label: '🌿 แหล่งเรียนรู้นอกห้อง' },  // แล้วนอกห้อง
+      { id: 'assigninnercorners', label: '🏡 กำหนดกิจกรรมภายในห้องเรียน'  },
+      { id: 'assignoutercorners', label: '🌿 กำหนดกิจกรรมภายนอกห้องเรียน' },
     ],
   },
   {
@@ -98,16 +101,17 @@ const TEACHER_TAB_GROUPS = [
       { id: 'pins',            label: '🔑 PIN ผู้ปกครอง' },
       { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ'  },  // ขึ้นทะเบียนก่อน
       { id: 'mediaborrow', label: '🔄 รายการยืม-คืนสื่อ' },  // แล้วจึงยืม-คืน
+      { id: 'profile',     label: '👤 โปรไฟล์ของฉัน'     },  // ข้อมูลส่วนตัว
     ],
   },
   {
-    label: 'มาตรฐานและโปรไฟล์',
+    label: 'มาตรฐาน',
     color: '#6b7280',
     tabs: [
-      { id: 'profile',     label: '👤 โปรไฟล์ของฉัน'     },  // ข้อมูลส่วนตัว
       { id: 'standards',   label: '🗺️ มาตรฐานปฐมวัย'     },  // มาตรฐานเด็ก
       { id: 'nationalstd', label: '🏛 มาตรฐานแห่งชาติ'   },  // ระดับชาติ
       { id: 'indicators',  label: '🔬 ตัวบ่งชี้'          },  // ดูเท่านั้น
+      { id: 'activities',  label: '🎯 กิจกรรมตัวบ่งชี้'    },  // ดูเท่านั้น
     ],
   },
   {
@@ -475,7 +479,7 @@ function StudentList({ myStudents, filtered, search, setSearch, myClass, today, 
               )}
               {!isInactive && (
                 <div style={{ textAlign: 'center', minWidth: '48px' }}>
-                  {s.assessments?.summary
+                  {isAssessed(s)
                     ? <div style={{ color: 'var(--success)', fontSize: '1.25rem' }}>✅</div>
                     : <div style={{ color: '#d1d5db', fontSize: '1.25rem' }}>○</div>}
                   <div {...ui('text-xs text-muted')}>ประเมิน</div>
@@ -514,7 +518,7 @@ export default function TeacherDashboard() {
     handleImport, announcements, setAnnouncements, dailyRecords,
     saveDailyAttendance, saveDailyHygiene,
     user, teachers, setTeachers,
-    menuPermissions,
+    menuPermissions, imgbbApiKey,
   } = useApp();
 
   // ── กรอง tab ตาม menuPermissions ของ user ที่ login อยู่ ──
@@ -542,18 +546,31 @@ export default function TeacherDashboard() {
   const [photoUploading, setPhotoUploading] = useState(false);
 
   async function handlePhotoUpload(file) {
-    if (!file || !storage) return;
+    if (!file) return;
+    if (!file.type?.startsWith('image/')) { alert('กรุณาเลือกไฟล์รูปภาพ (JPG / PNG / WEBP)'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('ไฟล์รูปใหญ่เกิน 5MB กรุณาเลือกรูปที่เล็กกว่านี้'); return; }
+    if (!imgbbApiKey) { alert('ยังไม่ได้ตั้งค่าบริการอัปโหลดรูป (ImgBB API Key) กรุณาแจ้งแอดมิน'); return; }
     setPhotoUploading(true);
     try {
-      const ext  = file.name.split('.').pop();
-      const path = `teacher-photos/${myTeacher?.id ?? 'unknown'}.${ext}`;
-      const sRef = ref(storage, path);
-      await uploadBytes(sRef, file);
-      const url  = await getDownloadURL(sRef);
+      // อัปโหลดไป ImgBB (เหมือนรูปนักเรียนและรูปสื่อ) — ไม่ต้องใช้ Firebase Auth
+      const b64 = await new Promise((res, rej) => {
+        const reader = new FileReader();
+        reader.onload  = ev => res(String(ev.target.result).split(',')[1]);
+        reader.onerror = rej;
+        reader.readAsDataURL(file);
+      });
+      const form = new FormData();
+      form.append('key', imgbbApiKey);
+      form.append('image', b64);
+      const resp = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form });
+      const json = await resp.json();
+      if (!json.success) throw new Error(json.error?.message ?? 'ImgBB upload failed');
+      const url = json.data.display_url;
       setTeachers(ts => ts.map(t => t.id === myTeacher?.id ? { ...t, photoURL: url } : t));
       setProfileForm(f => f ? { ...f, photoURL: url } : f);
     } catch (err) {
       console.error('upload photo error:', err);
+      alert(`❌ อัปโหลดรูปไม่สำเร็จ: ${err.message}`);
     } finally {
       setPhotoUploading(false);
     }
@@ -606,7 +623,7 @@ export default function TeacherDashboard() {
     total:    activeStudents.length,
     attend:   activeStudents.filter(s => getDayRecord(dailyRecords, today, s.id)?.attendance === 'มา').length,
     hygiene:  activeStudents.filter(s => hasHygieneToday(getDayRecord(dailyRecords, today, s.id))).length,
-    assessed: activeStudents.filter(s => s.assessments?.summary).length,
+    assessed: activeStudents.filter(isAssessed).length,
   }), [activeStudents, dailyRecords, today]);
 
   // ── Monthly attendance chart (auto-slide) ─────────────────────────────
@@ -770,11 +787,14 @@ export default function TeacherDashboard() {
           {activeTab === 'media'       && <MediaTab teacherClassFilter={myClass} viewMode="entry" />}
           {activeTab === 'corner'      && <CornerTab teacherClassFilter={myClass} />}
           {activeTab === 'innercorner' && <InnerCornerTab teacherClassFilter={myClass} />}
+          {activeTab === 'assigninnercorners' && <AssignInnerCornersTab teacherClassFilter={myClass} />}
+          {activeTab === 'assignoutercorners' && <AssignOuterCornersTab teacherClassFilter={myClass} />}
           {activeTab === 'devreport'   && <DevelopmentalReportTab teacherClassFilter={myClass} />}
 
           {/* ── Standards ── */}
           {activeTab === 'nationalstd' && <NationalStandardsTab />}
           {activeTab === 'indicators'  && <IndicatorsTab readOnly={true} />}
+          {activeTab === 'activities'  && <ActivitiesTab readOnly />}
           {activeTab === 'aichat'      && <AIChatTab />}
           {activeTab === 'help'        && <HelpTab />}
           {activeTab === 'standards'   && <StandardsMapTab />}

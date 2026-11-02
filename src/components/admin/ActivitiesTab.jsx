@@ -103,7 +103,7 @@ function ActivityModal({ isOpen, onClose, onSave, editing, indicators, presetInd
 }
 
 // ── Main ActivitiesTab ────────────────────────────────────────────────────────
-export default function ActivitiesTab() {
+export default function ActivitiesTab({ readOnly = false }) {
   const { indicators, activities, setActivities } = useApp();
 
   const domains = INDICATORS_DATA_68.map(d => ({ id: d.id, label: d.label, emoji: d.emoji, color: d.color, bg: d.bg }));
@@ -167,9 +167,11 @@ export default function ActivitiesTab() {
         <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <input {...ui('input', { maxWidth: '180px' })} placeholder="🔍 ค้นหา..."
             value={search} onChange={e => setSearch(e.target.value)} />
+          {!readOnly && (
           <button {...ui('btn btn-primary')} onClick={() => openModal()}>
             + เพิ่มกิจกรรม
           </button>
+          )}
         </div>
       </div>
 
@@ -259,7 +261,7 @@ export default function ActivitiesTab() {
                 <span style={{ fontSize: '.82rem', fontWeight: 700, color: domain?.color ?? '#7c3aed' }}>
                   {ind?.label ?? indId}
                 </span>
-                <button type="button"
+                {!readOnly && <button type="button"
                   onClick={() => openModal(null, indId)}
                   style={{
                     marginLeft: 'auto', padding: '.2rem .6rem', border: 'none',
@@ -268,7 +270,7 @@ export default function ActivitiesTab() {
                     cursor: 'pointer', fontFamily: 'inherit',
                   }}>
                   + เพิ่มกิจกรรม
-                </button>
+                </button>}
               </div>
 
               {/* Activity rows */}
@@ -294,11 +296,13 @@ export default function ActivitiesTab() {
                         <span style={{ fontSize: '.83rem', color: '#374151' }}>{act.label}</span>
                       </div>
                     </div>
+                    {!readOnly && (
                     <div style={{ display: 'flex', gap: '.4rem', flexShrink: 0 }}>
                       <button {...ui('btn btn-sm')} onClick={() => openModal(act)}>แก้ไข</button>
                       <button {...ui('btn btn-sm', { color: 'var(--danger)' })}
                         onClick={() => handleDelete(act.id)}>ลบ</button>
                     </div>
+                    )}
                   </div>
                 ))}
               </div>

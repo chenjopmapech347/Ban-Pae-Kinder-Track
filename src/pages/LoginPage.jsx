@@ -185,6 +185,15 @@ function LoginModal({ onClose }) {
     const teacherResult = login('teacher', { username: u, pin });
     if (teacherResult.ok) { setLoading(false); return; }
 
+    // username ตรงกับครูในระบบ แต่เข้าไม่ได้ → บอกสาเหตุจริง (ไม่ใช่ "ไม่พบบัญชี")
+    if (detectedTeacher) {
+      setLoading(false);
+      setError(detectedTeacher.pin
+        ? 'รหัสผ่าน (PIN) ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง'
+        : 'บัญชีครูนี้ยังไม่ได้ตั้ง PIN — กรุณาแจ้งแอดมินตั้ง PIN ให้ในเมนู ครู');
+      return;
+    }
+
     // Try parent (username = student code / id)
     const student = students.find(s =>
       (s.code && s.code === u) || String(s.id) === u || (s.parentPin && s.parentPin === u)

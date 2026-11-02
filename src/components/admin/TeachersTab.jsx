@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { compareClassNames } from '../../utils/helpers';
 import { useApp } from '../../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
@@ -94,7 +95,6 @@ const TEACHER_TAB_GROUPS = [
       { id: 'dailyroutine', label: '🗓️ กิจกรรมประจำวัน' },
       { id: 'lunch',        label: '🍱 อาหารกลางวัน' },
       { id: 'toothbrush',   label: '🪥 แปรงฟัน' },
-      { id: 'pickup',       label: '🚗 รับกลับบ้าน' },
     ],
   },
   {
@@ -123,16 +123,16 @@ const TEACHER_TAB_GROUPS = [
     ],
   },
   {
-    label: 'สื่อการสอน',
+    label: 'บุคลากรและสื่อ',
     tabs: [
       { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ' },
       { id: 'mediaborrow', label: '🔄 รายการยืม-คืนสื่อ' },
+      { id: 'profile',     label: '👤 โปรไฟล์ของฉัน' },
     ],
   },
   {
-    label: 'มาตรฐาน & โปรไฟล์',
+    label: 'มาตรฐาน',
     tabs: [
-      { id: 'profile',     label: '👤 โปรไฟล์ของฉัน' },
       { id: 'std2self',    label: '👩‍🏫 มาตรฐานที่ 2' },
       { id: 'standards',   label: '🗺️ มาตรฐานปฐมวัย' },
       { id: 'nationalstd', label: '🏛 มาตรฐานแห่งชาติ' },
@@ -400,7 +400,7 @@ export default function TeachersTab() {
             </tr>
           </thead>
           <tbody>
-            {[...teachers].sort((a, b) => (a.className || '').localeCompare(b.className || '') || (a.name || '').localeCompare(b.name || '', 'th')).map(t => (
+            {[...teachers].sort((a, b) => compareClassNames(a.className, b.className) || (a.name || '').localeCompare(b.name || '', 'th')).map(t => (
               <tr key={t.id} {...ui('hover-row')}>
                 <td>
                   <div {...ui('font-bold')}>{t.name}</div>

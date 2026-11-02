@@ -13,9 +13,9 @@ import {
   DEFAULT_ACADEMIC_YEARS,
 } from '../data/initialData';
 import { INITIAL_INDICATORS, INITIAL_ACTIVITIES } from '../data/flatIndicators';
-import { mergeById, indexById, MERGE_FIELDS } from '../lib/mergeById';
+import { mergeById, indexById, MERGE_FIELDS, stableStringify } from '../lib/mergeById';
 import { mergeDayRecords, recomputeAttendanceFromDailyRecords } from '../utils/attendance';
-import { getMondayOf, compareStudents, registerMakeupDates } from '../utils/helpers';
+import { getMondayOf, compareStudents, compareClassNames, registerMakeupDates } from '../utils/helpers';
 import { buildAppSnapshot, validateSnapshot } from '../utils/appSnapshot';
 import { pullSnapshotFromCloud, pushSnapshotToCloud } from '../lib/cloudSync';
 import { isSupabaseConfigured } from '../lib/supabase';
@@ -380,7 +380,17 @@ export function AppProvider({ children }) {
   );
 
   const restoreSnapshotData = useCallback((payload, { mergeDaily = false } = {}) => {
-    if (payload.students) setStudents(payload.students);
+    if (payload.students) {
+      // รูปที่ยังเป็น base64 (ไม่ได้อัปโหลดขึ้น ImgBB) ไม่ถูกส่งขึ้น Firebase — ถ้าดึงข้อมูลกลับมาทับ รูปจะหาย
+      // จึงคงรูป base64 ของเครื่องนี้ไว้ ถ้าฝั่งเซิร์ฟเวอร์ไม่มีรูปของนักเรียนคนนั้น
+      setStudents((prev) => {
+        const local = new Map((prev ?? []).map(p => [String(p.id), p.photo]));
+        return payload.students.map((st) => {
+          const lp = local.get(String(st.id));
+          return (!st.photo && typeof lp === 'string' && lp.startsWith('data:')) ? { ...st, photo: lp } : st;
+        });
+      });
+    }
     if (payload.teachers) setTeachers(payload.teachers);
     if (payload.classes) setClasses(payload.classes);
     if (payload.schools) setSchools(payload.schools);
@@ -607,14 +617,21 @@ export function AppProvider({ children }) {
       const list = Array.isArray(payload[f]) ? payload[f] : [];
       base[f] = f === 'students' ? list.map(stripStudentForSync) : list;
     });
+    // ฟิลด์อื่นทั้งหมด (ตั้งค่า/วันหยุด/ภาคเรียน ฯลฯ) เก็บลายนิ้วมือไว้เทียบว่าเครื่องนี้แก้หรือไม่
+    const all = {};
+    Object.keys(payload).forEach((k) => {
+      if (!MERGE_FIELDS.includes(k)) all[k] = stableStringify(payload[k]);
+    });
+    base.__all = all;
     syncBaseRef.current = base;
   }, []);
 
   // ส่งขึ้น Firebase แบบ "ตรวจก่อน รวมก่อน": ดึงฉบับล่าสุดบนเซิร์ฟเวอร์มาเทียบ
-  // รายการ (นักเรียน/ครู/ห้อง/ประกาศ) ที่เครื่องนี้ไม่ได้แก้ จะใช้ฉบับบนเซิร์ฟเวอร์ → ไม่ทับงานของคนอื่น
+  // รายการ (นักเรียน/ครู/ห้อง/ประกาศ/ทะเบียนสื่อ/ยืม-คืนสื่อ) ที่เครื่องนี้ไม่ได้แก้ จะใช้ฉบับบนเซิร์ฟเวอร์ → ไม่ทับงานของคนอื่น
   const pushReconciled = useCallback(async (payload) => {
     let toPush = payload;
     let merged = null;
+    const adopted = {};
     const base = syncBaseRef.current;
     if (base) {
       try {
@@ -629,6 +646,18 @@ export function AppProvider({ children }) {
             next[f] = res.merged;
             if (res.changedFromLocal) merged[f] = res.merged;
           });
+          // ฟิลด์ที่เครื่องนี้ "ไม่ได้แก้" แต่บน Firebase ถูกคนอื่นแก้ไปแล้ว → ใช้ค่าบน Firebase ไม่เขียนทับด้วยสำเนาเก่า
+          const baseAll = base.__all ?? {};
+          Object.keys(payload).forEach((k) => {
+            if (MERGE_FIELDS.includes(k)) return;
+            const rv = remote.payload[k];
+            const bs = baseAll[k];
+            if (rv === undefined || bs === undefined) return;
+            if (stableStringify(payload[k]) === bs && stableStringify(rv) !== bs) {
+              next[k] = rv;
+              adopted[k] = rv;
+            }
+          });
           toPush = next;
         }
       } catch { /* ดึงไม่ได้ → ส่งแบบเดิม */ }
@@ -636,6 +665,7 @@ export function AppProvider({ children }) {
     const result = await pushSnapshotToFirebase(toPush);
     if (result.ok) {
       rememberBase(toPush);
+      if (Object.keys(adopted).length) restoreSnapshotData(adopted);
       // เอาของใหม่ที่ได้จากคนอื่นมาแสดงในเครื่องนี้ด้วย
       if (merged) {
         Object.entries(merged).forEach(([f, list]) => {
@@ -655,11 +685,14 @@ export function AppProvider({ children }) {
           } else if (f === 'teachers') setTeachers(list);
           else if (f === 'classes') setClasses(list);
           else if (f === 'announcements') setAnnouncements(list);
+          else if (f === 'mediaRecords') setMediaRecords(list);
+          else if (f === 'mediaBorrowRecords') setMediaBorrowRecords(list);
+          else if (f === 'specialHolidays') setSpecialHolidays(list);
         });
       }
     }
     return result;
-  }, [rememberBase, setStudents, setTeachers, setClasses, setAnnouncements]);
+  }, [rememberBase, setStudents, setTeachers, setClasses, setAnnouncements, setMediaRecords, setMediaBorrowRecords, setSpecialHolidays, restoreSnapshotData]);
 
   // ─── Firebase Sync ──────────────────────────────────────
   const syncPushToFirebase = useCallback(async () => {
@@ -840,6 +873,26 @@ export function AppProvider({ children }) {
           setTimeout(() => setPullSyncStatus('idle'), 3000);
         });
       });
+  }, [role]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── ดึงรายชื่อครู/นักเรียนล่าสุดตั้งแต่หน้าล็อกอิน (ก่อนเข้าระบบ) ──
+  // การตรวจ username/PIN ใช้ข้อมูลในเครื่อง ถ้าเครื่องไม่เคยเข้าระบบมาก่อน (หรือแอดมินเพิ่งเพิ่มครู/เปลี่ยน PIN)
+  // จะมองไม่เห็นบัญชีใหม่ จึงดึงจาก Firebase หนึ่งครั้งต่อการเปิดหน้า ก่อนที่ผู้ใช้จะกดเข้าสู่ระบบ
+  const prePullDone = useRef(false);
+  useEffect(() => {
+    if (role || prePullDone.current) return;
+    if (!isFirebaseConfigured || SERVER_AUTH) return;
+    prePullDone.current = true;
+    pullSnapshotFromFirebase()
+      .then((result) => {
+        if (!result.ok) return;
+        const check = validateSnapshot(result.payload);
+        if (check.ok && (check.snapshot.students?.length ?? 0) > 0) {
+          restoreSnapshotData(check.snapshot);
+          rememberBase(check.snapshot);
+        }
+      })
+      .catch(() => {});
   }, [role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Auto-sync to Firebase (debounced 4s) ──────────────
@@ -1736,7 +1789,7 @@ export function AppProvider({ children }) {
     // รวมห้องจาก classes collection + ห้องที่นักเรียนมีจริงแต่ไม่ได้ลงทะเบียน
     const fromClasses  = (classes  ?? []).map(c => c.name ?? c.id).filter(Boolean);
     const fromStudents = (students ?? []).map(s => s.className).filter(Boolean);
-    return [...new Set([...fromClasses, ...fromStudents])].sort();
+    return [...new Set([...fromClasses, ...fromStudents])].sort(compareClassNames);
   }, [classes, students]);
 
   // แผนที่ห้องเรียนจัดกลุ่มตามระดับชั้น { K1: ['อ.1/1', ...], K2: [...], K3: [...] }
@@ -1754,7 +1807,7 @@ export function AppProvider({ children }) {
         map[s.level].push(s.className);
       }
     });
-    Object.keys(map).forEach(k => map[k].sort());
+    Object.keys(map).forEach(k => map[k].sort(compareClassNames));
     return map;
   }, [classes, students]);
 
@@ -1883,7 +1936,7 @@ export function AppProvider({ children }) {
     // AI
     aiApiKey,
     setAiApiKey,
-    imgbbApiKey,
+    imgbbApiKey: imgbbApiKey || import.meta.env.VITE_IMGBB_API_KEY || '',
     setImgbbApiKey,
     // Pickup
     pickupRecords,

@@ -1,5 +1,7 @@
 // MediaBorrowTab.jsx — รายการยืม-คืนสื่อการสอน
 import { useState, useMemo, useEffect } from 'react';
+import { compareClassNames } from '../../utils/helpers';
+import { useTermRange, OUT_OF_TERM_MSG } from '../../hooks/useTermRange';
 import { useApp } from '../../context/AppContext';
 import { ui } from '../../ui/ui';
 
@@ -174,7 +176,7 @@ export default function MediaBorrowTab({ teacherClassFilter = null }) {
   /* ── Class list ── */
   const classList = useMemo(() => {
     if (teacherClassFilter) return [teacherClassFilter];
-    return (classes ?? []).map(c => c.name ?? c.id).filter(Boolean).sort();
+    return (classes ?? []).map(c => c.name ?? c.id).filter(Boolean).sort(compareClassNames);
   }, [classes, teacherClassFilter]);
 
   const cn = selClass || classList[0] || '';
@@ -243,9 +245,12 @@ export default function MediaBorrowTab({ teacherClassFilter = null }) {
     setShowForm(false);
   }
 
+  const { isInTerm } = useTermRange();
+
   function save(e) {
     e.preventDefault();
     if (!form.mediaName.trim() || !form.borrowerName.trim()) return;
+    if (form.borrowDate && !isInTerm(form.borrowDate)) { alert(OUT_OF_TERM_MSG); return; } // นอกช่วงเปิด–ปิดเรียน
     if (editId) {
       setMediaBorrowRecords(prev =>
         prev.map(r => r.id === editId ? { ...r, ...form, className: cn } : r)

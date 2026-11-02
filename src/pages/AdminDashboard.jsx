@@ -110,7 +110,6 @@ const TAB_GROUPS = [
     tabs: [
       { id: 'students',    label: '👶 นักเรียน'              },
       { id: 'classassign', label: '🚪 จัดนักเรียนเข้าห้อง'  },
-      { id: 'yearend',     label: '🎓 จัดการสิ้นปีการศึกษา'  },
       { id: 'classes',     label: '🏫 ห้องเรียน'             },
       { id: 'teachers',    label: '👩‍🏫 ครู'                  },
       { id: 'media',       label: '📚 ทะเบียนผลิตสื่อ'       },
@@ -123,6 +122,7 @@ const TAB_GROUPS = [
     tabs: [
       { id: 'schools',           label: '🏛️ โรงเรียน'                  },
       { id: 'terms',             label: '📅 ภาคเรียน'                   },
+      { id: 'yearend',           label: '🎓 จัดการสิ้นปีการศึกษา'        },
       { id: 'holidays',          label: '🏖️ วันหยุดราชการ'               },
       { id: 'specialholidays',   label: '📵 วันหยุดพิเศษและวันชดเชย'      },
       { id: 'measurementdates',  label: '📏 เดือนวัดน้ำหนัก/ส่วนสูง'  },

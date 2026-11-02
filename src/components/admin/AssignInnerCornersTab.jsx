@@ -30,7 +30,7 @@ function normalizeEntries(stored) {
   return stored;
 }
 
-export default function AssignInnerCornersTab() {
+export default function AssignInnerCornersTab({ teacherClassFilter = null }) {
   const {
     innerCornerDefs,
     classInnerCornerKeys,
@@ -38,12 +38,13 @@ export default function AssignInnerCornersTab() {
     allClassNames,
   } = useApp();
 
+  // ครู: เห็น/แก้ไขได้เฉพาะห้องของตนเอง — Admin: ทุกห้อง
   const classNames = useMemo(
-    () => (allClassNames ?? []).filter(Boolean),
-    [allClassNames],
+    () => teacherClassFilter ? [teacherClassFilter] : (allClassNames ?? []).filter(Boolean),
+    [allClassNames, teacherClassFilter],
   );
 
-  const [selectedClass, setSelectedClass] = useState('');
+  const [selectedClass, setSelectedClass] = useState(teacherClassFilter ?? '');
 
   function getEntriesForClass(cls) {
     if (!cls) return [];

@@ -4,6 +4,7 @@
 // กดตกลง → อัปเดต className ของนักเรียนที่เลือก
 
 import { useState, useMemo } from 'react';
+import { compareByClassThenCode } from '../../utils/helpers';
 import { useApp } from '../../context/AppContext';
 import { ui } from '../../ui/ui';
 
@@ -37,7 +38,7 @@ export default function ClassAssignTab() {
         if (!nameMatch && !classMatch && !nickMatch) return false;
       }
       return true;
-    }).sort((a, b) => (a.className || '').localeCompare(b.className || '') || (a.name || '').localeCompare(b.name || ''));
+    }).sort((a, b) => compareByClassThenCode(a, b));
   }, [students, showUnassigned, levelFilter, search]);
 
   // ── Derive class list with live student count ─────────────

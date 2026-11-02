@@ -7,7 +7,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { compareStudents } from '../../utils/helpers';
+import { compareStudents, compareClassNames } from '../../utils/helpers';
 import {
   SCALE_C60, DOMAINS_C60, INDICATORS_C60,
   getIndicatorsByDomain, LEVEL_TO_KEY, calcAvgScore,
@@ -409,7 +409,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
               <select value={selClass} onChange={e => setSelClass(e.target.value)}
                 style={{ padding: '.3rem .6rem', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '.82rem', outline: 'none', color: '#1e293b', background: 'white' }}>
                 <option value="">— เลือกห้อง —</option>
-                {(allClassNames ?? []).sort().map(c => (
+                {[...(allClassNames ?? [])].sort(compareClassNames).map(c => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>

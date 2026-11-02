@@ -13,7 +13,7 @@ import SubDomainSummaryBox from './report/SubDomainSummaryBox';
 import DomainSummaryBox from './report/DomainSummaryBox';
 import DomainSummarySection from './report/DomainSummarySection';
 import HighlightsSection from './report/HighlightsSection';
-import { isoToThai, compareStudents } from '../../utils/helpers';
+import { isoToThai, compareStudents, compareClassNames, compareByClassThenCode } from '../../utils/helpers';
 import {
   GROWTH_ROWS, PHILOSOPHY_TEXT, VISION_TEXT,
   DEV_ASSESS_DOMAINS,
@@ -53,8 +53,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
   // sorted students by class then name
   const sortedStudents = useMemo(() =>
     [...filteredStudents].sort((a, b) =>
-      (a.className ?? '').localeCompare(b.className ?? '', 'th') ||
-      compareStudents(a, b)
+      compareByClassThenCode(a, b)
     ), [filteredStudents]);
 
   const student = useMemo(() =>
@@ -329,7 +328,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
   const classNames = useMemo(() => {
     const all = teacherClassFilter
       ? [teacherClassFilter]
-      : [...new Set(sortedStudents.map(s => s.className).filter(Boolean))].sort();
+      : [...new Set(sortedStudents.map(s => s.className).filter(Boolean))].sort(compareClassNames);
     return all;
   }, [sortedStudents, teacherClassFilter]);
 

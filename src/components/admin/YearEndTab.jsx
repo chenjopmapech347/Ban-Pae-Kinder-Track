@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { ui } from '../../ui/ui';
 
-import { compareStudents } from '../../utils/helpers';
+import { compareStudents, compareClassNames } from '../../utils/helpers';
 const LEVEL_LABEL = { K1: 'อ.1', K2: 'อ.2', K3: 'อ.3' };
 const LEVEL_NEXT  = { K1: 'K2', K2: 'K3' };
 
@@ -86,7 +86,7 @@ export default function YearEndTab() {
 // ─── ย้ายห้องเรียน ────────────────────────────────────────────────────────
 function MovePanel({ students, setStudents, classes, meta }) {
   const allClassNames = useMemo(
-    () => [...new Set(students.filter(isActive).map(s => s.className).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'th')),
+    () => [...new Set(students.filter(isActive).map(s => s.className).filter(Boolean))].sort(compareClassNames),
     [students],
   );
 
@@ -104,7 +104,7 @@ function MovePanel({ students, setStudents, classes, meta }) {
     () => {
       // ห้องปลายทาง = ทุกชื่อห้องที่มีในระบบ (classes) ยกเว้นห้องต้นทาง
       const fromClasses = classes.map(c => c.name).filter(n => n && n !== srcClass);
-      return fromClasses.sort((a, b) => a.localeCompare(b, 'th'));
+      return fromClasses.sort(compareClassNames);
     },
     [classes, srcClass],
   );
@@ -219,7 +219,7 @@ function PromotePanel({ students, setStudents, classes, meta }) {
   );
 
   const dstOptions = useMemo(
-    () => classes.map(c => c.name).filter(Boolean).sort((a, b) => a.localeCompare(b, 'th')),
+    () => classes.map(c => c.name).filter(Boolean).sort(compareClassNames),
     [classes],
   );
 

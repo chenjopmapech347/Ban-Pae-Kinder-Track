@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
+import { useTermRange, OUT_OF_TERM_MSG } from '../../hooks/useTermRange';
 import { ui } from '../../ui/ui';
 
 import { compareStudents } from '../../utils/helpers';
@@ -99,7 +100,10 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
   }, [holidays, selDate]);
   const [saved,         setSaved]         = useState(false);
   const [backfillMsg,   setBackfillMsg]   = useState('');
-  const isLocked = useIsTermLocked(selDate);
+  const termLocked = useIsTermLocked(selDate);
+  const { isInTerm } = useTermRange();
+  const outOfTerm = !isInTerm(selDate); // นอกช่วงเปิด–ปิดเรียน → บันทึกไม่ได้
+  const isLocked = termLocked || outOfTerm;
 
   const key = useMemo(() => recordKey(selClass, academicYear, selDate), [selClass, academicYear, selDate]);
 
@@ -543,7 +547,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:6px"><img src="${sch
         <div style={{ padding:'.6rem 1rem', background:'#fef2f2', border:'1.5px solid #fca5a5',
           borderRadius:'10px', color:'#b91c1c', fontWeight:700, fontSize:'.82rem',
           marginTop:'.75rem', display:'flex', alignItems:'center', gap:'.5rem' }}>
-          🔒 ภาคเรียนนี้ถูกล็อกแล้ว — ไม่สามารถบันทึกหรือแก้ไขข้อมูลได้
+          {outOfTerm ? `⛔ ${OUT_OF_TERM_MSG}` : '🔒 ภาคเรียนนี้ถูกล็อกแล้ว — ไม่สามารถบันทึกหรือแก้ไขข้อมูลได้'}
         </div>
       )}
       {/* ── Actions ── */}

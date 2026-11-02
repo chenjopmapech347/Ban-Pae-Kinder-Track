@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { compareClassNames } from '../../utils/helpers';
 import { useApp } from '../../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
@@ -31,7 +32,7 @@ export default function ClassesTab() {
       </div>
 
       <div {...ui('grid grid-2', { gap: '1rem' })}>
-        {[...classes].sort((a, b) => a.name.localeCompare(b.name, 'th')).map(c => (
+        {[...classes].sort((a, b) => compareClassNames(a.name, b.name)).map(c => (
           <div key={c.id} {...ui('glass-card flex justify-between items-center')}>
             <div>
               <div {...ui('font-bold')}>{c.name}</div>

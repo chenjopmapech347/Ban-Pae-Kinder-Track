@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { AttendanceBarChart, ClassRadarChart } from '../DevelopmentChart';
 import { exportDailyAttendanceSummaryExcel } from '../../utils/exportExcel';
+import { isAssessed, compareClassNames } from '../../utils/helpers';
 import { ui } from '../../ui/ui';
 
 
@@ -45,7 +46,7 @@ export default function OverviewTab() {
 
   // ── Attendance chart — class selector + auto-cycle ───────────────────────
   const classNames = useMemo(() =>
-    [...new Set(students.filter(s => !s.name.startsWith('(ว่าง)')).map(s => s.className))].sort(),
+    [...new Set(students.filter(s => !s.name.startsWith('(ว่าง)')).map(s => s.className))].sort(compareClassNames),
     [students]
   );
   const [selAttClass, setSelAttClass] = useState(null);
@@ -80,8 +81,8 @@ export default function OverviewTab() {
     total:    students.length,
     boys:     students.filter(s => s.name.includes('ชาย')).length,
     girls:    students.filter(s => s.name.includes('หญิง')).length,
-    assessed: students.filter(s => s.assessments?.summary).length,
-    pending:  students.filter(s => !s.assessments?.summary).length,
+    assessed: students.filter(isAssessed).length,
+    pending:  students.filter(s => !isAssessed(s)).length,
     teachers: teachers.length,
     rate: (() => {
       const tot = students.reduce((a,s) => a + (s.attendance?.total || 0), 0);

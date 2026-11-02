@@ -1,10 +1,11 @@
 // InnerCornerTab.jsx — แบบบันทึกการเล่นตามมุมประสบการณ์ภายในห้องเรียนรายสัปดาห์
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
-import { getMondayOf, getWeekLabel, genUniqueKey, compareStudents } from '../../utils/helpers';
+import { getMondayOf, getWeekLabel, genUniqueKey, compareStudents, compareClassNames } from '../../utils/helpers';
 import { getDayRecord } from '../../utils/attendance';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
+import { useTermRange, OUT_OF_TERM_MSG } from '../../hooks/useTermRange';
 import { ui } from '../../ui/ui';
 
 // ── พิมพ์แบบบันทึก ───────────────────────────────────────────────────────────
@@ -157,13 +158,16 @@ export default function InnerCornerTab({ teacherClassFilter = null }) {
   const today = new Date().toISOString().slice(0, 10);
   const [selClass, setSelClass] = useState(teacherClassFilter ?? '');
   const [selDate,  setSelDate]  = useState(today);
-  const isLocked = useIsTermLocked(selDate);
+  const termLocked = useIsTermLocked(selDate);
+  const { isInTerm } = useTermRange();
+  const outOfTerm = !isInTerm(selDate); // นอกช่วงเปิด–ปิดเรียน → บันทึกไม่ได้
+  const isLocked = termLocked || outOfTerm;
   const [weekNo,   setWeekNo]   = useState('');
   const [showMgmt, setShowMgmt] = useState(false);
 
   const classList = useMemo(() => {
     if (teacherClassFilter) return [teacherClassFilter];
-    return (classes ?? []).map(c => c.name ?? c.id).filter(Boolean).sort();
+    return (classes ?? []).map(c => c.name ?? c.id).filter(Boolean).sort(compareClassNames);
   }, [classes, teacherClassFilter]);
 
   const cn      = selClass || classList[0] || '';
@@ -222,7 +226,7 @@ export default function InnerCornerTab({ teacherClassFilter = null }) {
         <div style={{ padding:'.6rem 1rem', background:'#fef2f2', border:'1.5px solid #fca5a5',
           borderRadius:'10px', color:'#b91c1c', fontWeight:700, fontSize:'.82rem',
           marginBottom:'.75rem', display:'flex', alignItems:'center', gap:'.5rem' }}>
-          🔒 ภาคเรียนนี้ถูกล็อกแล้ว — ไม่สามารถบันทึกหรือแก้ไขข้อมูลได้
+          {outOfTerm ? `⛔ ${OUT_OF_TERM_MSG}` : '🔒 ภาคเรียนนี้ถูกล็อกแล้ว — ไม่สามารถบันทึกหรือแก้ไขข้อมูลได้'}
         </div>
       )}
       {/* ── Header ── */}

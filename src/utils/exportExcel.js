@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx';
-import { getQualityText } from './helpers';
+import { getQualityText, compareByClassThenCode } from './helpers';
 
 function downloadWorkbook(wb, filename) {
   XLSX.writeFile(wb, filename);
@@ -97,7 +97,7 @@ function autoWidth(ws, rows) {
 export function exportClassSummaryExcel(students, assessmentTopics, indicators, activities, schoolName) {
   const real = students
     .filter(s => !s.name.startsWith('(ว่าง)'))
-    .sort((a, b) => a.className < b.className ? -1 : a.className > b.className ? 1 : Number(a.id) - Number(b.id));
+    .sort((a, b) => compareByClassThenCode(a, b));
 
   const topicAvg = (student, topic) => {
     const inds   = indicators.filter(i => i.domainId === topic.id);
@@ -132,7 +132,7 @@ export function exportClassSummaryExcel(students, assessmentTopics, indicators, 
 export function exportActivityDetailExcel(students, assessmentTopics, indicators, activities, schoolName) {
   const real = students
     .filter(s => !s.name.startsWith('(ว่าง)'))
-    .sort((a, b) => a.className < b.className ? -1 : a.className > b.className ? 1 : Number(a.id) - Number(b.id));
+    .sort((a, b) => compareByClassThenCode(a, b));
 
   const headers = [
     'รหัสนักเรียน', 'ชื่อ-นามสกุล', 'ห้องเรียน', 'ระดับชั้น',

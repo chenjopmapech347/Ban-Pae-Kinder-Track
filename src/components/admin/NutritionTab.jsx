@@ -9,6 +9,7 @@ import {
 import { ui } from '../../ui/ui';
 
 import { compareStudents } from '../../utils/helpers';
+import { useTermRange, OUT_OF_TERM_MSG } from '../../hooks/useTermRange';
 // ── ตัวเลือกผลประเมิน ────────────────────────────────────────────────────────
 const WEIGHT_AGE_OPTS = [
   'น้ำหนักตามเกณฑ์',
@@ -131,6 +132,8 @@ export default function NutritionTab({ teacherClassFilter = null }) {
 
   const [selClass, setSelClass] = useState(() => myClass ?? (classes[0]?.name ?? ''));
   const [selDate,  setSelDate]  = useState(todayISO());
+  const { isInTerm } = useTermRange();
+  const outOfTerm = !isInTerm(selDate); // นอกช่วงเปิด–ปิดเรียน → บันทึกไม่ได้
   const [saved, setSaved] = useState(false);
   const [showRef, setShowRef] = useState(false);
 
@@ -144,7 +147,7 @@ export default function NutritionTab({ teacherClassFilter = null }) {
   );
 
   // draft: { [studentId]: { ageYear, ageMonth, weight, height, weightForAge, heightForAge, weightForHeight } }
-  const [draft, setDraft] = useState(() => buildDraft(nutritionRecords[key], classStudents, selDate));
+  const [draftState, setDraft] = useState(() => buildDraft(nutritionRecords[key], classStudents, selDate));
 
   function buildDraft(existing, sList, date) {
     const base = {};
@@ -168,6 +171,20 @@ export default function NutritionTab({ teacherClassFilter = null }) {
     return base;
   }
 
+  // ตารางที่ใช้แสดง/บันทึกจริง: คำนวณอายุสดจากวันเกิดของนักเรียนเสมอ
+  // (กันกรณีกรอกวันเกิดหรือซิงก์ข้อมูลเข้ามาหลังเปิดหน้านี้แล้ว) และเติมแถวนักเรียนที่เพิ่งเพิ่มเข้ามา
+  const draft = useMemo(() => {
+    const out = {};
+    classStudents.forEach(s => {
+      const base = draftState[s.id] ?? buildDraft(null, [s], selDate)[s.id];
+      const c = s.birthDate ? ageAt(s.birthDate, selDate) : null;
+      out[s.id] = c
+        ? { ...base, ageYear: c.ageYear, ageMonth: c.ageMonth, hasBirthDate: true }
+        : { ...base, hasBirthDate: false };
+    });
+    return out;
+  }, [draftState, classStudents, selDate]);
+
   const switchRecord = useCallback((cls, date) => {
     const k = recKey(cls, academicYear, date);
     const sList = students
@@ -175,7 +192,6 @@ export default function NutritionTab({ teacherClassFilter = null }) {
       .sort(compareStudents);
     setDraft(buildDraft(nutritionRecords[k], sList, date));
     setSaved(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nutritionRecords, academicYear, students]);
 
   function handleClassChange(cls) { setSelClass(cls); switchRecord(cls, selDate); }
@@ -183,7 +199,7 @@ export default function NutritionTab({ teacherClassFilter = null }) {
 
   function updateRow(studentId, patch) {
     setSaved(false);
-    setDraft(prev => ({ ...prev, [studentId]: { ...prev[studentId], ...patch } }));
+    setDraft(prev => ({ ...prev, [studentId]: { ...(prev[studentId] ?? draft[studentId]), ...patch } }));
   }
 
   // คำนวณอัตโนมัติแถวเดียว
@@ -201,7 +217,7 @@ export default function NutritionTab({ teacherClassFilter = null }) {
     setDraft(prev => {
       const next = { ...prev };
       classStudents.forEach(s => {
-        const row = prev[s.id];
+        const row = draft[s.id];
         if (!row) return;
         next[s.id] = { ...row, ...autoCalc(row, genderOf(s)) };
       });
@@ -210,6 +226,7 @@ export default function NutritionTab({ teacherClassFilter = null }) {
   }
 
   function handleSave() {
+    if (outOfTerm) return;
     setNutritionRecords(prev => ({
       ...prev,
       [key]: {
@@ -659,8 +676,16 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
       )}
 
       {/* ── Actions ── */}
+      {outOfTerm && (
+        <div style={{ padding:'.6rem 1rem', background:'#fef2f2', border:'1.5px solid #fca5a5',
+          borderRadius:'10px', color:'#b91c1c', fontWeight:700, fontSize:'.82rem',
+          marginTop:'1rem', display:'flex', alignItems:'center', gap:'.5rem' }}>
+          ⛔ {OUT_OF_TERM_MSG}
+        </div>
+      )}
       <div style={{ display:'flex', gap:'.6rem', marginTop:'1rem', flexWrap:'wrap', alignItems:'center' }}>
-        <button {...ui('btn btn-primary')} onClick={handleSave}>💾 บันทึก</button>
+        <button {...ui('btn btn-primary', { opacity: outOfTerm ? 0.5 : 1, cursor: outOfTerm ? 'not-allowed' : 'pointer' }, undefined, outOfTerm)}
+          onClick={handleSave} disabled={outOfTerm}>{outOfTerm ? '⛔ นอกช่วงเปิด–ปิดเรียน' : '💾 บันทึก'}</button>
         <button type="button" {...ui('btn btn-secondary', { background:'#d1fae5', color:'#065f46', borderColor:'#bbf7d0' })}
           onClick={recalcAll}>
           🔄 คำนวณทั้งหมด (อัตโนมัติ)
@@ -706,8 +731,9 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
 function AssessHistory({ nutritionRecords, selClass, academicYear, selDate, onSelect }) {
   const records = useMemo(() =>
     Object.values(nutritionRecords)
-      .filter(r => r.className === selClass && r.academicYear === academicYear)
-      .sort((a, b) => b.assessmentDate.localeCompare(a.assessmentDate)),
+      // ข้ามรายการที่ข้อมูลไม่ครบ (ไม่มีวันที่ประเมิน) แทนที่จะทำให้ทั้งหน้าล่ม
+      .filter(r => r && r.assessmentDate && r.className === selClass && r.academicYear === academicYear)
+      .sort((a, b) => String(b.assessmentDate).localeCompare(String(a.assessmentDate))),
     [nutritionRecords, selClass, academicYear]
   );
   if (records.length === 0) return null;

@@ -6,7 +6,7 @@ import { exportStudentsListExcel } from '../../utils/exportExcel';
 import { useState, useRef, useEffect } from 'react';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
-import { compareStudents } from '../../utils/helpers';
+import { compareStudents, compareByClassThenCode } from '../../utils/helpers';
 // wizardRef ใช้ anchor scroll fallback
 
 export default function StudentsTab() {
@@ -219,11 +219,7 @@ export default function StudentsTab() {
     const matchClass  = selectedClass === 'all' || s.className === selectedClass;
     const matchStatus = showAll || !s.status || s.status === 'กำลังเรียน' || s.status === 'ปกติ';
     return matchName && matchLevel && matchClass && matchStatus;
-  }).sort((a, b) => {
-    const idA = Number(a.studentId || a.code || a.id) || 0;
-    const idB = Number(b.studentId || b.code || b.id) || 0;
-    return idA - idB;
-  });
+  }).sort(compareByClassThenCode);
 
   const [openMenuId, setOpenMenuId] = useState(null);
   useEffect(() => {

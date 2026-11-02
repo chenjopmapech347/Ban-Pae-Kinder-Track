@@ -4,7 +4,8 @@ import { useApp } from '../../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
 
-import { compareStudents } from '../../utils/helpers';
+import { compareStudents, compareClassNames, compareByClassThenCode } from '../../utils/helpers';
+import { useTermRange, OUT_OF_TERM_MSG } from '../../hooks/useTermRange';
 // ── Event type definitions ────────────────────────────────────────────────────
 const EVENT_TYPES = {
   school:   { label: '🏫 กิจกรรมโรงเรียน',         color: '#1d4ed8', bg: '#dbeafe' },
@@ -261,6 +262,7 @@ function ParticipationGrid({ scopeStudents, participants, onToggle, onToggleAll 
 
 // ── Event form modal ──────────────────────────────────────────────────────────
 function EventModal({ event, allClassNames, students, assessmentTopics, indicators, activities, onSave, onClose }) {
+  const { isInTerm } = useTermRange();
   const [form, setForm] = useState(() => event
     ? { name: event.name, date: event.date, type: event.type, scope: event.scope,
         description: event.description ?? '', activityIds: event.activityIds ?? [] }
@@ -270,13 +272,14 @@ function EventModal({ event, allClassNames, students, assessmentTopics, indicato
 
   const scopeStudents = useMemo(() => {
     const base = students.filter(s => !s.name.startsWith('(ว่าง)'));
-    if (form.scope === 'all') return base.sort((a, b) => String(a.className).localeCompare(String(b.className), 'th') || (a.name ?? '').localeCompare(b.name ?? '', 'th'));
+    if (form.scope === 'all') return base.sort((a, b) => compareClassNames(a.className, b.className) || (a.name ?? '').localeCompare(b.name ?? '', 'th'));
     return base.filter(s => s.className === form.scope).sort(compareStudents);
   }, [students, form.scope]);
 
   function handleSave() {
     if (!form.name.trim()) { alert('กรุณากรอกชื่อกิจกรรม'); return; }
     if (!form.date)         { alert('กรุณาเลือกวันที่');       return; }
+    if (!isInTerm(form.date)) { alert(OUT_OF_TERM_MSG); return; } // นอกช่วงเปิด–ปิดเรียน
     onSave({ ...form, participants });
   }
 
@@ -402,13 +405,13 @@ function EventModal({ event, allClassNames, students, assessmentTopics, indicato
 
 // ── ParticipantModal ──────────────────────────────────────────────────────────
 function ParticipantModal({ event, students, isTeacher, teacherClassFilter, allClassNames, onSave, onClose }) {
+  const { isInTerm } = useTermRange();
   // All students in this event's scope (across all classes)
   const scopeStudents = students.filter(s =>
     !s.name.startsWith('(ว่าง)') &&
     (event.scope === 'all' || s.className === event.scope)
   ).sort((a, b) => {
-    if (a.className !== b.className) return a.className.localeCompare(b.className);
-    return compareStudents(a, b);
+    return compareByClassThenCode(a, b);
   });
 
   // Which class tabs to show
@@ -444,6 +447,7 @@ function ParticipantModal({ event, students, isTeacher, teacherClassFilter, allC
   const clearVisible   = () => setSelected(prev => { const n = { ...prev }; visibleStudents.forEach(s => { n[s.id] = false; }); return n; });
 
   const handleSave = () => {
+    if (!isInTerm(event?.date)) { alert(OUT_OF_TERM_MSG); return; } // นอกช่วงเปิด–ปิดเรียน
     const participants = {};
     scopeStudents.forEach(s => { participants[s.id] = selected[s.id] === true; });
     onSave(participants);
@@ -572,6 +576,7 @@ function ParticipantModal({ event, students, isTeacher, teacherClassFilter, allC
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function SpecialEventTab({ teacherClassFilter }) {
+  const { isInTerm } = useTermRange();
   const {
     specialEvents, setSpecialEvents,
     students, allClassNames,
@@ -606,10 +611,11 @@ export default function SpecialEventTab({ teacherClassFilter }) {
         }
         return true;
       })
-      .sort((a, b) => b.date.localeCompare(a.date));
+      .sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')));
   }, [specialEvents, search, filterType, filterClass, isTeacher, teacherClassFilter]);
 
   const handleSave = useCallback((formData, existingId) => {
+    if (!isInTerm(formData?.date)) { alert(OUT_OF_TERM_MSG); return; } // นอกช่วงเปิด–ปิดเรียน
     const id   = existingId ?? `ev_${Date.now()}`;
     setSpecialEvents(prev => ({
       ...prev,
@@ -617,7 +623,7 @@ export default function SpecialEventTab({ teacherClassFilter }) {
     }));
     setAddModal(false);
     setEditId(null);
-  }, [setSpecialEvents]);
+  }, [setSpecialEvents, isInTerm]);
 
   const handleDelete = useCallback((id) => {
     setSpecialEvents(prev => {

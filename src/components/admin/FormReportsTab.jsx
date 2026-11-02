@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { ui } from '../../ui/ui';
 
-import { compareStudents } from '../../utils/helpers';
+import { compareStudents, compareClassNames } from '../../utils/helpers';
 // ── constants ────────────────────────────────────────────────────────────────
 // คำนวณรายชื่อเดือนในปีการศึกษาจากปี พ.ศ. ที่เลือก
 // ปีการศึกษา ay (เช่น 2568) เริ่มพ.ค. CE (ay-543) สิ้นสุดมี.ค. CE (ay-542)
@@ -649,7 +649,7 @@ export default function FormReportsTab({ teacherClassFilter = null, defaultRepor
 
   const classList = useMemo(() => {
     if (teacherClassFilter) return [teacherClassFilter];
-    return (classes ?? []).map(c => c.name ?? c.id).filter(Boolean).sort();
+    return (classes ?? []).map(c => c.name ?? c.id).filter(Boolean).sort(compareClassNames);
   }, [classes, teacherClassFilter]);
 
   // auto-select first class

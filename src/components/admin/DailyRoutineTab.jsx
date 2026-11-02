@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
+import { useTermRange } from '../../hooks/useTermRange';
 import { daysInMonth, getDow, isWeekendDay } from '../../utils/helpers';
 
 // ── กิจกรรมที่ติดตาม ─────────────────────────────────────────────────────────
@@ -111,9 +112,12 @@ export default function DailyRoutineTab({ teacherClassFilter = null }) {
     return s;
   }, [holidays]);
 
+  const { isInTerm } = useTermRange();
+
   function isSchoolOff(ty, mo, d) {
     if (isWeekendDay(ty, mo, d)) return true;
     const iso = `${ty-543}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if (!isInTerm(iso)) return true; // นอกช่วงเปิด–ปิดเรียน → บันทึกไม่ได้
     return holidayISOs.has(iso);
   }
 
@@ -219,7 +223,7 @@ export default function DailyRoutineTab({ teacherClassFilter = null }) {
       return { ...prev, days: updatedDays };
     });
     setSaved(false);
-  }, [dayArr, selYear, selMonth]);
+  }, [dayArr, selYear, selMonth, isInTerm]);
 
   // ── บันทึก ────────────────────────────────────────────────────────────────
   const handleSave = useCallback(() => {
@@ -237,7 +241,7 @@ export default function DailyRoutineTab({ teacherClassFilter = null }) {
       total: schoolDays,
       pct:   schoolDays > 0 ? Math.round(countKey(draft.days, def.key) / schoolDays * 100) : 0,
     }));
-  }, [draft.days, dayArr, selYear, selMonth, holidayISOs]);
+  }, [draft.days, dayArr, selYear, selMonth, holidayISOs, isInTerm]);
 
   const recorded = useMemo(() => countRecorded(draft.days), [draft.days]);
 

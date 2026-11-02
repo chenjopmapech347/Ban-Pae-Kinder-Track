@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { getDayRecord } from '../../utils/attendance';
 import { todayISO, formatDateThai, isStudentActive, compareStudents, isWeekendISO } from '../../utils/helpers';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
+import { useTermRange, OUT_OF_TERM_MSG } from '../../hooks/useTermRange';
 import { ui } from '../../ui/ui';
 
 // ALL_CLASSES ดึงจาก AppContext แบบ dynamic ภายในคอมโพเนนต์
@@ -246,7 +247,10 @@ export default function AttendanceTab({ defaultClass }) {
 
   const [mainView,     setMainView]     = useState('daily');   // 'daily' | 'monthly'
   const [selectedDate, setSelectedDate] = useState(todayISO());
-  const isLocked = useIsTermLocked(selectedDate);
+  const termLocked = useIsTermLocked(selectedDate);
+  const { isInTerm } = useTermRange();
+  const outOfTerm = !isInTerm(selectedDate); // นอกช่วงเปิด–ปิดเรียน → บันทึกไม่ได้
+  const isLocked = termLocked || outOfTerm;
   const isHolidayDate = holidayISOs.has(selectedDate);
   const [filterClass,  setFilterClass]  = useState(defaultClass ?? 'ทั้งหมด');
   const [viewMode,     setViewMode]     = useState('card');  // 'card' | 'table'
@@ -335,6 +339,7 @@ export default function AttendanceTab({ defaultClass }) {
 
   // บันทึกห้องนี้ + auto-fill modules อัตโนมัติ (ผ่าน saveDailyAttendance ใน AppContext)
   function handleSaveClass(cls) {
+    if (isLocked) return; // ล็อกภาคเรียน หรือนอกช่วงเปิด–ปิดเรียน
     if (isHolidayDate) {
       const h = holidays.find(hd => {
         if (!hd.date) return false;
@@ -794,7 +799,7 @@ export default function AttendanceTab({ defaultClass }) {
           color: '#b91c1c', fontWeight: 700, fontSize: '.82rem',
           marginBottom: '.5rem', display: 'flex', alignItems: 'center', gap: '.5rem',
         }}>
-          🔒 ภาคเรียนนี้ถูกล็อกแล้ว — ไม่สามารถบันทึกหรือแก้ไขข้อมูลการมาเรียนได้
+          {outOfTerm ? `⛔ ${OUT_OF_TERM_MSG}` : '🔒 ภาคเรียนนี้ถูกล็อกแล้ว — ไม่สามารถบันทึกหรือแก้ไขข้อมูลการมาเรียนได้'}
         </div>
       )}
       {mainView === 'daily' && (

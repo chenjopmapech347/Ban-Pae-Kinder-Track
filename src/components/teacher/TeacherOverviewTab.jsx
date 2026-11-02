@@ -12,7 +12,6 @@ export default function TeacherOverviewTab({ onTabChange, className: classOverri
     user, students,
     academicYear,
     dailyRecords,
-    pickupRecords,
     healthCheckRecords,
     illnessCheckRecords,
     toothBrushRecords,
@@ -56,7 +55,6 @@ export default function TeacherOverviewTab({ onTabChange, className: classOverri
     const hasAttendance = myStudents.some(s =>
       dailyRecords[dayKey]?.[String(s.id)]?.attendance != null,
     );
-    const hasPickup = Object.keys(pickupRecords[dayKey] ?? {}).length > 0;
     const hasHealthCheck  = !!healthCheckRecords[hxKey];
     const hasIllnessCheck = !!illnessCheckRecords[tbMilkKey]; // monthly, Thai-year key
     const hasToothBrush   = !!toothBrushRecords[tbMilkKey];  // monthly, Thai-year key
@@ -75,14 +73,14 @@ export default function TeacherOverviewTab({ onTabChange, className: classOverri
     const hasSpecialEvent = Object.keys(specialEvents ?? {}).length > 0;
 
     return {
-      hasAttendance, hasPickup,
+      hasAttendance,
       hasHealthCheck, hasIllnessCheck, hasToothBrush, hasLunch,
       hasCorner, hasInnerCorner,
       hasMilk, hasDailyRoutine,
       hasNutrition, hasSpecialEvent,
     };
   }, [
-    myStudents, dailyRecords, pickupRecords,
+    myStudents, dailyRecords,
     healthCheckRecords, illnessCheckRecords, toothBrushRecords, lunchRecords,
     cornerRecords, innerCornerRecords, milkRecords, dailyRoutineRecords,
     nutritionRecords, specialEvents,
@@ -91,7 +89,7 @@ export default function TeacherOverviewTab({ onTabChange, className: classOverri
 
   // สรุปสถานะรวม
   const dailyItems = [
-    status.hasAttendance, status.hasPickup,
+    status.hasAttendance,
     status.hasHealthCheck, status.hasIllnessCheck,
     status.hasToothBrush, status.hasLunch,
   ];
@@ -148,7 +146,6 @@ export default function TeacherOverviewTab({ onTabChange, className: classOverri
         subtitle={`ควรบันทึกทุกวันทำการ · วันที่ ${todayTH}`}
         items={[
           { icon: '✅', label: 'การมาเรียน',      tab: 'attendance',   done: status.hasAttendance   },
-          { icon: '🚗', label: 'รับกลับบ้าน',     tab: 'pickup',       done: status.hasPickup       },
           { icon: '🏥', label: 'ตรวจสุขภาพ',      tab: 'healthcheck',  done: status.hasHealthCheck  },
           { icon: '🤒', label: 'คัดกรองอาการป่วย', tab: 'illnesscheck', done: status.hasIllnessCheck },
           { icon: '🪥', label: 'แปรงฟัน',         tab: 'toothbrush',   done: status.hasToothBrush   },

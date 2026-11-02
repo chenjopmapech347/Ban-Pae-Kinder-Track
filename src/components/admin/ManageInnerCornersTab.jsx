@@ -5,7 +5,8 @@ import { genUniqueKey } from '../../utils/helpers';
 import { ui } from '../../ui/ui';
 
 export default function ManageInnerCornersTab() {
-  const { innerCornerDefs, setInnerCornerDefs } = useApp();
+  const { innerCornerDefs, setInnerCornerDefs, role } = useApp();
+  const isAdmin = role === 'admin'; // เฉพาะ Admin เท่านั้นที่เพิ่ม/แก้ไข/ลบ/เรียงลำดับได้
 
   const [newLabel, setNewLabel] = useState('');
   const [editIdx, setEditIdx]   = useState(null);
@@ -13,6 +14,7 @@ export default function ManageInnerCornersTab() {
 
   /* ── เพิ่ม ── */
   function addNew() {
+    if (!isAdmin) return;
     const label = newLabel.trim();
     if (!label) return;
     setInnerCornerDefs(prev => [...prev, { key: genUniqueKey('inner'), label }]);
@@ -20,8 +22,9 @@ export default function ManageInnerCornersTab() {
   }
 
   /* ── แก้ไข ── */
-  function startEdit(i) { setEditIdx(i); setEditVal(innerCornerDefs[i].label); }
+  function startEdit(i) { if (!isAdmin) return; setEditIdx(i); setEditVal(innerCornerDefs[i].label); }
   function saveEdit(i) {
+    if (!isAdmin) return;
     const val = editVal.trim();
     if (!val) return;
     setInnerCornerDefs(prev => prev.map((d, idx) => idx === i ? { ...d, label: val } : d));
@@ -31,16 +34,19 @@ export default function ManageInnerCornersTab() {
 
   /* ── ลบ ── */
   function remove(i) {
+    if (!isAdmin) return;
     if (!window.confirm(`ลบ "${innerCornerDefs[i].label}" ?`)) return;
     setInnerCornerDefs(prev => prev.filter((_, idx) => idx !== i));
   }
 
   /* ── เรียง ── */
   function moveUp(i) {
+    if (!isAdmin) return;
     if (i === 0) return;
     setInnerCornerDefs(prev => { const a = [...prev]; [a[i-1], a[i]] = [a[i], a[i-1]]; return a; });
   }
   function moveDown(i) {
+    if (!isAdmin) return;
     if (i === innerCornerDefs.length - 1) return;
     setInnerCornerDefs(prev => { const a = [...prev]; [a[i], a[i+1]] = [a[i+1], a[i]]; return a; });
   }
@@ -63,7 +69,7 @@ export default function ManageInnerCornersTab() {
         <div>
           <h3>🏡 จัดการกิจกรรมภายในห้องเรียน</h3>
           <p {...ui('text-xs text-muted', { marginTop: '.25rem' })}>
-            กำหนดชื่อมุมประสบการณ์ภายในห้องเรียน — แก้ไข เรียงลำดับ และลบได้ตามต้องการ
+            กำหนดชื่อมุมประสบการณ์ภายในห้องเรียน — แก้ไข เรียงลำดับ และลบได้ตามต้องการ (เฉพาะ Admin)
           </p>
         </div>
         <div style={{ background: '#dcfce7', border: '1.5px solid #86efac', borderRadius: '10px',
@@ -85,7 +91,7 @@ export default function ManageInnerCornersTab() {
                 {i + 1}
               </span>
 
-              {editIdx === i ? (
+              {isAdmin && editIdx === i ? (
                 <>
                   <input
                     value={editVal}
@@ -106,10 +112,12 @@ export default function ManageInnerCornersTab() {
                   <span style={{ flex: 1, fontWeight: 600, fontSize: '.9rem', color: '#166534' }}>
                     {d.label}
                   </span>
+                  {isAdmin && <>
                   <button style={btn()} onClick={() => startEdit(i)} title="แก้ไขชื่อ">✏️</button>
                   <button style={btn()} onClick={() => moveUp(i)}   title="เลื่อนขึ้น" disabled={i === 0}>↑</button>
                   <button style={btn()} onClick={() => moveDown(i)} title="เลื่อนลง"  disabled={i === innerCornerDefs.length - 1}>↓</button>
                   <button style={btn('#fee2e2', '#991b1b')} onClick={() => remove(i)} title="ลบ">🗑️</button>
+                  </>}
                 </>
               )}
             </div>
@@ -117,6 +125,14 @@ export default function ManageInnerCornersTab() {
         </div>
       )}
 
+      {!isAdmin && (
+        <div style={{ background: '#fef3c7', border: '1.5px solid #fcd34d', borderRadius: '10px',
+          padding: '.7rem 1rem', color: '#92400e', fontWeight: 600, fontSize: '.85rem' }}>
+          🔒 เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่เพิ่ม แก้ไข ลบ และเรียงลำดับได้
+        </div>
+      )}
+      {isAdmin && (
+      <>
       {/* เพิ่มมุมใหม่ */}
       <div style={{ borderTop: '1.5px solid #bbf7d0', paddingTop: '1.25rem' }}>
         <div style={{ fontWeight: 700, fontSize: '.88rem', color: '#16a34a', marginBottom: '.6rem' }}>
@@ -143,6 +159,8 @@ export default function ManageInnerCornersTab() {
           💡 การเปลี่ยนแปลงจะบันทึกทันที และส่งผลต่อแบบบันทึกมุมประสบการณ์ในห้องเรียน
         </p>
       </div>
+      </>
+      )}
     </div>
   );
 }

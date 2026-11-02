@@ -135,6 +135,16 @@ export function isWeekendISO(iso) {
   return (dow === 0 || dow === 6) && !isMakeupDate(iso);
 }
 
+/** เปรียบเทียบชื่อห้องเรียนแบบตัวเลขตามธรรมชาติ (อ.1/2 ก่อน อ.1/10, อ.1/x ก่อน อ.2/x) */
+export function compareClassNames(a, b) {
+  return String(a ?? '').localeCompare(String(b ?? ''), 'th', { numeric: true });
+}
+
+/** เปรียบเทียบนักเรียน: เรียงตามห้องก่อน แล้วตามเลขประจำตัว */
+export function compareByClassThenCode(a, b) {
+  return compareClassNames(a?.className, b?.className) || compareStudents(a, b);
+}
+
 /** เลขประจำตัวนักเรียน (รองรับชื่อฟิลด์เก่า) */
 export function studentCodeOf(s) {
   return String(s?.studentCode ?? s?.code ?? s?.studentId ?? '').trim();
@@ -152,4 +162,22 @@ export function compareStudents(a, b) {
   } else if (ca) return -1;
   else if (cb) return 1;
   return (a?.name ?? '').localeCompare(b?.name ?? '', 'th');
+}
+
+/**
+ * นักเรียนคนนี้ "ถูกประเมินแล้ว" หรือยัง
+ * นับทั้งผลสรุปรายด้าน (assessments.summary จากปุ่ม 📊 / ตัวช่วยประเมิน)
+ * และผลรายกิจกรรมจากเมนู "ประเมินพัฒนาการ" (assessments.indicators[ตัวบ่งชี้][กิจกรรม] → score / r1..r4)
+ */
+export function isAssessed(s) {
+  const a = s?.assessments;
+  if (!a) return false;
+  if (a.summary && Object.keys(a.summary).length > 0) return true;
+  const inds = a.indicators;
+  if (!inds || typeof inds !== 'object') return false;
+  return Object.values(inds).some(acts =>
+    acts && typeof acts === 'object' &&
+    Object.values(acts).some(v =>
+      v && typeof v === 'object' &&
+      (Number(v.score) > 0 || [1, 2, 3, 4].some(r => Number(v[`r${r}`]) > 0))));
 }

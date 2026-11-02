@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
+import { useTermRange } from '../../hooks/useTermRange';
 import { daysInMonth, getDow, isWeekendDay, compareStudents } from '../../utils/helpers';
 import { ui } from '../../ui/ui';
 
@@ -57,9 +58,12 @@ export default function MilkTab({ teacherClassFilter = null }) {
     return s;
   }, [holidays]);
 
+  const { isInTerm } = useTermRange();
+
   function isSchoolOff(ty, mo, d) {
     if (isWeekendDay(ty, mo, d)) return true;
     const iso = `${ty-543}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if (!isInTerm(iso)) return true; // นอกช่วงเปิด–ปิดเรียน → บันทึกไม่ได้
     return holidayISOs.has(iso);
   }
 

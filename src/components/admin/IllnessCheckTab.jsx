@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
+import { useTermRange } from '../../hooks/useTermRange';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
 
@@ -210,7 +211,11 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
 
   // วันในสัปดาห์ของวันที่ 1 (0=อาทิตย์)
   const firstDow = useMemo(() => new Date(selYear - 543, selMonth - 1, 1).getDay(), [selYear, selMonth]);
+  const { isInTerm } = useTermRange();
+  const outOfTerm = (day) => !isInTerm(`${selYear - 543}-${String(selMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
   const isWeekend = (day) => {
+    // นอกช่วงเปิด–ปิดเรียน → ปิดช่อง บันทึกไม่ได้
+    if (!isInTerm(`${selYear - 543}-${String(selMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`)) return true;
     const dow = (firstDow + day - 1) % 7;
     if (dow !== 0 && dow !== 6) return false;
     // วันเรียนชดเชยไม่ถือเป็นวันหยุด
@@ -279,6 +284,7 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
 
   // คลิก cell วน symbol
   function cycleCell(studentId, day) {
+    if (outOfTerm(day)) return; // นอกช่วงเปิด–ปิดเรียน บันทึกไม่ได้
     setSaved(false);
     setDraft(prev => {
       const sData = prev.students[studentId] ?? { days: {}, weight: 0, height: 0 };
@@ -314,6 +320,7 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
 
   // บันทึกจาก modal
   function saveDetail(studentId, day, entry) {
+    if (outOfTerm(day)) return;
     setSaved(false);
     setDraft(prev => {
       const sData = prev.students[studentId] ?? { days: {}, weight: 0, height: 0 };
@@ -593,7 +600,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                         value={sData.days?.[d]}
                         isWeekend={isWeekend(d)}
                         onCycle={() => cycleCell(s.id, d)}
-                        onDetail={() => setModal({ studentId: s.id, day: d })}
+                        onDetail={() => !outOfTerm(d) && setModal({ studentId: s.id, day: d })}
                       />
                     ))}
                     {/* รวม */}

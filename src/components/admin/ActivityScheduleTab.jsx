@@ -631,19 +631,39 @@ export default function ActivityScheduleTab() {
     return () => unsub();
   }, []);
 
+  /* ── รวมกิจกรรมที่กำหนดไว้ (ในห้อง/นอกห้อง) เข้ากับตารางอัตโนมัติ — แสดงทันทีโดยไม่ต้องกดเติม ── */
+  const effectiveRooms = useMemo(() => rooms.map(room => {
+    const { innerSchedule, outerSchedule } = getAssignedDefs(room.name);
+    const sched = [...innerSchedule, ...outerSchedule].filter(e => e.days?.length > 0 && e.time);
+    if (sched.length === 0) return room;
+    const days = Object.fromEntries(DAYS.map(d => [d, [...(room.days?.[d] ?? [])]]));
+    let changed = false;
+    sched.forEach(({ key, days: ds, time }) => {
+      ds.forEach(day => {
+        if (!DAYS.includes(day)) return;
+        if (days[day].some(e => e.type === key)) return;
+        days[day] = [...days[day], { type: key, time, label: getLabel(key) }]
+          .sort((a, b) => a.time.localeCompare(b.time));
+        changed = true;
+      });
+    });
+    return changed ? { ...room, days } : room;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [rooms, classInnerCornerKeys, classOuterCornerKeys, innerCornerDefs, cornerDefs, allClassNames]);
+
   /* ── Group rooms by level ── */
   const grouped = useMemo(() => {
     const map = {};
-    rooms.forEach(r => {
+    effectiveRooms.forEach(r => {
       const lk = r.levelKey ?? '1';
       if (!map[lk]) map[lk] = [];
       map[lk].push(r);
     });
     return Object.entries(map).sort(([a],[b]) => a.localeCompare(b));
-  }, [rooms]);
+  }, [effectiveRooms]);
 
   /* ── Daily summary ── */
-  const dailySummary = useMemo(() => computeDailySummary(rooms), [rooms]);
+  const dailySummary = useMemo(() => computeDailySummary(effectiveRooms), [effectiveRooms]);
 
   /* ── Save handler ── */
   const handleSave = async (roomId, newDays) => {
@@ -697,9 +717,9 @@ export default function ActivityScheduleTab() {
 
   /* ── Reseed with legacy sample data ── */
   const totalActivities = useMemo(
-    () => rooms.reduce((sum, r) =>
+    () => effectiveRooms.reduce((sum, r) =>
       sum + DAYS.reduce((s2, d) => s2 + (r.days[d]?.length ?? 0), 0), 0),
-    [rooms],
+    [effectiveRooms],
   );
 
   const TH = { padding:'9px 12px', border:'1px solid #cfd8dc', background:'#eceff1',
@@ -1101,7 +1121,7 @@ export default function ActivityScheduleTab() {
               </tr>
             </thead>
             <tbody>
-              {rooms.map((r,i) => {
+              {effectiveRooms.map((r,i) => {
                 const { inC, outC } = computeCounts(r.days, innerKeySet);
                 const total = inC + outC;
                 const pct   = total > 0 ? Math.round((inC / total) * 100) : 0;

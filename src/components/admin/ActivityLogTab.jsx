@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { compareClassNames } from '../../utils/helpers';
 import { useApp } from '../../context/AppContext';
 import { exportActivityLogExcel } from '../../utils/exportExcel';
 import { ui } from '../../ui/ui';
@@ -29,7 +30,7 @@ export default function ActivityLogTab() {
   const PAGE_SIZE = 20;
 
   // unique values for filters
-  const classes  = useMemo(() => [...new Set(activityLogs.map(l => l.className))].sort(), [activityLogs]);
+  const classes  = useMemo(() => [...new Set(activityLogs.map(l => l.className))].sort(compareClassNames), [activityLogs]);
   const teachers = useMemo(() => [...new Set(activityLogs.map(l => l.recordedBy))].sort(), [activityLogs]);
 
   const filtered = useMemo(() => {

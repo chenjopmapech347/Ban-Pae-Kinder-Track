@@ -1,5 +1,6 @@
 // MediaTab.jsx — ทะเบียนผลิตสื่อ / นวัตกรรมการเรียนการสอน
 import { useState, useMemo, useEffect } from 'react';
+import { compareClassNames } from '../../utils/helpers';
 import { createPortal } from 'react-dom';
 import { useApp } from '../../context/AppContext';
 import { ui } from '../../ui/ui';
@@ -336,7 +337,7 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
 
   const classList = useMemo(() => {
     if (teacherClassFilter) return [teacherClassFilter];
-    return (classes ?? []).map(c => c.name ?? c.id).filter(Boolean).sort();
+    return (classes ?? []).map(c => c.name ?? c.id).filter(Boolean).sort(compareClassNames);
   }, [classes, teacherClassFilter]);
 
   const cn = selClass || classList[0] || '';

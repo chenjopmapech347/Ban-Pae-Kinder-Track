@@ -1037,9 +1037,44 @@ export function AppProvider({ children }) {
     lunchRecords, milkRecords, nutritionRecords, dailyRoutineRecords, studentReportRecords,
     specialEvents, specialHolidays, abilityAssessments,
     cornerDefs, innerCornerDefs,
+    // ตั้งค่าที่ต้องมีผลกับทุกเครื่องทันที (เดิมไม่ได้ watch → แก้แล้วไม่ถูกส่งขึ้น Firebase จนกว่าจะมีข้อมูลอื่นเปลี่ยน)
+    schoolTerms, lockedTerms, currentTerm, classInnerCornerKeys, classOuterCornerKeys,
+    measurementDates, parentCommentDeadlines, menuPermissions,
     imgbbApiKey,   // ← ต้องอยู่ใน dep เพื่อให้ push ขึ้น Firebase ทันทีที่ตั้งค่า
     getDailyData,  // ← volatile fields wrapper
   ]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── รับการเปลี่ยนแปลง "ล็อกภาคเรียน / วันเปิด-ปิดเรียน" จากเครื่องอื่นแบบเรียลไทม์ ───
+  // แอดมินล็อก/ปลดล็อกแล้ว ทุกเครื่องที่เปิดอยู่ (ครู ฯลฯ) ต้องเห็นทันที ไม่ต้องรีโหลดหน้า
+  const syncStatusRef = useRef('idle');
+  const termsLocalRef = useRef({ lockedTerms: null, schoolTerms: null });
+  useEffect(() => { syncStatusRef.current = autoSyncStatus; }, [autoSyncStatus]);
+  useEffect(() => { termsLocalRef.current = { lockedTerms, schoolTerms }; }, [lockedTerms, schoolTerms]);
+  useEffect(() => {
+    if (!isFirebaseConfigured || !role) return undefined;
+    if (SERVER_AUTH && role === 'parent') return undefined;
+    const unsub = onSnapshot(
+      doc(db, 'schools', 'default', 'snapshots', 'latest'),
+      (snap) => {
+        if (!snap.exists() || snap.metadata.hasPendingWrites) return;
+        if (!initialPullDone.current) return;
+        // เครื่องนี้มีการแก้ที่ยังไม่ได้ส่ง → ไม่ทับ (ตอนส่งจะรวมกับฉบับบนเซิร์ฟเวอร์เอง)
+        if (syncStatusRef.current === 'pending' || syncStatusRef.current === 'syncing') return;
+        const d = snap.data();
+        const cur = termsLocalRef.current;
+        if (d.lockedTerms && stableStringify(d.lockedTerms) !== stableStringify(cur.lockedTerms)) {
+          setLockedTerms(d.lockedTerms);
+          if (syncBaseRef.current?.__all) syncBaseRef.current.__all.lockedTerms = stableStringify(d.lockedTerms);
+        }
+        if (d.schoolTerms && stableStringify(d.schoolTerms) !== stableStringify(cur.schoolTerms)) {
+          setSchoolTerms(d.schoolTerms);
+          if (syncBaseRef.current?.__all) syncBaseRef.current.__all.schoolTerms = stableStringify(d.schoolTerms);
+        }
+      },
+      () => { /* ฟังไม่ได้ (offline/สิทธิ์) → ใช้ค่าที่ดึงตอนเข้าระบบ */ },
+    );
+    return () => unsub();
+  }, [role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ─── Firebase Auth login (async, admin/teacher) ─────────
   const loginWithFirebase = useCallback(async (nextRole, email, password) => {

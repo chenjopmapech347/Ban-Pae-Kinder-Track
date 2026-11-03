@@ -13,7 +13,7 @@ import SubDomainSummaryBox from './report/SubDomainSummaryBox';
 import DomainSummaryBox from './report/DomainSummaryBox';
 import DomainSummarySection from './report/DomainSummarySection';
 import HighlightsSection from './report/HighlightsSection';
-import { isoToThai, compareStudents, compareClassNames, compareByClassThenCode } from '../../utils/helpers';
+import { isoToThai, compareStudents, compareClassNames, compareByClassThenCode, getClassSchoolDays, holidayISOSet } from '../../utils/helpers';
 import {
   GROWTH_ROWS, PHILOSOPHY_TEXT, VISION_TEXT,
   DEV_ASSESS_DOMAINS,
@@ -27,7 +27,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
     
     students, teachers, academicYear, schoolName,
     schoolPhilosophy, schoolVision, schoolLogo, schoolDirectorName, yearDirectors, schools,
-    dailyRecords, schoolTerms,
+    dailyRecords, schoolTerms, holidays,
     studentReportRecords, setStudentReportRecords,
     indicators, activities, assessmentTopics,
     aiApiKey,
@@ -243,35 +243,32 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
   }, [student?.id, recKey]);
 
   // ── attendance summary (computed from dailyRecords) ───────────────────────
+  // เวลาเรียนเต็ม = จำนวนวันเรียนจริงของ "ห้อง" ในภาคเรียนนั้น (นับเหมือนกันทุกคนในห้อง)
+  //   มาเรียน = วันเรียนจริงที่นักเรียนคนนี้ "มา", ไม่มาเรียน = เวลาเรียนเต็ม − มาเรียน
+  // วันหยุด / เสาร์–อาทิตย์ / นอกช่วงเปิด–ปิดเรียน ไม่ถูกนับ (ตรงกับหน้า "การมาเรียน")
   const attendanceSummary = useMemo(() => {
     if (!student) return { term1: {}, term2: {} };
-    const terms = schoolTerms?.[academicYear] ?? [];
-    const useConfiguredTerms = terms.length >= 2 &&
-      terms[0]?.open && terms[0]?.close && terms[1]?.open && terms[1]?.close;
-    const summary = { term1: { totalDays: 0, presentDays: 0, absentDays: 0 },
-                      term2: { totalDays: 0, presentDays: 0, absentDays: 0 } };
-    Object.entries(dailyRecords).forEach(([date, dayRecs]) => {
-      const stuRec = dayRecs?.[String(student.id)];
-      if (!stuRec) return;
-      let termNum;
-      if (useConfiguredTerms) {
-        // ใช้ช่วงวันเปิด–ปิดจากการตั้งค่าภาคเรียน
-        if (date >= terms[0].open && date <= terms[0].close) termNum = 1;
-        else if (date >= terms[1].open && date <= terms[1].close) termNum = 2;
-        else return; // วันนี้ไม่อยู่ในช่วงเปิดภาคเรียน
-      } else {
-        // fallback: ภาคเรียน 1 = พ.ค.–ต.ค. (5–10), ภาคเรียน 2 = พ.ย.–เม.ย. (11–12, 1–4)
-        const m = new Date(date).getMonth() + 1;
-        termNum = (m >= 5 && m <= 10) ? 1 : 2;
-      }
-      const t = `term${termNum}`;
-      summary[t].totalDays++;
-      const att = stuRec.attendance ?? stuRec.status;
-      if (att === 'มา' || att === 'present') summary[t].presentDays++;
-      else summary[t].absentDays++;
+    const classIds = students
+      .filter(s => s.className === student.className && !String(s.name).startsWith('(ว่าง)'))
+      .map(s => s.id);
+    const days = getClassSchoolDays({
+      dailyRecords,
+      studentIds: classIds,
+      terms: schoolTerms?.[academicYear] ?? [],
+      holidaySet: holidayISOSet(holidays),
+    });
+    const summary = {};
+    [1, 2].forEach(t => {
+      const list = days[`term${t}`];
+      const present = list.filter(d => {
+        const rec = dailyRecords[d]?.[String(student.id)];
+        const att = rec?.attendance ?? rec?.status;
+        return att === 'มา' || att === 'present';
+      }).length;
+      summary[`term${t}`] = { totalDays: list.length, presentDays: present, absentDays: list.length - present };
     });
     return summary;
-  }, [dailyRecords, student, schoolTerms, academicYear]);
+  }, [dailyRecords, student, students, schoolTerms, academicYear, holidays]);
 
   // ── developmental domains (from indicators + student.assessments) ─────────
   const devDomains = useMemo(() => {
@@ -663,7 +660,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                 </tbody>
               </table>
               <div style={{ marginTop: '.75rem', fontSize: '.78rem', color: '#6b7280' }}>
-                ข้อมูลคำนวณจากการบันทึกการมาเรียนในระบบ (ภาคเรียน 1 = พ.ค.–ก.ย., ภาคเรียน 2 = ต.ค.–เม.ย.)
+                ข้อมูลคำนวณจากการบันทึกการมาเรียนในระบบ ตามช่วงเปิด–ปิดเรียนของแต่ละภาคเรียน (ไม่นับวันหยุด เสาร์–อาทิตย์ และวันนอกภาคเรียน)
               </div>
             </div>
           )}

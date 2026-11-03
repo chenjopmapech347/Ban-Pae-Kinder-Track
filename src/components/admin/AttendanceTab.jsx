@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { getDayRecord } from '../../utils/attendance';
-import { todayISO, formatDateThai, isStudentActive, compareStudents, isWeekendISO } from '../../utils/helpers';
+import { todayISO, formatDateThai, isStudentActive, compareStudents, isWeekendISO, getClassSchoolDays } from '../../utils/helpers';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 import { useTermRange, OUT_OF_TERM_MSG } from '../../hooks/useTermRange';
 import { ui } from '../../ui/ui';
@@ -419,15 +419,19 @@ export default function AttendanceTab({ defaultClass }) {
   }, [availableMonths, schoolTerms, academicYear]);
 
   const monthlyData = useMemo(() => {
-    // เสาร์–อาทิตย์เป็นวันหยุดปกติ ไม่นับเป็นวันเรียน แม้จะมีข้อมูลบันทึกไว้ก็ตาม
-    const targetDates = Object.keys(dailyRecords).filter(d => {
-      if (!d.startsWith(selMonth)) return false;
-      return !isWeekendISO(d); // เสาร์–อาทิตย์เป็นวันหยุด ยกเว้นวันเรียนชดเชย
-    });
     const targetClasses = filterClass === 'ทั้งหมด' ? ALL_CLASSES : [filterClass];
     return targetClasses.map(cls => {
       const teacher = teachers?.find(t => t.className === cls);
       const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)')).sort(compareStudents);
+      // วันเรียนจริงของห้อง (ในช่วงเปิด–ปิดเรียน, ไม่ใช่เสาร์–อาทิตย์/วันหยุด) — ใช้กติกาเดียวกับสมุดรายงาน
+      const days = getClassSchoolDays({
+        dailyRecords,
+        studentIds: sts.map(s => s.id),
+        terms: schoolTerms?.[academicYear] ?? [],
+        holidaySet: holidayISOs,
+      });
+      const targetDates = [...days.term1, ...days.term2].filter(d => d.startsWith(selMonth));
+      const excluded    = days.excluded.filter(x => x.date.startsWith(selMonth));
       const rows = sts.map(s => {
         const counts = { มา: 0, ขาด: 0, ลา: 0, ป่วย: 0 };
         const dailyAtt = {};
@@ -440,11 +444,9 @@ export default function AttendanceTab({ defaultClass }) {
         });
         return { ...s, counts, dailyAtt };
       });
-      // นับเฉพาะวันที่ห้องนี้มีการบันทึกการมาเรียนจริง (ไม่ใช่วันที่มีข้อมูลของห้องอื่น)
-      const schoolDays = targetDates.filter(d => sts.some(s => dailyRecords[d]?.[String(s.id)]?.attendance)).length;
-      return { cls, teacher, rows, schoolDays };
+      return { cls, teacher, rows, schoolDays: targetDates.length, excluded };
     }).filter(sec => sec.rows.length > 0);
-  }, [dailyRecords, selMonth, filterClass, students, teachers]);
+  }, [dailyRecords, selMonth, filterClass, students, teachers, schoolTerms, academicYear, holidayISOs]);
 
   const isToday = selectedDate === todayISO();
   const dateLabel = formatDateThai(selectedDate);
@@ -715,7 +717,7 @@ export default function AttendanceTab({ defaultClass }) {
             <div {...ui('glass-card text-center text-muted', { padding: '2rem' })}>
               ยังไม่มีข้อมูลการลงเวลาในเดือนนี้
             </div>
-          ) : monthlyData.map(({ cls, teacher, rows, schoolDays }) => (
+          ) : monthlyData.map(({ cls, teacher, rows, schoolDays, excluded }) => (
             <div key={cls} {...ui('glass-card', { padding: '1rem 1.25rem' })}>
               {/* Class header */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem', marginBottom: '.85rem', flexWrap: 'wrap' }}>
@@ -731,6 +733,14 @@ export default function AttendanceTab({ defaultClass }) {
                   📆 วันที่มีข้อมูล {schoolDays} วัน
                 </span>
               </div>
+              {excluded?.length > 0 && (
+                <div style={{ marginBottom: '.75rem', padding: '.5rem .75rem', background: '#fffbeb',
+                  border: '1.5px solid #fcd34d', borderRadius: '10px', color: '#92400e',
+                  fontSize: '.76rem', fontWeight: 600 }}>
+                  ⚠️ มีบันทึกการมาเรียน {excluded.length} วันที่ไม่ถูกนับเป็นวันเรียน:{' '}
+                  {excluded.map(x => `${formatDateThai(x.date)} (${x.reason})`).join(' · ')}
+                </div>
+              )}
 
               <div {...ui('table-wrap')}>
                 <table {...ui('table', { fontSize: '.83rem' })}>

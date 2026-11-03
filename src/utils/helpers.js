@@ -135,6 +135,51 @@ export function isWeekendISO(iso) {
   return (dow === 0 || dow === 6) && !isMakeupDate(iso);
 }
 
+
+/** แปลงรายการวันหยุด (รูปแบบ 'dd/mm/พ.ศ.' หรือ ISO) เป็นชุด ISO ค.ศ. */
+export function holidayISOSet(holidays) {
+  const set = new Set();
+  (holidays ?? []).forEach(h => {
+    if (!h?.date) return;
+    if (String(h.date).includes('/')) {
+      const [dd, mm, bYear] = String(h.date).split('/');
+      set.add(`${parseInt(bYear, 10) - 543}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`);
+    } else set.add(String(h.date).slice(0, 10));
+  });
+  return set;
+}
+
+/**
+ * วันเรียนจริงของห้อง แยกตามภาคเรียน
+ *  - นับเฉพาะวันที่ "ห้องนี้มีบันทึกการมาเรียน" และเป็นวันเรียนจริง
+ *  - วันเรียนจริง = อยู่ในช่วงเปิด–ปิดเรียนของภาคเรียน + ไม่ใช่เสาร์–อาทิตย์ (ยกเว้นวันชดเชย) + ไม่ใช่วันหยุด
+ *  - วันที่มีบันทึกแต่ไม่ใช่วันเรียนจริง ไม่ถูกนับ และคืนไว้ใน excluded พร้อมเหตุผล
+ * คืนค่า { term1: [ISO...], term2: [ISO...], excluded: [{ date, reason }] }
+ */
+export function getClassSchoolDays({ dailyRecords, studentIds, terms, holidaySet }) {
+  const ids = (studentIds ?? []).map(String);
+  const useTerms = (terms ?? []).length >= 2 &&
+    terms[0]?.open && terms[0]?.close && terms[1]?.open && terms[1]?.close;
+  const out = { term1: [], term2: [], excluded: [] };
+  Object.keys(dailyRecords ?? {}).sort().forEach(date => {
+    const day = dailyRecords[date];
+    if (!day || !ids.some(id => day[id]?.attendance ?? day[id]?.status)) return;
+    let termNum;
+    if (useTerms) {
+      if (date >= terms[0].open && date <= terms[0].close) termNum = 1;
+      else if (date >= terms[1].open && date <= terms[1].close) termNum = 2;
+      else { out.excluded.push({ date, reason: 'นอกช่วงเปิด–ปิดเรียน' }); return; }
+    } else {
+      const m = new Date(date).getMonth() + 1;
+      termNum = (m >= 5 && m <= 10) ? 1 : 2;
+    }
+    if (isWeekendISO(date)) { out.excluded.push({ date, reason: 'เสาร์–อาทิตย์' }); return; }
+    if (holidaySet?.has(date)) { out.excluded.push({ date, reason: 'วันหยุด' }); return; }
+    out[`term${termNum}`].push(date);
+  });
+  return out;
+}
+
 /** เปรียบเทียบชื่อห้องเรียนแบบตัวเลขตามธรรมชาติ (อ.1/2 ก่อน อ.1/10, อ.1/x ก่อน อ.2/x) */
 export function compareClassNames(a, b) {
   return String(a ?? '').localeCompare(String(b ?? ''), 'th', { numeric: true });

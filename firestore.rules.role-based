@@ -28,6 +28,8 @@ service cloud.firestore {
       allow delete: if false;
     }
     match /schools/default/dailyData/{docId}        { allow read, create, update: if isStaff(); allow delete: if false; }
+    // บันทึกการซิงก์ (ช่วงตรวจความเร็ว/ข้อผิดพลาด) — เจ้าหน้าที่เขียนได้, แอดมินอ่าน
+    match /schools/default/syncLogs/{k}             { allow create: if isStaff(); allow read: if isAdmin(); allow update, delete: if false; }
     match /schools/default/classAssessments/{k}     { allow read, create, update: if isStaff(); allow delete: if false; }
     match /activitySchedule/{docId}                 { allow read, create, update: if isStaff(); allow delete: if false; }
     match /cornerAssignments/{docId}                { allow read, create, update: if isStaff(); allow delete: if false; }

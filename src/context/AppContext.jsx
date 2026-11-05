@@ -21,6 +21,7 @@ import { pullSnapshotFromCloud, pushSnapshotToCloud } from '../lib/cloudSync';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { isFirebaseConfigured, db } from '../lib/firebase';
 import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
+import { logSync, setSyncLogContext } from '../lib/syncLog';
 import { scheduleParentViewPush, pushSnapshotToFirebase, pullSnapshotFromFirebase, pullClassAssessments, pullAllClassAssessments, listDailyBackups, pullDailyBackupById, pushDailyDataToFirebase, pullDailyDataFromFirebase, seedDailyBaseline } from '../lib/firebaseSync';
 
 import { firebaseLogin, firebaseLogout, onFirebaseAuthChange } from '../lib/firebaseAuth';
@@ -979,6 +980,7 @@ export function AppProvider({ children }) {
           setAutoSyncError(msg);
           setAutoSyncStatus('error');
           setLastSyncFailed(true);
+          logSync({ part: 'snap', ok: false, kb: payloadSizeKB, error: msg });
           return;
         }
 
@@ -1011,6 +1013,9 @@ export function AppProvider({ children }) {
           const prevT = JSON.parse(localStorage.getItem('kt_syncTiming') || '[]');
           localStorage.setItem('kt_syncTiming', JSON.stringify([...prevT, timing].slice(-20)));
           console.info('[sync]', timing);
+          // ส่งขึ้น syncLogs ให้ผู้ดูแลตรวจย้อนหลัง (แยกส่วนที่ล้มเหลวพร้อมข้อความ error)
+          if (snapChanged) logSync({ part: 'snap', ok: !!snapRes.ok, ms: timing.snapMs ?? timing.totalMs, kb: timing.snapKB, error: snapRes.ok ? undefined : snapRes.message });
+          if (dailyChanged) logSync({ part: 'daily', ok: !!dailyRes.ok, ms: timing.dailyMs ?? timing.totalMs, kb: timing.dailyKB, error: dailyRes.ok ? undefined : dailyRes.message });
         } catch { /* ignore */ }
         const result = snapRes.ok ? dailyRes : snapRes;
         // โหมด Firebase Auth: อัปเดตข้อมูลรายบุตรหลานให้ผู้ปกครอง (ครู = ห้องตัวเอง, แอดมิน = ทุกห้อง)
@@ -1037,6 +1042,7 @@ export function AppProvider({ children }) {
           setLastSyncFailed(true);
         }
       } catch (e) {
+        logSync({ part: 'all', ok: false, error: e?.message ?? 'unknown error' });
         setAutoSyncError(e?.message ?? 'unknown error');
         setAutoSyncStatus('error');
         setLastSyncFailed(true);
@@ -1880,6 +1886,15 @@ export function AppProvider({ children }) {
       className: rec.className ?? user.className,
     };
   }, [role, user, teachers]);
+
+  // บอกโมดูลบันทึกการซิงก์ว่าเครื่องนี้ใครใช้อยู่ (บทบาท/ชื่อ/ห้อง) — ไม่มีข้อมูลนักเรียน
+  useEffect(() => {
+    setSyncLogContext({
+      role: role ?? '',
+      userName: effectiveUser?.name ?? '',
+      className: effectiveUser?.className ?? '',
+    });
+  }, [role, effectiveUser]);
 
   // รายชื่อนักเรียนที่หน้าจอทุกหน้าใช้ — เรียงตามเลขประจำตัวเสมอ (ข้อมูลดิบยังเก็บตามเดิม)
   const studentsSorted = useMemo(() => [...(students ?? [])].sort(compareStudents), [students]);

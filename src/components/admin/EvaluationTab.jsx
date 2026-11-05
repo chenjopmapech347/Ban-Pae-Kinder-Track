@@ -40,7 +40,10 @@ export default function EvaluationTab() {
   const [systemTab,    setSystemTab] = useState('qa');  // 'qa' = ระบบที่ 1 ดย. | 'std' = ระบบที่ 2 หลักสูตร
 
   // Step 2 — ห้อง
-  const [selLevel, setLevel] = useState(() => teacherLevel ?? null);
+  // ครูที่ล็อกอินเป็นห้อง → ใช้ห้องของตัวเอง ไม่ต้องเลือกห้อง (ระดับชั้นหาจากห้อง)
+  const hideClassStep = isTeacher && !!teacherClass;
+  const levelOfClass = cls => Object.keys(CLASS_MAP ?? {}).find(lv => (CLASS_MAP[lv] ?? []).includes(cls)) ?? null;
+  const [selLevel, setLevel] = useState(() => teacherLevel ?? levelOfClass(teacherClass));
   const [selClass, setClass] = useState(() => teacherClass ?? null);
 
   // Step 3 — ประเมิน
@@ -448,7 +451,8 @@ export default function EvaluationTab() {
         )}
       </div>
 
-      {/* ═══ STEP 2: เลือกห้องเรียน ═══ */}
+      {/* ═══ STEP 2: เลือกห้องเรียน (ซ่อนสำหรับครูที่ล็อกอินเป็นห้อง) ═══ */}
+      {!hideClassStep && (
       <div style={{
         background: 'white', border: '1.5px solid #e2e8f0',
         borderRadius: '14px', padding: '1rem 1.2rem', marginBottom: '1rem',
@@ -549,6 +553,7 @@ export default function EvaluationTab() {
           </>
         )}
       </div>
+      )}
 
       {/* ═══ STEP 3: ประเมิน ═══ */}
       {stepActivity && stepClass && (
@@ -557,7 +562,7 @@ export default function EvaluationTab() {
           borderRadius: '14px', padding: '1rem 1.2rem',
         }}>
           <div style={{ fontSize: '.72rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '.8rem', letterSpacing: '.05em' }}>
-            ขั้นที่ 3 — ประเมินผลทั้งห้อง {selClass}
+            ขั้นที่ {hideClassStep ? 2 : 3} — ประเมินผลทั้งห้อง {selClass}
           </div>
 
           {/* ครั้งที่ + วันที่ */}

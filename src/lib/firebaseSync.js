@@ -8,14 +8,37 @@
  *     { className, updatedAt, students: { [studentId]: { indicators: {...} } } }
  */
 import {
-  doc, setDoc, getDoc, getDocFromServer, getDocs, serverTimestamp, collection, deleteField,
+  doc, setDoc, getDoc, getDocFromServer, getDocs, getDocsFromServer, serverTimestamp, collection, deleteField,
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
 
 const SCHOOL_ID = 'default'; // เปลี่ยนได้ถ้ามีหลายโรงเรียน
 
 function snapshotRef()  { return doc(db, 'schools', SCHOOL_ID, 'snapshots', 'latest'); }
-function dailyDataRef() { return doc(db, 'schools', SCHOOL_ID, 'dailyData', 'latest'); }
+function dailyDataRef() { return doc(db, 'schools', SCHOOL_ID, 'dailyData', 'latest'); }   // เอกสารเดิม (อ่านอย่างเดียว — เต็ม 1MB แล้ว)
+function dailyColRef()  { return collection(db, 'schools', SCHOOL_ID, 'dailyData'); }
+
+// ── แบ่งข้อมูลรายวันเป็นหลายเอกสาร (shard) เพราะเอกสารเดียวจำกัด 1MB ──────────────────────────
+// id = `${field}__${bucket}` — key ที่มีวันที่ (YYYY-MM-DD) แบ่งตามครึ่งเดือน, key อื่นแบ่งด้วย hash 8 กลุ่ม
+function bucketOf(key) {
+  const m = /(\d{4})-(\d{2})-(\d{2})/.exec(String(key));
+  if (m) return `${m[1]}-${m[2]}${Number(m[3]) <= 15 ? 'a' : 'b'}`;
+  let h = 0;
+  const str = String(key);
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return `k${h % 8}`;
+}
+function shardId(field, bucket) { return `${field}__${bucket}`; }
+
+// แปลงข้อความ error ของ Firestore ให้อ่านง่าย (โดยเฉพาะเอกสารเกิน 1MB)
+function friendlyErr(e) {
+  const msg = e?.message ?? String(e);
+  if (/exceeds the maximum|cannot be written because its size/i.test(msg)) {
+    const path = /documents\/([^\s'"]+)/.exec(msg)?.[1] ?? '';
+    return `เอกสารบนฐานข้อมูลเต็ม (เกิน 1MB) ${path ? '[' + path + '] ' : ''}— แจ้งผู้ดูแลระบบ`;
+  }
+  return msg;
+}
 
 // ข้อมูลที่ครูบันทึกรายวัน — push ด้วย dot-notation updateDoc (key-level merge)
 // แต่ละ device เขียนเฉพาะ key ของตัวเอง ไม่ทับ key ที่ device อื่นเขียนไว้
@@ -142,7 +165,7 @@ export async function pushSnapshotToFirebase(payload) {
 
     return { ok: true, message: 'อัปโหลดสำเร็จ ✅' };
   } catch (e) {
-    return { ok: false, message: 'อัปโหลดไม่สำเร็จ: ' + e.message };
+    return { ok: false, message: 'อัปโหลดไม่สำเร็จ: ' + friendlyErr(e) };
   }
 }
 
@@ -195,26 +218,57 @@ export async function pullDailyBackupById(docId) {
  * ใช้ updateDoc เพื่อ merge ระดับ key — Device A เขียน key ของตัวเอง
  * ไม่ลบ key ที่ Device B เขียนไว้ (ต่างจาก setDoc ที่ replace ทั้ง field)
  */
+// ลายนิ้วมือ (JSON) ของแต่ละ key ที่ส่ง/ดึงมาแล้ว — ส่งเฉพาะ key ที่เปลี่ยน แทนการส่งทั้งก้อนทุกครั้งที่บันทึก
+const dailySent = new Map();   // field -> Map(key -> json)
+function sentMap(field) {
+  if (!dailySent.has(field)) dailySent.set(field, new Map());
+  return dailySent.get(field);
+}
+
+/** ตั้งฐานอ้างอิงจากข้อมูลที่ดึงมาจากเซิร์ฟเวอร์ → การบันทึกครั้งแรกไม่ต้องส่งทั้งก้อน */
+export function seedDailyBaseline(payload) {
+  DAILY_FIELDS.forEach((field) => {
+    const val = payload?.[field];
+    if (!val || typeof val !== 'object') return;
+    const m = sentMap(field);
+    Object.entries(val).forEach(([k, v]) => { m.set(k, JSON.stringify(v)); });
+  });
+}
+
 export async function pushDailyDataToFirebase(dailyData) {
   if (!isFirebaseConfigured || !db) return { ok: false };
   try {
     // setDoc + merge:true = merge ระดับ key ของแมป (Device A ไม่ลบ key ของ Device B)
     // ห้ามใช้ updateDoc + dot-notation: key เช่น 'อ.1/1__2569__2026-11-01' มี '.' และ '/'
-    // ทำให้ path ผิดรูป (SDK โยน error) และทั้งการเขียนล้มเหลวเงียบ ๆ
-    const data = { updatedAt: serverTimestamp() };
-    let hasData = false;
+    // ส่งเฉพาะ key ที่เปลี่ยนจากที่เคยส่ง/ดึงมาแล้ว (delta) และเขียนลง shard ตามช่วงวันที่ — ไม่ชนขีดจำกัด 1MB
+    const shards = new Map();   // shardId -> { field, delta, staged }
     for (const field of DAILY_FIELDS) {
       const val = dailyData[field];
-      if (val && typeof val === 'object' && Object.keys(val).length > 0) {
-        data[field] = JSON.parse(JSON.stringify(val));
-        hasData = true;
+      if (!val || typeof val !== 'object') continue;
+      const m = sentMap(field);
+      for (const [k, v] of Object.entries(val)) {
+        const json = JSON.stringify(v);
+        if (m.get(k) === json) continue;
+        const id = shardId(field, bucketOf(k));
+        if (!shards.has(id)) shards.set(id, { field, delta: {}, staged: [] });
+        const sh = shards.get(id);
+        sh.delta[k] = JSON.parse(json);
+        sh.staged.push([field, k, json]);
       }
     }
-    if (!hasData) return { ok: true }; // ไม่มีข้อมูลใหม่ — ข้าม
-    await setDoc(dailyDataRef(), data, { merge: true });
+    if (shards.size === 0) return { ok: true }; // ไม่มีข้อมูลใหม่ — ข้าม
+    let firstErr = null;
+    await Promise.all([...shards.entries()].map(async ([id, sh]) => {
+      try {
+        await setDoc(doc(db, 'schools', SCHOOL_ID, 'dailyData', id),
+          { field: sh.field, updatedAt: serverTimestamp(), data: sh.delta }, { merge: true });
+        sh.staged.forEach(([field, k, json]) => sentMap(field).set(k, json));   // จำเฉพาะ shard ที่เขียนสำเร็จ
+      } catch (e) { firstErr = firstErr ?? e; }
+    }));
+    if (firstErr) return { ok: false, message: friendlyErr(firstErr) };
     return { ok: true };
   } catch (e) {
-    return { ok: false, message: e.message };
+    return { ok: false, message: friendlyErr(e) };
   }
 }
 
@@ -224,13 +278,22 @@ export async function pushDailyDataToFirebase(dailyData) {
 export async function pullDailyDataFromFirebase() {
   if (!isFirebaseConfigured || !db) return { ok: true, payload: {} };
   try {
-    const snap = await getDocFromServer(dailyDataRef());
-    if (!snap.exists()) return { ok: true, payload: {} };
-    const { updatedAt, ...raw } = snap.data();
+    // 1) เอกสารเดิม dailyData/latest (ข้อมูลก่อนแบ่ง shard)  2) shard ใหม่ — ค่าใน shard ทับค่าเดิมในระดับ key
+    const [legacySnap, shardSnap] = await Promise.all([
+      getDocFromServer(dailyDataRef()),
+      getDocsFromServer(dailyColRef()),
+    ]);
+    const raw = legacySnap.exists() ? { ...legacySnap.data() } : {};
+    delete raw.updatedAt;
     const payload = stripSecrets(raw);
+    shardSnap.forEach((d) => {
+      const x = d.data();
+      if (!x?.field || !DAILY_FIELDS.includes(x.field) || !x.data) return;
+      payload[x.field] = { ...(payload[x.field] ?? {}), ...x.data };
+    });
     return { ok: true, payload };
   } catch (e) {
-    return { ok: false, payload: {}, message: e.message };
+    return { ok: false, payload: {}, message: friendlyErr(e) };
   }
 }
 

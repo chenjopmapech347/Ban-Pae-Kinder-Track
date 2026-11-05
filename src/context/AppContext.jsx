@@ -21,7 +21,7 @@ import { pullSnapshotFromCloud, pushSnapshotToCloud } from '../lib/cloudSync';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { isFirebaseConfigured, db } from '../lib/firebase';
 import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
-import { scheduleParentViewPush, pushSnapshotToFirebase, pullSnapshotFromFirebase, pullClassAssessments, pullAllClassAssessments, listDailyBackups, pullDailyBackupById, pushDailyDataToFirebase, pullDailyDataFromFirebase } from '../lib/firebaseSync';
+import { scheduleParentViewPush, pushSnapshotToFirebase, pullSnapshotFromFirebase, pullClassAssessments, pullAllClassAssessments, listDailyBackups, pullDailyBackupById, pushDailyDataToFirebase, pullDailyDataFromFirebase, seedDailyBaseline } from '../lib/firebaseSync';
 
 import { firebaseLogin, firebaseLogout, onFirebaseAuthChange } from '../lib/firebaseAuth';
 import { SERVER_AUTH, parentLoginServer, fetchMyChild, currentClaims } from '../lib/serverAuth';
@@ -773,6 +773,7 @@ export function AppProvider({ children }) {
     // Pull daily data (volatile) แยก — merge กลับเข้า state
     const daily = await pullDailyDataFromFirebase();
     if (daily.ok && Object.keys(daily.payload).length > 0) {
+      seedDailyBaseline(daily.payload);
       restoreSnapshotData(daily.payload, { mergeDaily: true }); // รวมกับข้อมูลที่มีอยู่ ไม่ทับทั้งก้อน
     }
     return { ok: true, updatedAt: result.updatedAt };
@@ -865,6 +866,7 @@ export function AppProvider({ children }) {
         pullDailyDataFromFirebase().then(daily => {
           if (daily.ok && Object.keys(daily.payload).length > 0) {
             console.info('[KinderTrack] Auto-pull daily data from Firebase');
+            seedDailyBaseline(daily.payload); // ฐานอ้างอิงสำหรับส่งเฉพาะส่วนที่เปลี่ยน
             restoreSnapshotData(daily.payload, { mergeDaily: true });
           }
         }).catch(() => {}).finally(() => {
@@ -903,7 +905,8 @@ export function AppProvider({ children }) {
   const [snapshotSizeKB, setSnapshotSizeKB] = useState(0);
   const autoSyncTimer  = useRef(null);
   const isMounted      = useRef(false);   // skip initial mount
-  const lastPushedSig  = useRef('');      // ลายนิ้วมือข้อมูลที่ส่งสำเร็จล่าสุด
+  const lastSnapStr    = useRef('');      // snapshot หลักที่ส่งสำเร็จล่าสุด (JSON ไม่รวม exportedAt)
+  const lastDailyStr   = useRef('');      // ข้อมูลรายวันที่ส่งสำเร็จล่าสุด
 
   useEffect(() => {
     // ครั้งแรกที่ mount ข้าม — ไม่ต้องการ overwrite Firebase ด้วยข้อมูลเริ่มต้น
@@ -953,15 +956,15 @@ export function AppProvider({ children }) {
 
         const payload = buildAppSnapshot(snapData);
 
-        // ข้อมูลเหมือนที่ส่งสำเร็จครั้งล่าสุดทุกประการ (เช่น effect ทำงานซ้ำโดยผู้ใช้ไม่ได้แก้อะไร) → ไม่ต้องส่งซ้ำ
+        // แยกส่ง 2 ส่วน: (1) snapshot หลัก (นักเรียน/ครู/ตั้งค่า ฯลฯ ก้อนใหญ่) (2) ข้อมูลรายวัน (เช็คชื่อ/นม/อาหารกลางวัน ฯลฯ)
+        // บันทึกทั่วไปของครูเปลี่ยนแค่ส่วน (2) → ข้ามการดึง+รวม+อัปโหลด snapshot หลักทั้งก้อน (ช้าที่สุด) ไปเลย
         // ตัด exportedAt ออกก่อนเทียบ เพราะเป็นเวลาที่เปลี่ยนทุกครั้ง
-        const sig = (() => {
-          const s = JSON.stringify({ ...payload, exportedAt: null }) + JSON.stringify(getDailyData());
-          let h = 5381;
-          for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
-          return `${s.length}:${h}`;
-        })();
-        if (sig === lastPushedSig.current) {
+        const snapStr  = JSON.stringify({ ...payload, exportedAt: null });
+        const dailyData = getDailyData();
+        const dailyStr = JSON.stringify(dailyData);
+        const snapChanged  = snapStr  !== lastSnapStr.current;
+        const dailyChanged = dailyStr !== lastDailyStr.current;
+        if (!snapChanged && !dailyChanged) {
           setAutoSyncStatus('idle');
           return;
         }
@@ -969,9 +972,9 @@ export function AppProvider({ children }) {
         // ── ตรวจขนาด snapshot ก่อน push ──
         // Firestore document limit = 1MB (1,048,576 bytes)
         // ถ้า JSON > 900KB มีความเสี่ยงสูงที่จะ push ล้มเหลว
-        const payloadSizeKB = Math.round(JSON.stringify(payload).length / 1024);
+        const payloadSizeKB = Math.round(snapStr.length / 1024);
         setSnapshotSizeKB(payloadSizeKB);
-        if (payloadSizeKB > 900) {
+        if (snapChanged && payloadSizeKB > 900) {
           const msg = `ข้อมูลขนาดใหญ่เกินไป (${payloadSizeKB} KB) — อาจไม่ถูกบันทึกลงระบบ กรุณาแจ้งผู้ดูแลระบบ`;
           setAutoSyncError(msg);
           setAutoSyncStatus('error');
@@ -983,36 +986,42 @@ export function AppProvider({ children }) {
         // → จำกัดเวลา 25 วินาที แล้วแจ้งเป็น error (ข้อมูลยังอยู่ในเครื่อง และจะลองส่งใหม่เมื่อมีการแก้ไขครั้งถัดไป)
         const SYNC_TIMEOUT_MS = 25000;
         let timeoutId;
-        const result = await Promise.race([
-          pushReconciled(payload),
+        const snapPromise  = snapChanged  ? pushReconciled(payload) : Promise.resolve({ ok: true });
+        // ข้อมูลรายวันส่งเฉพาะ key ที่เปลี่ยน (delta) — ส่งขนานกับ snapshot ไม่ต้องรอกัน
+        const dailyPromise = dailyChanged ? pushDailyDataToFirebase(dailyData) : Promise.resolve({ ok: true });
+        const [snapRes, dailyRes] = await Promise.race([
+          Promise.all([snapPromise, dailyPromise]),
           new Promise((resolve) => {
-            timeoutId = setTimeout(() => resolve({
-              ok: false,
-              message: 'ฐานข้อมูลไม่ตอบสนองภายใน 25 วินาที — ตรวจอินเทอร์เน็ต แล้วกดปุ่ม "บันทึก" อีกครั้ง',
-            }), SYNC_TIMEOUT_MS);
+            timeoutId = setTimeout(() => {
+              const timeoutRes = {
+                ok: false,
+                message: 'ฐานข้อมูลไม่ตอบสนองภายใน 25 วินาที — ตรวจอินเทอร์เน็ต แล้วกดปุ่ม "บันทึก" อีกครั้ง',
+              };
+              resolve([timeoutRes, timeoutRes]);
+            }, SYNC_TIMEOUT_MS);
           }),
         ]);
         clearTimeout(timeoutId);
+        const result = snapRes.ok ? dailyRes : snapRes;
         // โหมด Firebase Auth: อัปเดตข้อมูลรายบุตรหลานให้ผู้ปกครอง (ครู = ห้องตัวเอง, แอดมิน = ทุกห้อง)
         if (SERVER_AUTH && result.ok && (role === 'admin' || role === 'teacher')) {
-          const dr = getDailyData().dailyRecords;
           scheduleParentViewPush(
             { students: snapData.students, teachers: snapData.teachers, announcements: snapData.announcements,
-              dailyRecords: dr, schoolName: snapData.schoolName },
+              dailyRecords: dailyData.dailyRecords, schoolName: snapData.schoolName },
             role === 'teacher' ? user?.className : null,
           );
         }
-        // push daily data (volatile) แยก — dot-notation merge ป้องกัน overwrite
-        pushDailyDataToFirebase(getDailyData()).catch((e) => {
-          console.warn('[KinderTrack] dailyData push failed:', e?.message);
-        });
         if (result.ok) localStorage.setItem('kt_lastPushAt', Date.now().toString());
         if (result.ok) {
-          lastPushedSig.current = sig;
+          lastSnapStr.current  = snapStr;
+          lastDailyStr.current = dailyStr;
           setAutoSyncError('');
           setAutoSyncStatus('done');
           setLastSyncFailed(false);
         } else {
+          // ส่วนที่สำเร็จแล้วจำไว้ ไม่ต้องส่งซ้ำรอบหน้า
+          if (snapRes.ok)  lastSnapStr.current  = snapStr;
+          if (dailyRes.ok) lastDailyStr.current = dailyStr;
           setAutoSyncError(result.message ?? '');
           setAutoSyncStatus('error');
           setLastSyncFailed(true);

@@ -47,11 +47,31 @@ export function levelColor(n) {
 }
 
 // ── term score helpers ────────────────────────────────────────────────────────
-// round → term: r1+r2 = term1, r3+r4 = term2
-export function getActivityTermScore(actData, term) {
-  if (!actData) return null;
+// สรุปผลตัวบ่งชี้ในสมุดรายงาน: ภาคเรียนที่ 1 ใช้ผลที่ประเมินในเดือนกันยายน, ภาคเรียนที่ 2 ใช้ผลเดือนกุมภาพันธ์
+// (ดูจากวันที่ประเมิน r{n}_date) — ถ้าเดือนนั้นยังไม่มีผลประเมิน จะใช้ครั้งที่ประเมินเดิม (r1+r2 / r3+r4) แทน
+export const SUMMARY_MONTH = { 1: '09', 2: '02' };
+
+/** คะแนนทุกครั้ง (r1–r4) ของกิจกรรมหนึ่ง ที่วันที่ประเมินตรงกับเดือนสรุปของภาคเรียนนั้น */
+function monthScores(actData, term) {
+  const mm = SUMMARY_MONTH[term];
+  return [1, 2, 3, 4]
+    .filter(r => String(actData?.[`r${r}_date`] ?? '').slice(5, 7) === mm)
+    .map(r => actData?.[`r${r}`])
+    .filter(v => v != null && v > 0);
+}
+
+/** คะแนนของกิจกรรมสำหรับภาคเรียน: เดือนสรุปก่อน ถ้าไม่มีใช้ครั้งที่ประเมินเดิม */
+export function termScoresOf(actData, term) {
+  if (!actData) return [];
+  const m = monthScores(actData, term);
+  if (m.length) return m;
   const rounds = term === 1 ? [1, 2] : [3, 4];
-  const scores = rounds.map(r => actData[`r${r}`]).filter(v => v != null && v > 0);
+  return rounds.map(r => actData[`r${r}`]).filter(v => v != null && v > 0);
+}
+
+// round → term (สำรอง): r1+r2 = term1, r3+r4 = term2
+export function getActivityTermScore(actData, term) {
+  const scores = termScoresOf(actData, term);
   if (!scores.length) return null;
   return parseFloat((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1));
 }
@@ -82,9 +102,7 @@ export function suggestLevelFromIndicator(student, domainId, standardId, indicat
   const indKey = `${domainId}__${standardId}__${indicatorId}`;
   const indData = student?.assessments?.indicators?.[indKey];
   if (!indData || !Object.keys(indData).length) return 0;
-  const rounds = term === 1 ? ['r1', 'r2'] : ['r3', 'r4'];
-  const scores = Object.values(indData)
-    .flatMap(actData => rounds.map(r => actData?.[r]).filter(v => v != null && v > 0));
+  const scores = Object.values(indData).flatMap(actData => termScoresOf(actData, term));
   if (!scores.length) return 0;
   const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
   if (avg >= 2.5) return 3;
@@ -98,9 +116,7 @@ export function rawScoreFromIndicator(student, domainId, standardId, indicatorId
   const indKey = `${domainId}__${standardId}__${indicatorId}`;
   const indData = student?.assessments?.indicators?.[indKey];
   if (!indData || !Object.keys(indData).length) return null;
-  const rounds = term === 1 ? ['r1', 'r2'] : ['r3', 'r4'];
-  const scores = Object.values(indData)
-    .flatMap(actData => rounds.map(r => actData?.[r]).filter(v => v != null && v > 0));
+  const scores = Object.values(indData).flatMap(actData => termScoresOf(actData, term));
   if (!scores.length) return null;
   return scores.reduce((a, b) => a + b, 0) / scores.length;
 }
@@ -136,6 +152,28 @@ export function emptyPhys() {
   return Object.fromEntries(
     PHYS_KEYS.map(k => [k, { date: '', weight: '', height: '', weightLevel: 0, heightLevel: 0 }])
   );
+}
+
+// ── ดึงน้ำหนัก/ส่วนสูงจากเมนู "ภาวะโภชนาการ" (nutritionRecords) ───────────────
+// คืน { 'YYYY-MM': { date, weight, height } } ของนักเรียนคนนี้ — เลือกครั้งล่าสุดของแต่ละเดือน
+// ใช้เฉพาะรอบที่มีค่าน้ำหนักหรือส่วนสูงจริง (> 0)
+export function buildNutritionIndex(nutritionRecords, studentId, academicYear) {
+  const out = {};
+  const sid = String(studentId);
+  Object.values(nutritionRecords ?? {}).forEach(r => {
+    if (!r || !r.assessmentDate) return;
+    if (academicYear && String(r.academicYear) !== String(academicYear)) return;
+    const row = r.students?.[sid];
+    if (!row) return;
+    const w = parseFloat(row.weight) || 0;
+    const h = parseFloat(row.height) || 0;
+    if (!w && !h) return;
+    const ym = String(r.assessmentDate).slice(0, 7);
+    if (!out[ym] || String(r.assessmentDate) > out[ym].date) {
+      out[ym] = { date: String(r.assessmentDate), weight: w || '', height: h || '' };
+    }
+  });
+  return out;
 }
 
 // ── monthly growth records ────────────────────────────────────────────────────

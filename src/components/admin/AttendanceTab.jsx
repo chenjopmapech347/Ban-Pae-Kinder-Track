@@ -252,6 +252,8 @@ export default function AttendanceTab({ defaultClass }) {
   const outOfTerm = !isInTerm(selectedDate); // นอกช่วงเปิด–ปิดเรียน → บันทึกไม่ได้
   const isLocked = termLocked || outOfTerm;
   const isHolidayDate = holidayISOs.has(selectedDate);
+  // เสาร์–อาทิตย์ที่ไม่ใช่วันเรียนชดเชย → ไม่มีเรียน บันทึกไม่ได้ (กันบันทึกผิดวัน)
+  const isWeekendDate = isWeekendISO(selectedDate);
   const [filterClass,  setFilterClass]  = useState(defaultClass ?? 'ทั้งหมด');
   const [viewMode,     setViewMode]     = useState('card');  // 'card' | 'table'
   const [showHygiene,  setShowHygiene]  = useState(false);
@@ -340,6 +342,10 @@ export default function AttendanceTab({ defaultClass }) {
   // บันทึกห้องนี้ + auto-fill modules อัตโนมัติ (ผ่าน saveDailyAttendance ใน AppContext)
   function handleSaveClass(cls) {
     if (isLocked) return; // ล็อกภาคเรียน หรือนอกช่วงเปิด–ปิดเรียน
+    if (isWeekendDate && !isHolidayDate) {
+      alert('วันเสาร์–อาทิตย์ไม่มีการเรียนการสอน — ไม่สามารถบันทึกข้อมูลได้ (ถ้าเป็นวันเรียนชดเชย ให้ตั้งที่เมนู วันหยุดพิเศษ/วันชดเชย)');
+      return;
+    }
     if (isHolidayDate) {
       const h = holidays.find(hd => {
         if (!hd.date) return false;
@@ -442,6 +448,10 @@ export default function AttendanceTab({ defaultClass }) {
             dailyAtt[d] = rec.attendance;
           }
         });
+        // วันเรียนของห้องที่นักเรียนคนนี้ไม่มีบันทึก → นับเป็น "ขาด" (เหมือนสมุดรายงาน: ไม่มาเรียน = เวลาเรียนเต็ม − มา)
+        // ทำให้ "รวม" เท่ากับจำนวนวันเรียนของห้องทุกคน
+        const recorded = counts.มา + counts.ขาด + counts.ลา + counts.ป่วย;
+        if (recorded < targetDates.length) counts.ขาด += targetDates.length - recorded;
         return { ...s, counts, dailyAtt };
       });
       return { cls, teacher, rows, schoolDays: targetDates.length, excluded };
@@ -848,18 +858,18 @@ export default function AttendanceTab({ defaultClass }) {
                   ✅ มาทั้งหมด
                 </button>
                 <button
-                  onClick={() => !isLocked && !isHolidayDate && handleSaveClass(cls)}
-                  disabled={isLocked || isHolidayDate}
+                  onClick={() => !isLocked && !isHolidayDate && !isWeekendDate && handleSaveClass(cls)}
+                  disabled={isLocked || isHolidayDate || isWeekendDate}
                   style={{
                     padding: '.25rem .75rem', borderRadius: '8px', border: 'none',
                     background: isLocked ? '#f3f4f6' : dirtyClasses.has(cls) ? '#7c3aed' : '#e5e7eb',
                     color: isLocked ? '#9ca3af' : dirtyClasses.has(cls) ? 'white' : '#9ca3af',
                     fontFamily: 'inherit', fontWeight: 700, fontSize: '.73rem',
                     cursor: isLocked ? 'not-allowed' : 'pointer',
-                    opacity: isLocked || isHolidayDate ? 0.6 : 1,
+                    opacity: isLocked || isHolidayDate || isWeekendDate ? 0.6 : 1,
                   }}
                 >
-                  {isLocked ? '🔒 ล็อกแล้ว' : isHolidayDate ? '🚫 วันหยุด' : `💾 บันทึก${dirtyClasses.has(cls) ? '' : ' (บันทึกแล้ว)'}`}
+                  {isLocked ? '🔒 ล็อกแล้ว' : (isHolidayDate || isWeekendDate) ? '🚫 วันหยุด' : `💾 บันทึก${dirtyClasses.has(cls) ? '' : ' (บันทึกแล้ว)'}`}
                 </button>
               </div>
             </div>

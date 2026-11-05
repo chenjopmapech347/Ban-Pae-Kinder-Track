@@ -1,6 +1,5 @@
 // AbilityAssessmentTab.jsx
-// ประเมินความสามารถผู้เรียน — รองรับ 4 ชุดข้อมูล
-//   • C60      : หลักสูตรการศึกษาปฐมวัย พ.ศ. 2560 · 4 ด้าน 23 ตัวบ่งชี้
+// ประเมินความสามารถผู้เรียน — หลักสูตรการศึกษาปฐมวัย พ.ศ. 2568 (3 ชุดตามระดับชั้น)
 //   • C68 อ.3  : ความสามารถผู้เรียนสิ้นปี อ.3 หลักสูตร พ.ศ. 2568 · 4 ด้าน 15 ความสามารถ
 //   • C68 อ.2  : ความสามารถผู้เรียนสิ้นปี อ.2 หลักสูตร พ.ศ. 2568 · 4 ด้าน 33 ความสามารถ
 //   • C68 อ.1  : ความสามารถผู้เรียนสิ้นปี อ.1 หลักสูตร พ.ศ. 2568 · 4 ด้าน 33 ความสามารถ
@@ -8,10 +7,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { compareStudents, compareClassNames } from '../../utils/helpers';
-import {
-  SCALE_C60, DOMAINS_C60, INDICATORS_C60,
-  getIndicatorsByDomain, LEVEL_TO_KEY, calcAvgScore,
-} from '../../data/indicatorsData_curriculum60';
 import {
   SCALE_C68, DOMAINS_C68, COMPETENCIES_C68,
   getCompetenciesByDomain, calcAvgScoreC68,
@@ -34,25 +29,6 @@ const TODAY = new Date().toISOString().slice(0, 10);
 // Dataset config
 // ──────────────────────────────────────────────────────────────────────────────
 const DATASETS = {
-  c60: {
-    key: 'c60',
-    label: 'หลักสูตร พ.ศ. 2560',
-    subtitle: '4 ด้าน 23 ตัวบ่งชี้',
-    scale: SCALE_C60,
-    domains: DOMAINS_C60,
-    indicators: INDICATORS_C60,
-    getByDomain: getIndicatorsByDomain,
-    calcAvg: (scores) => calcAvgScore(scores),
-    calcDomainAvg: (scores, domainId) => {
-      const inds = getIndicatorsByDomain(domainId);
-      const vals = inds.map(i => scores[i.code]).filter(v => v > 0);
-      return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
-    },
-    descriptorRow: (ind, levelKey) => ind.levelDescriptors?.[levelKey] ?? '—',
-    descriptorLabel: (selClass) =>
-      `เกณฑ์ระดับ: ${Object.keys(LEVEL_TO_KEY).find(k => selClass.includes(k)) ?? '—'}`,
-    allLevels: true,      // แสดง levelKey selector
-  },
   c68: {
     key: 'c68',
     label: 'หลักสูตร พ.ศ. 2568',
@@ -194,9 +170,9 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
   const [selYear,   setSelYear]   = useState(academicYear);
   const [selTerm,   setSelTerm]   = useState(currentTerm ?? '1');
   const [selClass,  setSelClass]  = useState(myClass ?? '');
-  // auto-select c68_อ1/อ2/อ3 จากชื่อห้อง; ถ้าไม่มีห้อง default = 'c60'
+  // auto-select c68_อ1/อ2/อ3 จากชื่อห้อง; ถ้าไม่มีห้อง default = อ.3
   const [datasetKey, setDatasetKey] = useState(
-    myClass ? autoC68KeyFromClass(myClass) : 'c60'
+    autoC68KeyFromClass(myClass ?? '')
   );
   const [activeDomain, setActiveDomain] = useState('d1');
   const [picker, setPicker] = useState(null);
@@ -219,10 +195,8 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
 
   // เมื่อเปลี่ยนห้อง → auto-switch c68 sub-dataset ให้ตรงระดับ
   useEffect(() => {
-    if (datasetKey !== 'c60') {
-      const autoKey = autoC68KeyFromClass(selClass);
-      if (autoKey !== datasetKey) switchDataset(autoKey);
-    }
+    const autoKey = autoC68KeyFromClass(selClass);
+    if (autoKey !== datasetKey) switchDataset(autoKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selClass]);
 
@@ -233,24 +207,16 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
     [students, selClass]
   );
 
-  // หา level key จากชื่อห้อง (ใช้เฉพาะชุด C60)
-  const levelKey = useMemo(() => {
-    if (!selClass) return 'k2';
-    const lv = Object.keys(LEVEL_TO_KEY).find(k => selClass.includes(k));
-    return lv ? LEVEL_TO_KEY[lv] : 'k2';
-  }, [selClass]);
-
   const domainIndicators = useMemo(
     () => DS.getByDomain(activeDomain),
     [DS, activeDomain]
   );
 
   // ─── getter / setter ──────────────────────────────────────────────────────
-  // C60 ใช้ key เดิม (ไม่มี suffix) เพื่อ backward-compat
-  // C68 เพิ่ม suffix ||c68 แยกออกมา
+  // key = sid||ปี||ภาค||ชุด (c68 = อ.3, c68_อ2, c68_อ1)
   function dsKey(sid) {
     const base = recKey(sid, selYear, selTerm);
-    return datasetKey === 'c60' ? base : `${base}||${datasetKey}`;
+    return `${base}||${datasetKey}`;
   }
 
   function getScore(sid, code) {
@@ -275,7 +241,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
   // ─── summary ─────────────────────────────────────────────────────────────
   const summaryRows = useMemo(() => classStudents.map(s => {
     const base = recKey(s.id, selYear, selTerm);
-    const k = datasetKey === 'c60' ? base : `${base}||${datasetKey}`;
+    const k = `${base}||${datasetKey}`;
     const rec = abilityAssessments?.[k] ?? {};
     const scores = Object.fromEntries(
       DS.indicators.map(i => [i.code, rec[i.code] ?? 0])
@@ -337,8 +303,8 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
 
             {/* ── ปุ่ม C68 รวม (auto-select ระดับจากห้อง) ── */}
             {(() => {
-              const active = datasetKey !== 'c60';
-              const level  = active ? c68LevelLabel(datasetKey) : (selClass ? c68LevelLabel(autoC68KeyFromClass(selClass)) : 'อ.3');
+              const active = true;
+              const level  = c68LevelLabel(datasetKey);
               return (
                 <button
                   onClick={() => switchDataset(autoC68KeyFromClass(selClass))}
@@ -416,21 +382,8 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
             )}
           </div>
 
-          {/* ระดับ (C60 allLevels) */}
-          {selClass && DS.allLevels && (
-            <>
-              <div style={{ width: '1px', height: '28px', background: '#e2e8f0', alignSelf: 'flex-end', marginBottom: '1px' }} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <label style={{ fontSize: '.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.05em' }}>ระดับ</label>
-                <span style={{ padding: '.3rem .75rem', borderRadius: '6px', background: '#f8fafc', color: '#475569', fontSize: '.82rem', border: '1px solid #e2e8f0' }}>
-                  {Object.keys(LEVEL_TO_KEY).find(k => selClass.includes(k)) ?? selClass}
-                </span>
-              </div>
-            </>
-          )}
-
           {/* คำเตือนเมื่อ dataset ที่เลือกไม่ตรงกับระดับชั้นของห้อง */}
-          {selClass && datasetKey !== 'c60' && datasetKey !== autoC68KeyFromClass(selClass) && (
+          {selClass && datasetKey !== autoC68KeyFromClass(selClass) && (
             <span style={{ padding: '.3rem .75rem', borderRadius: '6px', background: '#fffbeb', color: '#92400e', fontSize: '.78rem', fontWeight: 600, border: '1px solid #fde68a', alignSelf: 'flex-end' }}>
               ⚠️ ชุดนี้ออกแบบสำหรับ {c68LevelLabel(datasetKey)} — ห้องนี้ควรใช้ชุด {c68LevelLabel(autoC68KeyFromClass(selClass))}
             </span>
@@ -516,7 +469,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                       </td>
                       {domainIndicators.map(ind => (
                         <td key={ind.code} style={{ padding: '.25rem .5rem', fontSize: '.7rem', color: '#3b82f6', textAlign: 'center', lineHeight: 1.3 }}>
-                          {DS.descriptorRow(ind, levelKey)}
+                          {DS.descriptorRow(ind)}
                         </td>
                       ))}
                     </tr>
@@ -756,9 +709,9 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                               <span style={{ fontFamily: 'monospace', fontSize: '.75rem', fontWeight: 700, color: d.color }}>{ind.code}</span>
                               <span style={{ fontSize: '.82rem', color: '#1e293b' }}>{ind.label}</span>
                             </div>
-                            {DS.descriptorRow(ind, levelKey) !== '—' && (
+                            {DS.descriptorRow(ind) !== '—' && (
                               <p style={{ margin: '3px 0 0', fontSize: '.72rem', color: '#94a3b8', lineHeight: 1.5 }}>
-                                {DS.descriptorRow(ind, levelKey)}
+                                {DS.descriptorRow(ind)}
                               </p>
                             )}
                           </div>

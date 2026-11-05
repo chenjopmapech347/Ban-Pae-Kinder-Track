@@ -2,11 +2,10 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { INDICATORS_DATA_68 } from '../../data/indicatorsData_68';
 import {
-  SCALE_C60, DOMAINS_C60, INDICATORS_C60, LEVEL_TO_KEY,
-} from '../../data/indicatorsData_curriculum60';
-import {
   SCALE_C68, DOMAINS_C68, COMPETENCIES_C68, getCompetenciesByDomain,
 } from '../../data/competenciesData_อ3_68';
+import { COMPETENCIES_C68_อ2, getCompetenciesByDomainอ2 } from '../../data/competenciesData_อ2_68';
+import { COMPETENCIES_C68_อ1, getCompetenciesByDomainอ1 } from '../../data/competenciesData_อ1_68';
 import { callClaude, buildTeacherCommentPrompt, buildDomainSummaryPrompt } from '../../utils/aiHelper';
 import CompCard from './report/CompCard';
 import SubDomainSummaryBox from './report/SubDomainSummaryBox';
@@ -18,7 +17,7 @@ import {
   GROWTH_ROWS, PHILOSOPHY_TEXT, VISION_TEXT,
   DEV_ASSESS_DOMAINS,
 } from '../../data/reportConstants';
-import { calcGrowthLevels, levelColor, getActivityTermScore, getIndicatorTermScore, gradeLabelOf, suggestLevelFromIndicator, genderOf, ageAt, PHYS_KEYS, PHYS_LABELS, PHYS_MONTH_HINTS, emptyPhys, GROWTH_MONTHS_T1, GROWTH_MONTHS_T2, GROWTH_MONTHS_ALL, monthRefDate, emptyGrowth, domainAllComponents, emptyDevAssess, devAssessDomainAvg } from '../../utils/reportHelpers';
+import { calcGrowthLevels, levelColor, getActivityTermScore, getIndicatorTermScore, gradeLabelOf, suggestLevelFromIndicator, genderOf, ageAt, PHYS_KEYS, PHYS_LABELS, PHYS_MONTH_HINTS, emptyPhys, GROWTH_MONTHS_T1, GROWTH_MONTHS_T2, GROWTH_MONTHS_ALL, monthRefDate, buildNutritionIndex, emptyGrowth, domainAllComponents, emptyDevAssess, devAssessDomainAvg } from '../../utils/reportHelpers';
 import { printReport } from '../../utils/printReport';
 import { ui } from '../../ui/ui';
 
@@ -33,6 +32,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
     aiApiKey,
     measurementDates,
     abilityAssessments,
+    nutritionRecords,
   } = useApp();
 
   const [aiCommentLoading, setAiCommentLoading] = useState({ 1: false, 2: false });
@@ -80,16 +80,52 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
   }, [recKey, studentReportRecords, selStudentId, academicYear]);
 
   // ดึงข้อมูลจากบันทึก — ถ้ายังไม่มีวันที่ ให้ใช้ค่าเริ่มต้นจากเมนู "กำหนดวันวัดน้ำหนัก/ส่วนสูง"
+  // น้ำหนัก/ส่วนสูงที่บันทึกในเมนู "ภาวะโภชนาการ" แยกตามเดือน (YYYY-MM) — ใช้เติมให้อัตโนมัติ
+  const nutriIdx = useMemo(
+    () => (student ? buildNutritionIndex(nutritionRecords, student.id, academicYear) : {}),
+    [nutritionRecords, student, academicYear]
+  );
+  const PHYS_DEFAULT_MONTH_NUM = [6, 9, 12, 2];
+
   const physData = (() => {
     const raw = rec?.physicalRecords ?? emptyPhys();
-    if (!measurementDates) return raw;
     const result = {};
-    PHYS_KEYS.forEach(k => {
-      result[k] = { ...raw[k], date: raw[k].date || (measurementDates[k] ?? '') };
+    PHYS_KEYS.forEach((k, i) => {
+      const r = { ...(raw[k] ?? { date: '', weight: '', height: '', weightLevel: 0, heightLevel: 0 }) };
+      r.date = r.date || (measurementDates?.[k] ?? '');
+      // ถ้าครูยังไม่กรอกเองในสมุดพก → ดึงจากเมนูภาวะโภชนาการ (เดือนที่กำหนดไว้ หรือเดือนมาตรฐานของรอบนั้น)
+      if (!r.weight && !r.height) {
+        const ym = (measurementDates?.[k] && String(measurementDates[k]).slice(0, 7))
+          || monthRefDate(PHYS_DEFAULT_MONTH_NUM[i], academicYear).slice(0, 7);
+        const n = nutriIdx[ym];
+        if (n) {
+          r.weight = n.weight; r.height = n.height; r.date = n.date; r.fromNutrition = true;
+          if (student?.birthDate) {
+            const { ageYear, ageMonth } = ageAt(student.birthDate, n.date);
+            const lv = calcGrowthLevels(ageYear, ageMonth, n.weight, n.height, genderOf(student));
+            if (n.weight) r.weightLevel = lv.weightLevel;
+            if (n.height) r.heightLevel = lv.heightLevel;
+          }
+        }
+      }
+      result[k] = r;
     });
     return result;
   })();
-  const growthData     = rec?.growthRecords  ?? emptyGrowth();
+  const growthData = (() => {
+    const raw = rec?.growthRecords ?? emptyGrowth();
+    const result = { ...raw };
+    GROWTH_MONTHS_ALL.forEach(m => {
+      const g = raw[m.key] ?? { weight: '', height: '' };
+      if (!g.weight && !g.height) {
+        const n = nutriIdx[monthRefDate(m.num, academicYear).slice(0, 7)];
+        result[m.key] = n ? { ...g, weight: n.weight, height: n.height, fromNutrition: true } : g;
+      } else {
+        result[m.key] = g;
+      }
+    });
+    return result;
+  })();
   const devAssessData  = rec?.devAssessment  ?? emptyDevAssess();
   const healthServices = rec?.healthServices ?? [];
   const teacherComments  = rec?.teacherComments  ?? { term1: '', term2: '' };
@@ -482,6 +518,11 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                             <div style={{ fontSize: '.7rem', color: '#9ca3af', fontWeight: 400 }}>
                               อ้างอิงเดือน {PHYS_MONTH_HINTS[i]}
                             </div>
+                            {p.fromNutrition && (
+                              <div style={{ fontSize: '.68rem', color: '#059669', fontWeight: 600 }}>
+                                ✓ ดึงจากเมนูภาวะโภชนาการ
+                              </div>
+                            )}
                           </td>
                           <td style={{ padding: '6px 10px', border: '1px solid #e5e7eb' }}>
                             <input type="date" value={p.date}
@@ -1029,29 +1070,18 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
               SECTION: ความสามารถผู้เรียน (จาก AbilityAssessmentTab)
           ══════════════════════════════════════════════════════════ */}
           {activeSection === 'ability' && student && (() => {
-            // helper: get ability score for this student
-            const getAbilityScore = (sid, year, term, code, dsKey) => {
-              const base = `${sid}||${year}||${term}`;
-              const k = dsKey === 'c60' ? base : `${base}||${dsKey}`;
-              return abilityAssessments?.[k]?.[code] ?? 0;
-            };
-            const levelKey = (() => {
-              const lv = Object.keys(LEVEL_TO_KEY).find(k => student.className?.includes(k));
-              return lv ? LEVEL_TO_KEY[lv] : 'k2';
-            })();
-            const isK3 = student.className?.includes('3');
-
-            // ─── C60 scores ───────────────────────────────────────────
-            const c60Scores = Object.fromEntries(
-              INDICATORS_C60.map(i => [i.code, getAbilityScore(student.id, academicYear, '1', i.code, 'c60')])
-            );
-            const c60Filled = INDICATORS_C60.filter(i => c60Scores[i.code] > 0).length;
-
-            // ─── C68 scores (อ.3 only) ────────────────────────────────
+            // ชุดความสามารถผู้เรียน หลักสูตร 2568 ตามระดับชั้นของห้อง (อ.1 / อ.2 / อ.3)
+            const cn = student.className ?? '';
+            const lvl = /อ\.?1|อนุบาล ?[1๑]/.test(cn) ? 'k1' : /อ\.?2|อนุบาล ?[2๒]/.test(cn) ? 'k2' : 'k3';
+            const DSX = {
+              k1: { key: 'c68_อ1', label: 'อ.1', list: COMPETENCIES_C68_อ1, byDomain: getCompetenciesByDomainอ1 },
+              k2: { key: 'c68_อ2', label: 'อ.2', list: COMPETENCIES_C68_อ2, byDomain: getCompetenciesByDomainอ2 },
+              k3: { key: 'c68',    label: 'อ.3', list: COMPETENCIES_C68,    byDomain: getCompetenciesByDomain },
+            }[lvl];
             const c68Scores = Object.fromEntries(
-              COMPETENCIES_C68.map(i => [i.code, getAbilityScore(student.id, academicYear, '1', i.code, 'c68')])
+              DSX.list.map(i => [i.code, abilityAssessments?.[`${student.id}||${academicYear}||1||${DSX.key}`]?.[i.code] ?? 0])
             );
-            const c68Filled = COMPETENCIES_C68.filter(i => c68Scores[i.code] > 0).length;
+            const c68Filled = DSX.list.filter(i => c68Scores[i.code] > 0).length;
 
             const avgOf = (scores, indicators) => {
               const vals = indicators.map(i => scores[i.code]).filter(v => v > 0);
@@ -1063,72 +1093,19 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
             return (
               <div {...ui('space-y-6 mt-4')}>
                 <p {...ui('text-xs text-gray-400')}>
-                  ข้อมูลนี้ดึงจากแท็บ "ประเมินความสามารถ" · ปีการศึกษา {academicYear} · ภาคเรียนที่ 1
+                  ข้อมูลนี้ดึงจากเมนู "ประเมินความสามารถผู้เรียน" · ปีการศึกษา {academicYear} · ภาคเรียนที่ 1
                 </p>
 
-                {/* ─── C60: หลักสูตร 2560 ─────────────────────────── */}
-                <div {...ui('bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden')}>
-                  <div {...ui('px-4 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between')}>
-                    <div>
-                      <span {...ui('font-semibold text-sm text-indigo-800')}>📋 ตัวบ่งชี้หลักสูตร พ.ศ. 2560</span>
-                      <span {...ui('ml-2 text-xs text-indigo-500')}>4 ด้าน · 23 ตัวบ่งชี้</span>
-                    </div>
-                    <span {...ui(`text-xs font-medium ${c60Filled > 0 ? 'text-indigo-600' : 'text-gray-400'}`)}>
-                      ประเมินแล้ว {c60Filled}/23 ข้อ
-                    </span>
-                  </div>
-                  {c60Filled === 0 ? (
-                    <p {...ui('px-4 py-8 text-center text-gray-400 text-sm')}>ยังไม่มีข้อมูลการประเมิน</p>
-                  ) : (
-                    <div {...ui('divide-y divide-gray-50')}>
-                      {DOMAINS_C60.map(d => {
-                        const inds = INDICATORS_C60.filter(i => i.domainId === d.id);
-                        const avg = avgOf(c60Scores, inds);
-                        return (
-                          <div key={d.id} {...ui('px-4 py-3')}>
-                            <div {...ui('flex items-center justify-between mb-2')}>
-                              <span {...ui('text-sm font-semibold', { color: d.color })}>
-                                {d.icon} {d.label}
-                              </span>
-                              {avg > 0 && (
-                                <span {...ui('text-xs font-bold', { color: labelColor(avg) })}>
-                                  {avg.toFixed(2)} — {levelLabel(avg)}
-                                </span>
-                              )}
-                            </div>
-                            <div {...ui('flex flex-wrap gap-2')}>
-                              {inds.map(ind => {
-                                const sc = c60Scores[ind.code];
-                                const meta = SCALE_C60[sc];
-                                return (
-                                  <div key={ind.code} title={ind.label}
-                                    {...ui('flex items-center gap-1 px-2 py-1 rounded-lg text-xs border', meta
-                                      ? { background: meta.bg, borderColor: meta.border, color: meta.color }
-                                      : { background: '#f9fafb', borderColor: '#e5e7eb', color: '#9ca3af' })}>
-                                    <span {...ui('font-mono font-bold')}>{ind.code}</span>
-                                    {meta ? <span>{sc} {meta.label}</span> : <span>—</span>}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                            <p {...ui('text-[10px] text-indigo-400 mt-1')}>เกณฑ์ {levelKey}: {inds[0]?.levelDescriptors?.[levelKey] ?? '—'}</p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-
                 {/* ─── C68: ความสามารถสิ้นปี อ.3 ─────────────────── */}
-                {isK3 && (
+                {(
                   <div {...ui('bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden')}>
                     <div {...ui('px-4 py-3 bg-purple-50 border-b border-purple-100 flex items-center justify-between')}>
                       <div>
-                        <span {...ui('font-semibold text-sm text-purple-800')}>🎯 ความสามารถผู้เรียนสิ้นปี พ.ศ. 2568</span>
-                        <span {...ui('ml-2 text-xs text-purple-500')}>4 ด้าน · 15 ความสามารถ</span>
+                        <span {...ui('font-semibold text-sm text-purple-800')}>🎯 ความสามารถผู้เรียนสิ้นปี พ.ศ. 2568 ({DSX.label})</span>
+                        <span {...ui('ml-2 text-xs text-purple-500')}>4 ด้าน · {DSX.list.length} ความสามารถ</span>
                       </div>
                       <span {...ui(`text-xs font-medium ${c68Filled > 0 ? 'text-purple-600' : 'text-gray-400'}`)}>
-                        ประเมินแล้ว {c68Filled}/15 ข้อ
+                        ประเมินแล้ว {c68Filled}/{DSX.list.length} ข้อ
                       </span>
                     </div>
                     {c68Filled === 0 ? (
@@ -1136,7 +1113,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                     ) : (
                       <div {...ui('divide-y divide-gray-50')}>
                         {DOMAINS_C68.map(d => {
-                          const items = getCompetenciesByDomain(d.id);
+                          const items = DSX.byDomain(d.id);
                           const avg = avgOf(c68Scores, items);
                           const passCount = items.filter(i => c68Scores[i.code] >= 2).length;
                           return (
@@ -1180,11 +1157,6 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                   </div>
                 )}
 
-                {!isK3 && (
-                  <p {...ui('text-center text-xs text-amber-600 bg-amber-50 rounded-xl py-3 border border-amber-100')}>
-                    ⚠️ ชุดความสามารถผู้เรียนสิ้นปี (หลักสูตร พ.ศ. 2568) ใช้สำหรับ อนุบาล 3 เท่านั้น
-                  </p>
-                )}
               </div>
             );
           })()}

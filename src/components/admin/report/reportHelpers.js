@@ -10,18 +10,5 @@ export function levelColor(n) {
   return { bg: '#f3f4f6', color: '#9ca3af' };
 }
 
-/**
- * Compute the raw (decimal) average score for one indicator from student.assessments.indicators.
- * Returns null if no activity scores are present.
- */
-export function rawScoreFromIndicator(student, domainId, standardId, indicatorId, term) {
-  if (!indicatorId) return null;
-  const indKey  = `${domainId}__${standardId}__${indicatorId}`;
-  const indData = student?.assessments?.indicators?.[indKey];
-  if (!indData || !Object.keys(indData).length) return null;
-  const rounds = term === 1 ? ['r1', 'r2'] : ['r3', 'r4'];
-  const scores = Object.values(indData)
-    .flatMap(actData => rounds.map(r => actData?.[r]).filter(v => v != null && v > 0));
-  if (!scores.length) return null;
-  return scores.reduce((a, b) => a + b, 0) / scores.length;
-}
+// ใช้ฟังก์ชันเดียวกับ utils/reportHelpers (ภาค 1 = ผลเดือน ก.ย., ภาค 2 = ผลเดือน ก.พ.)
+export { rawScoreFromIndicator } from '../../../utils/reportHelpers';

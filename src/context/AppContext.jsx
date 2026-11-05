@@ -986,9 +986,12 @@ export function AppProvider({ children }) {
         // → จำกัดเวลา 25 วินาที แล้วแจ้งเป็น error (ข้อมูลยังอยู่ในเครื่อง และจะลองส่งใหม่เมื่อมีการแก้ไขครั้งถัดไป)
         const SYNC_TIMEOUT_MS = 25000;
         let timeoutId;
-        const snapPromise  = snapChanged  ? pushReconciled(payload) : Promise.resolve({ ok: true });
+        // วัดเวลาแต่ละส่วนไว้ดูภายหลัง: localStorage 'kt_syncTiming' (20 รายการล่าสุด)
+        const t0 = performance.now();
+        const timing = { at: new Date().toISOString(), snapKB: snapChanged ? Math.round(snapStr.length / 1024) : 0, dailyKB: dailyChanged ? Math.round(dailyStr.length / 1024) : 0, snapMs: null, dailyMs: null };
+        const snapPromise  = snapChanged  ? pushReconciled(payload).then(r => { timing.snapMs = Math.round(performance.now() - t0); return r; }) : Promise.resolve({ ok: true });
         // ข้อมูลรายวันส่งเฉพาะ key ที่เปลี่ยน (delta) — ส่งขนานกับ snapshot ไม่ต้องรอกัน
-        const dailyPromise = dailyChanged ? pushDailyDataToFirebase(dailyData) : Promise.resolve({ ok: true });
+        const dailyPromise = dailyChanged ? pushDailyDataToFirebase(dailyData).then(r => { timing.dailyMs = Math.round(performance.now() - t0); return r; }) : Promise.resolve({ ok: true });
         const [snapRes, dailyRes] = await Promise.race([
           Promise.all([snapPromise, dailyPromise]),
           new Promise((resolve) => {
@@ -1002,6 +1005,13 @@ export function AppProvider({ children }) {
           }),
         ]);
         clearTimeout(timeoutId);
+        try {
+          timing.totalMs = Math.round(performance.now() - t0);
+          timing.ok = !!(snapRes.ok && dailyRes.ok);
+          const prevT = JSON.parse(localStorage.getItem('kt_syncTiming') || '[]');
+          localStorage.setItem('kt_syncTiming', JSON.stringify([...prevT, timing].slice(-20)));
+          console.info('[sync]', timing);
+        } catch { /* ignore */ }
         const result = snapRes.ok ? dailyRes : snapRes;
         // โหมด Firebase Auth: อัปเดตข้อมูลรายบุตรหลานให้ผู้ปกครอง (ครู = ห้องตัวเอง, แอดมิน = ทุกห้อง)
         if (SERVER_AUTH && result.ok && (role === 'admin' || role === 'teacher')) {

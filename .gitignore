@@ -46,3 +46,6 @@ functions/node_modules
 parent-pins-*.csv
 all-pins-*.csv
 backup-latest-stale-*.json
+
+# สำรองข้อมูลนักเรียนจากสคริปต์ import (ห้าม commit)
+backup_*.json

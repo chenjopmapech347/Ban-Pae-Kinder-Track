@@ -96,7 +96,7 @@ const TAB_GROUPS = [
     color: '#4f46e5',
     tabs: [
       { id: 'evaluation',    label: '📊 ประเมินพัฒนาการ'        },
-      { id: 'abilityassess', label: '🎯 ประเมินความสามารถผู้เรียน' },
+      { id: 'abilityassess', label: '🎯 ประเมินความสามารถผู้เรียนหลักสูตร 2568' },
       { id: 'activitylog',   label: '📜 ประวัติการประเมิน'      },
       { id: 'devreport',     label: '📑 ผลการประเมินพัฒนาการ'   },
       { id: 'reports',       label: '📈 รายงานสรุปผลการประเมินพัฒนาการ' },

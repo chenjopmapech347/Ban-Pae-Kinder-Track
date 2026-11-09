@@ -17,7 +17,7 @@ import {
   GROWTH_ROWS, PHILOSOPHY_TEXT, VISION_TEXT,
   DEV_ASSESS_DOMAINS,
 } from '../../data/reportConstants';
-import { calcGrowthLevels, levelColor, getActivityTermScore, getIndicatorTermScore, gradeLabelOf, suggestLevelFromIndicator, genderOf, ageAt, PHYS_KEYS, PHYS_LABELS, PHYS_MONTH_HINTS, emptyPhys, GROWTH_MONTHS_T1, GROWTH_MONTHS_T2, GROWTH_MONTHS_ALL, monthRefDate, buildNutritionIndex, emptyGrowth, domainAllComponents, emptyDevAssess, devAssessDomainAvg } from '../../utils/reportHelpers';
+import { calcGrowthLevels, levelColor, getActivityTermScore, getIndicatorTermScore, gradeLabelOf, suggestLevelFromIndicator, genderOf, ageAt, PHYS_KEYS, PHYS_LABELS, PHYS_MONTH_HINTS, emptyPhys, GROWTH_MONTHS_T1, GROWTH_MONTHS_T2, GROWTH_MONTHS_ALL, monthRefDate, buildNutritionIndex, emptyGrowth, domainAllComponents, emptyDevAssess, devAssessDomainAvg, computeDevAssessFill, derivedAbilityLevels } from '../../utils/reportHelpers';
 import { printReport } from '../../utils/printReport';
 import { ui } from '../../ui/ui';
 
@@ -126,7 +126,16 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
     });
     return result;
   })();
-  const devAssessData  = rec?.devAssessment  ?? emptyDevAssess();
+  // ระดับพัฒนาการ: ค่าที่บันทึกไว้จริง (raw) + ค่าที่ระบบคำนวณให้แสดงในช่องว่าง (ไม่ได้บันทึก)
+  // — คำนวณสดจากคะแนนประเมินรายกิจกรรม และข้อมูลภาวะโภชนาการ (1.1ข.1/1.1ข.2)
+  // — ค่าที่ครูกรอกเองไม่ถูกทับ, ค่าที่คำนวณจะถูกบันทึกก็ต่อเมื่อครูแก้ไขช่องนั้น
+  const devAssessRaw = rec?.devAssessment ?? emptyDevAssess();
+  const devAssessData = useMemo(() => {
+    if (!student) return devAssessRaw;
+    const upd = computeDevAssessFill(student, devAssessRaw, nutritionRecords, academicYear);
+    return Object.keys(upd).length ? { ...devAssessRaw, ...upd } : devAssessRaw;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [student, rec?.devAssessment, nutritionRecords, academicYear]);
   const healthServices = rec?.healthServices ?? [];
   const teacherComments  = rec?.teacherComments  ?? { term1: '', term2: '' };
   const parentComments   = rec?.parentComments   ?? { term1: '', term2: '' };
@@ -134,13 +143,24 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
   const highlights       = rec?.highlights       ?? {};
 
   // ── save helper ───────────────────────────────────────────────────────────
-  const saveRec = useCallback((patch) => {
+  const saveRec = useCallback((rawPatch) => {
     if (!recKey) return;
+    let patch = rawPatch;
+    if (rawPatch.devAssessment) {
+      // ไม่บันทึกค่าที่ระบบคำนวณให้ (ยังไม่ถูกแก้) — เก็บเฉพาะช่องที่ครูแก้จริง
+      const clean = {};
+      Object.entries(rawPatch.devAssessment).forEach(([k, v]) => {
+        if (JSON.stringify(v) === JSON.stringify(devAssessData[k])) {
+          if (devAssessRaw[k] !== undefined) clean[k] = devAssessRaw[k];
+        } else clean[k] = v;
+      });
+      patch = { ...rawPatch, devAssessment: clean };
+    }
     setStudentReportRecords(prev => ({
       ...prev,
       [recKey]: { ...(prev[recKey] ?? { studentId: selStudentId, academicYear, physicalRecords: emptyPhys(), growthRecords: emptyGrowth(), devAssessment: emptyDevAssess(), healthServices: [], teacherComments: { term1: '', term2: '' }, parentComments: { term1: '', term2: '' }, directorsComment: '', highlights: {} }), ...patch },
     }));
-  }, [recKey, setStudentReportRecords, selStudentId, academicYear]);
+  }, [recKey, setStudentReportRecords, selStudentId, academicYear, devAssessRaw, devAssessData]);
 
   // ── highlights update helper ──────────────────────────────────────────────
   // rowKey: 'd0','d1','d2','d3s0'–'d3s4'  |  term: 'term1'|'term2'  |  role: 'teacher'|'parent'
@@ -223,60 +243,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
     }
   }, [aiApiKey, student, devAssessData, saveRec]);
 
-  // ── auto-fill devAssess levels from indicator scores on student select ───────
-  // เมื่อเลือกนักเรียนใหม่ ดึงคะแนนจากระบบประเมินพัฒนาการมาเติมให้อัตโนมัติ
-  // (เติมเฉพาะช่องที่ยังเป็น 0 — ไม่ทับค่าที่ครูกรอกแล้ว)
-  const autoFilledRecRef = useRef(null);
-
-  useEffect(() => {
-    if (!student || !recKey) return;
-    if (autoFilledRecRef.current === recKey) return; // ป้องกันรัน 2 ครั้งสำหรับ student เดิม
-    autoFilledRecRef.current = recKey;
-
-    const currentDA = studentReportRecords[recKey]?.devAssessment ?? emptyDevAssess();
-    const updates = {};
-    let hasAny = false;
-
-    DEV_ASSESS_DOMAINS.forEach(domain => {
-      domainAllComponents(domain).forEach(comp => {
-        if (!comp.domainId || !comp.standardId || !comp.indicatorId) return;
-        const cur = currentDA[comp.key] ?? { t1level: 0, t2level: 0, summary: 0 };
-        const fillT1 = (cur.t1level ?? 0) === 0
-          ? suggestLevelFromIndicator(student, comp.domainId, comp.standardId, comp.indicatorId, 1)
-          : 0;
-        const fillT2 = (cur.t2level ?? 0) === 0
-          ? suggestLevelFromIndicator(student, comp.domainId, comp.standardId, comp.indicatorId, 2)
-          : 0;
-        if (fillT1 > 0 || fillT2 > 0) {
-          const fillSummary = (cur.summary ?? 0) === 0 ? (fillT2 || fillT1) : 0;
-          updates[comp.key] = {
-            ...cur,
-            ...(fillT1 > 0 && { t1level: fillT1 }),
-            ...(fillT2 > 0 && { t2level: fillT2 }),
-            ...(fillSummary > 0 && { summary: fillSummary }),
-          };
-          hasAny = true;
-        }
-      });
-    });
-
-    if (!hasAny) return;
-    setStudentReportRecords(prev => ({
-      ...prev,
-      [recKey]: {
-        ...(prev[recKey] ?? {
-          studentId: selStudentId, academicYear,
-          physicalRecords: emptyPhys(), growthRecords: emptyGrowth(),
-          devAssessment: emptyDevAssess(), healthServices: [],
-          teacherComments: { term1: '', term2: '' },
-          parentComments: { term1: '', term2: '' },
-          directorsComment: '',
-        }),
-        devAssessment: { ...currentDA, ...updates },
-      },
-    }));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [student?.id, recKey]);
+  // (เดิมมี effect เติมระดับอัตโนมัติแล้วบันทึกตอนเลือกนักเรียน — เปลี่ยนเป็นคำนวณแสดงสดที่ devAssessData แทน)
 
   // ── attendance summary (computed from dailyRecords) ───────────────────────
   // เวลาเรียนเต็ม = จำนวนวันเรียนจริงของ "ห้อง" ในภาคเรียนนั้น (นับเหมือนกันทุกคนในห้อง)
@@ -370,6 +337,36 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
     sortedStudents.filter(s => s.className === selClass),
   [sortedStudents, selClass]);
 
+  // ── เติมระดับพัฒนาการให้ทั้งห้อง (เฉพาะช่องที่ยังว่าง) ───────────────────────────
+  const [bulkMsg, setBulkMsg] = useState('');
+  const [abilityTerm, setAbilityTerm] = useState(null); // null = เลือกภาคที่มีข้อมูลให้อัตโนมัติ
+  const handleBulkFill = () => {
+    if (!studentsInClass.length) return;
+    if (!window.confirm(`เติมระดับพัฒนาการอัตโนมัติให้นักเรียน ${studentsInClass.length} คน ห้อง ${selClass}\n\n• เติมเฉพาะช่องที่ยังว่าง ไม่ทับค่าที่ครูกรอกไว้\n• ใช้คะแนนประเมินรายกิจกรรม และข้อมูลภาวะโภชนาการ (น้ำหนัก/ส่วนสูง)\n\nดำเนินการต่อหรือไม่?`)) return;
+    const next = { ...studentReportRecords };
+    let nStudents = 0, nCells = 0;
+    studentsInClass.forEach(st => {
+      const key = `${st.id}__${academicYear}`;
+      const base = next[key] ?? {
+        studentId: String(st.id), academicYear,
+        physicalRecords: emptyPhys(), growthRecords: emptyGrowth(),
+        devAssessment: emptyDevAssess(), healthServices: [],
+        teacherComments: { term1: '', term2: '' }, parentComments: { term1: '', term2: '' },
+        directorsComment: '', highlights: {},
+      };
+      const cur = base.devAssessment ?? emptyDevAssess();
+      const upd = computeDevAssessFill(st, cur, nutritionRecords, academicYear);
+      const n = Object.keys(upd).length;
+      if (!n) return;
+      next[key] = { ...base, devAssessment: { ...cur, ...upd } };
+      nStudents += 1; nCells += n;
+    });
+    if (nStudents) setStudentReportRecords(next);
+    setBulkMsg(nStudents
+      ? `✅ เติมแล้ว ${nStudents}/${studentsInClass.length} คน (${nCells} ตัวบ่งชี้) — คนที่เหลือไม่มีข้อมูลให้คำนวณ หรือกรอกครบแล้ว`
+      : 'ℹ️ ไม่มีช่องที่เติมได้ — ยังไม่มีคะแนนประเมินรายกิจกรรม/ข้อมูลโภชนาการ หรือกรอกครบแล้ว');
+  };
+
   // ── UI ────────────────────────────────────────────────────────────────────
   const ACCENT = '#7c3aed';
   const BG     = '#f5f3ff';
@@ -422,6 +419,19 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
               );
             })}
           </div>
+          {!!studentsInClass.length && (
+            <div style={{ marginTop: '.5rem', display: 'flex', alignItems: 'center', gap: '.6rem', flexWrap: 'wrap' }}>
+              <button type="button" onClick={handleBulkFill}
+                style={{
+                  padding: '.3rem .8rem', borderRadius: '8px', border: `1.5px solid ${ACCENT}`,
+                  background: 'white', color: ACCENT, fontFamily: 'inherit', fontWeight: 700,
+                  fontSize: '.78rem', cursor: 'pointer',
+                }}>
+                ✨ เติมระดับทั้งห้อง ({selClass})
+              </button>
+              {bulkMsg && <span style={{ fontSize: '.75rem', color: '#4b5563' }}>{bulkMsg}</span>}
+            </div>
+          )}
         </div>
       </div>}
 
@@ -855,22 +865,11 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.8rem' }}>
                   <thead>
                     <tr style={{ background: '#f3f4f6' }}>
-                      <th style={{ padding: '7px 8px', border: '1px solid #e5e7eb', textAlign: 'center', width: '40px' }}>ลำดับ</th>
-                      <th style={{ padding: '7px 8px', border: '1px solid #e5e7eb', textAlign: 'center' }}>มาตรฐานคุณลักษณะที่พึงประสงค์</th>
-                      <th colSpan={3} style={{ padding: '7px 8px', border: '1px solid #e5e7eb', textAlign: 'center' }}>ภาคเรียน 1</th>
-                      <th colSpan={3} style={{ padding: '7px 8px', border: '1px solid #e5e7eb', textAlign: 'center' }}>ภาคเรียน 2</th>
+                      <th style={{ padding: '7px 8px', border: '1px solid #e5e7eb', textAlign: 'center', width: '60px' }}>ตัวบ่งชี้</th>
+                      <th style={{ padding: '7px 8px', border: '1px solid #e5e7eb', textAlign: 'center' }}>ตัวบ่งชี้คุณลักษณะที่พึงประสงค์</th>
+                      <th style={{ padding: '7px 8px', border: '1px solid #e5e7eb', textAlign: 'center', width: '90px' }}>ภาคเรียน 1</th>
+                      <th style={{ padding: '7px 8px', border: '1px solid #e5e7eb', textAlign: 'center', width: '90px' }}>ภาคเรียน 2</th>
                       <th style={{ padding: '7px 8px', border: '1px solid #e5e7eb', textAlign: 'center', minWidth: '70px' }}>สรุปตลอดปี</th>
-                    </tr>
-                    <tr style={{ background: '#f9fafb', fontSize: '.72rem' }}>
-                      <th style={{ padding: '4px 8px', border: '1px solid #e5e7eb' }}></th>
-                      <th style={{ padding: '4px 8px', border: '1px solid #e5e7eb' }}></th>
-                      {[1,2,3].map(n => (
-                        <th key={`t1-${n}`} style={{ padding: '4px 8px', border: '1px solid #e5e7eb', textAlign: 'center', width: '36px', ...levelColor(n) }}>{n}</th>
-                      ))}
-                      {[1,2,3].map(n => (
-                        <th key={`t2-${n}`} style={{ padding: '4px 8px', border: '1px solid #e5e7eb', textAlign: 'center', width: '36px', ...levelColor(n) }}>{n}</th>
-                      ))}
-                      <th style={{ padding: '4px 8px', border: '1px solid #e5e7eb' }}></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -883,7 +882,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                         : null;
                       return [
                         <tr key={`dom-${domain.id}`} style={{ background: domain.bg }}>
-                          <td colSpan={8} style={{ padding: '5px 10px', border: '1px solid #e5e7eb', fontWeight: 900, fontSize: '.82rem', color: domain.color }}>
+                          <td colSpan={4} style={{ padding: '5px 10px', border: '1px solid #e5e7eb', fontWeight: 900, fontSize: '.82rem', color: domain.color }}>
                             {domain.emoji} ด้าน{domain.label}
                           </td>
                           <td style={{ padding: '5px 10px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 900, fontSize: '.82rem', color: domain.color,
@@ -891,25 +890,20 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                             {domainYearly ?? '—'}
                           </td>
                         </tr>,
-                        ...domain.standards.map((std, si) => {
-                          const t1Scores = std.indicators.map(ind => ind.indScores.term1).filter(v => v !== null);
-                          const t2Scores = std.indicators.map(ind => ind.indScores.term2).filter(v => v !== null);
-                          const t1 = t1Scores.length ? Math.round(t1Scores.reduce((a,b)=>a+b,0)/t1Scores.length) : null;
-                          const t2 = t2Scores.length ? Math.round(t2Scores.reduce((a,b)=>a+b,0)/t2Scores.length) : null;
+                        ...domain.standards.flatMap(std => std.indicators).map((ind, si) => {
+                          const r = v => (v === null || v === undefined) ? null : Math.round(v);
+                          const t1 = r(ind.indScores.term1);
+                          const t2 = r(ind.indScores.term2);
                           return (
-                            <tr key={`std-${std.id}`} style={{ background: si % 2 === 0 ? 'white' : '#fafafa' }}>
-                              <td style={{ padding: '6px 8px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 700, color: '#6b7280' }}>{std.stdNo ?? ''}</td>
-                              <td style={{ padding: '6px 8px', border: '1px solid #e5e7eb', fontSize: '.78rem' }}>{std.title}</td>
-                              {[3,2,1].map(n => (
-                                <td key={`r1-${n}`} style={{ padding: '6px 8px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 700, ...( t1 === n ? levelColor(n) : {}) }}>
-                                  {t1 === n ? '✓' : ''}
-                                </td>
-                              ))}
-                              {[3,2,1].map(n => (
-                                <td key={`r2-${n}`} style={{ padding: '6px 8px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 700, ...( t2 === n ? levelColor(n) : {}) }}>
-                                  {t2 === n ? '✓' : ''}
-                                </td>
-                              ))}
+                            <tr key={`ind-${domain.id}-${ind.id}`} style={{ background: si % 2 === 0 ? 'white' : '#fafafa' }}>
+                              <td style={{ padding: '6px 8px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 700, color: '#6b7280' }}>{String(ind.id).replace(/(\d)ข/g,'$1')}</td>
+                              <td style={{ padding: '6px 8px', border: '1px solid #e5e7eb', fontSize: '.78rem' }}>{String(ind.label).replace(/^ตัวบ่งชี้\s*[\d.]+\s*/, '')}</td>
+                              <td style={{ padding: '6px 8px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 800, ...(t1 ? levelColor(t1) : {}) }}>
+                                {t1 ?? '—'}
+                              </td>
+                              <td style={{ padding: '6px 8px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 800, ...(t2 ? levelColor(t2) : {}) }}>
+                                {t2 ?? '—'}
+                              </td>
                               <td style={{ padding: '6px 8px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 800, ...(t2 ? levelColor(t2) : {}) }}>
                                 {t2 ?? '—'}
                               </td>
@@ -1078,9 +1072,16 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
               k2: { key: 'c68_อ2', label: 'อ.2', list: COMPETENCIES_C68_อ2, byDomain: getCompetenciesByDomainอ2 },
               k3: { key: 'c68',    label: 'อ.3', list: COMPETENCIES_C68,    byDomain: getCompetenciesByDomain },
             }[lvl];
-            const c68Scores = Object.fromEntries(
-              DSX.list.map(i => [i.code, abilityAssessments?.[`${student.id}||${academicYear}||1||${DSX.key}`]?.[i.code] ?? 0])
-            );
+            const scoresOfTerm = t => {
+              const auto = derivedAbilityLevels(student, t); // ช่องที่ไม่ได้บันทึก → ใช้ค่าที่ระบบคำนวณจากประเมินพัฒนาการ
+              return Object.fromEntries(
+                DSX.list.map(i => [i.code, abilityAssessments?.[`${student.id}||${academicYear}||${t}||${DSX.key}`]?.[i.code] || (auto[i.code] ?? 0)])
+              );
+            };
+            const countOfTerm = t => Object.values(scoresOfTerm(t)).filter(v => v > 0).length;
+            const termFilled = { '1': countOfTerm('1'), '2': countOfTerm('2') };
+            const abTerm = abilityTerm ?? (termFilled['1'] === 0 && termFilled['2'] > 0 ? '2' : '1');
+            const c68Scores = scoresOfTerm(abTerm);
             const c68Filled = DSX.list.filter(i => c68Scores[i.code] > 0).length;
 
             const avgOf = (scores, indicators) => {
@@ -1093,8 +1094,18 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
             return (
               <div {...ui('space-y-6 mt-4')}>
                 <p {...ui('text-xs text-gray-400')}>
-                  ข้อมูลนี้ดึงจากเมนู "ประเมินความสามารถผู้เรียน" · ปีการศึกษา {academicYear} · ภาคเรียนที่ 1
+                  ข้อมูลนี้ดึงจากเมนู "ประเมินความสามารถผู้เรียนหลักสูตร 2568" · ปีการศึกษา {academicYear} · ภาคเรียนที่ {abTerm}
                 </p>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  {['1','2'].map(t => (
+                    <button key={t} type="button" onClick={() => setAbilityTerm(t)}
+                      style={{ padding: '4px 14px', borderRadius: '999px', fontSize: '.78rem', cursor: 'pointer', fontWeight: abTerm === t ? 700 : 400,
+                        border: abTerm === t ? '1px solid #7c3aed' : '1px solid #e5e7eb',
+                        background: abTerm === t ? '#7c3aed' : '#fff', color: abTerm === t ? '#fff' : '#374151' }}>
+                      ภาคเรียน {t} ({termFilled[t]}/{DSX.list.length})
+                    </button>
+                  ))}
+                </div>
 
                 {/* ─── C68: ความสามารถสิ้นปี อ.3 ─────────────────── */}
                 {(
@@ -1134,14 +1145,14 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                                   const meta = SCALE_C68[sc];
                                   const passed = sc >= 2;
                                   return (
-                                    <div key={ind.code}
+                                    <div key={String(ind.code).replace(/(\d)ข/g,'$1')}
                                       {...ui('flex items-start gap-2 text-xs')}>
                                       <div {...ui(`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center font-bold shrink-0 text-[10px] ${
                                         sc === 0 ? 'bg-gray-100 text-gray-300' :
                                         passed ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-500'
                                       }`)}>{sc === 0 ? '—' : passed ? '✓' : '✗'}</div>
                                       <div {...ui('flex-1')}>
-                                        <span {...ui('font-mono font-bold', { color: d.color })}>{ind.code}</span>
+                                        <span {...ui('font-mono font-bold', { color: d.color })}>{String(ind.code).replace(/(\d)ข/g,'$1')}</span>
                                         <span {...ui('text-gray-700 ml-1')}>{ind.label}</span>
                                         {meta && <span {...ui('ml-1 font-semibold', { color: meta.color })}>({meta.label})</span>}
                                       </div>

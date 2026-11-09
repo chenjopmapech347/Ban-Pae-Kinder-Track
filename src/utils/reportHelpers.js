@@ -4,6 +4,8 @@
  * extracted จาก StudentReportTab.jsx เพื่อลดขนาดไฟล์
  */
 import { GROWTH_TABLE, DEV_ASSESS_DOMAINS } from '../data/reportConstants';
+import { INDICATORS_DATA_68 } from '../data/indicatorsData_68';
+import { COMPETENCY_ACTIVITY_MAP } from '../data/competencyActivityMap';
 
 export function getGrowthLevel(value, low, high) {
   const v = parseFloat(value);
@@ -197,6 +199,60 @@ export const GROWTH_MONTHS_T2 = [
 ];
 export const GROWTH_MONTHS_ALL = [...GROWTH_MONTHS_T1, ...GROWTH_MONTHS_T2];
 
+/**
+ * ระดับน้ำหนัก/ส่วนสูงตามเกณฑ์กรมอนามัยของภาคเรียน — คำนวณจากข้อมูลภาวะโภชนาการ
+ * ใช้เดือนสรุปของภาคเรียน (ภาค 1 = ก.ย., ภาค 2 = ก.พ.) ถ้าเดือนนั้นไม่มีข้อมูล ใช้เดือนล่าสุดที่มีในภาคเรียน
+ */
+export function growthLevelsForTerm(student, nutritionRecords, academicYear, term) {
+  const none = { weightLevel: 0, heightLevel: 0 };
+  if (!student?.birthDate) return none;
+  const idx = buildNutritionIndex(nutritionRecords, student.id, academicYear);
+  const months = (term === 1 ? GROWTH_MONTHS_T1 : GROWTH_MONTHS_T2)
+    .map(m => ({ num: m.num, ym: monthRefDate(m.num, academicYear).slice(0, 7) }));
+  const pref = months.find(m => String(m.num).padStart(2, '0') === SUMMARY_MONTH[term]);
+  let n = pref ? idx[pref.ym] : null;
+  if (!n) months.forEach(m => { if (idx[m.ym]) n = idx[m.ym]; });
+  if (!n) return none;
+  const { ageYear, ageMonth } = ageAt(student.birthDate, n.date);
+  const lv = calcGrowthLevels(ageYear, ageMonth, n.weight, n.height, genderOf(student));
+  return { weightLevel: n.weight ? lv.weightLevel : 0, heightLevel: n.height ? lv.heightLevel : 0 };
+}
+
+/**
+ * ระดับพัฒนาการที่ระบบเติมให้ได้ (เฉพาะช่องที่ยังเป็น 0 — ไม่ทับค่าที่ครูกรอกแล้ว)
+ * - ตัวบ่งชี้ทั่วไป: จากคะแนนประเมินรายกิจกรรม
+ * - 1.1ข.1 / 1.1ข.2 (น้ำหนัก/ส่วนสูงตามเกณฑ์): จากข้อมูลภาวะโภชนาการ
+ * คืนค่าเป็น { [comp.key]: record ใหม่ } เฉพาะที่เปลี่ยน
+ */
+export function computeDevAssessFill(student, currentDA, nutritionRecords, academicYear) {
+  const updates = {};
+  const g = { 1: growthLevelsForTerm(student, nutritionRecords, academicYear, 1),
+              2: growthLevelsForTerm(student, nutritionRecords, academicYear, 2) };
+  DEV_ASSESS_DOMAINS.forEach(domain => {
+    domainAllComponents(domain).forEach(comp => {
+      if (!comp.domainId || !comp.standardId || !comp.indicatorId) return;
+      const cur = currentDA?.[comp.key] ?? { t1level: 0, t2level: 0, summary: 0 };
+      const pick = (term) => {
+        if (comp.key === 'physical_1_1k_1' && g[term].weightLevel > 0) return g[term].weightLevel;
+        if (comp.key === 'physical_1_1k_2' && g[term].heightLevel > 0) return g[term].heightLevel;
+        return suggestLevelFromIndicator(student, comp.domainId, comp.standardId, comp.indicatorId, term);
+      };
+      const fillT1 = (cur.t1level ?? 0) === 0 ? pick(1) : 0;
+      const fillT2 = (cur.t2level ?? 0) === 0 ? pick(2) : 0;
+      if (fillT1 > 0 || fillT2 > 0) {
+        const fillSummary = (cur.summary ?? 0) === 0 ? (fillT2 || fillT1) : 0;
+        updates[comp.key] = {
+          ...cur,
+          ...(fillT1 > 0 && { t1level: fillT1 }),
+          ...(fillT2 > 0 && { t2level: fillT2 }),
+          ...(fillSummary > 0 && { summary: fillSummary }),
+        };
+      }
+    });
+  });
+  return updates;
+}
+
 // วันที่อ้างอิง: วันที่ 15 ของเดือนนั้นในปีการศึกษา (เพื่อคำนวณอายุ)
 // เดือน 5–12 → CE = ay-543 ; เดือน 1–4 → CE = ay-542
 export function monthRefDate(monthNum, academicYear) {
@@ -253,3 +309,56 @@ export function devAssessDomainAvg(devAssessment, domainId) {
 // ═══════════════════════════════════════════════════════════════════════════════
 //  Main Component
 // ═══════════════════════════════════════════════════════════════════════════════
+
+
+// ── ระดับความสามารถผู้เรียนที่ระบบคำนวณให้ (ตัวเลือก 1: ค่าเฉลี่ยรายด้าน) ──────────
+// เอาค่าเฉลี่ยคะแนน "ประเมินพัฒนาการ" ของทุกตัวบ่งชี้ในด้านนั้น ตามภาคเรียน → ปัดเป็น 1-3
+// คืน { d1, d2, d3, d4 } (d1=กาย d2=อารมณ์-สังคม d3=พลเมือง d4=สติปัญญา); ไม่มีข้อมูล = ไม่มีคีย์
+const ABILITY_DOMAIN_MAP = { physical: 'd1', emotional: 'd2', citizen: 'd3', cognitive: 'd4' };
+export function derivedDomainLevels(student, term) {
+  const out = {};
+  if (!student) return out;
+  const t = Number(term) || 1;
+  INDICATORS_DATA_68.forEach(domain => {
+    const vals = [];
+    domain.standards.forEach(std => std.indicators.forEach(ind => {
+      const indKey = `${domain.id}__${std.id}__${ind.id}`;
+      const indData = student.assessments?.indicators?.[indKey];
+      if (!indData) return;
+      const actIds = [];
+      ind.items.forEach(item => item.activities.forEach(act => actIds.push(`${indKey}__${item.id}__${act.no}`)));
+      const v = getIndicatorTermScore(indData, actIds, t);
+      if (v !== null) vals.push(v);
+    }));
+    if (vals.length) {
+      const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+      out[ABILITY_DOMAIN_MAP[domain.id]] = Math.min(3, Math.max(1, Math.round(avg)));
+    }
+  });
+  return out;
+}
+
+// ── ระดับความสามารถรายข้อ จากการจับคู่กับกิจกรรมย่อยของประเมินพัฒนาการ ──────────
+// ความสามารถ = ค่าเฉลี่ยคะแนนของกิจกรรมที่จับคู่ไว้ (ดู data/competencyActivityMap.js) เฉพาะกิจกรรมที่มีคะแนนในภาคนั้น
+// ข้อที่ไม่มีกิจกรรมรองรับ หรือกิจกรรมที่จับคู่ยังไม่มีคะแนนเลย → ไม่คำนวณให้ (ไม่มีคีย์)
+// คืน { '1.1': level, ... } เฉพาะข้อที่คำนวณได้
+export function derivedAbilityLevels(student, term) {
+  const out = {};
+  if (!student) return out;
+  const t = Number(term) || 1;
+  const actScore = {}; // no → คะแนนเฉลี่ยของกิจกรรมในภาคนี้
+  INDICATORS_DATA_68.forEach(domain => domain.standards.forEach(std => std.indicators.forEach(ind => {
+    const indKey = `${domain.id}__${std.id}__${ind.id}`;
+    const indData = student.assessments?.indicators?.[indKey];
+    if (!indData) return;
+    ind.items.forEach(item => item.activities.forEach(act => {
+      const v = getActivityTermScore(indData[`${indKey}__${item.id}__${act.no}`], t);
+      if (v !== null) actScore[Number(act.no)] = v;
+    }));
+  })));
+  Object.entries(COMPETENCY_ACTIVITY_MAP).forEach(([code, nos]) => {
+    const vals = nos.map(n => actScore[n]).filter(v => v !== undefined);
+    if (vals.length) out[code] = Math.min(3, Math.max(1, Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)));
+  });
+  return out;
+}

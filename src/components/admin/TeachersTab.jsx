@@ -115,7 +115,7 @@ const TEACHER_TAB_GROUPS = [
     label: 'ประเมิน',
     tabs: [
       { id: 'evaluation',    label: '✏️ ประเมินพัฒนาการ' },
-      { id: 'abilityassess', label: '🎯 ประเมินความสามารถผู้เรียน' },
+      { id: 'abilityassess', label: '🎯 ประเมินความสามารถผู้เรียนหลักสูตร 2568' },
       { id: 'activitylog',   label: '📜 ประวัติการประเมิน' },
       { id: 'devreport',     label: '📑 ผลการประเมินพัฒนาการ' },
       { id: 'formreports',   label: '📄 รายงานสรุป' },

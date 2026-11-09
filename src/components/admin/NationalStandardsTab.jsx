@@ -1,6 +1,6 @@
 // NationalStandardsTab.jsx
 // แสดงผลตามมาตรฐานสถานพัฒนาเด็กปฐมวัยแห่งชาติ ปี 68 (กลุ่ม ข — อายุ 3 ปีขึ้นไป)
-// 3 มาตรฐาน · 17 ตัวบ่งชี้ · 59 รายการพิจารณา
+// 1 มาตรฐาน · 7 ตัวบ่งชี้ · 20 รายการพิจารณา
 //
 // มาตรฐานที่ 1 คุณภาพเด็ก  → aggregate จาก activityLogs (7 ตัวบ่งชี้ 1.1ข–1.7ข)
 // มาตรฐานที่ 2 การบริหาร   → checklist บันทึกโดยผู้อำนวยการ (settings/std1_ratings)
@@ -39,10 +39,10 @@ function getDomainfromCode(code) {
 
 // ตัวบ่งชี้มาตรฐานที่ 1 ที่แมปกับแต่ละ domain
 const DOMAIN_META = {
-  physical:  { label: '🏃 ร่างกาย',      color: '#059669', bg: '#ecfdf5', border: '#6ee7b7', nat: '1.1ข–1.2ข, 1.6ข' },
-  emotional: { label: '❤️ อารมณ์-จิตใจ', color: '#e11d48', bg: '#fff1f2', border: '#fda4af', nat: '1.3ข' },
-  social:    { label: '🤝 สังคม-คุณธรรม',  color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd', nat: '1.4ข, 1.7ข' },
-  cognitive: { label: '💡 สติปัญญา-ภาษา', color: '#b45309', bg: '#fffbeb', border: '#fcd34d', nat: '1.5ข' },
+  physical:  { label: '🏃 ร่างกาย',      color: '#059669', bg: '#ecfdf5', border: '#6ee7b7', nat: '1.1–1.2, 1.6' },
+  emotional: { label: '❤️ อารมณ์-จิตใจ', color: '#e11d48', bg: '#fff1f2', border: '#fda4af', nat: '1.3' },
+  social:    { label: '🤝 สังคม-คุณธรรม',  color: '#7c3aed', bg: '#f5f3ff', border: '#c4b5fd', nat: '1.4, 1.7' },
+  cognitive: { label: '💡 สติปัญญา-ภาษา', color: '#b45309', bg: '#fffbeb', border: '#fcd34d', nat: '1.5' },
 };
 
 // ─── มาตรฐานที่ 2 — การบริหาร (5 ตัวบ่งชี้, 22 รายการพิจารณา) ปี 68 ────
@@ -481,8 +481,6 @@ export default function NationalStandardsTab() {
   const SECTIONS = [
     { id: 'all',  label: '📊 ภาพรวม' },
     { id: 'std3', label: '👶 มาตรฐานที่ 1 — คุณภาพเด็ก' },
-    { id: 'std2', label: '👩‍🏫 มาตรฐานที่ 3 — การจัดประสบการณ์' },
-    { id: 'std1', label: '🏛 มาตรฐานที่ 2 — การบริหาร' },
   ];
 
   return (
@@ -491,7 +489,7 @@ export default function NationalStandardsTab() {
       <div {...ui('page-header mb-4')}>
         <h3>🏛 มาตรฐานสถานพัฒนาเด็กปฐมวัยแห่งชาติ ปี 68</h3>
         <div style={{ fontSize: '.75rem', color: 'var(--text-muted)' }}>
-          กลุ่ม ข (อายุ 3 ปีขึ้นไป) · 3 มาตรฐาน · 17 ตัวบ่งชี้ · 59 รายการพิจารณา
+          กลุ่ม ข (อายุ 3 ปีขึ้นไป) · 1 มาตรฐาน · 7 ตัวบ่งชี้ · 20 รายการพิจารณา
         </div>
       </div>
 
@@ -527,16 +525,6 @@ export default function NationalStandardsTab() {
               score={std3Score}
               color="#059669" bg="#ecfdf5" border="#6ee7b7"
             />
-            <SummaryBadge
-              label="มาตรฐานที่ 2 — การบริหาร"
-              score={std1Score}
-              color="#0891b2" bg="#f0f9ff" border="#bae6fd"
-            />
-            <SummaryBadge
-              label="มาตรฐานที่ 3 — การจัดประสบการณ์"
-              score={std2Score}
-              color="#7c3aed" bg="#f5f3ff" border="#ddd6fe"
-            />
           </div>
 
           {/* Note */}
@@ -545,9 +533,7 @@ export default function NationalStandardsTab() {
             borderRadius: '10px', padding: '.7rem 1rem',
             fontSize: '.78rem', color: '#92400e', marginBottom: '1.25rem',
           }}>
-            💡 <strong>มาตรฐานที่ 1 (คุณภาพเด็ก)</strong> คำนวณจากผลการประเมินพัฒนาการในระบบ &nbsp;·&nbsp;
-            <strong>มาตรฐานที่ 2 (การบริหาร)</strong> Checklist โดยผู้อำนวยการ/ผู้รับผิดชอบ &nbsp;·&nbsp;
-            <strong>มาตรฐานที่ 3 (การจัดประสบการณ์)</strong> ครูแต่ละคนประเมินตนเองจาก TeacherDashboard
+            💡 <strong>มาตรฐานที่ 1 (คุณภาพเด็ก)</strong> คำนวณจากผลการประเมินพัฒนาการในระบบ
           </div>
 
           {/* Domain quick view */}
@@ -615,10 +601,10 @@ export default function NationalStandardsTab() {
                   </thead>
                   <tbody>
                     {[
-                      { domain: 'physical',  nat: '1.1ข น้ำหนัก-ส่วนสูง / 1.2ข กล้ามเนื้อ / 1.6ข ความปลอดภัย', codes: '3.1–3.3 (ดย.) / มาตรฐาน 1-2 (ปวัย.)' },
-                      { domain: 'emotional', nat: '1.3ข สุขภาวะอารมณ์-จิตใจ',                                      codes: '4.1–4.3 (ดย.) / มาตรฐาน 3-5 (ปวัย.)' },
-                      { domain: 'social',    nat: '1.4ข สุขภาวะสังคม / 1.7ข คุณธรรม',                               codes: '5.1–5.4 (ดย.) / มาตรฐาน 6-8 (ปวัย.)' },
-                      { domain: 'cognitive', nat: '1.5ข สุขภาวะสติปัญญา-ภาษา',                                      codes: '6.1–6.3 (ดย.) / มาตรฐาน 9-12 (ปวัย.)' },
+                      { domain: 'physical',  nat: '1.1 น้ำหนัก-ส่วนสูง / 1.2 กล้ามเนื้อ / 1.6 ความปลอดภัย', codes: '3.1–3.3 (ดย.) / มาตรฐาน 1-2 (ปวัย.)' },
+                      { domain: 'emotional', nat: '1.3 สุขภาวะอารมณ์-จิตใจ',                                      codes: '4.1–4.3 (ดย.) / มาตรฐาน 3-5 (ปวัย.)' },
+                      { domain: 'social',    nat: '1.4 สุขภาวะสังคม / 1.7 คุณธรรม',                               codes: '5.1–5.4 (ดย.) / มาตรฐาน 6-8 (ปวัย.)' },
+                      { domain: 'cognitive', nat: '1.5 สุขภาวะสติปัญญา-ภาษา',                                      codes: '6.1–6.3 (ดย.) / มาตรฐาน 9-12 (ปวัย.)' },
                     ].map(row => {
                       const st = domainStats[row.domain];
                       const total = st.s1 + st.s2 + st.s3;
@@ -649,193 +635,6 @@ export default function NationalStandardsTab() {
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* ══ มาตรฐานที่ 2 ════════════════════════════════════════════════════ */}
-      {activeSection === 'std2' && (
-        <div>
-          {/* Info banner */}
-          <div style={{
-            background: '#f5f3ff', border: '1px solid #ddd6fe',
-            borderRadius: '10px', padding: '.7rem 1rem',
-            fontSize: '.78rem', color: '#5b21b6', marginBottom: '1.25rem',
-          }}>
-            👩‍🏫 <strong>มาตรฐานที่ 3 — การจัดประสบการณ์ (ปี 68)</strong> · 5 ตัวบ่งชี้ · 17 รายการพิจารณา &nbsp;·&nbsp; ครูแต่ละคนประเมินตนเองจาก TeacherDashboard → มาตรฐานที่ 3 &nbsp;·&nbsp; ข้อมูลอัปเดตอัตโนมัติเมื่อครูบันทึก
-          </div>
-
-          {/* School average score card */}
-          <div style={{
-            background: std2Score !== null ? '#7c3aed' : '#6b7280',
-            color: 'white', borderRadius: '14px', padding: '1rem 1.5rem',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            marginBottom: '1.25rem',
-          }}>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: '.95rem' }}>คะแนนเฉลี่ยของสถานศึกษา</div>
-              <div style={{ fontSize: '.72rem', opacity: .85, marginTop: '.2rem' }}>
-                ครูที่ประเมินแล้ว {std2ByTeacher.filter(x => x.score !== null).length}/{std2ByTeacher.length} คน
-              </div>
-            </div>
-            {std2Score !== null ? (
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '2.5rem', fontWeight: 900, lineHeight: 1 }}>{std2Score}%</div>
-                <div style={{ fontSize: '.65rem', opacity: .8 }}>
-                  {std2Score >= 80 ? 'ดีมาก' : std2Score >= 60 ? 'พอใช้' : 'ต้องพัฒนา'}
-                </div>
-              </div>
-            ) : (
-              <div style={{ fontSize: '.85rem', opacity: .8 }}>ยังไม่มีครูประเมิน</div>
-            )}
-          </div>
-
-          {/* Per-teacher table */}
-          {std2ByTeacher.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '2rem', color: '#9ca3af', fontSize: '.85rem' }}>
-              ยังไม่มีข้อมูลครู — เพิ่มครูในเมนู บุคลากร → ครู ก่อน
-            </div>
-          ) : (
-            <>
-              {/* Summary by teacher */}
-              <div style={{ fontWeight: 700, fontSize: '.85rem', color: '#374151', marginBottom: '.6rem' }}>
-                ผลประเมินรายบุคคล
-              </div>
-              <div style={{ overflowX: 'auto', marginBottom: '1.5rem' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '.78rem' }}>
-                  <thead>
-                    <tr style={{ background: '#f5f3ff' }}>
-                      <th style={{ padding: '.5rem .75rem', textAlign: 'center', fontWeight: 700, color: '#5b21b6', borderBottom: '2px solid #ddd6fe', whiteSpace: 'nowrap' }}>ครู</th>
-                      <th style={{ padding: '.5rem .75rem', textAlign: 'center', fontWeight: 700, color: '#5b21b6', borderBottom: '2px solid #ddd6fe', whiteSpace: 'nowrap' }}>ห้อง</th>
-                      {STD3_ITEMS.map(it => (
-                        <th key={it.id} style={{ padding: '.5rem .4rem', textAlign: 'center', fontWeight: 700, color: '#5b21b6', borderBottom: '2px solid #ddd6fe', whiteSpace: 'nowrap', fontSize: '.7rem' }}>
-                          {it.id}
-                        </th>
-                      ))}
-                      <th style={{ padding: '.5rem .75rem', textAlign: 'center', fontWeight: 700, color: '#5b21b6', borderBottom: '2px solid #ddd6fe', whiteSpace: 'nowrap' }}>คะแนน</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {std2ByTeacher.map((row, i) => (
-                      <tr key={row.teacher.id} style={{ borderBottom: '1px solid #f1f5f9', background: i % 2 === 0 ? 'white' : '#faf5ff' }}>
-                        <td style={{ padding: '.5rem .75rem', fontWeight: 600, whiteSpace: 'nowrap' }}>{row.name}</td>
-                        <td style={{ padding: '.5rem .75rem', color: '#6b7280', fontSize: '.73rem' }}>{row.teacher.className ?? '—'}</td>
-                        {STD3_ITEMS.map(it => {
-                          const val = row.ratings[it.id] ?? 0;
-                          const meta = val > 0
-                            ? RATINGS.find(r => r.value === val)
-                            : { color: '#d1d5db', bg: '#f9fafb', label: '' };
-                          return (
-                            <td key={it.id} style={{ padding: '.5rem .4rem', textAlign: 'center' }}>
-                              {val > 0 ? (
-                                <span style={{
-                                  display: 'inline-block', width: '22px', height: '22px', lineHeight: '22px',
-                                  borderRadius: '6px', fontSize: '.65rem', fontWeight: 800,
-                                  background: meta.bg, color: meta.color, textAlign: 'center',
-                                }}>
-                                  {val}
-                                </span>
-                              ) : (
-                                <span style={{ color: '#d1d5db', fontSize: '.8rem' }}>—</span>
-                              )}
-                            </td>
-                          );
-                        })}
-                        <td style={{ padding: '.5rem .75rem', textAlign: 'center' }}>
-                          {row.score !== null ? (
-                            <span style={{
-                              fontWeight: 800, fontSize: '.78rem', padding: '2px 8px', borderRadius: '6px',
-                              background: row.score >= 80 ? '#dcfce7' : row.score >= 60 ? '#fef3c7' : '#fee2e2',
-                              color: row.score >= 80 ? '#16a34a' : row.score >= 60 ? '#d97706' : '#dc2626',
-                            }}>
-                              {row.score}%
-                            </span>
-                          ) : (
-                            <span style={{ color: '#9ca3af', fontSize: '.75rem' }}>ยังไม่ประเมิน</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                    {/* School average row */}
-                    {std2ByTeacher.some(x => x.score !== null) && (
-                      <tr style={{ background: '#f5f3ff', borderTop: '2px solid #ddd6fe' }}>
-                        <td colSpan={2} style={{ padding: '.5rem .75rem', fontWeight: 800, color: '#7c3aed', fontSize: '.8rem' }}>
-                          ค่าเฉลี่ยสถานศึกษา
-                        </td>
-                        {STD3_ITEMS.map(it => {
-                          const vals = std2ByTeacher.map(r => r.ratings[it.id] ?? 0).filter(v => v > 0);
-                          const avg = vals.length > 0 ? (vals.reduce((s, v) => s + v, 0) / vals.length).toFixed(1) : null;
-                          return (
-                            <td key={it.id} style={{ padding: '.5rem .4rem', textAlign: 'center' }}>
-                              {avg !== null ? (
-                                <span style={{ fontSize: '.72rem', fontWeight: 700, color: '#7c3aed' }}>{avg}</span>
-                              ) : (
-                                <span style={{ color: '#d1d5db', fontSize: '.8rem' }}>—</span>
-                              )}
-                            </td>
-                          );
-                        })}
-                        <td style={{ padding: '.5rem .75rem', textAlign: 'center' }}>
-                          {std2Score !== null && (
-                            <span style={{
-                              fontWeight: 900, fontSize: '.82rem', padding: '3px 10px', borderRadius: '6px',
-                              background: std2Score >= 80 ? '#dcfce7' : std2Score >= 60 ? '#fef3c7' : '#fee2e2',
-                              color: std2Score >= 80 ? '#16a34a' : std2Score >= 60 ? '#d97706' : '#dc2626',
-                            }}>
-                              {std2Score}%
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Legend */}
-              <div style={{
-                background: '#f9fafb', border: '1px solid #e5e7eb',
-                borderRadius: '10px', padding: '.6rem 1rem',
-                fontSize: '.72rem', color: '#6b7280',
-                display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center',
-              }}>
-                <span style={{ fontWeight: 700, color: '#374151' }}>คะแนน:</span>
-                {RATINGS.map(r => (
-                  <span key={r.value} style={{ display: 'flex', alignItems: 'center', gap: '.3rem' }}>
-                    <span style={{
-                      display: 'inline-block', width: '18px', height: '18px', lineHeight: '18px',
-                      borderRadius: '4px', background: r.bg, color: r.color,
-                      fontWeight: 800, textAlign: 'center', fontSize: '.65rem',
-                    }}>{r.value}</span>
-                    {r.label}
-                  </span>
-                ))}
-                <span style={{ marginLeft: 'auto' }}>
-                  ตัวบ่งชี้ {STD3_ITEMS.map(it => `${it.id}`).join(', ')}
-                </span>
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* ══ มาตรฐานที่ 1 ════════════════════════════════════════════════════ */}
-      {activeSection === 'std1' && (
-        <div>
-          <div style={{
-            background: '#f0f9ff', border: '1px solid #bae6fd',
-            borderRadius: '10px', padding: '.7rem 1rem',
-            fontSize: '.78rem', color: '#075985', marginBottom: '1.25rem',
-          }}>
-            📝 <strong>วิธีใช้:</strong> ประเมินแต่ละตัวบ่งชี้โดยเลือก ดีมาก / พอใช้ / ต้องพัฒนา ข้อมูลบันทึกอัตโนมัติ
-          </div>
-          <ChecklistSection
-            title="มาตรฐานที่ 2 — การบริหารสถานพัฒนาเด็กปฐมวัย (ปี 68)"
-            subtitle="5 ตัวบ่งชี้ · 22 รายการพิจารณา · กลุ่ม ข อัตราส่วน 1:15"
-            items={STD2_ITEMS}
-            ratings={std1Ratings}
-            onChange={updateStd1}
-            colorAccent="#0891b2"
-          />
         </div>
       )}
     </div>

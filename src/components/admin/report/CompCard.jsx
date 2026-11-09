@@ -60,7 +60,7 @@ export default function CompCard({ comp, ci, domain, devAssessData, student, sav
           background: domain.color, color: 'white',
           borderRadius: '6px', padding: '2px 8px', fontSize: '.75rem', fontWeight: 800,
           whiteSpace: 'nowrap', flexShrink: 0,
-        }}>{comp.code}</span>
+        }}>{String(comp.code).replace(/(\d)ข/g,'$1')}</span>
         <span style={{ fontWeight: 700, fontSize: '.84rem', color: '#111' }}>{comp.label}</span>
       </div>
       <div style={{

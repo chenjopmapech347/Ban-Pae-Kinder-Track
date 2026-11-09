@@ -27,8 +27,8 @@ const DOMAIN_ID_MAP = Object.fromEntries(
 function downloadTemplate() {
   const rows = [
     ['ด้าน (physical/emotional/citizen/cognitive)', 'รหัสมาตรฐาน', 'ชื่อมาตรฐาน', 'รหัสตัวบ่งชี้', 'ชื่อตัวบ่งชี้'],
-    ['physical',  'std68-physical',  'มาตรฐานที่ 1 — ด้านสุขภาวะทางกาย',  '1.1ข', 'ตัวบ่งชี้ 1.1ข น้ำหนักและส่วนสูงตามเกณฑ์'],
-    ['cognitive', 'std68-cognitive', 'มาตรฐานที่ 1 — ด้านสติปัญญา',       '1.5ข', 'ตัวบ่งชี้ 1.5ข สุขภาวะทางสติปัญญา'],
+    ['physical',  'std68-physical',  'มาตรฐานที่ 1 — ด้านสุขภาวะทางกาย',  '1.1', 'ตัวบ่งชี้ 1.1 น้ำหนักและส่วนสูงตามเกณฑ์'],
+    ['cognitive', 'std68-cognitive', 'มาตรฐานที่ 1 — ด้านสติปัญญา',       '1.5', 'ตัวบ่งชี้ 1.5 สุขภาวะทางสติปัญญา'],
   ];
   const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
   const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });

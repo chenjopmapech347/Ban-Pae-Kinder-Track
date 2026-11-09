@@ -7,6 +7,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { compareStudents, compareClassNames } from '../../utils/helpers';
+import { derivedAbilityLevels } from '../../utils/reportHelpers';
+import { evidenceNote } from '../../data/competencyActivityMap';
 import {
   SCALE_C68, DOMAINS_C68, COMPETENCIES_C68,
   getCompetenciesByDomain, calcAvgScoreC68,
@@ -98,7 +100,7 @@ function c68LevelLabel(key) {
 // ──────────────────────────────────────────────────────────────────────────────
 function recKey(sid, year, term) { return `${sid}||${year}||${term}`; }
 
-function ScoreBadge({ score, onClick, scale }) {
+function ScoreBadge({ score, onClick, scale, auto }) {
   const meta = scale[score];
   if (!meta) {
     // ยังไม่มีคะแนน → แสดง 3 (ดี) เป็น default พร้อม opacity จางลงเล็กน้อย
@@ -114,8 +116,8 @@ function ScoreBadge({ score, onClick, scale }) {
   return (
     <button
       onClick={onClick}
-      style={{ background: meta.bg, color: meta.color, border: `1px solid ${meta.border}`, padding: '2px 8px', borderRadius: '4px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}
-      title={`${meta.label} — คลิกเพื่อเปลี่ยน`}
+      style={{ opacity: auto ? 0.7 : 1, background: meta.bg, color: meta.color, border: `1px ${auto ? 'dashed' : 'solid'} ${meta.border}`, padding: '2px 8px', borderRadius: '4px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}
+      title={auto ? `${meta.label} — ระบบคำนวณจากการประเมินพัฒนาการ (ยังไม่ได้บันทึก) คลิกเพื่อยืนยัน/เปลี่ยน` : `${meta.label} — คลิกเพื่อเปลี่ยน`}
     >{score} {meta.label}</button>
   );
 }
@@ -219,8 +221,20 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
     return `${base}||${datasetKey}`;
   }
 
+  // ช่องที่ยังไม่ได้บันทึก → ระบบคำนวณจากกิจกรรมย่อยที่จับคู่ไว้ (ข้อที่ไม่มีกิจกรรมรองรับ = ว่าง) ของ "ประเมินพัฒนาการ" (แสดงอย่างเดียว ไม่บันทึกจนกว่าครูกด)
+  const derivedMap = useMemo(
+    () => Object.fromEntries(students.filter(s => s.className === selClass)
+      .map(s => [s.id, derivedAbilityLevels(s, selTerm)])),
+    [students, selClass, selTerm]
+  );
+  function derivedScore(sid, code) {
+    return derivedMap[sid]?.[code] || 0;
+  }
+  function isAuto(sid, code) {
+    return !abilityAssessments?.[dsKey(sid)]?.[code] && derivedScore(sid, code) > 0;
+  }
   function getScore(sid, code) {
-    return abilityAssessments?.[dsKey(sid)]?.[code] ?? 0;
+    return abilityAssessments?.[dsKey(sid)]?.[code] || derivedScore(sid, code);
   }
 
   function setScore(sid, code, score) {
@@ -244,10 +258,10 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
     const k = `${base}||${datasetKey}`;
     const rec = abilityAssessments?.[k] ?? {};
     const scores = Object.fromEntries(
-      DS.indicators.map(i => [i.code, rec[i.code] ?? 0])
+      DS.indicators.map(i => [i.code, rec[i.code] || (derivedMap[s.id]?.[i.code] ?? 0)])
     );
     return { ...s, scores, avg: DS.calcAvg(scores) };
-  }), [classStudents, abilityAssessments, selYear, selTerm, DS, datasetKey]);
+  }), [classStudents, abilityAssessments, selYear, selTerm, DS, datasetKey, derivedMap]);
 
   const domainAvgs = useMemo(() => {
     const result = {};
@@ -268,7 +282,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
         <div>
-          <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#1e293b' }}>ประเมินความสามารถผู้เรียน</h2>
+          <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#1e293b' }}>ประเมินความสามารถผู้เรียนหลักสูตร 2568</h2>
           <p style={{ margin: '2px 0 0', fontSize: '.78rem', color: '#94a3b8' }}>{DS.label} · {DS.subtitle}</p>
         </div>
         {/* View mode toggle — pill group */}
@@ -295,49 +309,6 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
 
       {/* ── Filters ── */}
       <div style={{ background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,.04)' }}>
-
-        {/* แถว 1: เลือกชุดตัวบ่งชี้ */}
-        <div style={{ padding: '.75rem 1rem', borderBottom: '1px solid #e2e8f0' }}>
-          <p style={{ margin: '0 0 .5rem', fontSize: '.72rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '.05em' }}>ชุดตัวบ่งชี้</p>
-          <div style={{ display: 'flex', gap: '.625rem', flexWrap: 'wrap' }}>
-
-            {/* ── ปุ่ม C68 รวม (auto-select ระดับจากห้อง) ── */}
-            {(() => {
-              const active = true;
-              const level  = c68LevelLabel(datasetKey);
-              return (
-                <button
-                  onClick={() => switchDataset(autoC68KeyFromClass(selClass))}
-                  style={{
-                    position: 'relative', display: 'flex', alignItems: 'center', gap: '10px',
-                    padding: '.5rem .875rem', borderRadius: '8px', border: `2px solid ${active ? '#6366f1' : '#e2e8f0'}`,
-                    background: active ? '#6366f1' : 'white', cursor: 'pointer', textAlign: 'left',
-                    boxShadow: active ? '0 2px 8px rgba(99,102,241,.25)' : 'none',
-                    transition: 'all .15s',
-                  }}
-                >
-                  <span style={{ fontSize: '1.25rem', lineHeight: 1 }}>📗</span>
-                  <div>
-                    <div style={{ fontSize: '.82rem', fontWeight: 700, color: active ? 'white' : '#1e293b', lineHeight: 1.2 }}>
-                      หลักสูตร 2568
-                    </div>
-                    <div style={{ fontSize: '.72rem', marginTop: '2px', color: active ? 'rgba(255,255,255,.7)' : '#94a3b8' }}>
-                      4 ด้าน 33 ความสามารถ
-                    </div>
-                  </div>
-                  {/* badge ระดับ */}
-                  <span style={{
-                    marginLeft: 'auto', fontSize: '.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: '999px',
-                    background: active ? 'rgba(255,255,255,.2)' : '#ede9fe', color: active ? 'white' : '#6366f1',
-                  }}>
-                    {level}
-                  </span>
-                  {active && <span style={{ position: 'absolute', top: '6px', right: '6px', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,.8)' }} />}
-                </button>
-              );
-            })()}
-          </div>
-        </div>
 
         {/* แถว 2: ตัวกรอง */}
         <div style={{ padding: '.625rem 1rem', display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', gap: '.75rem', background: 'white' }}>
@@ -454,11 +425,14 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                       <th style={{ textAlign: 'left', padding: '.5rem .75rem', color: '#64748b', fontWeight: 600, width: '2rem' }}>#</th>
                       <th style={{ textAlign: 'left', padding: '.5rem .75rem', color: '#64748b', fontWeight: 600, minWidth: '140px' }}>ชื่อ-สกุล</th>
                       {domainIndicators.map(ind => (
-                        <th key={ind.code} style={{ padding: '.5rem .5rem', textAlign: 'center', color: '#64748b', fontWeight: 600, minWidth: '110px' }}>
-                          <div style={{ fontSize: '.78rem', fontWeight: 700, color: '#374151' }}>{ind.code}</div>
+                        <th key={String(ind.code).replace(/(\d)ข/g,'$1')} style={{ padding: '.5rem .5rem', textAlign: 'center', color: '#64748b', fontWeight: 600, minWidth: '110px' }}>
+                          <div style={{ fontSize: '.78rem', fontWeight: 700, color: '#374151' }}>{String(ind.code).replace(/(\d)ข/g,'$1')}</div>
                           <div style={{ fontSize: '.7rem', color: '#94a3b8', lineHeight: 1.3, maxWidth: '100px', margin: '0 auto' }}>
                             {ind.label}
                           </div>
+                          {evidenceNote(ind.code) && (
+                            <div style={{ fontSize: '.64rem', color: '#b45309', lineHeight: 1.2, marginTop: '2px' }}>{evidenceNote(ind.code)}</div>
+                          )}
                         </th>
                       ))}
                     </tr>
@@ -468,7 +442,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                         {DS.descriptorLabel(selClass)}
                       </td>
                       {domainIndicators.map(ind => (
-                        <td key={ind.code} style={{ padding: '.25rem .5rem', fontSize: '.7rem', color: '#3b82f6', textAlign: 'center', lineHeight: 1.3 }}>
+                        <td key={String(ind.code).replace(/(\d)ข/g,'$1')} style={{ padding: '.25rem .5rem', fontSize: '.7rem', color: '#3b82f6', textAlign: 'center', lineHeight: 1.3 }}>
                           {DS.descriptorRow(ind)}
                         </td>
                       ))}
@@ -483,7 +457,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                           <div style={{ fontSize: '.72rem', color: '#94a3b8' }}>{s.studentCode || s.studentId || ''}</div>
                         </td>
                         {domainIndicators.map(ind => (
-                          <td key={ind.code} style={{ padding: '.5rem .5rem', textAlign: 'center' }}>
+                          <td key={String(ind.code).replace(/(\d)ข/g,'$1')} style={{ padding: '.5rem .5rem', textAlign: 'center' }}>
                             {picker?.sid === s.id && picker?.code === ind.code ? (
                               <ScorePicker
                                 scale={DS.scale}
@@ -492,7 +466,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                             ) : (
                               <ScoreBadge
                                 scale={DS.scale}
-                                score={getScore(s.id, ind.code)}
+                                score={getScore(s.id, ind.code)} auto={isAuto(s.id, ind.code)}
                                 onClick={() => setPicker({ sid: s.id, code: ind.code })}
                               />
                             )}
@@ -618,9 +592,9 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                   const c1 = summaryRows.filter(r => r.scores[ind.code] === 1).length;
                   const dom = DS.domains.find(d => d.id === ind.domainId);
                   return (
-                    <tr key={ind.code} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <tr key={String(ind.code).replace(/(\d)ข/g,'$1')} style={{ borderBottom: '1px solid #f1f5f9' }}>
                       <td style={{ padding: '.5rem .75rem' }}>
-                        <span style={{ fontFamily: 'monospace', fontSize: '.75rem', fontWeight: 700, color: dom?.color }}>{ind.code}</span>
+                        <span style={{ fontFamily: 'monospace', fontSize: '.75rem', fontWeight: 700, color: dom?.color }}>{String(ind.code).replace(/(\d)ข/g,'$1')}</span>
                       </td>
                       <td style={{ padding: '.5rem .75rem', fontSize: '.78rem', color: '#374151' }}>{ind.label}</td>
                       <td style={{ padding: '.5rem .75rem', textAlign: 'center' }}><AvgBar avg={avg} /></td>
@@ -694,7 +668,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                       const sc = stuScores[ind.code];
                       const passed = sc >= 2;
                       return (
-                        <div key={ind.code} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '.625rem .875rem', borderBottom: itemIdx < items.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                        <div key={String(ind.code).replace(/(\d)ข/g,'$1')} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', padding: '.625rem .875rem', borderBottom: itemIdx < items.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
                           {/* pass/fail indicator */}
                           <div style={{
                             marginTop: '2px', width: '20px', height: '20px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '.72rem', fontWeight: 700, flexShrink: 0,
@@ -706,8 +680,11 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                           {/* code + label */}
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                              <span style={{ fontFamily: 'monospace', fontSize: '.75rem', fontWeight: 700, color: d.color }}>{ind.code}</span>
+                              <span style={{ fontFamily: 'monospace', fontSize: '.75rem', fontWeight: 700, color: d.color }}>{String(ind.code).replace(/(\d)ข/g,'$1')}</span>
                               <span style={{ fontSize: '.82rem', color: '#1e293b' }}>{ind.label}</span>
+                              {evidenceNote(ind.code) && (
+                                <span style={{ fontSize: '.68rem', color: '#b45309' }}>({evidenceNote(ind.code)})</span>
+                              )}
                             </div>
                             {DS.descriptorRow(ind) !== '—' && (
                               <p style={{ margin: '3px 0 0', fontSize: '.72rem', color: '#94a3b8', lineHeight: 1.5 }}>
@@ -842,9 +819,9 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                         {compsForAct.map((ind, idx) => {
                           const dom = DS.domains.find(d => d.id === ind.domainId);
                           return (
-                            <div key={ind.code} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '.625rem .875rem', borderBottom: idx < compsForAct.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                            <div key={String(ind.code).replace(/(\d)ข/g,'$1')} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '.625rem .875rem', borderBottom: idx < compsForAct.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
                               <span style={{ marginTop: '2px', fontSize: '.72rem', fontWeight: 700, fontFamily: 'monospace', padding: '2px 6px', borderRadius: '6px', flexShrink: 0, background: dom?.bg ?? '#f3f4f6', color: dom?.color ?? '#6b7280' }}>
-                                {ind.code}
+                                {String(ind.code).replace(/(\d)ข/g,'$1')}
                               </span>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: '.82rem', fontWeight: 600, color: '#1e293b' }}>{ind.label}</div>
@@ -881,13 +858,13 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                         const actCount = getActivitiesForCompetency(ind.code).length;
                         return (
                           <button
-                            key={ind.code}
+                            key={String(ind.code).replace(/(\d)ข/g,'$1')}
                             onClick={() => setSelCompCode(ind.code)}
                             style={active
                               ? { display: 'flex', alignItems: 'center', gap: '6px', padding: '.35rem .625rem', borderRadius: '6px', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', background: dom.bg, color: dom.color, fontWeight: 700 }
                               : { display: 'flex', alignItems: 'center', gap: '6px', padding: '.35rem .625rem', borderRadius: '6px', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%', background: 'transparent', color: '#374151', fontWeight: 400 }}
                           >
-                            <span style={{ fontFamily: 'monospace', fontSize: '.72rem', fontWeight: 700, flexShrink: 0, color: active ? dom.color : '#9ca3af' }}>{ind.code}</span>
+                            <span style={{ fontFamily: 'monospace', fontSize: '.72rem', fontWeight: 700, flexShrink: 0, color: active ? dom.color : '#9ca3af' }}>{String(ind.code).replace(/(\d)ข/g,'$1')}</span>
                             <span style={{ flex: 1, lineHeight: 1.3, fontSize: '.75rem' }}>{ind.label}</span>
                             {actCount > 0 && (
                               <span style={{ fontSize: '.68rem', padding: '1px 5px', borderRadius: '999px', flexShrink: 0,
@@ -990,9 +967,9 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                           </td>
                         </tr>
                         {DS.getByDomain(dom.id).map(ind => (
-                          <tr key={ind.code} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                          <tr key={String(ind.code).replace(/(\d)ข/g,'$1')} style={{ borderBottom: '1px solid #f1f5f9' }}>
                             <td style={{ padding: '.5rem .75rem' }}>
-                              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: dom.color }}>{ind.code}</span>
+                              <span style={{ fontFamily: 'monospace', fontWeight: 700, color: dom.color }}>{String(ind.code).replace(/(\d)ข/g,'$1')}</span>
                             </td>
                             <td style={{ padding: '.5rem .75rem', color: '#374151', lineHeight: 1.4 }}>{ind.label}</td>
                             {ACTIVITY_TYPES.map(act => {
@@ -1062,12 +1039,12 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                           const pct = ((avg / 3) * 100).toFixed(0);
                           const color = avg >= 2.5 ? '#059669' : avg >= 1.5 ? '#d97706' : '#dc2626';
                           return (
-                            <div key={ind.code} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '.625rem .875rem', borderBottom: rank < weakComps.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                            <div key={String(ind.code).replace(/(\d)ข/g,'$1')} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '.625rem .875rem', borderBottom: rank < weakComps.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
                               <span style={{ fontSize: '1rem', fontWeight: 900, color: '#cbd5e1', width: '20px', textAlign: 'center', flexShrink: 0 }}>
                                 {rank + 1}
                               </span>
                               <span style={{ fontFamily: 'monospace', fontSize: '.72rem', fontWeight: 700, flexShrink: 0, padding: '2px 6px', borderRadius: '6px', background: dom?.bg, color: dom?.color }}>
-                                {ind.code}
+                                {String(ind.code).replace(/(\d)ข/g,'$1')}
                               </span>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: '.82rem', color: '#1e293b', lineHeight: 1.3 }}>{ind.label}</div>
@@ -1123,9 +1100,9 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                                   const dom = DS.domains.find(d => d.id === ind.domainId);
                                   const avg = compAvgMap[ind.code];
                                   return (
-                                    <div key={ind.code}
+                                    <div key={String(ind.code).replace(/(\d)ข/g,'$1')}
                                       style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '2px 8px', borderRadius: '8px', fontSize: '.72rem', background: dom?.bg, color: dom?.color }}>
-                                      <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{ind.code}</span>
+                                      <span style={{ fontFamily: 'monospace', fontWeight: 700 }}>{String(ind.code).replace(/(\d)ข/g,'$1')}</span>
                                       <span style={{ opacity: .7 }}>({avg?.toFixed(1)})</span>
                                     </div>
                                   );

@@ -241,13 +241,13 @@ export const INITIAL_HOLIDAYS = [
 // ── หัวข้อประเมิน 4 ด้าน (หลักสูตรปฐมวัย 2568) ─────────────
 export const DEFAULT_ASSESSMENT_TOPICS = [
   { id: 'physical',  label: 'สุขภาวะทางกาย',               emoji: '🏃',
-    crossRef: { std68: '1.1ข / 1.2ข / 1.6ข' } },
+    crossRef: { std68: '1.1 / 1.2 / 1.6' } },
   { id: 'emotional', label: 'อารมณ์ จิตใจ และสังคม',       emoji: '❤️',
-    crossRef: { std68: '1.3ข / 1.4ข' } },
+    crossRef: { std68: '1.3 / 1.4' } },
   { id: 'citizen',   label: 'ความเป็นพลเมืองและความเป็นไทย', emoji: '🇹🇭',
-    crossRef: { std68: '1.7ข' } },
+    crossRef: { std68: '1.7' } },
   { id: 'cognitive', label: 'สติปัญญา',                     emoji: '💡',
-    crossRef: { std68: '1.5ข' } },
+    crossRef: { std68: '1.5' } },
 ];
 
 // ── ประกาศ ────────────────────────────────────────────────

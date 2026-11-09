@@ -93,7 +93,7 @@ function StepIndicator({ domain, onSelect, onBack }) {
                   const actCount = ind.items.reduce((s, item) => s + item.activities.length, 0);
                   if (actCount === 0) return null;
                   return (
-                    <button key={ind.id} type="button"
+                    <button key={String(ind.id).replace(/(\d)ข/g,'$1')} type="button"
                       onClick={() => onSelect({ domain, std, ind })}
                       style={{
                         width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -116,7 +116,7 @@ function StepIndicator({ domain, onSelect, onBack }) {
                           background: `${domain.color}20`, color: domain.color,
                           borderRadius: '5px', padding: '0 .4rem', fontSize: '.7rem',
                           fontWeight: 800, marginRight: '.5rem',
-                        }}>{ind.id}</span>
+                        }}>{String(ind.id).replace(/(\d)ข/g,'$1')}</span>
                         <span style={{ fontWeight: 600, fontSize: '.84rem' }}>{ind.label}</span>
                       </div>
                       <span style={{

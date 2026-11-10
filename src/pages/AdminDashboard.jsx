@@ -15,6 +15,7 @@ const SchoolsTab             = lazy(() => import('../components/admin/SchoolsTab
 const ReportsTab             = lazy(() => import('../components/admin/ReportsTab'));
 const IndicatorsTab          = lazy(() => import('../components/admin/IndicatorsTab'));
 const ActivitiesTab          = lazy(() => import('../components/admin/ActivitiesTab'));
+const ActivityMappingTab    = lazy(() => import('../components/admin/ActivityMappingTab'));
 const TeacherOverviewTab     = lazy(() => import('../components/teacher/TeacherOverviewTab'));
 const StandardsMapTab        = lazy(() => import('../components/admin/StandardsMapTab'));
 const TermsTab               = lazy(() => import('../components/admin/TermsTab'));
@@ -149,6 +150,7 @@ const TAB_GROUPS = [
       { id: 'topics',       label: '📝 หัวข้อประเมิน'     },
       { id: 'indicators',   label: '🔬 ตัวบ่งชี้'          },
       { id: 'activities',   label: '🎯 กิจกรรมตัวบ่งชี้'  },
+      { id: 'activitymap',  label: '🧭 Mapping กิจกรรม–ตัวบ่งชี้' },
     ],
   },
   {
@@ -246,6 +248,7 @@ export default function AdminDashboard() {
           {activeTab === 'topics'         && <TopicsTab />}
           {activeTab === 'indicators'     && <IndicatorsTab />}
           {activeTab === 'activities'     && <ActivitiesTab />}
+          {activeTab === 'activitymap'    && <ActivityMappingTab />}
           {activeTab === 'terms'          && <TermsTab />}
           {activeTab === 'holidays'         && <HolidaysTab />}
           {activeTab === 'specialholidays' && <SpecialHolidaysTab />}

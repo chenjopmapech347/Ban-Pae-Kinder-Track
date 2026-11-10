@@ -218,16 +218,75 @@ export function growthLevelsForTerm(student, nutritionRecords, academicYear, ter
   return { weightLevel: n.weight ? lv.weightLevel : 0, heightLevel: n.height ? lv.heightLevel : 0 };
 }
 
+
+// ── ระดับพัฒนาการจากข้อมูลที่บันทึกไว้แล้วในระบบ (นอกเหนือจากคะแนนกิจกรรม) ─────────
+// ใช้เติมเฉพาะช่องที่ยังไม่มีคะแนนกิจกรรม/ไม่มีค่าที่ครูกรอก (คำนวณสด ไม่บันทึกทับ)
+//  - 1.1.3 นิสัยการกินและดูแลสุขภาพ  ← บันทึกแปรงฟัน + อาหารกลางวัน (สัดส่วนวันที่ทำ √)
+//  - 1.4.2 ช่วยเหลือตนเองในกิจวัตร    ← ตรวจสุขภาพรายสัปดาห์ (ผม ปาก เล็บ หู ร่างกาย เสื้อผ้า)
+const TERM_MONTH_NUMS = { 1: [5, 6, 7, 8, 9, 10], 2: [12, 1, 2, 3, 4] };
+const ratioToLevel = (ratio) => (ratio >= 0.8 ? 3 : ratio >= 0.5 ? 2 : 1);
+const avgToLevel = (avg) => (avg >= 2.5 ? 3 : avg >= 1.5 ? 2 : 1);
+
+function dailyCheckLevel(records, sid, academicYear, term) {
+  const months = TERM_MONTH_NUMS[term];
+  let done = 0, missed = 0;
+  Object.values(records ?? {}).forEach(r => {
+    if (!r || String(r.academicYear) !== String(academicYear)) return;
+    if (!months.includes(Number(r.month))) return;
+    const days = r.students?.[sid]?.days;
+    if (!days) return;
+    Object.values(days).forEach(v => {
+      if (v === '√' || v === true) done++;
+      else if (v === '' || v === false) missed++;   // 'X' (ขาด/ลา/ป่วย) ไม่นับ
+    });
+  });
+  const total = done + missed;
+  return total >= 3 ? ratioToLevel(done / total) : 0;
+}
+
+function healthCheckLevel(records, sid, academicYear, term) {
+  const months = TERM_MONTH_NUMS[term];
+  const vals = [];
+  Object.values(records ?? {}).forEach(r => {
+    if (!r || String(r.academicYear) !== String(academicYear)) return;
+    if (!months.includes(parseInt(String(r.date ?? '').slice(5, 7), 10))) return;
+    const row = r.students?.[sid];
+    if (!row) return;
+    ['hair', 'mouth', 'nail', 'ear', 'body', 'cloth'].forEach(k => {
+      const n = Number(row[k]);
+      if (n >= 1 && n <= 3) vals.push(n);
+    });
+  });
+  return vals.length >= 3 ? avgToLevel(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+}
+
+/** { [comp.key]: level } ที่หาได้จากข้อมูลบันทึกของภาคเรียนนั้น (0 = ไม่มีข้อมูล) */
+export function recordLevelsForTerm(student, recs, academicYear, term) {
+  const sid = String(student?.id ?? '');
+  const out = {};
+  if (!sid || !recs) return out;
+  const parts = [
+    dailyCheckLevel(recs.toothBrushRecords, sid, academicYear, term),
+    dailyCheckLevel(recs.lunchRecords,      sid, academicYear, term),
+  ].filter(v => v > 0);
+  if (parts.length) out.physical_1_1k_3 = Math.round(parts.reduce((a, b) => a + b, 0) / parts.length);
+  const hc = healthCheckLevel(recs.healthCheckRecords, sid, academicYear, term);
+  if (hc) out.emotional_1_4k_2 = hc;
+  return out;
+}
+
 /**
  * ระดับพัฒนาการที่ระบบเติมให้ได้ (เฉพาะช่องที่ยังเป็น 0 — ไม่ทับค่าที่ครูกรอกแล้ว)
  * - ตัวบ่งชี้ทั่วไป: จากคะแนนประเมินรายกิจกรรม
  * - 1.1ข.1 / 1.1ข.2 (น้ำหนัก/ส่วนสูงตามเกณฑ์): จากข้อมูลภาวะโภชนาการ
  * คืนค่าเป็น { [comp.key]: record ใหม่ } เฉพาะที่เปลี่ยน
  */
-export function computeDevAssessFill(student, currentDA, nutritionRecords, academicYear) {
+export function computeDevAssessFill(student, currentDA, nutritionRecords, academicYear, recs = null) {
   const updates = {};
   const g = { 1: growthLevelsForTerm(student, nutritionRecords, academicYear, 1),
               2: growthLevelsForTerm(student, nutritionRecords, academicYear, 2) };
+  const rl = { 1: recordLevelsForTerm(student, recs, academicYear, 1),
+               2: recordLevelsForTerm(student, recs, academicYear, 2) };
   DEV_ASSESS_DOMAINS.forEach(domain => {
     domainAllComponents(domain).forEach(comp => {
       if (!comp.domainId || !comp.standardId || !comp.indicatorId) return;
@@ -235,7 +294,8 @@ export function computeDevAssessFill(student, currentDA, nutritionRecords, acade
       const pick = (term) => {
         if (comp.key === 'physical_1_1k_1' && g[term].weightLevel > 0) return g[term].weightLevel;
         if (comp.key === 'physical_1_1k_2' && g[term].heightLevel > 0) return g[term].heightLevel;
-        return suggestLevelFromIndicator(student, comp.domainId, comp.standardId, comp.indicatorId, term);
+        const fromAct = suggestLevelFromIndicator(student, comp.domainId, comp.standardId, comp.indicatorId, term);
+        return fromAct > 0 ? fromAct : (rl[term][comp.key] ?? 0);
       };
       const fillT1 = (cur.t1level ?? 0) === 0 ? pick(1) : 0;
       const fillT2 = (cur.t2level ?? 0) === 0 ? pick(2) : 0;

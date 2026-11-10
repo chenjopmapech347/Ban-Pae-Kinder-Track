@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { DEFAULT_ASSESSMENT_TOPICS } from '../../data/initialData';
 import { ui } from '../../ui/ui';
+const noKor = x => String(x ?? '').replace(/(\d)ข/g, '$1'); // display only
 
 const FRAME_STYLE = {
   std68: { bg: '#f0fdf4', color: '#15803d', border: '#86efac' },
@@ -24,7 +25,7 @@ function CrossRefBadges({ crossRef }) {
             borderRadius: '999px', background: s.bg, color: s.color,
             border: `1px solid ${s.border}`, whiteSpace: 'nowrap',
           }}>
-            {FRAME_LABEL[key]}: {val}
+            {FRAME_LABEL[key]}: {noKor(val)}
           </span>
         );
       })}

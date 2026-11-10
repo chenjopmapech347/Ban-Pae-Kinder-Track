@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import { ui } from '../../ui/ui';
+import { fetchSystemLogs } from '../../lib/systemLog';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const ACTION_LABELS = {
@@ -16,6 +17,8 @@ const ACTION_LABELS = {
   export:         { label: 'ส่งออกข้อมูล',      badge: '#f59e0b', bg: '#fef3c7' },
   import:         { label: 'นำเข้าข้อมูล',      badge: '#06b6d4', bg: '#cffafe' },
   save:           { label: 'บันทึกข้อมูล',       badge: '#0891b2', bg: '#e0f2fe' },
+  edit:           { label: 'แก้ไขข้อมูล',        badge: '#d97706', bg: '#fef3c7' },
+  view:           { label: 'เปิดเมนู',           badge: '#64748b', bg: '#f1f5f9' },
 };
 
 function getActionMeta(action) {
@@ -46,6 +49,8 @@ const ACTION_GROUPS = [
   { value: 'teacher',        label: 'จัดการครู' },
   { value: 'report',         label: 'รายงาน / ส่งออก' },
   { value: 'save',           label: 'บันทึกข้อมูล' },
+  { value: 'edit',           label: 'แก้ไขข้อมูล' },
+  { value: 'view',           label: 'เปิดเมนู' },
   { value: 'import',         label: 'นำเข้าข้อมูล' },
 ];
 
@@ -92,7 +97,23 @@ function SummaryCard({ icon, label, value, color }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function SystemLogTab() {
-  const { systemLogs, setSystemLogs } = useApp();
+  const { systemLogs: localLogs, setSystemLogs } = useApp();
+
+  // รวมบันทึกในเครื่องนี้ + บันทึกจาก Firestore (ทุกเครื่อง) — ตัดซ้ำด้วย id
+  const [remoteLogs, setRemoteLogs] = useState([]);
+  const [remoteState, setRemoteState] = useState('loading'); // loading | ok | error
+  const loadRemote = useCallback(async () => {
+    setRemoteState('loading');
+    try { setRemoteLogs(await fetchSystemLogs(500)); setRemoteState('ok'); }
+    catch { setRemoteState('error'); }
+  }, []);
+  useEffect(() => { loadRemote(); }, [loadRemote]);
+  const clearedAt = (() => { try { return localStorage.getItem('kt_sysLogClearedAt') || ''; } catch { return ''; } })();
+  const systemLogs = useMemo(() => {
+    const map = new Map();
+    [...remoteLogs.filter(l => !clearedAt || (l.ts ?? '') > clearedAt), ...localLogs].forEach(l => { if (!map.has(String(l.id))) map.set(String(l.id), l); });
+    return [...map.values()].sort((a, b) => String(b.ts).localeCompare(String(a.ts)));
+  }, [remoteLogs, localLogs, clearedAt]);
 
   const [search,      setSearch]      = useState('');
   const [actionFilter, setActionFilter] = useState('');
@@ -124,6 +145,8 @@ export default function SystemLogTab() {
         if (actionFilter === 'login'   && a !== 'login') return false;
         if (actionFilter === 'logout'  && a !== 'logout') return false;
         if (actionFilter === 'save'    && a !== 'save') return false;
+        if (actionFilter === 'edit'    && a !== 'edit') return false;
+        if (actionFilter === 'view'    && a !== 'view') return false;
         if (actionFilter === 'import'  && a !== 'import') return false;
       }
       if (dateFilter) {
@@ -145,8 +168,10 @@ export default function SystemLogTab() {
   const handleDateFilter   = v => { setDateFilter(v); setPage(1); };
 
   const clearAll = () => {
-    if (!confirm('⚠️ ต้องการลบบันทึกการใช้งานระบบทั้งหมดหรือไม่?\n(ไม่สามารถกู้คืนได้)')) return;
+    if (!confirm('⚠️ ต้องการลบบันทึกการใช้งานระบบทั้งหมดหรือไม่?\n(ไม่สามารถกู้คืนได้)\n\nหมายเหตุ: ล้างจากหน้าจอนี้เท่านั้น ข้อมูลสำรองบนระบบกลางยังคงอยู่')) return;
+    try { localStorage.setItem('kt_sysLogClearedAt', new Date().toISOString()); } catch { /* ignore */ }
     setSystemLogs([]);
+    setRemoteLogs([]);
   };
 
   return (
@@ -160,6 +185,10 @@ export default function SystemLogTab() {
           </p>
         </div>
         <div {...ui('flex gap-2')}>
+          <button {...ui('btn', { background: '#f5f3ff', color: '#6d28d9' })}
+            onClick={loadRemote} disabled={remoteState === 'loading'}>
+            {remoteState === 'loading' ? '⏳ กำลังโหลด…' : '🔄 โหลดใหม่'}
+          </button>
           <button {...ui('btn', { background: '#f0f9ff', color: '#0369a1' })}
             onClick={() => exportCsv(filtered)}>
             📥 Export CSV
@@ -170,6 +199,12 @@ export default function SystemLogTab() {
           </button>
         </div>
       </div>
+
+      {remoteState === 'error' && (
+        <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e', borderRadius: '10px', padding: '.55rem .85rem', fontSize: '.78rem', marginBottom: '1rem' }}>
+          ⚠️ โหลดบันทึกจากส่วนกลางไม่ได้ (ออฟไลน์หรือยังไม่ได้ตั้งสิทธิ์) — แสดงเฉพาะบันทึกของเครื่องนี้
+        </div>
+      )}
 
       {/* Summary cards */}
       <div style={{ display: 'flex', gap: '.85rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>

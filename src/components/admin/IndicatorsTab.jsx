@@ -4,6 +4,7 @@ import { INDICATORS_DATA_68 } from '../../data/indicatorsData_68';
 import { INITIAL_INDICATORS, INITIAL_ACTIVITIES } from '../../data/flatIndicators';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
+const noKor = x => String(x ?? '').replace(/(\d)ข/g, '$1'); // display only
 
 // ── helper: รายการ standard ในแต่ละ domain (ใช้ indicatorsData_68) ─────────
 function getStandardsByDomain(domainId) {
@@ -221,8 +222,8 @@ function CsvImportModal({ isOpen, onClose, onImport, existingIndicators }) {
                           background: ind.domainColor, color: 'white',
                           borderRadius: '5px', padding: '0 .35rem',
                           fontWeight: 800, flexShrink: 0, lineHeight: '1.5',
-                        }}>{ind.indicatorCode}</span>
-                        <span>{ind.domainEmoji} {ind.label}</span>
+                        }}>{noKor(ind.indicatorCode)}</span>
+                        <span>{ind.domainEmoji} {noKor(ind.label)}</span>
                       </div>
                     ))}
                   </div>
@@ -314,7 +315,7 @@ function IndicatorModal({ isOpen, onClose, onSave, editing, domains }) {
             onChange={e => setForm({ ...form, standardId: e.target.value })}>
             <option value="">— เลือกมาตรฐาน —</option>
             {getStandardsByDomain(form.domainId).map(s => (
-              <option key={s.id} value={s.id}>{s.title}</option>
+              <option key={s.id} value={s.id}>{noKor(s.title)}</option>
             ))}
           </select>
         </div>
@@ -512,8 +513,8 @@ export default function IndicatorsTab({ readOnly = false }) {
                     background: `${domain?.color ?? '#7c3aed'}20`, color: domain?.color ?? '#7c3aed',
                     borderRadius: '6px', padding: '.1rem .45rem',
                     fontSize: '.7rem', fontWeight: 800, flexShrink: 0,
-                  }}>{ind.indicatorCode}</span>
-                  <span style={{ fontWeight: 600, fontSize: '.85rem', color: '#374151' }}>{ind.label}</span>
+                  }}>{noKor(ind.indicatorCode)}</span>
+                  <span style={{ fontWeight: 600, fontSize: '.85rem', color: '#374151' }}>{noKor(ind.label)}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexShrink: 0 }}>
                   <span style={{

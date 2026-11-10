@@ -22,6 +22,29 @@ import { isSupabaseConfigured } from '../lib/supabase';
 import { isFirebaseConfigured, db } from '../lib/firebase';
 import { collection, onSnapshot, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { logSync, setSyncLogContext } from '../lib/syncLog';
+import { pushSystemLog, makeLogEntry, actorName } from '../lib/systemLog';
+
+// ตัวตั้งค่าข้อมูลที่ผู้ใช้แก้ผ่านหน้าจอ → บันทึกในบันทึกการใช้งานระบบ (ครั้งแรกในรอบ 60 วินาทีต่อชุดข้อมูล)
+// หมายเหตุ: ครอบเฉพาะตัวที่ส่งออกให้หน้าจอใช้ — การซิงก์/ดึงข้อมูลภายในใช้ตัวจริง จึงไม่ถูกนับเป็นการแก้ไขของผู้ใช้
+const LOGGED_SETTERS = {
+  setStudents: 'ข้อมูลนักเรียน', setTeachers: 'ข้อมูลครู', setClasses: 'ห้องเรียน', setSchools: 'ข้อมูลโรงเรียน',
+  setHolidays: 'วันหยุด', setSpecialHolidays: 'วันหยุดพิเศษ', setSpecialEvents: 'กิจกรรมวันสำคัญ',
+  setAssessmentTopics: 'หัวข้อประเมิน', setIndicators: 'ตัวบ่งชี้', setActivities: 'กิจกรรมตัวบ่งชี้',
+  setQaData: 'ข้อมูลมาตรฐาน', setAnnouncements: 'ประกาศ',
+  setPickupRecords: 'การรับ-ส่งนักเรียน', setMediaRecords: 'ทะเบียนผลิตสื่อ', setMediaBorrowRecords: 'ยืม-คืนสื่อ',
+  setCornerRecords: 'มุมประสบการณ์', setCornerDefs: 'มุมประสบการณ์', setInnerCornerRecords: 'มุมในห้อง', setInnerCornerDefs: 'มุมในห้อง',
+  setClassInnerCornerKeys: 'มุมในห้อง', setClassOuterCornerKeys: 'มุมนอกห้อง',
+  setHealthCheckRecords: 'ตรวจสุขภาพ', setIllnessCheckRecords: 'คัดกรองอาการป่วย', setToothBrushRecords: 'แปรงฟัน',
+  setLunchRecords: 'อาหารกลางวัน', setMilkRecords: 'นม', setNutritionRecords: 'ภาวะโภชนาการ', setDailyRoutineRecords: 'กิจวัตรประจำวัน',
+  setStudentReportRecords: 'สมุดรายงาน อ.01', setAbilityAssessments: 'ประเมินความสามารถผู้เรียน',
+  setMeasurementDates: 'เดือนวัดน้ำหนัก/ส่วนสูง', setParentCommentDeadlines: 'กำหนดวันความคิดเห็นผู้ปกครอง',
+  setMenuPermissions: 'สิทธิ์การใช้เมนู', setAcademicYear: 'ปีการศึกษา', setAcademicYears: 'รายการปีการศึกษา',
+  setCurrentTerm: 'ภาคเรียนปัจจุบัน', setLockedTerms: 'การล็อกภาคเรียน', setSchoolTerms: 'ภาคเรียน', setYearDirectors: 'ผู้อำนวยการประจำปี',
+  setSchoolName: 'ข้อมูลโรงเรียน', setSchoolLogo: 'ข้อมูลโรงเรียน', setSchoolSlogan: 'ข้อมูลโรงเรียน', setLocalGovSlogan: 'ข้อมูลโรงเรียน',
+  setSchoolPhilosophy: 'ข้อมูลโรงเรียน', setSchoolVision: 'ข้อมูลโรงเรียน', setSchoolDirectorName: 'ข้อมูลโรงเรียน',
+  setAiApiKey: 'ค่า API key', setImgbbApiKey: 'ค่า API key',
+};
+const _lastLogged = {};
 import { scheduleParentViewPush, pushSnapshotToFirebase, pullSnapshotFromFirebase, pullClassAssessments, pullAllClassAssessments, listDailyBackups, pullDailyBackupById, pushDailyDataToFirebase, pullDailyDataFromFirebase, seedDailyBaseline } from '../lib/firebaseSync';
 
 import { firebaseLogin, firebaseLogout, onFirebaseAuthChange } from '../lib/firebaseAuth';
@@ -203,6 +226,12 @@ export function AppProvider({ children }) {
   const [imgbbApiKey, setImgbbApiKey] = useLocalStorage(STORAGE_KEYS.imgbbApiKey, '');
   const [activityLogs, setActivityLogs] = useLocalStorage(STORAGE_KEYS.activityLogs, []);
   const [systemLogs, setSystemLogs]     = useLocalStorage(STORAGE_KEYS.systemLogs, []);
+  // บันทึกการใช้งาน: เก็บในเครื่อง + ส่งขึ้น Firestore ให้ทุกเครื่องเห็น (userName ว่าง = ใช้ผู้ใช้ปัจจุบัน)
+  const logSystem = useCallback((e) => {
+    const entry = makeLogEntry({ ...e, userName: e.userName || actorName(user, role) });
+    setSystemLogs(prev => [entry, ...prev].slice(0, 2000));
+    pushSystemLog(entry);
+  }, [setSystemLogs, user, role]);
   const [pickupRecords, setPickupRecords] = useLocalStorage(STORAGE_KEYS.pickupRecords, {});
   const [mediaRecords,        setMediaRecords]        = useLocalStorage(STORAGE_KEYS.mediaRecords,        []);
   const [mediaBorrowRecords,  setMediaBorrowRecords]  = useLocalStorage(STORAGE_KEYS.mediaBorrowRecords,  []);
@@ -293,6 +322,19 @@ export function AppProvider({ children }) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
+
+  // ── One-time migration: เพิ่มกิจกรรมใหม่ (no 46–48) ให้ข้อมูลกิจกรรมที่บันทึกไว้เดิม ──
+  // (3.4 ประหยัดพอเพียง · 4.8 จำนวนและตัวเลข · 4.9 มิติสัมพันธ์) — เติมครั้งเดียวต่อเครื่อง
+  useEffect(() => {
+    const FLAG = 'kt_actMig_46_48';
+    try { if (localStorage.getItem(FLAG)) return; } catch { /* ignore */ }
+    if (!Array.isArray(activities) || activities.length === 0) return;
+    const have = new Set(activities.map(a => a.id));
+    const add = INITIAL_ACTIVITIES.filter(a => ['46', '47', '48'].includes(String(a.no)) && !have.has(a.id));
+    if (add.length) setActivities(prev => [...(prev ?? []), ...add.filter(a => !(prev ?? []).some(p => p.id === a.id))]);
+    try { localStorage.setItem(FLAG, '1'); } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activities]);
 
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [evaluatingStudent, setEvaluatingStudent] = useState(null);
@@ -706,18 +748,20 @@ export function AppProvider({ children }) {
   // ลบนักเรียนแล้ว push ทันที (ไม่รอ debounce) — ป้องกันนักเรียนกลับมาถ้าปิด browser ก่อน 4 วินาที
   const deleteStudentAndSync = useCallback(async (studentId) => {
     const newStudents = students.filter(s => String(s.id) !== String(studentId));
+    logSystem({ action: 'delete_student', detail: `ลบนักเรียน ${students.find(s => String(s.id) === String(studentId))?.name ?? studentId}` });
     setStudents(newStudents);
     // Build snapshot ด้วย newStudents โดยตรง ไม่รอ React state update
     const payload = buildAppSnapshot({ ...getSnapshotData(), students: newStudents });
     const result  = await pushReconciled(payload);
     if (result.ok) localStorage.setItem('kt_lastPushAt', Date.now().toString());
     return result;
-  }, [students, setStudents, getSnapshotData, pushReconciled]);
+  }, [students, setStudents, getSnapshotData, pushReconciled, logSystem]);
 
   // ลบครูแล้ว push ทันที (ไม่รอ debounce) — ถ้าบันทึกขึ้นระบบไม่สำเร็จ รายชื่อจะกลับมาเมื่อโหลดหน้าใหม่
   // เพราะระบบถือข้อมูลบน Firebase เป็นหลัก จึงคืนผลลัพธ์ให้หน้าจอแจ้งผู้ใช้
   const deleteTeacherAndSync = useCallback(async (teacherId) => {
     const newTeachers = teachers.filter(t => String(t.id) !== String(teacherId));
+    logSystem({ action: 'delete_teacher', detail: `ลบครู ${teachers.find(t => String(t.id) === String(teacherId))?.name ?? teacherId}` });
     setTeachers(newTeachers);
     if (!isFirebaseConfigured) return { ok: true, local: true };
     localStorage.setItem('kt_lastPushAt', Date.now().toString()); // กัน pull เขียนทับก่อนส่งเสร็จ
@@ -734,7 +778,7 @@ export function AppProvider({ children }) {
     ]);
     if (result.ok) localStorage.setItem('kt_lastPushAt', Date.now().toString());
     return result;
-  }, [teachers, setTeachers, getSnapshotData, pushReconciled]);
+  }, [teachers, setTeachers, getSnapshotData, pushReconciled, logSystem]);
 
   // getDailyData: รวบรวม volatile fields สำหรับ push ไปยัง dailyData/latest
   const getDailyData = useCallback(() => ({
@@ -1156,14 +1200,8 @@ export function AppProvider({ children }) {
   // detail: รายละเอียดเพิ่มเติม
   // userName: ชื่อผู้ใช้ที่กระทำ (ถ้าไม่ระบุใช้ค่าจาก role/user ปัจจุบัน)
   const addSystemLog = useCallback((action, detail = '', userName = '') => {
-    setSystemLogs((prev) => [{
-      id: Date.now() + Math.random(),
-      ts: new Date().toISOString(),
-      action,
-      detail,
-      userName,
-    }, ...prev].slice(0, 2000));
-  }, [setSystemLogs]);
+    logSystem({ action, detail, userName });
+  }, [logSystem]);
 
   // ไม่มี Master PIN ฝังในโค้ดอีกต่อไป — ถ้า admin ลืม PIN ให้ล้างข้อมูลเบราว์เซอร์ของเครื่องนั้น
   // (authConfig เก็บเฉพาะในเครื่อง จึงรีเซ็ตกลับค่าเริ่มต้นได้)
@@ -1182,7 +1220,7 @@ export function AppProvider({ children }) {
         }
         persistSession('admin', { name: authConfig.admin.name });
         writeSessionToken('admin', { name: authConfig.admin.name });
-        setSystemLogs(prev => [{ id: Date.now() + Math.random(), ts: new Date().toISOString(), action: 'login', detail: 'เข้าสู่ระบบสำเร็จ', userName: 'admin (ผู้ดูแลระบบ)' }, ...prev].slice(0, 2000));
+        logSystem({ action: 'login', detail: 'เข้าสู่ระบบสำเร็จ', userName: 'admin (ผู้ดูแลระบบ)' });
         return { ok: true };
       }
       if (nextRole === 'teacher') {
@@ -1223,7 +1261,7 @@ export function AppProvider({ children }) {
         };
         persistSession('teacher', teacherData);
         writeSessionToken('teacher', teacherData);
-        setSystemLogs(prev => [{ id: Date.now() + Math.random(), ts: new Date().toISOString(), action: 'login', detail: `เข้าสู่ระบบสำเร็จ — ห้อง ${matchedTeacher.className ?? '-'}`, userName: `${matchedTeacher.name} (ครู)` }, ...prev].slice(0, 2000));
+        logSystem({ action: 'login', detail: `เข้าสู่ระบบสำเร็จ — ห้อง ${matchedTeacher.className ?? '-'}`, userName: `${matchedTeacher.name} (ครู)` });
         return { ok: true };
       }
       if (nextRole === 'parent') {
@@ -1244,12 +1282,12 @@ export function AppProvider({ children }) {
         };
         persistSession('parent', parentData);
         writeSessionToken('parent', parentData);
-        setSystemLogs(prev => [{ id: Date.now() + Math.random(), ts: new Date().toISOString(), action: 'login', detail: `เข้าสู่ระบบสำเร็จ — นักเรียน ${student.name}`, userName: `${guardianName} (ผู้ปกครอง)` }, ...prev].slice(0, 2000));
+        logSystem({ action: 'login', detail: `เข้าสู่ระบบสำเร็จ — นักเรียน ${student.name}`, userName: `${guardianName} (ผู้ปกครอง)` });
         return { ok: true };
       }
       return { ok: false, message: 'บทบาทไม่ถูกต้อง' };
     },
-    [students, teachers, authConfig, setSystemLogs, persistSession],
+    [students, teachers, authConfig, logSystem, persistSession],
   );
 
   // ─── เปลี่ยนรหัสผ่าน ──────────────────────────────────────
@@ -1291,18 +1329,12 @@ export function AppProvider({ children }) {
     sessionTokenRef.current = null;
     try { localStorage.removeItem('kt_sessionToken'); } catch { /* ignore */ }
     // บันทึก log ก่อน clear user
-    setSystemLogs(prev => [{
-      id: Date.now() + Math.random(),
-      ts: new Date().toISOString(),
-      action: 'logout',
-      detail: 'ออกจากระบบ',
-      userName: user?.name ?? 'ผู้ใช้',
-    }, ...prev].slice(0, 2000));
+    logSystem({ action: 'logout', detail: 'ออกจากระบบ', userName: actorName(user, role) || 'ผู้ใช้' });
     persistSession(null, null);
     setSelectedStudent(null);
     setEvaluatingStudent(null);
     if (isFirebaseConfigured) firebaseLogout();
-  }, [user, role, setSystemLogs, persistSession]);
+  }, [user, role, logSystem, persistSession]);
 
   // ─── Single-session watcher: ถ้ามีคนอื่น login ด้วย account เดิม → kick out ────
   useEffect(() => {
@@ -1419,6 +1451,7 @@ export function AppProvider({ children }) {
               };
             });
           setStudents((prev) => [...prev, ...newStudents]);
+          logSystem({ action: 'import', detail: `นำเข้านักเรียน ${newStudents.length} คน` });
           return { ok: true, count: newStudents.length };
         } else if (type === 'teachers') {
           const newTeachers = dataRows.map((row) => ({
@@ -1428,13 +1461,14 @@ export function AppProvider({ children }) {
             status: 'Active',
           }));
           setTeachers((prev) => [...prev, ...newTeachers]);
+          logSystem({ action: 'import', detail: `นำเข้าครู ${newTeachers.length} คน` });
         }
         return { ok: true };
       } catch {
         return { ok: false, message: 'รูปแบบข้อมูลไม่ถูกต้อง' };
       }
     },
-    [setStudents, setTeachers],
+    [setStudents, setTeachers, logSystem],
   );
 
   const handleSaveEvaluation = useCallback(
@@ -1447,13 +1481,15 @@ export function AppProvider({ children }) {
             : s,
         ),
       );
+      logSystem({ action: 'save', detail: `บันทึกผลประเมิน ${evaluatingStudent.name ?? ''}`.trim() });
       setEvaluatingStudent(null);
     },
-    [evaluatingStudent, setStudents],
+    [evaluatingStudent, setStudents, logSystem],
   );
 
   const saveDailyAttendance = useCallback(
     (date, recordsByStudentId) => {
+      logSystem({ action: 'save', detail: `บันทึกเช็คชื่อ ${date} (${Object.keys(recordsByStudentId ?? {}).length} คน)` });
       const merged = mergeDayRecords(dailyRecords, date, recordsByStudentId);
       setDailyRecords(merged);
       setStudents((prev) =>
@@ -1729,7 +1765,7 @@ export function AppProvider({ children }) {
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      dailyRecords, setDailyRecords, setStudents, students, academicYear,
+      dailyRecords, setDailyRecords, setStudents, students, academicYear, logSystem,
       milkRecords,       setMilkRecords,
       lunchRecords,      setLunchRecords,
       toothBrushRecords, setToothBrushRecords,
@@ -1840,8 +1876,9 @@ export function AppProvider({ children }) {
         },
       ]);
       setIsAdding(false);
+      logSystem({ action: 'add_student', detail: `เพิ่มนักเรียน ${data?.name ?? ''} ${data?.className ? `(${data.className})` : ''}`.trim() });
     },
-    [setStudents],
+    [setStudents, logSystem],
   );
 
   // รายชื่อห้องเรียนทั้งหมด (dynamic — ไม่ hardcode)
@@ -2072,7 +2109,27 @@ export function AppProvider({ children }) {
     abilityAssessments,    setAbilityAssessments,
   };
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  // ตัวตั้งค่าที่บันทึกการแก้ไข (ตัวเดียวกันตลอด ไม่เปลี่ยนทุกครั้งที่ render)
+  const rawValueRef = useRef(value);
+  rawValueRef.current = value;
+  const logSystemRef = useRef(logSystem);
+  logSystemRef.current = logSystem;
+  const wrappedSetters = useMemo(() => Object.fromEntries(Object.entries(LOGGED_SETTERS).map(([name, label]) => [
+    name,
+    (...args) => {
+      const r = rawValueRef.current[name](...args);
+      const now = Date.now();
+      if (now - (_lastLogged[label] ?? 0) > 60000) {
+        _lastLogged[label] = now;
+        logSystemRef.current({ action: 'edit', detail: `แก้ไข${label}` });
+      }
+      return r;
+    },
+  ])), []);
+  const loggedValue = { ...value };
+  Object.keys(wrappedSetters).forEach(k => { if (typeof value[k] === 'function') loggedValue[k] = wrappedSetters[k]; });
+
+  return <AppContext.Provider value={loggedValue}>{children}</AppContext.Provider>;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components -- hook paired with provider

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useApp } from '../../context/AppContext';
 
 /**
  * DashboardSidebar — collapsible left sidebar navigation.
@@ -13,6 +14,7 @@ import { useState, useEffect } from 'react';
 const AUTO_COLLAPSE_BREAKPOINT = 900; // px
 
 export default function DashboardSidebar({ groups, activeTab, onTabChange, badge }) {
+  const { addSystemLog } = useApp();
   const [collapsed, setCollapsed] = useState(() => window.innerWidth < AUTO_COLLAPSE_BREAKPOINT);
   const [hoveredId, setHoveredId] = useState(null);
 
@@ -44,6 +46,7 @@ export default function DashboardSidebar({ groups, activeTab, onTabChange, badge
   const handleTabChange = (tabId) => {
     const grp = groups.find(g => g.tabs.some(t => t.id === tabId));
     if (grp) setExpandedGroups(new Set([grp.label]));
+    if (tabId !== activeTab) addSystemLog?.('view', `เปิดเมนู ${grp?.tabs.find(t => t.id === tabId)?.label ?? tabId}`);
     onTabChange(tabId);
   };
 

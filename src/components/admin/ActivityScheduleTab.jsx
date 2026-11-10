@@ -481,13 +481,20 @@ export default function ActivityScheduleTab() {
     classInnerCornerKeys = {},
     classOuterCornerKeys = {},
     allClassNames        = [],
+    role,
     setInnerCornerDefs,
     setCornerDefs,
     setClassInnerCornerKeys,
     setClassOuterCornerKeys,
   } = useApp();
 
-  const [rooms,        setRooms]        = useState([]);
+  const [allRooms,     setRooms]        = useState([]);
+  // แสดงเฉพาะห้องที่ยังมีอยู่ในระบบ (ห้องที่ถูกลบจะไม่แสดง แต่ข้อมูลตารางยังเก็บไว้ ไม่ถูกลบ — ถ้าสร้างห้องชื่อเดิมกลับมาจะกลับมาแสดง)
+  const rooms = useMemo(() => {
+    if (!allClassNames.length) return allRooms;
+    const names = new Set(allClassNames);
+    return allRooms.filter(r => names.has(r.name) || names.has(String(r.name).replace(/^ห้อง\s+/, '').trim()));
+  }, [allRooms, allClassNames]);
   const [loading,      setLoading]      = useState(true);
   const [editRoom,     setEditRoom]     = useState(null);
 
@@ -610,6 +617,24 @@ export default function ActivityScheduleTab() {
       outerSchedule,
     };
   }
+
+  /* ── สร้างห้องในตารางอัตโนมัติเมื่อมีห้องใหม่ในระบบ (เฉพาะแอดมิน) ── */
+  useEffect(() => {
+    if (loading || role !== 'admin' || !allClassNames.length) return;
+    const colRef = collection(db, 'activitySchedule');
+    const haveNames = new Set(allRooms.map(r => String(r.name).replace(/^ห้อง\s+/, '').trim()));
+    const haveIds = new Set(allRooms.map(r => r.id));
+    allClassNames.forEach(cn => {
+      if (haveNames.has(cn)) return;
+      const m = String(cn).match(/อ\.?\s*(\d)\s*\/\s*(\d+)/);
+      const levelKey = m ? m[1] : '1';
+      const id = m ? `${m[1]}_${m[2]}` : `c_${String(cn).replace(/[^\p{L}\p{N}]/gu, '')}`;
+      if (haveIds.has(id)) return;
+      haveIds.add(id);
+      const days = Object.fromEntries(DAYS.map(d => [d, []]));
+      setDoc(doc(colRef, id), { id, levelKey, name: `ห้อง ${cn}`, days }).catch(() => {});
+    });
+  }, [loading, role, allClassNames, allRooms]);
 
   /* ── Firestore: seed once + live-listen ── */
   useEffect(() => {

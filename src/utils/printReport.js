@@ -199,12 +199,15 @@ export function printReport({ student, physData, growthRecords, devAssessment, a
       return `<table style="width:100%;border-collapse:collapse;margin:0;margin-bottom:-1px">
         <thead style="display:table-header-group">
           <tr>
-            <th style="${thDA};width:48px">รหัส</th>
-            <th style="${thDA}">องค์ประกอบ</th>
-            <th style="${thDA}">สภาพที่พึงประสงค์</th>
-            <th style="${thDA};width:52px">ภาค 1</th>
-            <th style="${thDA};width:52px">ภาค 2</th>
-            <th style="${thDA};width:52px">สรุป</th>
+            <th rowspan="2" style="${thDA};width:48px">รหัส</th>
+            <th rowspan="2" style="${thDA}">องค์ประกอบ</th>
+            <th rowspan="2" style="${thDA}">สภาพที่พึงประสงค์</th>
+            <th colspan="2" style="${thDA}">ภาคเรียน</th>
+            <th rowspan="2" style="${thDA};width:52px">สรุป</th>
+          </tr>
+          <tr>
+            <th style="${thDA};width:52px">1</th>
+            <th style="${thDA};width:52px">2</th>
           </tr>
           <tr style="background:${domain.color}20">
             <td colspan="6" style="padding:6px 10px;border:1px solid #d1d5db;font-weight:900;font-size:.85rem;color:${domain.color}">
@@ -307,6 +310,7 @@ export function printReport({ student, physData, growthRecords, devAssessment, a
     <title>สมุดรายงานประจำตัว — ${student?.name ?? ''}</title>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap');
+      * { -webkit-print-color-adjust:exact; print-color-adjust:exact; } /* พิมพ์สีพื้นหลัง (แท่งกราฟ) แม้ไม่ได้เปิด Background graphics */
       body { font-family:'Sarabun',sans-serif; font-size:13px; margin:1in; color:#111; }
       h1 { text-align:center; font-size:1.1rem; margin-bottom:4px; }
       h2 { font-size:.95rem; margin:14px 0 4px; background:#f3f4f6; padding:4px 8px; border-radius:4px; }
@@ -518,7 +522,7 @@ export function printReport({ student, physData, growthRecords, devAssessment, a
         <td style="padding:3px 8px"><strong>วันเกิด:</strong></td>
         <td style="padding:3px 8px">${isoToThai(student?.birthDate) || '—'}</td>
         <td style="padding:3px 8px"><strong>ผู้ปกครอง:</strong></td>
-        <td style="padding:3px 8px">${student?.parentName ?? '—'}</td>
+        <td style="padding:3px 8px">${student?.guardianName || student?.parentName || '—'}</td>
       </tr>
     </table>
 
@@ -641,18 +645,18 @@ export function printReport({ student, physData, growthRecords, devAssessment, a
 
     <h2>6. ความคิดเห็นของครู</h2>
     <p style="font-weight:700">ภาคเรียนที่ 1:</p>
-    <p style="min-height:60px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${teacherComments?.term1 || '—'}</p>
+    <p style="min-height:60px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${teacherComments?.term1 || ''}</p>
     <p style="font-weight:700">ภาคเรียนที่ 2:</p>
-    <p style="min-height:60px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${teacherComments?.term2 || '—'}</p>
+    <p style="min-height:60px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${teacherComments?.term2 || ''}</p>
 
     <h2>7. ความคิดเห็นของผู้ปกครอง</h2>
     <p style="font-weight:700">ภาคเรียนที่ 1:</p>
-    <p style="min-height:60px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${parentComments?.term1 || '—'}</p>
+    <p style="min-height:60px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${parentComments?.term1 || ''}</p>
     <p style="font-weight:700">ภาคเรียนที่ 2:</p>
-    <p style="min-height:60px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${parentComments?.term2 || '—'}</p>
+    <p style="min-height:60px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${parentComments?.term2 || ''}</p>
 
     <h2>8. ความคิดเห็นของผู้อำนวยการสถานศึกษา</h2>
-    <p style="min-height:60px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${directorsComment || '—'}</p>
+    <p style="min-height:60px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${directorsComment || ''}</p>
 
     ${overallLevel !== null ? `
     <div style="margin-top:28px;padding:14px 18px;border:1.5px solid #d1d5db;border-radius:8px;background:#f9fafb;font-size:.87rem;line-height:2;text-align:justify">
@@ -667,14 +671,14 @@ export function printReport({ student, physData, growthRecords, devAssessment, a
     <div style="margin-top:32px;display:flex;justify-content:space-around">
       <div style="min-width:200px">
         <div style="height:52px"></div>
-        <div style="border-top:1px solid #000;padding-top:6px;font-size:.85rem;text-align:left">
+        <div style="padding-top:6px;font-size:.85rem;text-align:left">
           ลงชื่อ..................................ครูประจำชั้น
         </div>
         <div style="font-size:.82rem;color:#374151;margin-top:4px;text-align:left;padding-left:2.5rem">(${teacherName || '..................................'})</div>
       </div>
       <div style="min-width:200px">
         <div style="height:52px"></div>
-        <div style="border-top:1px solid #000;padding-top:6px;font-size:.85rem;text-align:left">
+        <div style="padding-top:6px;font-size:.85rem;text-align:left">
           ลงชื่อ..................................ผู้บริหารสถานศึกษา
         </div>
         <div style="font-size:.82rem;color:#374151;margin-top:4px;text-align:left;padding-left:2.5rem">(${directorName || '..................................'})</div>

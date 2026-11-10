@@ -33,6 +33,8 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
     measurementDates,
     abilityAssessments,
     nutritionRecords,
+    toothBrushRecords, lunchRecords, healthCheckRecords,
+    addSystemLog,
   } = useApp();
 
   const [aiCommentLoading, setAiCommentLoading] = useState({ 1: false, 2: false });
@@ -132,10 +134,11 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
   const devAssessRaw = rec?.devAssessment ?? emptyDevAssess();
   const devAssessData = useMemo(() => {
     if (!student) return devAssessRaw;
-    const upd = computeDevAssessFill(student, devAssessRaw, nutritionRecords, academicYear);
+    const upd = computeDevAssessFill(student, devAssessRaw, nutritionRecords, academicYear,
+      { toothBrushRecords, lunchRecords, healthCheckRecords });
     return Object.keys(upd).length ? { ...devAssessRaw, ...upd } : devAssessRaw;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [student, rec?.devAssessment, nutritionRecords, academicYear]);
+  }, [student, rec?.devAssessment, nutritionRecords, toothBrushRecords, lunchRecords, healthCheckRecords, academicYear]);
   const healthServices = rec?.healthServices ?? [];
   const teacherComments  = rec?.teacherComments  ?? { term1: '', term2: '' };
   const parentComments   = rec?.parentComments   ?? { term1: '', term2: '' };
@@ -355,7 +358,8 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
         directorsComment: '', highlights: {},
       };
       const cur = base.devAssessment ?? emptyDevAssess();
-      const upd = computeDevAssessFill(st, cur, nutritionRecords, academicYear);
+      const upd = computeDevAssessFill(st, cur, nutritionRecords, academicYear,
+        { toothBrushRecords, lunchRecords, healthCheckRecords });
       const n = Object.keys(upd).length;
       if (!n) return;
       next[key] = { ...base, devAssessment: { ...cur, ...upd } };
@@ -452,12 +456,13 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
             {student.birthDate && (
               <span style={{ fontSize: '.82rem', color: '#6b7280' }}>เกิด {isoToThai(student.birthDate)}</span>
             )}
-            {student.parentName && (
-              <span style={{ fontSize: '.82rem', color: '#6b7280' }}>ผู้ปกครอง: {student.parentName}</span>
+            {(student.guardianName || student.parentName) && (
+              <span style={{ fontSize: '.82rem', color: '#6b7280' }}>ผู้ปกครอง: {student.guardianName || student.parentName}</span>
             )}
             <button type="button"
               onClick={() => {
                 const classTeacher = teachers?.find(t => t.className === (student?.className ?? student?.level));
+                addSystemLog?.('report', `พิมพ์สมุดรายงาน ${student?.name ?? ''} ปี ${academicYear}`);
                 printReport({ student, physData, growthRecords: growthData, devAssessment: devAssessData, attendanceSummary, healthServices, devDomains, teacherComments, parentComments, directorsComment, highlights, academicYear, schoolName, schoolPhilosophy, schoolVision, schoolLogo, teacherName: classTeacher?.name ?? '', directorName: yearDirectors?.[academicYear] || schoolDirectorName || schools?.[0]?.principal || '' });
               }}
               style={{

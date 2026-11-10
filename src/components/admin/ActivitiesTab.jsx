@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { INDICATORS_DATA_68 } from '../../data/indicatorsData_68';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
+const noKor = x => String(x ?? '').replace(/(\d)ข/g, '$1'); // display only
 
 // ── Modal เพิ่ม/แก้ไขกิจกรรม ───────────────────────────────────────────────
 function ActivityModal({ isOpen, onClose, onSave, editing, indicators, presetIndicatorId }) {
@@ -58,7 +59,7 @@ function ActivityModal({ isOpen, onClose, onSave, editing, indicators, presetInd
               <optgroup key={domainId} label={`${dom.emoji} ด้าน${dom.label}`}>
                 {dom.items.map(ind => (
                   <option key={ind.id} value={ind.id}>
-                    [{ind.indicatorCode}] {ind.label.length > 50 ? ind.label.slice(0, 50) + '…' : ind.label}
+                    [{noKor(ind.indicatorCode)}] {noKor(ind.label.length > 50 ? ind.label.slice(0, 50) + '…' : ind.label)}
                   </option>
                 ))}
               </optgroup>
@@ -229,7 +230,7 @@ export default function ActivitiesTab({ readOnly = false }) {
                 color: activeIndicator === ind.id ? 'white' : '#6b7280',
                 transition: 'all .15s',
               }}>
-              [{ind.indicatorCode}] {cnt}
+              [{noKor(ind.indicatorCode)}] {cnt}
             </button>
           );
         })}
@@ -257,9 +258,9 @@ export default function ActivitiesTab({ readOnly = false }) {
                   background: domain?.color ?? '#7c3aed', color: 'white',
                   borderRadius: '5px', padding: '0 .4rem',
                   fontSize: '.7rem', fontWeight: 800,
-                }}>{ind?.indicatorCode ?? '?'}</span>
+                }}>{noKor(ind?.indicatorCode ?? '?')}</span>
                 <span style={{ fontSize: '.82rem', fontWeight: 700, color: domain?.color ?? '#7c3aed' }}>
-                  {ind?.label ?? indId}
+                  {noKor(ind?.label ?? indId)}
                 </span>
                 {!readOnly && <button type="button"
                   onClick={() => openModal(null, indId)}

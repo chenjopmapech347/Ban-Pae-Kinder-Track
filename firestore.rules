@@ -35,6 +35,18 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // บันทึกการซิงก์ (ช่วงทดสอบ) — สร้าง/อ่านได้ ห้ามแก้/ลบ
+    match /schools/default/syncLogs/{docId} {
+      allow read, create: if true;
+      allow update, delete: if false;
+    }
+
+    // บันทึกการใช้งานระบบ (ใครทำอะไรเมื่อไร) — สร้าง/อ่านได้ ห้ามแก้/ลบ
+    match /schools/default/systemLogs/{docId} {
+      allow read, create: if true;
+      allow update, delete: if false;
+    }
+
     // อย่างอื่นทั้งหมดปิด (default deny)
   }
 }

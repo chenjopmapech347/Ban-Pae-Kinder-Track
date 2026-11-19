@@ -45,7 +45,7 @@ const LOGGED_SETTERS = {
   setAiApiKey: 'ค่า API key', setImgbbApiKey: 'ค่า API key',
 };
 const _lastLogged = {};
-import { scheduleParentViewPush, pushSnapshotToFirebase, pullSnapshotFromFirebase, pullClassAssessments, pullAllClassAssessments, listDailyBackups, pullDailyBackupById, pushDailyDataToFirebase, pullDailyDataFromFirebase, seedDailyBaseline } from '../lib/firebaseSync';
+import { scheduleParentViewPush, pushSnapshotToFirebase, pullSnapshotFromFirebase, pullClassAssessments, pullAllClassAssessments, pushClassAssessments, listDailyBackups, pullDailyBackupById, pushDailyDataToFirebase, pullDailyDataFromFirebase, seedDailyBaseline } from '../lib/firebaseSync';
 
 import { firebaseLogin, firebaseLogout, onFirebaseAuthChange } from '../lib/firebaseAuth';
 import { SERVER_AUTH, parentLoginServer, fetchMyChild, currentClaims } from '../lib/serverAuth';
@@ -858,6 +858,7 @@ export function AppProvider({ children }) {
   // ครู: ห้องตัวเอง / admin: ทุกห้อง / ผู้ปกครองไม่ดึง
   const [assessPullStatus, setAssessPullStatus] = useState({ state: 'idle', message: '', count: 0 }); // idle|pulling|ok|error
   const reloadAssessmentsRef = useRef(async () => ({ ok: false }));
+  const studentsRef = useRef([]);
   const reloadAssessments = useCallback(async () => {
     if (!isFirebaseConfigured) return { ok: false, message: 'ไม่ได้เชื่อมต่อ Firebase' };
     if (role !== 'teacher' && role !== 'admin') return { ok: true, count: 0 };
@@ -883,10 +884,33 @@ export function AppProvider({ children }) {
         };
       }));
     }
-    setAssessPullStatus({ state: 'ok', message: '', count });
-    return { ok: true, count };
+    // ── ย้ายคะแนนที่ค้างในเครื่องขึ้นระบบ (ครั้งเดียวต่อห้อง) ──
+    // ถ้าในเครื่องนี้มีคะแนนรายกิจกรรมของห้องใด แต่ในระบบยังไม่มีของนักเรียนห้องนั้นเลย (เช่น เคยบันทึกตอนกฎ Firestore ยังไม่เปิด)
+    // → ส่งขึ้นระบบให้ (ไม่ทับห้องที่ในระบบมีข้อมูลอยู่แล้ว)
+    let migrated = 0;
+    try {
+      const byClass = {};
+      (studentsRef.current ?? []).forEach(st => {
+        if (!st.className || !st.assessments?.indicators || Object.keys(st.assessments.indicators).length === 0) return;
+        (byClass[st.className] ??= []).push(st);
+      });
+      const allByClass = {};
+      (studentsRef.current ?? []).forEach(st => { (allByClass[st.className] ??= []).push(String(st.id)); });
+      for (const [cls, list] of Object.entries(byClass)) {
+        if (role === 'teacher' && cls !== user?.className) continue;
+        const cloudHasClass = (allByClass[cls] ?? []).some(id => incoming[id]);
+        if (cloudHasClass) continue;
+        const data = {};
+        list.forEach(st => { data[String(st.id)] = { indicators: st.assessments.indicators }; });
+        const r = await pushClassAssessments(cls, data);
+        if (r.ok) migrated += list.length;
+      }
+    } catch { /* ข้ามได้ — จะลองใหม่ครั้งถัดไป */ }
+    setAssessPullStatus({ state: 'ok', message: '', count: count + migrated, migrated });
+    return { ok: true, count, migrated };
   }, [role, user]); // eslint-disable-line react-hooks/exhaustive-deps
   reloadAssessmentsRef.current = reloadAssessments;
+  studentsRef.current = students;
 
   useEffect(() => {
     if (role !== 'parent' && role !== 'teacher' && role !== 'admin') return;

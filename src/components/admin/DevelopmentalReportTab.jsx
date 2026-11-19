@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { ui } from '../../ui/ui';
 
@@ -866,7 +866,9 @@ ${allRows}
 
 // ── Main Component ────────────────────────────────────────────────────────────
 export default function DevelopmentalReportTab({ teacherClassFilter = null }) {
-  const { students, classes, indicators, activities, role, user, schoolName, schoolLogo, academicYear } = useApp();
+  const { students, classes, indicators, activities, role, user, schoolName, schoolLogo, academicYear, reloadAssessments } = useApp();
+  // เปิดหน้านี้ (แอดมิน) → ดึงคะแนนประเมินรายกิจกรรมล่าสุดจากระบบ
+  useEffect(() => { if (role === 'admin') reloadAssessments?.(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isTeacher = role === 'teacher';
   const myClass = teacherClassFilter ?? (isTeacher ? user?.className : null);

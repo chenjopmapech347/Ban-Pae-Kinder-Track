@@ -473,24 +473,24 @@ export function printReport({ student, physData, growthRecords, devAssessment, a
         ตารางแสดงการเจริญเติบโตของเพศชายและหญิง อายุ 3–6 ปี
       </h2>
       <p style="text-align:center;font-size:.67rem;color:#666;margin-bottom:3px">
-        มาตรฐานการเจริญเติบโตองค์การอนามัยโลก WHO 2006 (อายุ 5 ปี 1 เดือนขึ้นไปใช้ WHO 2007) · ตั้งแต่ = –2SD · จนถึง = +2SD
+        มาตรฐานการเจริญเติบโตองค์การอนามัยโลก WHO 2006 (5 ปี 1–11 เดือนใช้ WHO 2007 · 6 ปีขึ้นไปใช้เกณฑ์อ้างอิงกรมอนามัย พ.ศ. 2564) · ตั้งแต่ = –2SD · จนถึง = +2SD
       </p>
       <table style="font-size:.67rem;line-height:1.2">
         <thead>
           <tr style="background:#1e3a5f;color:white">
-            <th rowspan="3" style="padding:3px 5px;border:1px solid #374151;text-align:center">ปี</th>
-            <th rowspan="3" style="padding:3px 5px;border:1px solid #374151;text-align:center">เดือน</th>
-            <th colspan="4" style="padding:3px 5px;border:1px solid #374151;text-align:center">น้ำหนักมาตรฐาน (กิโลกรัม)</th>
-            <th colspan="4" style="padding:3px 5px;border:1px solid #374151;text-align:center">ส่วนสูงมาตรฐาน (เซนติเมตร)</th>
+            <th rowspan="3" style="padding:3px 5px;border:1px solid #374151;background:#1e3a5f;color:white;text-align:center">ปี</th>
+            <th rowspan="3" style="padding:3px 5px;border:1px solid #374151;background:#1e3a5f;color:white;text-align:center">เดือน</th>
+            <th colspan="4" style="padding:3px 5px;border:1px solid #374151;background:#1e3a5f;color:white;text-align:center">น้ำหนักมาตรฐาน (กิโลกรัม)</th>
+            <th colspan="4" style="padding:3px 5px;border:1px solid #374151;background:#1e3a5f;color:white;text-align:center">ส่วนสูงมาตรฐาน (เซนติเมตร)</th>
           </tr>
           <tr style="background:#1e3a5f;color:white">
-            <th colspan="2" style="padding:2px 5px;border:1px solid #374151;text-align:center">ชาย</th>
-            <th colspan="2" style="padding:2px 5px;border:1px solid #374151;text-align:center">หญิง</th>
-            <th colspan="2" style="padding:2px 5px;border:1px solid #374151;text-align:center">ชาย</th>
-            <th colspan="2" style="padding:2px 5px;border:1px solid #374151;text-align:center">หญิง</th>
+            <th colspan="2" style="padding:2px 5px;border:1px solid #374151;background:#1e3a5f;color:white;text-align:center">ชาย</th>
+            <th colspan="2" style="padding:2px 5px;border:1px solid #374151;background:#1e3a5f;color:white;text-align:center">หญิง</th>
+            <th colspan="2" style="padding:2px 5px;border:1px solid #374151;background:#1e3a5f;color:white;text-align:center">ชาย</th>
+            <th colspan="2" style="padding:2px 5px;border:1px solid #374151;background:#1e3a5f;color:white;text-align:center">หญิง</th>
           </tr>
           <tr style="background:#2d4a6e;color:#e5e7eb;font-size:.62rem">
-            ${['ตั้งแต่','จนถึง','ตั้งแต่','จนถึง','ตั้งแต่','จนถึง','ตั้งแต่','จนถึง'].map(l => `<th style="padding:2px 4px;border:1px solid #374151;text-align:center">${l}</th>`).join('')}
+            ${['ตั้งแต่','จนถึง','ตั้งแต่','จนถึง','ตั้งแต่','จนถึง','ตั้งแต่','จนถึง'].map(l => `<th style="padding:2px 4px;border:1px solid #374151;background:#2d4a6e;color:#e5e7eb;text-align:center">${l}</th>`).join('')}
           </tr>
         </thead>
         <tbody>

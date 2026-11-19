@@ -1263,20 +1263,20 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                 <table style={{ borderCollapse: 'collapse', fontSize: '.76rem', width: '100%' }}>
                   <thead>
                     <tr style={{ background: '#1e3a5f', color: 'white' }}>
-                      <th rowSpan={3} style={{ padding: '6px 10px', border: '1px solid #374151', textAlign: 'center' }}>ปี</th>
-                      <th rowSpan={3} style={{ padding: '6px 10px', border: '1px solid #374151', textAlign: 'center' }}>เดือน</th>
-                      <th colSpan={4} style={{ padding: '6px 10px', border: '1px solid #374151', textAlign: 'center' }}>น้ำหนักมาตรฐาน (กิโลกรัม)</th>
-                      <th colSpan={4} style={{ padding: '6px 10px', border: '1px solid #374151', textAlign: 'center' }}>ส่วนสูงมาตรฐาน (เซนติเมตร)</th>
+                      <th rowSpan={3} style={{ padding: '6px 10px', border: '1px solid #374151', background: '#1e3a5f', color: 'white', textAlign: 'center' }}>ปี</th>
+                      <th rowSpan={3} style={{ padding: '6px 10px', border: '1px solid #374151', background: '#1e3a5f', color: 'white', textAlign: 'center' }}>เดือน</th>
+                      <th colSpan={4} style={{ padding: '6px 10px', border: '1px solid #374151', background: '#1e3a5f', color: 'white', textAlign: 'center' }}>น้ำหนักมาตรฐาน (กิโลกรัม)</th>
+                      <th colSpan={4} style={{ padding: '6px 10px', border: '1px solid #374151', background: '#1e3a5f', color: 'white', textAlign: 'center' }}>ส่วนสูงมาตรฐาน (เซนติเมตร)</th>
                     </tr>
                     <tr style={{ background: '#1e3a5f', color: 'white' }}>
-                      <th colSpan={2} style={{ padding: '4px 8px', border: '1px solid #374151', textAlign: 'center' }}>ชาย</th>
-                      <th colSpan={2} style={{ padding: '4px 8px', border: '1px solid #374151', textAlign: 'center' }}>หญิง</th>
-                      <th colSpan={2} style={{ padding: '4px 8px', border: '1px solid #374151', textAlign: 'center' }}>ชาย</th>
-                      <th colSpan={2} style={{ padding: '4px 8px', border: '1px solid #374151', textAlign: 'center' }}>หญิง</th>
+                      <th colSpan={2} style={{ padding: '4px 8px', border: '1px solid #374151', background: '#1e3a5f', color: 'white', textAlign: 'center' }}>ชาย</th>
+                      <th colSpan={2} style={{ padding: '4px 8px', border: '1px solid #374151', background: '#1e3a5f', color: 'white', textAlign: 'center' }}>หญิง</th>
+                      <th colSpan={2} style={{ padding: '4px 8px', border: '1px solid #374151', background: '#1e3a5f', color: 'white', textAlign: 'center' }}>ชาย</th>
+                      <th colSpan={2} style={{ padding: '4px 8px', border: '1px solid #374151', background: '#1e3a5f', color: 'white', textAlign: 'center' }}>หญิง</th>
                     </tr>
                     <tr style={{ background: '#2d4a6e', color: '#e5e7eb', fontSize: '.7rem' }}>
                       {['ตั้งแต่','จนถึง','ตั้งแต่','จนถึง','ตั้งแต่','จนถึง','ตั้งแต่','จนถึง'].map((l,i) => (
-                        <th key={i} style={{ padding: '3px 6px', border: '1px solid #374151', textAlign: 'center', fontWeight: 500 }}>{l}</th>
+                        <th key={i} style={{ padding: '3px 6px', border: '1px solid #374151', background: '#2d4a6e', color: '#e5e7eb', textAlign: 'center', fontWeight: 500 }}>{l}</th>
                       ))}
                     </tr>
                   </thead>

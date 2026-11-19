@@ -18,6 +18,7 @@ import {
   DEV_ASSESS_DOMAINS,
 } from '../../data/reportConstants';
 import { calcGrowthLevels, levelColor, getActivityTermScore, getIndicatorTermScore, gradeLabelOf, suggestLevelFromIndicator, genderOf, ageAt, PHYS_KEYS, PHYS_LABELS, PHYS_MONTH_HINTS, emptyPhys, GROWTH_MONTHS_T1, GROWTH_MONTHS_T2, GROWTH_MONTHS_ALL, monthRefDate, buildNutritionIndex, emptyGrowth, domainAllComponents, emptyDevAssess, devAssessDomainAvg, computeDevAssessFill, derivedAbilityLevels } from '../../utils/reportHelpers';
+import { withAutoDev } from '../../utils/autoDevelopment';
 import { printReport } from '../../utils/printReport';
 import { ui } from '../../ui/ui';
 
@@ -35,7 +36,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
     nutritionRecords,
     toothBrushRecords, lunchRecords, healthCheckRecords,
     addSystemLog,
-    assessPullStatus, reloadAssessments,
+    assessPullStatus, reloadAssessments, autoDevLedger,
   } = useApp();
 
   // เปิดหน้านี้ → ดึงคะแนนประเมินรายกิจกรรมล่าสุดจากระบบอีกครั้ง (กันกรณีดึงตอนเข้าสู่ระบบไม่สำเร็จหรือครูเพิ่งบันทึกใหม่)
@@ -62,9 +63,10 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
       compareByClassThenCode(a, b)
     ), [filteredStudents]);
 
+  // นักเรียน + คะแนนพัฒนาการที่ระบบเติมจากเช็คชื่อ (เฉพาะกิจกรรมที่ครูยังไม่ให้คะแนน)
   const student = useMemo(() =>
-    students.find(s => String(s.id) === String(selStudentId)) ?? null
-  , [students, selStudentId]);
+    withAutoDev(students.find(s => String(s.id) === String(selStudentId)) ?? null, autoDevLedger)
+  , [students, selStudentId, autoDevLedger]);
 
   // ── record key ────────────────────────────────────────────────────────────
   const recKey = selStudentId ? `${selStudentId}__${academicYear}` : null;

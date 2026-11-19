@@ -68,7 +68,11 @@ export function termScoresOf(actData, term) {
   const m = monthScores(actData, term);
   if (m.length) return m;
   const rounds = term === 1 ? [1, 2] : [3, 4];
-  return rounds.map(r => actData[`r${r}`]).filter(v => v != null && v > 0);
+  const manual = rounds.map(r => actData[`r${r}`]).filter(v => v != null && v > 0);
+  if (manual.length) return manual;
+  // ครูยังไม่ให้คะแนนภาคนี้ → ใช้ระดับที่ระบบเติมจากการเช็คชื่อ (utils/autoDevelopment.js) ถ้ามี
+  const auto = actData[`autoT${term}`];
+  return auto > 0 ? [auto] : [];
 }
 
 // round → term (สำรอง): r1+r2 = term1, r3+r4 = term2

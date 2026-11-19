@@ -45,6 +45,7 @@ const LOGGED_SETTERS = {
   setAiApiKey: 'ค่า API key', setImgbbApiKey: 'ค่า API key',
 };
 const _lastLogged = {};
+import { AUTO_BASE_SOURCES, AUTO_ROUTINE_SOURCES } from '../utils/autoDevelopment';
 import { scheduleParentViewPush, pushSnapshotToFirebase, pullSnapshotFromFirebase, pullClassAssessments, pullAllClassAssessments, pushClassAssessments, listDailyBackups, pullDailyBackupById, pushDailyDataToFirebase, pullDailyDataFromFirebase, seedDailyBaseline } from '../lib/firebaseSync';
 
 import { firebaseLogin, firebaseLogout, onFirebaseAuthChange } from '../lib/firebaseAuth';
@@ -265,6 +266,7 @@ export function AppProvider({ children }) {
   const [specialEvents,       setSpecialEvents]       = useLocalStorage(STORAGE_KEYS.specialEvents,       {});
   const [studentReportRecords, setStudentReportRecords] = useLocalStorage(STORAGE_KEYS.studentReportRecords, {});
   const [abilityAssessments,  setAbilityAssessments]  = useLocalStorage(STORAGE_KEYS.abilityAssessments, {});
+  const [autoDevLedger,       setAutoDevLedger]       = useLocalStorage(STORAGE_KEYS.autoDevLedger, {});
   const [measurementDates, setMeasurementDates] = useLocalStorage(STORAGE_KEYS.measurementDates, {
     t1m1: '', // ภาคเรียน 1 ครั้งที่ 1 (อ้างอิง มิ.ย.)
     t1m2: '', // ภาคเรียน 1 ครั้งที่ 2 (อ้างอิง ก.ย.)
@@ -383,6 +385,7 @@ export function AppProvider({ children }) {
       mediaBorrowRecords,
       imgbbApiKey,
       abilityAssessments,
+      autoDevLedger,
       cornerDefs,
       innerCornerDefs,
       classInnerCornerKeys,
@@ -421,6 +424,7 @@ export function AppProvider({ children }) {
       mediaBorrowRecords,
       imgbbApiKey,
       abilityAssessments,
+      autoDevLedger,
       cornerDefs,
       innerCornerDefs,
       classInnerCornerKeys,
@@ -491,6 +495,7 @@ export function AppProvider({ children }) {
     if (payload.mediaBorrowRecords) setMediaBorrowRecords(payload.mediaBorrowRecords);
     if (payload.imgbbApiKey) setImgbbApiKey(payload.imgbbApiKey);
     if (payload.abilityAssessments) setAbilityAssessments(payload.abilityAssessments);
+    if (payload.autoDevLedger) setAutoDevLedger(payload.autoDevLedger);
     // บันทึกรายเดือน/รายวัน
     if (payload.nutritionRecords) setNutritionRecords(mergeDaily ? (prev) => deepMergeObjects(prev, payload.nutritionRecords) : payload.nutritionRecords);
     if (payload.milkRecords) setMilkRecords(mergeDaily ? (prev) => deepMergeObjects(prev, payload.milkRecords) : payload.milkRecords);
@@ -541,6 +546,7 @@ export function AppProvider({ children }) {
     setMediaBorrowRecords,
     setImgbbApiKey,
     setAbilityAssessments,
+    setAutoDevLedger,
     setNutritionRecords,
     setMilkRecords,
     setLunchRecords,
@@ -912,6 +918,20 @@ export function AppProvider({ children }) {
   reloadAssessmentsRef.current = reloadAssessments;
   studentsRef.current = students;
 
+  // แอดมิน (ผู้อ่าน): กลับมาเปิดแอป/สลับกลับมาที่แท็บนี้ → ดึงคะแนนประเมินล่าสุดอัตโนมัติ (ห่างกันอย่างน้อย 30 วินาที)
+  // ครูไม่ทำ เพราะครูเป็นผู้บันทึก (กันคะแนนในเครื่องที่ยังส่งไม่สำเร็จถูกทับด้วยข้อมูลเก่าในระบบ)
+  useEffect(() => {
+    if (role !== 'admin' || !isFirebaseConfigured) return undefined;
+    let last = Date.now();
+    const onVis = () => {
+      if (document.visibilityState !== 'visible' || Date.now() - last < 30000) return;
+      last = Date.now();
+      reloadAssessmentsRef.current().catch(() => {});
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [role]);
+
   useEffect(() => {
     if (role !== 'parent' && role !== 'teacher' && role !== 'admin') return;
     if (!isFirebaseConfigured) { initialPullDone.current = true; return; }
@@ -1152,7 +1172,7 @@ export function AppProvider({ children }) {
     pickupRecords, mediaRecords, cornerRecords, innerCornerRecords,
     healthCheckRecords, illnessCheckRecords, toothBrushRecords,
     lunchRecords, milkRecords, nutritionRecords, dailyRoutineRecords, studentReportRecords,
-    specialEvents, specialHolidays, abilityAssessments,
+    specialEvents, specialHolidays, abilityAssessments, autoDevLedger,
     cornerDefs, innerCornerDefs,
     // ตั้งค่าที่ต้องมีผลกับทุกเครื่องทันที (เดิมไม่ได้ watch → แก้แล้วไม่ถูกส่งขึ้น Firebase จนกว่าจะมีข้อมูลอื่นเปลี่ยน)
     schoolTerms, lockedTerms, currentTerm, classInnerCornerKeys, classOuterCornerKeys,
@@ -1604,7 +1624,7 @@ export function AppProvider({ children }) {
       // ── Milk, Lunch, ToothBrush → auto-link จากการเช็คชื่อ ──
       // นักเรียนที่ "มา" → '√' (เข้าร่วมกิจกรรมอัตโนมัติ ครูแก้ได้ภายหลัง)
       // นักเรียนที่ "ขาด/ลา/ป่วย" → 'X' (ไม่ได้รับการดูแล)
-      // เฉพาะวันที่ยังไม่มีข้อมูล (ไม่ overwrite ที่ครูบันทึกแล้ว)
+      // วันที่ยังไม่มีข้อมูล → เติม; ถ้าครูแก้สถานะมา↔ขาด → อัปเดตตาม (ค่าที่ครูตั้งเองระหว่างมาเรียนคงไว้)
       const applyAttendanceLink = (setter) => {
         setter(prev => {
           const next = { ...prev };
@@ -1616,7 +1636,9 @@ export function AppProvider({ children }) {
               : { id: k, className: cls, academicYear, year: thaiYear, month, students: {} };
             ids.forEach(id => {
               const sData = rec.students[id] ?? { days: {} };
-              if (!(day in (sData.days ?? {}))) {
+              const cur   = sData.days?.[day];
+              // ยังไม่มีข้อมูล หรือเดิมเป็น X (ครูแก้ขาด→มา) → √ ; ค่าอื่น (เช่น '' ที่ครูตั้ง) คงไว้
+              if (cur === undefined || cur === 'X') {
                 rec.students[id] = { ...sData, days: { ...(sData.days ?? {}), [day]: '√' } };
               }
             });
@@ -1630,7 +1652,8 @@ export function AppProvider({ children }) {
               : { id: k, className: cls, academicYear, year: thaiYear, month, students: {} };
             ids.forEach(id => {
               const sData = rec.students[id] ?? { days: {} };
-              if (!(day in (sData.days ?? {}))) {
+              // ขาด/ลา/ป่วย → X เสมอ (รวมกรณีครูแก้มา→ขาด ที่เดิมเป็น √ หรือ '')
+              if (sData.days?.[day] !== 'X') {
                 rec.students[id] = { ...sData, days: { ...(sData.days ?? {}), [day]: 'X' } };
               }
             });
@@ -1707,6 +1730,7 @@ export function AppProvider({ children }) {
         return next;
       });
 
+      let isHealthCheckDay = false; // ใช้ตัดสินแหล่งข้อมูลที่เติมให้พัฒนาการ (autoDevLedger)
       // ── HealthCheck → วันแรกของสัปดาห์ที่ไม่ใช่วันหยุด (จันทร์→อังคาร→พุธ→พฤหัส→ศุกร์) ──
       // key: className__academicYear__YYYY-MM-DD
       // ค่า: null=ยังไม่ตรวจ | 3 = ผ่าน (auto-fill ค่าคงที่ 3 ทุกหมวด)
@@ -1737,6 +1761,7 @@ export function AppProvider({ children }) {
           if (!isHoliday(iso)) { healthCheckDay = iso; break; }
         }
         if (healthCheckDay !== date) return; // วันนี้ไม่ใช่ health check day ของสัปดาห์นี้
+        isHealthCheckDay = true;
 
         const healthEntry = (val) => ({
           body: val, hair: val, cloth: val,
@@ -1829,6 +1854,34 @@ export function AppProvider({ children }) {
         return next;
       });
 
+      // ── พัฒนาการ/ความสามารถ → บันทึกรายวัน (autoDevLedger) ──
+      // มา = ได้ระดับ 3 ในกิจกรรมที่เชื่อมกับแหล่งข้อมูลที่ระบบเติมวันนั้น; แก้เป็นขาด/ลา/ป่วย = ถอดออก (ระดับ 0)
+      // เก็บแยกจากคะแนน r1–r4 ของครู จึงไม่ทับ/ไม่ลบคะแนนที่ครูให้เอง
+      {
+        const touched = new Set([...Object.keys(byClass), ...Object.keys(byClassAllAbsent)]);
+        setAutoDevLedger(prev => {
+          const next = { ...prev };
+          touched.forEach(cls => {
+            const presentIds = (byClass[cls] ?? []).map(String);
+            const absentIds  = new Set((byClassAllAbsent[cls] ?? []).map(String));
+            const oldDay     = next[cls]?.[date];
+            const keep       = (oldDay?.p ?? []).map(String).filter(id => !absentIds.has(id) && !presentIds.includes(id));
+            const p          = [...keep, ...presentIds];
+            const days       = { ...(next[cls] ?? {}) };
+            if (!p.length) { delete days[date]; }
+            else {
+              const sources = [...AUTO_BASE_SOURCES, ...AUTO_ROUTINE_SOURCES];
+              if (isHealthCheckDay) sources.push('health_check');
+              if ((getKeysForDay(classOuterCornerKeys[cls], thaiDay) ?? []).length) sources.push('outdoor');
+              if ((getKeysForDay(classInnerCornerKeys[cls], thaiDay) ?? []).length) sources.push('corner');
+              days[date] = { p, s: sources };
+            }
+            next[cls] = days;
+          });
+          return next;
+        });
+      }
+
       return { ok: true };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1837,7 +1890,7 @@ export function AppProvider({ children }) {
       milkRecords,       setMilkRecords,
       lunchRecords,      setLunchRecords,
       toothBrushRecords, setToothBrushRecords,
-      setDailyRoutineRecords,
+      setDailyRoutineRecords, setAutoDevLedger,
       setIllnessCheckRecords,
       healthCheckRecords, setHealthCheckRecords,
       cornerRecords,      setCornerRecords,      cornerDefs,      classOuterCornerKeys,
@@ -2176,6 +2229,7 @@ export function AppProvider({ children }) {
     setMenuPermissions,
     // ประเมินความสามารถผู้เรียน หลักสูตรปฐมวัย 2560
     abilityAssessments,    setAbilityAssessments,
+    autoDevLedger,
   };
 
   // ตัวตั้งค่าที่บันทึกการแก้ไข (ตัวเดียวกันตลอด ไม่เปลี่ยนทุกครั้งที่ render)

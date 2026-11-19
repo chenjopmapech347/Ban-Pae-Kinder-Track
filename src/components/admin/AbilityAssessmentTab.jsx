@@ -8,6 +8,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { compareStudents, compareClassNames, todayISO } from '../../utils/helpers';
 import { derivedAbilityLevels } from '../../utils/reportHelpers';
+import { withAutoDev } from '../../utils/autoDevelopment';
 import { evidenceNote } from '../../data/competencyActivityMap';
 import {
   SCALE_C68, DOMAINS_C68, COMPETENCIES_C68,
@@ -156,7 +157,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
   const {
     students, allClassNames, role, user,
     academicYear, currentTerm,
-    abilityAssessments, setAbilityAssessments,
+    abilityAssessments, setAbilityAssessments, autoDevLedger,
     addActivityLog,
   } = useApp();
 
@@ -219,8 +220,8 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
   // ช่องที่ยังไม่ได้บันทึก → ระบบคำนวณจากกิจกรรมย่อยที่จับคู่ไว้ (ข้อที่ไม่มีกิจกรรมรองรับ = ว่าง) ของ "ประเมินพัฒนาการ" (แสดงอย่างเดียว ไม่บันทึกจนกว่าครูกด)
   const derivedMap = useMemo(
     () => Object.fromEntries(students.filter(s => s.className === selClass)
-      .map(s => [s.id, derivedAbilityLevels(s, selTerm)])),
-    [students, selClass, selTerm]
+      .map(s => [s.id, derivedAbilityLevels(withAutoDev(s, autoDevLedger), selTerm)])),
+    [students, selClass, selTerm, autoDevLedger]
   );
   function derivedScore(sid, code) {
     return derivedMap[sid]?.[code] || 0;

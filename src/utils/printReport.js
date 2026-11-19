@@ -636,21 +636,22 @@ export function printReport({ student, physData, growthRecords, devAssessment, a
 
     <h2>6. ความคิดเห็นของครู</h2>
     <p style="font-weight:700">ภาคเรียนที่ 1:</p>
-    <p style="min-height:60px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${teacherComments?.term1 || ''}</p>
+    <p style="min-height:44px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${teacherComments?.term1 || ''}</p>
     <p style="font-weight:700">ภาคเรียนที่ 2:</p>
-    <p style="min-height:60px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${teacherComments?.term2 || ''}</p>
+    <p style="min-height:44px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${teacherComments?.term2 || ''}</p>
 
     <h2>7. ความคิดเห็นของผู้ปกครอง</h2>
     <p style="font-weight:700">ภาคเรียนที่ 1:</p>
-    <p style="min-height:60px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${parentComments?.term1 || ''}</p>
+    <p style="min-height:44px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${parentComments?.term1 || ''}</p>
     <p style="font-weight:700">ภาคเรียนที่ 2:</p>
-    <p style="min-height:60px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${parentComments?.term2 || ''}</p>
+    <p style="min-height:44px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${parentComments?.term2 || ''}</p>
 
+    <div style="break-inside:avoid;page-break-inside:avoid">
     <h2>8. ความคิดเห็นของผู้อำนวยการสถานศึกษา</h2>
-    <p style="min-height:60px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${directorsComment || ''}</p>
+    <p style="min-height:44px;border:1px solid #d1d5db;border-radius:4px;padding:8px;font-size:.85rem">${directorsComment || ''}</p>
 
     ${overallLevel !== null ? `
-    <div style="margin-top:28px;padding:14px 18px;border:1.5px solid #d1d5db;border-radius:8px;background:#f9fafb;font-size:.87rem;line-height:2;text-align:justify">
+    <div style="margin-top:14px;padding:10px 18px;border:1.5px solid #d1d5db;border-radius:8px;background:#f9fafb;font-size:.87rem;line-height:2;text-align:justify">
       สรุปผลการประเมินภาพรวมเมื่อจบชั้นปีการศึกษา ${academicYear} จากการประเมินพัฒนาการทั้ง ๔ ด้าน
       พบว่า ${genderPrefix} ${student?.name ?? ''} มีผลการประเมินอยู่ในเกณฑ์
       <strong style="display:inline-block;padding:1px 10px;border-radius:4px;background:${levelBg};color:#fff;margin:0 4px">
@@ -659,21 +660,22 @@ export function printReport({ student, physData, growthRecords, devAssessment, a
       มีความพร้อมในการเลื่อนชั้นขึ้นสู่ระดับชั้น <strong>${nextLevelLabel}</strong> ต่อไป
     </div>` : ''}
 
-    <div style="margin-top:32px;display:flex;justify-content:space-around">
+    <div style="margin-top:18px;display:flex;justify-content:space-around">
       <div style="min-width:200px">
-        <div style="height:52px"></div>
+        <div style="height:40px"></div>
         <div style="padding-top:6px;font-size:.85rem;text-align:left">
           ลงชื่อ..................................ครูประจำชั้น
         </div>
         <div style="font-size:.82rem;color:#374151;margin-top:4px;text-align:left;padding-left:2.5rem">(${teacherName || '..................................'})</div>
       </div>
       <div style="min-width:200px">
-        <div style="height:52px"></div>
+        <div style="height:40px"></div>
         <div style="padding-top:6px;font-size:.85rem;text-align:left">
           ลงชื่อ..................................ผู้บริหารสถานศึกษา
         </div>
         <div style="font-size:.82rem;color:#374151;margin-top:4px;text-align:left;padding-left:2.5rem">(${directorName || '..................................'})</div>
       </div>
+    </div>
     </div>
   </body></html>`;
   // เขียน HTML ลง iframe โดยตรง — ไม่ใช้ blob URL (หลีกเลี่ยง CSP + popup blocker)

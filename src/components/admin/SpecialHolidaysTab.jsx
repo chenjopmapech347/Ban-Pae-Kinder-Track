@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
+import { todayISO } from '../../utils/helpers';
 
 // แปลง YYYY-MM-DD (ค.ศ.) → วัน เดือน ปีพ.ศ.
 function toThaiDate(iso) {
@@ -59,7 +60,7 @@ function MiniCalendar({ value, onChange, mode = 'any', disabledDates = [] }) {
           const iso     = isoPrefix + String(d).padStart(2, '0');
           const dow     = (firstDay + d - 1) % 7;
           const isWknd  = dow === 0 || dow === 6;
-          const isToday = iso === today.toISOString().slice(0, 10);
+          const isToday = iso === todayISO();
           const sel     = iso === value;
           const disabled = (mode === 'weekend' && !isWknd) || disabledDates.includes(iso);
 

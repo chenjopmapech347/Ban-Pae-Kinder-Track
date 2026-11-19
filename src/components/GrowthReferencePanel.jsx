@@ -93,6 +93,25 @@ export function nearestKey(ageYear, ageMonth) {
   return AGE_KEYS[best];
 }
 
+/**
+ * ค่าอ้างอิง [median_boy, sd_boy, median_girl, sd_girl] ณ อายุที่ระบุ — ประมาณค่าเชิงเส้นระหว่างจุดอ้างอิง 6 เดือน
+ * (เดิมปัดอายุลงเป็นจุด 6 เดือนก่อนหน้า ทำให้เด็กอายุ 4 ปี 5 เดือนถูกเทียบกับเกณฑ์ 4 ปี 0 เดือน)
+ * อายุต่ำกว่าจุดแรก/เกินจุดสุดท้าย → ใช้ค่าของจุดปลายสุด
+ */
+export function interpRef(table, ageYear, ageMonth) {
+  const m = ageYear * 12 + ageMonth;
+  if (!Number.isFinite(m)) return null;
+  const last = AGE_MONTHS.length - 1;
+  if (m <= AGE_MONTHS[0]) return table[AGE_KEYS[0]];
+  if (m >= AGE_MONTHS[last]) return table[AGE_KEYS[last]];
+  let i = 0;
+  while (i < last && m >= AGE_MONTHS[i + 1]) i++;
+  const lo = table[AGE_KEYS[i]], hi = table[AGE_KEYS[i + 1]];
+  if (!lo || !hi) return null;
+  const t = (m - AGE_MONTHS[i]) / (AGE_MONTHS[i + 1] - AGE_MONTHS[i]);
+  return lo.map((v, k) => v + (hi[k] - v) * t);
+}
+
 // ── กราฟ SVG ─────────────────────────────────────────────────────────────────
 function GrowthChartSVG({ dataTable, gIdx, minV, maxV, unit }) {
   const W = 580, H = 210;

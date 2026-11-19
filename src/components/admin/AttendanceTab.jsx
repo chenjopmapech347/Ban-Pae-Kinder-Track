@@ -267,8 +267,7 @@ export default function AttendanceTab({ defaultClass }) {
   // โหลด/รีเซ็ต draft เมื่อเปลี่ยนวันที่หรือ dailyRecords อัปเดต
   useEffect(() => {
     if (mainView !== 'daily') return;
-    const todayISO = new Date().toISOString().slice(0, 10);
-    const isToday  = selectedDate === todayISO;
+    const isToday  = selectedDate === todayISO();   // วันนี้ตามเวลาท้องถิ่น (ไม่ใช่ UTC)
     const newDrafts = {};
     ALL_CLASSES.forEach(cls => {
       const sts = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)') && isStudentActive(s, selectedDate)).sort(compareStudents);

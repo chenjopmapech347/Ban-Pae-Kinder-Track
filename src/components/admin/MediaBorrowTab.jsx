@@ -1,6 +1,6 @@
 // MediaBorrowTab.jsx — รายการยืม-คืนสื่อการสอน
 import { useState, useMemo, useEffect } from 'react';
-import { compareClassNames } from '../../utils/helpers';
+import { compareClassNames, todayISO as _localTodayISO } from '../../utils/helpers';
 import { useTermRange, OUT_OF_TERM_MSG } from '../../hooks/useTermRange';
 import { useApp } from '../../context/AppContext';
 import { ui } from '../../ui/ui';
@@ -53,7 +53,7 @@ function thaiDate(isoStr) {
 }
 
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return _localTodayISO();   // เวลาท้องถิ่น (UTC ทำให้ 00:00–06:59 น. ได้วันเมื่อวาน)
 }
 
 function isOverdue(record) {

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
+import { todayISO } from '../../utils/helpers';
 
 const EMPTY = { label: '', date: '' };
 
@@ -66,7 +67,7 @@ function MiniCalendar({ value, onChange }) {
           if (!d) return <div key={'e' + i} />;
           const iso = isoPrefix + String(d).padStart(2, '0');
           const selected = iso === value;
-          const isToday  = iso === today.toISOString().slice(0, 10);
+          const isToday  = iso === todayISO();
           const dow = (firstDay + d - 1) % 7;
           const isWeekend = dow === 0 || dow === 6;
           return (

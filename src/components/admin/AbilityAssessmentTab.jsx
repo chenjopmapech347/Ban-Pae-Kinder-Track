@@ -6,7 +6,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { compareStudents, compareClassNames } from '../../utils/helpers';
+import { compareStudents, compareClassNames, todayISO } from '../../utils/helpers';
 import { derivedAbilityLevels } from '../../utils/reportHelpers';
 import { evidenceNote } from '../../data/competencyActivityMap';
 import {
@@ -25,7 +25,7 @@ import {
   ACTIVITY_TYPES, getActivitiesForCompetency,
 } from '../../data/activitiesData_68';
 
-const TODAY = new Date().toISOString().slice(0, 10);
+const TODAY = todayISO();
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Dataset config

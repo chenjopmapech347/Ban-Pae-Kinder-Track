@@ -1,7 +1,7 @@
 // InnerCornerTab.jsx — แบบบันทึกการเล่นตามมุมประสบการณ์ภายในห้องเรียนรายสัปดาห์
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
-import { getMondayOf, getWeekLabel, genUniqueKey, compareStudents, compareClassNames } from '../../utils/helpers';
+import { todayISO, getMondayOf, getWeekLabel, genUniqueKey, compareStudents, compareClassNames } from '../../utils/helpers';
 import { getDayRecord } from '../../utils/attendance';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
@@ -155,7 +155,7 @@ export default function InnerCornerTab({ teacherClassFilter = null }) {
     dailyRecords,
   } = useApp();
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   const [selClass, setSelClass] = useState(teacherClassFilter ?? '');
   const [selDate,  setSelDate]  = useState(today);
   const termLocked = useIsTermLocked(selDate);

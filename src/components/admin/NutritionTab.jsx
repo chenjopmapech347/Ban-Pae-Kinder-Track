@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
-import GrowthReferencePanel, { WHO_W_A, WHO_H_A, nearestKey, calcWHResult } from '../GrowthReferencePanel';
+import GrowthReferencePanel, { WHO_W_A, WHO_H_A, interpRef, calcWHResult } from '../GrowthReferencePanel';
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   AlignmentType, WidthType, BorderStyle, ShadingType, VerticalAlign,
@@ -8,7 +8,7 @@ import {
 } from 'docx';
 import { ui } from '../../ui/ui';
 
-import { compareStudents } from '../../utils/helpers';
+import { compareStudents, todayISO as _localTodayISO } from '../../utils/helpers';
 import { useTermRange, OUT_OF_TERM_MSG } from '../../hooks/useTermRange';
 // ── ตัวเลือกผลประเมิน ────────────────────────────────────────────────────────
 const WEIGHT_AGE_OPTS = [
@@ -46,8 +46,7 @@ function resultColor(val) {
 }
 
 function calcWeightAge(weight, ageYear, ageMonth, gender) {
-  const k = nearestKey(ageYear, ageMonth);
-  const ref = WHO_W_A[k]; if (!ref) return '';
+  const ref = interpRef(WHO_W_A, ageYear, ageMonth); if (!ref) return '';
   const [mb, sb, mg, sg] = ref;
   const [med, sd] = gender === 'ชาย' ? [mb, sb] : [mg, sg];
   const z = (weight - med) / sd;
@@ -59,8 +58,7 @@ function calcWeightAge(weight, ageYear, ageMonth, gender) {
 }
 
 function calcHeightAge(height, ageYear, ageMonth, gender) {
-  const k = nearestKey(ageYear, ageMonth);
-  const ref = WHO_H_A[k]; if (!ref) return '';
+  const ref = interpRef(WHO_H_A, ageYear, ageMonth); if (!ref) return '';
   const [mb, sb, mg, sg] = ref;
   const [med, sd] = gender === 'ชาย' ? [mb, sb] : [mg, sg];
   const z = (height - med) / sd;
@@ -91,7 +89,7 @@ function thaiDateStr(date) {
   return `${parseInt(d)} ${MONTHS[parseInt(m)]} ${parseInt(y) + 543}`;
 }
 function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return _localTodayISO();   // เวลาท้องถิ่น (UTC ทำให้ 00:00–06:59 น. ได้วันเมื่อวาน)
 }
 function recKey(className, academicYear, date) {
   return `${className}__${academicYear}__${date}`;

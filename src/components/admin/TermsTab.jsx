@@ -1,6 +1,7 @@
 // TermsTab.jsx — ตั้งค่าวันเปิดและปิดเรียนแต่ละภาคเรียน
 import { useApp } from '../../context/AppContext';
 import { ui } from '../../ui/ui';
+import { todayISO } from '../../utils/helpers';
 
 const TERM_COLORS = [
   { bg: '#eff6ff', border: '#bfdbfe', color: '#1d4ed8', accent: '#3b82f6' },
@@ -159,7 +160,7 @@ export default function TermsTab() {
 
               {/* Status badge */}
               {term.open && term.close && (() => {
-                const today = new Date().toISOString().slice(0,10);
+                const today = todayISO();
                 const isActive = today >= term.open && today <= term.close;
                 const isPast   = today > term.close;
                 return (

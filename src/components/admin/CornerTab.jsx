@@ -1,7 +1,7 @@
 // CornerTab.jsx — แบบบันทึกการใช้แหล่งเรียนรู้นอกห้องเรียนรายสัปดาห์
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { getMondayOf, getWeekLabel, genUniqueKey, compareStudents, compareClassNames } from '../../utils/helpers';
+import { todayISO, getMondayOf, getWeekLabel, genUniqueKey, compareStudents, compareClassNames } from '../../utils/helpers';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 import { useTermRange, OUT_OF_TERM_MSG } from '../../hooks/useTermRange';
@@ -152,7 +152,7 @@ export default function CornerTab({ teacherClassFilter = null }) {
     dailyRecords,
   } = useApp();
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   const [selClass, setSelClass]     = useState(teacherClassFilter ?? '');
   const [selDate,  setSelDate]      = useState(today);
   const termLocked = useIsTermLocked(selDate);

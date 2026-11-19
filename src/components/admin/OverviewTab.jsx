@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { AttendanceBarChart, ClassRadarChart } from '../DevelopmentChart';
 import { exportDailyAttendanceSummaryExcel } from '../../utils/exportExcel';
-import { compareClassNames } from '../../utils/helpers';
+import { compareClassNames, todayISO } from '../../utils/helpers';
 import { termDateRange, isAssessedInTerm, devAssessDomainAverages } from '../../utils/reportHelpers';
 import { ui } from '../../ui/ui';
 
@@ -42,7 +42,7 @@ export default function OverviewTab() {
   const ALL_CLASSES = allClassNames;
 
   // ── สถิติการมาเรียนรายวัน ────────────────────────────────────────────────────
-  const [attDate, setAttDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [attDate, setAttDate] = useState(() => todayISO());
   const dailySummary = useMemo(() => {
     const dayData = allDailyRecords?.[attDate] ?? {};
     return ALL_CLASSES.map(cls => {

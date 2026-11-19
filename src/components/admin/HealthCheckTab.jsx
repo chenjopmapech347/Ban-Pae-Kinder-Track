@@ -4,7 +4,7 @@ import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 import { useTermRange, OUT_OF_TERM_MSG } from '../../hooks/useTermRange';
 import { ui } from '../../ui/ui';
 
-import { compareStudents } from '../../utils/helpers';
+import { compareStudents, todayISO } from '../../utils/helpers';
 // ── รายการตรวจสุขภาพ 6 หมวด ──────────────────────────────────────────────────
 const CHECK_ITEMS = [
   { id: 'body',  label: 'ร่างกาย',  emoji: '🧍' },
@@ -81,7 +81,7 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
   const isTeacher = role === 'teacher';
   const myClass   = teacherClassFilter ?? (isTeacher ? user?.className : null);
 
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = todayISO();
 
   const [selClass, setSelClass] = useState(() => myClass ?? (classes[0]?.name ?? ''));
   const [selDate,  setSelDate]  = useState(todayIso);

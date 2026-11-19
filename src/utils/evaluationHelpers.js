@@ -81,14 +81,18 @@ export function computeIllnessStats(records, studentId, className) {
 
 // ── cornerRecords / innerCornerRecords: { [`${className}||${monday}`]: { [sid]: { [cornerKey]: bool } } }
 // done = จำนวนสัปดาห์ที่นักเรียนใช้มุมอย่างน้อย 1 มุม, total = จำนวนสัปดาห์ทั้งหมดของห้อง
-export function computeCornerStats(records, studentId, className) {
+// onlyKeys: จำกัดเฉพาะมุมที่ระบุ (เช่น ['creative'] สำหรับศิลปะ) — ไม่ระบุ = ทุกมุม
+export function computeCornerStats(records, studentId, className, onlyKeys = null) {
   let done = 0, total = 0;
   Object.entries(records ?? {}).forEach(([key, weekData]) => {
     const [cls] = key.split('||');
     if (cls !== className) return;
     total++;
     const sData = weekData[String(studentId)];
-    if (sData && Object.values(sData).some(v => v === true)) done++;
+    const ok = sData && (onlyKeys
+      ? onlyKeys.some(k => sData[k] === true)
+      : Object.values(sData).some(v => v === true));
+    if (ok) done++;
   });
   return total > 0 ? { done, total, pct: Math.round(done / total * 100) } : null;
 }

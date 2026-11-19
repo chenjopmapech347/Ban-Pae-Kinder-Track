@@ -45,7 +45,7 @@ export default function DailyContextPanel({
         illness:      computeIllnessStats(illnessCheckRecords, s.id, selClass),
         outdoor:      computeCornerStats(cornerRecords,        s.id, selClass),
         corner:       computeCornerStats(innerCornerRecords,   s.id, selClass),
-        art:          computeCornerStats(innerCornerRecords,   s.id, selClass),
+        art:          computeCornerStats(innerCornerRecords,   s.id, selClass, ['creative']), // เฉพาะมุมสร้างสรรค์
         events:       computeEventStats(specialEvents,         s.id, selClass),
         // กิจกรรมประจำวัน — ทุกนักเรียนในห้องได้ค่าเดียวกัน
         ...routineStats,

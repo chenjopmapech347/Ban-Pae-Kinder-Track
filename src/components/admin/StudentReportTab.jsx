@@ -35,7 +35,11 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
     nutritionRecords,
     toothBrushRecords, lunchRecords, healthCheckRecords,
     addSystemLog,
+    assessPullStatus, reloadAssessments,
   } = useApp();
+
+  // เปิดหน้านี้ → ดึงคะแนนประเมินรายกิจกรรมล่าสุดจากระบบอีกครั้ง (กันกรณีดึงตอนเข้าสู่ระบบไม่สำเร็จหรือครูเพิ่งบันทึกใหม่)
+  useEffect(() => { reloadAssessments?.(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [aiCommentLoading, setAiCommentLoading] = useState({ 1: false, 2: false });
   const [aiCommentError,   setAiCommentError]   = useState({ 1: '', 2: '' });
@@ -491,6 +495,32 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
               );
             })}
           </div>
+
+          {/* ── สถานะการดึงคะแนนประเมินรายกิจกรรม ── */}
+          {(() => {
+            const hasInd = Object.keys(student?.assessments?.indicators ?? {}).length > 0;
+            const st = assessPullStatus?.state;
+            if (st === 'ok' && hasInd) return null;
+            if (st === 'pulling') return (
+              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af', borderRadius: '8px', padding: '.5rem .8rem', fontSize: '.8rem', marginBottom: '.9rem' }}>
+                ⏳ กำลังดึงคะแนนประเมินรายกิจกรรมจากระบบ…
+              </div>
+            );
+            const isErr = st === 'error';
+            return (
+              <div style={{ background: isErr ? '#fef2f2' : '#fffbeb', border: `1px solid ${isErr ? '#fecaca' : '#fde68a'}`, color: isErr ? '#991b1b' : '#92400e', borderRadius: '8px', padding: '.55rem .8rem', fontSize: '.8rem', marginBottom: '.9rem', display: 'flex', alignItems: 'center', gap: '.6rem', flexWrap: 'wrap' }}>
+                <span style={{ flex: 1, minWidth: '220px' }}>
+                  {isErr
+                    ? `⚠️ ดึงคะแนนประเมินจากระบบไม่สำเร็จ: ${assessPullStatus.message}`
+                    : 'ℹ️ ยังไม่พบคะแนนประเมินรายกิจกรรมของนักเรียนคนนี้ในระบบ (ถ้าครูบันทึกแล้ว ให้กดดึงข้อมูลอีกครั้ง)'}
+                </span>
+                <button type="button" onClick={() => reloadAssessments?.()}
+                  style={{ padding: '.3rem .8rem', borderRadius: '6px', border: '1px solid currentColor', background: 'white', color: 'inherit', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: '.78rem' }}>
+                  🔄 ดึงข้อมูลอีกครั้ง
+                </button>
+              </div>
+            );
+          })()}
 
           {/* ══════════════════════════════════════════════════════════
               SECTION 1: Physical Measurements
@@ -1224,7 +1254,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                 ตารางแสดงการเจริญเติบโตของเพศชายและหญิง อายุ 3–6 ปี
               </div>
               <div style={{ fontSize: '.72rem', color: '#6b7280', marginBottom: '.75rem' }}>
-                มาตรฐานการเจริญเติบโตองค์การอนามัยโลก WHO 2006 (อายุ 5 ปี 1 เดือนขึ้นไปใช้ WHO 2007) · ตั้งแต่ = –2SD · จนถึง = +2SD
+                มาตรฐานการเจริญเติบโตองค์การอนามัยโลก WHO 2006 (5 ปี 1–11 เดือนใช้ WHO 2007 · 6 ปีขึ้นไปใช้เกณฑ์อ้างอิงกรมอนามัย พ.ศ. 2564) · ตั้งแต่ = –2SD · จนถึง = +2SD
               </div>
 
               <div style={{ overflowX: 'auto' }}>

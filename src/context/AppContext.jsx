@@ -433,10 +433,16 @@ export function AppProvider({ children }) {
       // รูปที่ยังเป็น base64 (ไม่ได้อัปโหลดขึ้น ImgBB) ไม่ถูกส่งขึ้น Firebase — ถ้าดึงข้อมูลกลับมาทับ รูปจะหาย
       // จึงคงรูป base64 ของเครื่องนี้ไว้ ถ้าฝั่งเซิร์ฟเวอร์ไม่มีรูปของนักเรียนคนนั้น
       setStudents((prev) => {
-        const local = new Map((prev ?? []).map(p => [String(p.id), p.photo]));
+        const local = new Map((prev ?? []).map(p => [String(p.id), p]));
         return payload.students.map((st) => {
-          const lp = local.get(String(st.id));
-          return (!st.photo && typeof lp === 'string' && lp.startsWith('data:')) ? { ...st, photo: lp } : st;
+          const ls = local.get(String(st.id));
+          let out = st;
+          const lp = ls?.photo;
+          if (!out.photo && typeof lp === 'string' && lp.startsWith('data:')) out = { ...out, photo: lp };
+          // คะแนนประเมินรายกิจกรรมไม่อยู่ใน snapshot (เก็บแยกใน classAssessments) → คงของเดิมในเครื่องไว้ ไม่ให้หายเมื่อดึง snapshot ซ้ำ
+          const li = ls?.assessments?.indicators;
+          if (li && !out.assessments?.indicators) out = { ...out, assessments: { ...(out.assessments ?? {}), indicators: li } };
+          return out;
         });
       });
     }
@@ -848,6 +854,40 @@ export function AppProvider({ children }) {
   // flag: auto-sync push ต้องรอจนกว่า pull เสร็จก่อน
   const initialPullDone = useRef(!isFirebaseConfigured); // ถ้าไม่มี Firebase ข้ามได้เลย
 
+  // ── ดึงคะแนนประเมินรายกิจกรรม (classAssessments) แล้วรวมเข้า students ──
+  // ครู: ห้องตัวเอง / admin: ทุกห้อง / ผู้ปกครองไม่ดึง
+  const [assessPullStatus, setAssessPullStatus] = useState({ state: 'idle', message: '', count: 0 }); // idle|pulling|ok|error
+  const reloadAssessmentsRef = useRef(async () => ({ ok: false }));
+  const reloadAssessments = useCallback(async () => {
+    if (!isFirebaseConfigured) return { ok: false, message: 'ไม่ได้เชื่อมต่อ Firebase' };
+    if (role !== 'teacher' && role !== 'admin') return { ok: true, count: 0 };
+    setAssessPullStatus(p => ({ ...p, state: 'pulling' }));
+    const className = role === 'teacher' ? user?.className : null;
+    const res = className ? await pullClassAssessments(className) : await pullAllClassAssessments();
+    if (!res.ok) {
+      setAssessPullStatus({ state: 'error', message: res.message || 'ดึงข้อมูลไม่สำเร็จ', count: 0 });
+      return res;
+    }
+    const incoming = res.students ?? {};
+    const count = Object.keys(incoming).length;
+    if (count > 0) {
+      setStudents(prev => prev.map(s => {
+        const sa = incoming[String(s.id)];
+        if (!sa) return s;
+        return {
+          ...s,
+          assessments: {
+            ...(s.assessments ?? {}),
+            indicators: { ...(s.assessments?.indicators ?? {}), ...(sa.indicators ?? {}) },
+          },
+        };
+      }));
+    }
+    setAssessPullStatus({ state: 'ok', message: '', count });
+    return { ok: true, count };
+  }, [role, user]); // eslint-disable-line react-hooks/exhaustive-deps
+  reloadAssessmentsRef.current = reloadAssessments;
+
   useEffect(() => {
     if (role !== 'parent' && role !== 'teacher' && role !== 'admin') return;
     if (!isFirebaseConfigured) { initialPullDone.current = true; return; }
@@ -889,29 +929,7 @@ export function AppProvider({ children }) {
       .finally(() => {
         // ── หลัง pull snapshot เสร็จ → pull classAssessments แล้ว inject เข้า students ──
         // ครู: pull เฉพาะห้องตัวเอง / admin: pull ทุกห้อง
-        const className = role === 'teacher' ? user?.className : null;
-        const pullFn = className
-          ? pullClassAssessments(className)
-          : (role === 'admin' ? pullAllClassAssessments() : Promise.resolve({ ok: false, students: {} }));
-
-        pullFn.then(assResult => {
-          if (assResult.ok && Object.keys(assResult.students).length > 0) {
-            setStudents(prev => prev.map(s => {
-              const sa = assResult.students[String(s.id)];
-              if (!sa) return s;
-              return {
-                ...s,
-                assessments: {
-                  ...(s.assessments ?? {}),
-                  indicators: {
-                    ...(s.assessments?.indicators ?? {}),
-                    ...(sa.indicators ?? {}),
-                  },
-                },
-              };
-            }));
-          }
-        }).catch(() => {});
+        reloadAssessmentsRef.current().catch(() => {});
 
         // ── หลัง pull snapshot + assessments → pull daily data (volatile) แยก ──
         pullDailyDataFromFirebase().then(daily => {
@@ -2058,6 +2076,7 @@ export function AppProvider({ children }) {
     lastSyncFailed,
     snapshotSizeKB,
     pullSyncStatus,
+    assessPullStatus, reloadAssessments,
     // Activity Log (evaluation-specific)
     activityLogs,
     addActivityLog,

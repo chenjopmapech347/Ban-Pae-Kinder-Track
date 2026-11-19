@@ -31,7 +31,14 @@ if (isFirebaseConfigured) {
     const app  = initializeApp(firebaseConfig);
     _app       = app;
     // ignoreUndefinedProperties: ฟิลด์ที่เป็น undefined จะถูกข้าม แทนที่จะทำให้การบันทึกทั้งก้อนล้มเหลว
-    _db        = initializeFirestore(app, { ignoreUndefinedProperties: true });
+    // เครือข่ายบางแห่ง (พร็อกซี/ไฟร์วอลล์โรงเรียน) หน่วงสตรีมของ Firestore ทำให้บันทึกช้า 10–25 วินาที
+    // → เปิด auto-detect long polling ให้ทุกเครื่อง และบังคับ long polling ได้รายเครื่องด้วย
+    //   localStorage.setItem('kt_longpoll','1') แล้วรีเฟรช (ปิด: removeItem('kt_longpoll'))
+    let forceLP = false;
+    try { forceLP = localStorage.getItem('kt_longpoll') === '1'; } catch { /* ignore */ }
+    _db        = initializeFirestore(app, forceLP
+      ? { ignoreUndefinedProperties: true, experimentalForceLongPolling: true }
+      : { ignoreUndefinedProperties: true, experimentalAutoDetectLongPolling: true });
     _auth      = getAuth(app);
     _storage   = getStorage(app);
   } catch (e) {

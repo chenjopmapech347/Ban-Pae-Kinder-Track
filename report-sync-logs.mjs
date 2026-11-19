@@ -46,6 +46,14 @@ const by = (keyFn) => { const m = new Map(); rows.forEach((r) => { const k = key
 console.log('\n── แยกตามเครือข่าย ──');
 [...by((r) => r.net?.online === false ? 'ออฟไลน์' : (r.net?.type ?? 'ไม่ทราบ')).entries()].forEach(([k, l]) => console.log(`${k.padEnd(10)} ${stat(l)}`));
 
+console.log('\n── แยกตามเครื่อง × ส่วน (มัธยฐาน ms / ขนาดที่ส่ง KB) ──');
+[...by((r) => `${r.user || r.role || '?'} ${r.cls || ''} [${r.device}]`).entries()].forEach(([k, l]) => {
+  const cell = (part) => { const x = l.filter((r) => r.part === part && typeof r.ms === 'number'); if (!x.length) return '—'.padEnd(22); const kb = x.map((r) => r.kb).filter((v) => typeof v === 'number'); return `${part} n=${x.length} ${q(x.map((r) => r.ms), 0.5)}ms ${kb.length ? q(kb, 0.5) + 'KB' : ''}`.padEnd(30); };
+  console.log(`${k.padEnd(46)} ${cell('snap')} ${cell('daily')}`);
+});
+console.log('\n── เวลาตามขนาดข้อมูลรายวันที่ส่ง ──');
+[[0, 5], [5, 20], [20, 100], [100, 1e9]].forEach(([a, b]) => { const x = rows.filter((r) => r.part === 'daily' && typeof r.ms === 'number' && r.kb >= a && r.kb < b); if (x.length) console.log(`${String(a).padStart(3)}–${b === 1e9 ? '∞' : b} KB  n=${String(x.length).padStart(3)}  มัธยฐาน ${q(x.map((r) => r.ms), 0.5)} ms`); });
+
 console.log('\n── ข้อผิดพลาดที่พบบ่อย ──');
 const errs = new Map();
 rows.filter((r) => r.ok === false).forEach((r) => { const k = (r.error ?? '(ไม่มีข้อความ)').slice(0, 110); errs.set(k, (errs.get(k) ?? 0) + 1); });

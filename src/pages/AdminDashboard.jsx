@@ -35,6 +35,7 @@ const ToothBrushTab          = lazy(() => import('../components/admin/ToothBrush
 const LunchTab               = lazy(() => import('../components/admin/LunchTab'));
 const MilkTab                = lazy(() => import('../components/admin/MilkTab'));
 const NutritionTab           = lazy(() => import('../components/admin/NutritionTab'));
+const DspmTab                = lazy(() => import('../components/admin/DspmTab'));
 const DailyRoutineTab        = lazy(() => import('../components/admin/DailyRoutineTab'));
 const SpecialEventTab        = lazy(() => import('../components/admin/SpecialEventTab'));
 const StudentReportTab       = lazy(() => import('../components/admin/StudentReportTab'));
@@ -89,6 +90,7 @@ const TAB_GROUPS = [
     color: '#7c3aed',
     tabs: [
       { id: 'nutrition',    label: '⚖️ ภาวะโภชนาการ'   },
+      { id: 'dspm',         label: '🧩 คัดกรองพัฒนาการ DSPM' },
       { id: 'specialevent', label: '🎉 กิจกรรมวันสำคัญ' },
     ],
   },
@@ -150,7 +152,7 @@ const TAB_GROUPS = [
       { id: 'topics',       label: '📝 หัวข้อประเมิน'     },
       { id: 'indicators',   label: '🔬 ตัวบ่งชี้'          },
       { id: 'activities',   label: '🎯 กิจกรรมตัวบ่งชี้'  },
-      { id: 'activitymap',  label: '🧭 Mapping กิจกรรม–ตัวบ่งชี้' },
+      { id: 'activitymap',  label: '🧭 จัดการจับคู่ กิจกรรม–ตัวบ่งชี้' },
     ],
   },
   {
@@ -226,6 +228,7 @@ export default function AdminDashboard() {
           {activeTab === 'lunch'          && <LunchTab />}
           {activeTab === 'milk'           && <MilkTab />}
           {activeTab === 'nutrition'      && <NutritionTab />}
+          {activeTab === 'dspm'           && <DspmTab />}
           {activeTab === 'dailyroutine'   && <DailyRoutineTab />}
           {activeTab === 'specialevent'   && <SpecialEventTab />}
           {activeTab === 'studentreport'  && <StudentReportTab />}

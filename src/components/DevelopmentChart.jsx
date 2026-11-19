@@ -14,6 +14,7 @@ import {
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts';
+import { termScoresByRange } from '../utils/reportHelpers';
 
 /* ── colour palette ─────────────────────────────────── */
 const LEVEL_COLORS  = { K1:'#3b82f6', K2:'#10b981', K3:'#f97316' };
@@ -249,51 +250,71 @@ const CLASS_COLORS = {
   'อ.3/1': '#f97316', 'อ.3/2': '#ef4444', 'อ.3/3': '#d97706',
 };
 
-export function ClassRadarChart({ students = [], topics = [] }) {
+export function ClassRadarChart({ students = [], topics = [], term = null, termRange = null, levelsByStudent = null }) {
   const { allClassNames } = useApp();
   const ALL_CLASSES = allClassNames;
   const [selectedClass, setSelectedClass] = useState(null); // null = auto-rotate
   const [currentIdx, setCurrentIdx] = useState(0);
 
+  // คำนวณค่าเฉลี่ยต่อ domain ของห้องหนึ่ง จาก assessments.indicators
+  // indicatorId format: "${domainId}__${stdId}__${indId}" → ตัดเอา domainId จาก segment แรก
+  // (ถ้าระบุ term → ใช้เฉพาะคะแนนของภาคเรียนนั้น)
+  const buildData = (cls) => {
+    const clsStudents = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'));
+    if (levelsByStudent) {
+      // ที่มาเดียวกับสมุดรายงาน: เฉลี่ยระดับรายด้านของนักเรียนในห้อง
+      return topics.map(t => {
+        const vals = clsStudents.map(s => levelsByStudent[String(s.id)]?.[t.id]).filter(v => v > 0);
+        const avg = vals.length ? parseFloat((vals.reduce((x, y) => x + y, 0) / vals.length).toFixed(2)) : 0;
+        return { subject: (t.emoji ?? '') + ' ' + t.label, value: avg, fullMark: 3 };
+      });
+    }
+    return topics.map(t => {
+      let total = 0, count = 0;
+      clsStudents.forEach(s => {
+        Object.entries(s.assessments?.indicators ?? {}).forEach(([indId, actMap]) => {
+          if (indId.split('__')[0] !== t.id) return;   // กรองเฉพาะ domain นี้
+          Object.values(actMap).forEach(scores => {
+            if (term) {
+              const sc = termScoresByRange(scores, termRange, term);
+              if (sc.length) { total += sc.reduce((x, y) => x + y, 0) / sc.length; count++; }
+              return;
+            }
+            // ใช้คะแนนรอบล่าสุดที่บันทึกไว้ (r4 → r3 → r2 → r1)
+            const val = scores?.r4 ?? scores?.r3 ?? scores?.r2 ?? scores?.r1 ?? null;
+            if (val != null) { total += val; count++; }
+          });
+        });
+      });
+      const avg = count > 0 ? parseFloat((total / count).toFixed(2)) : 0;
+      return { subject: (t.emoji ?? '') + ' ' + t.label, value: avg, fullMark: 3 };
+    });
+  };
+  const classHasData = (cls) =>
+    students.some(s => s.className === cls && !s.name.startsWith('(ว่าง)')) &&
+    buildData(cls).some(d => d.value > 0);
+
+  // ห้องที่มีข้อมูลในภาคเรียนนี้ — โหมด Auto จะวนเฉพาะห้องเหล่านี้
+  const classesWithData = ALL_CLASSES.filter(classHasData);
+  const rotation = classesWithData.length ? classesWithData : ALL_CLASSES;
+  const rotationKey = rotation.join('|');
+
   // auto-rotate when no class pinned
   useEffect(() => {
-    if (selectedClass !== null) return;
+    if (selectedClass !== null || rotation.length < 2) return;
     const id = setInterval(() => {
-      setCurrentIdx(i => (i + 1) % ALL_CLASSES.length);
+      setCurrentIdx(i => (i + 1) % rotation.length);
     }, 3000);
     return () => clearInterval(id);
-  }, [selectedClass]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClass, rotationKey]);
 
-  const displayClass = selectedClass ?? ALL_CLASSES[currentIdx];
+  const displayClass = selectedClass ?? rotation[currentIdx % Math.max(rotation.length, 1)];
   const color = CLASS_COLORS[displayClass] ?? '#7c3aed';
-
-  // compute averages for displayClass
   const classStudents = students.filter(
     s => s.className === displayClass && !s.name.startsWith('(ว่าง)')
   );
-
-  // คำนวณค่าเฉลี่ยต่อ domain จาก assessments.indicators
-  // indicatorId format: "${domainId}__${stdId}__${indId}" → ตัดเอา domainId จาก segment แรก
-  const data = topics.map(t => {
-    let total = 0, count = 0;
-    classStudents.forEach(s => {
-      Object.entries(s.assessments?.indicators ?? {}).forEach(([indId, actMap]) => {
-        if (indId.split('__')[0] !== t.id) return;   // กรองเฉพาะ domain นี้
-        Object.values(actMap).forEach(scores => {
-          // ใช้คะแนนรอบล่าสุดที่บันทึกไว้ (r4 → r3 → r2 → r1)
-          const val = scores?.r4 ?? scores?.r3 ?? scores?.r2 ?? scores?.r1 ?? null;
-          if (val != null) { total += val; count++; }
-        });
-      });
-    });
-    const avg = count > 0 ? parseFloat((total / count).toFixed(2)) : 0;
-    return {
-      subject: (t.emoji ?? '') + ' ' + t.label,
-      value: avg,
-      fullMark: 3,
-    };
-  });
-
+  const data = buildData(displayClass);
   const hasData = data.some(d => d.value > 0) && classStudents.length > 0;
 
   return (
@@ -325,7 +346,9 @@ export function ClassRadarChart({ students = [], topics = [] }) {
                 background: isActive ? c : 'white',
                 color: isActive ? 'white' : '#6b7280',
                 cursor: 'pointer', transition: 'all .15s',
+                opacity: isActive || classHasData(cls) ? 1 : 0.45,
               }}
+              title={classHasData(cls) ? undefined : 'ยังไม่มีข้อมูลการประเมิน'}
             >
               {cls}
             </button>
@@ -357,7 +380,9 @@ export function ClassRadarChart({ students = [], topics = [] }) {
 
       {!hasData ? (
         <div style={{ textAlign: 'center', padding: '1.5rem', color: '#9ca3af', fontSize: '.85rem' }}>
-          ⏳ ยังไม่มีข้อมูลการประเมินสำหรับห้อง {displayClass}
+          ⏳ {classesWithData.length === 0 && term
+            ? `ภาคเรียนที่ ${term} ยังไม่มีข้อมูลการประเมินของทุกห้อง`
+            : `ยังไม่มีข้อมูลการประเมินสำหรับห้อง ${displayClass}${term ? ` ในภาคเรียนที่ ${term}` : ''}`}
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={248}>

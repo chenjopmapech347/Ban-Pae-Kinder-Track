@@ -323,16 +323,22 @@ export function AppProvider({ children }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
 
-  // ── One-time migration: เพิ่มกิจกรรมใหม่ (no 46–48) ให้ข้อมูลกิจกรรมที่บันทึกไว้เดิม ──
-  // (3.4 ประหยัดพอเพียง · 4.8 จำนวนและตัวเลข · 4.9 มิติสัมพันธ์) — เติมครั้งเดียวต่อเครื่อง
+  // ── One-time migration: เพิ่มกิจกรรมใหม่ให้ข้อมูลกิจกรรมที่บันทึกไว้เดิม ──
+  // 46–48 (3.4 ประหยัด · 4.8 จำนวน · 4.9 มิติสัมพันธ์), 49 (3.2/3.3 มารยาทไทย-รักชาติ)
+  // เติมครั้งเดียวต่อเครื่องต่อชุด (ถ้าลบทีหลังจะไม่เติมกลับ)
   useEffect(() => {
-    const FLAG = 'kt_actMig_46_48';
-    try { if (localStorage.getItem(FLAG)) return; } catch { /* ignore */ }
     if (!Array.isArray(activities) || activities.length === 0) return;
-    const have = new Set(activities.map(a => a.id));
-    const add = INITIAL_ACTIVITIES.filter(a => ['46', '47', '48'].includes(String(a.no)) && !have.has(a.id));
-    if (add.length) setActivities(prev => [...(prev ?? []), ...add.filter(a => !(prev ?? []).some(p => p.id === a.id))]);
-    try { localStorage.setItem(FLAG, '1'); } catch { /* ignore */ }
+    const BATCHES = [
+      { flag: 'kt_actMig_46_48', nos: ['46', '47', '48'] },
+      { flag: 'kt_actMig_49',    nos: ['49'] },
+    ];
+    BATCHES.forEach(({ flag, nos }) => {
+      try { if (localStorage.getItem(flag)) return; } catch { /* ignore */ }
+      const have = new Set(activities.map(a => a.id));
+      const add = INITIAL_ACTIVITIES.filter(a => nos.includes(String(a.no)) && !have.has(a.id));
+      if (add.length) setActivities(prev => [...(prev ?? []), ...add.filter(a => !(prev ?? []).some(p => p.id === a.id))]);
+      try { localStorage.setItem(flag, '1'); } catch { /* ignore */ }
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activities]);
 
@@ -1374,7 +1380,7 @@ export function AppProvider({ children }) {
   }, []);
 
   const handleImport = useCallback(
-    (type, text) => {
+    (type, text, opts = {}) => {
       try {
         // detect separator: ถ้า header row มี ';' มากกว่า ',' → ใช้ semicolon (Excel ไทย/ยุโรป)
         const firstLine = text.trim().split('\n')[0] ?? '';
@@ -1421,8 +1427,8 @@ export function AppProvider({ children }) {
             .filter(row => row.some(c => c))
             .map((row) => {
               const name         = isMinimal ? row[0] : (row[iName]   || '');
-              const level        = isMinimal ? (row[1] || 'K1')        : (row[iLevel]  || 'K1');
-              const className    = isMinimal ? ''                       : (row[iClass]  || '');
+              const level        = opts.forceLevel || (isMinimal ? (row[1] || 'K1')        : (row[iLevel]  || 'K1'));
+              const className    = opts.forceClassName || (isMinimal ? ''                       : (row[iClass]  || ''));
               const birthDate    = isMinimal ? '' : (row[iBirth] || '');
               const ageFromBirth = calcAgeFromISO(birthDate);
               const age          = ageFromBirth ?? (isMinimal ? parseInt(row[2]) || 5 : (parseInt(row[iAge]) || 5));
@@ -1450,9 +1456,23 @@ export function AppProvider({ children }) {
                 attendance:   { present: 0, absent: 0, total: 0 },
               };
             });
-          setStudents((prev) => [...prev, ...newStudents]);
-          logSystem({ action: 'import', detail: `นำเข้านักเรียน ${newStudents.length} คน` });
-          return { ok: true, count: newStudents.length };
+          // ครูประจำชั้น: ข้ามรายชื่อที่ซ้ำ (เลขประจำตัว/ชื่อ) ในห้องเดียวกัน
+          let toAdd = newStudents.filter(n => n.name);
+          let skipped = 0;
+          if (opts.forceClassName) {
+            const exist = (students ?? []).filter(x => x.className === opts.forceClassName);
+            const codes = new Set(exist.map(x => String(x.studentCode || x.studentId || '')).filter(Boolean));
+            const names = new Set(exist.map(x => String(x.name || '').trim()));
+            toAdd = toAdd.filter(n => {
+              const dup = (n.studentCode && codes.has(String(n.studentCode))) || names.has(String(n.name).trim());
+              if (dup) skipped++;
+              return !dup;
+            });
+          }
+          if (!toAdd.length) return { ok: false, message: skipped ? `ไม่มีรายชื่อใหม่ (ข้ามรายชื่อซ้ำ ${skipped} คน)` : 'ไม่พบข้อมูลนักเรียนในไฟล์ (ตรวจสอบหัวตารางให้ตรงกับ Template)' };
+          setStudents((prev) => [...prev, ...toAdd]);
+          logSystem({ action: 'import', detail: `นำเข้านักเรียน ${toAdd.length} คน${opts.forceClassName ? ' ห้อง ' + opts.forceClassName : ''}` });
+          return { ok: true, count: toAdd.length, skipped };
         } else if (type === 'teachers') {
           const newTeachers = dataRows.map((row) => ({
             id: Date.now() + Math.random(),
@@ -1468,7 +1488,7 @@ export function AppProvider({ children }) {
         return { ok: false, message: 'รูปแบบข้อมูลไม่ถูกต้อง' };
       }
     },
-    [setStudents, setTeachers, logSystem],
+    [setStudents, setTeachers, logSystem, students],
   );
 
   const handleSaveEvaluation = useCallback(

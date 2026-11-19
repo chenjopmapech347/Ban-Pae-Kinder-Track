@@ -281,6 +281,34 @@ export function recordLevelsForTerm(student, recs, academicYear, term) {
  * - 1.1ข.1 / 1.1ข.2 (น้ำหนัก/ส่วนสูงตามเกณฑ์): จากข้อมูลภาวะโภชนาการ
  * คืนค่าเป็น { [comp.key]: record ใหม่ } เฉพาะที่เปลี่ยน
  */
+// ── ระดับรายข้อ (1.2.1 ฯลฯ) จากคะแนนกิจกรรมของ "รายการ" นั้น ─────────────────────
+// รหัสที่เก็บในข้อมูลมี "ข" (เช่น 1.2ข.1) แต่รหัสในสมุดรายงานไม่มี → จับคู่โดยตัด "ข" ออก
+let _ITEM_INDEX = null;
+function itemIndex() {
+  if (_ITEM_INDEX) return _ITEM_INDEX;
+  const idx = {};
+  INDICATORS_DATA_68.forEach(domain => domain.standards.forEach(std => std.indicators.forEach(ind => {
+    const indKey = `${domain.id}__${std.id}__${ind.id}`;
+    ind.items.forEach(item => {
+      idx[String(item.id).replace(/ข/g, '')] = {
+        indKey,
+        actKeys: item.activities.map(a => `${indKey}__${item.id}__${a.no}`),
+      };
+    });
+  })));
+  _ITEM_INDEX = idx;
+  return idx;
+}
+export function itemLevelFromActivities(student, code, term) {
+  const it = itemIndex()[String(code)];
+  if (!it) return 0;
+  const indData = student?.assessments?.indicators?.[it.indKey];
+  if (!indData) return 0;
+  const vals = it.actKeys.map(k => getActivityTermScore(indData[k], term)).filter(v => v !== null);
+  if (!vals.length) return 0;
+  return avgToLevel(vals.reduce((a, b) => a + b, 0) / vals.length);
+}
+
 export function computeDevAssessFill(student, currentDA, nutritionRecords, academicYear, recs = null) {
   const updates = {};
   const g = { 1: growthLevelsForTerm(student, nutritionRecords, academicYear, 1),
@@ -294,7 +322,8 @@ export function computeDevAssessFill(student, currentDA, nutritionRecords, acade
       const pick = (term) => {
         if (comp.key === 'physical_1_1k_1' && g[term].weightLevel > 0) return g[term].weightLevel;
         if (comp.key === 'physical_1_1k_2' && g[term].heightLevel > 0) return g[term].heightLevel;
-        const fromAct = suggestLevelFromIndicator(student, comp.domainId, comp.standardId, comp.indicatorId, term);
+        const fromAct = itemLevelFromActivities(student, comp.code, term)
+          || suggestLevelFromIndicator(student, comp.domainId, comp.standardId, comp.indicatorId, term);
         return fromAct > 0 ? fromAct : (rl[term][comp.key] ?? 0);
       };
       const fillT1 = (cur.t1level ?? 0) === 0 ? pick(1) : 0;
@@ -419,6 +448,64 @@ export function derivedAbilityLevels(student, term) {
   Object.entries(COMPETENCY_ACTIVITY_MAP).forEach(([code, nos]) => {
     const vals = nos.map(n => actScore[n]).filter(v => v !== undefined);
     if (vals.length) out[code] = Math.min(3, Math.max(1, Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)));
+  });
+  return out;
+}
+
+
+/** ช่วงวันที่ของภาคเรียน (CE ISO) — ใช้ค่าที่ตั้งไว้ใน schoolTerms ถ้าไม่มีใช้ค่าเริ่มต้น (ภาค 1 พ.ค.–ต.ค., ภาค 2 พ.ย.–เม.ย.) */
+export function termDateRange(schoolTerms, academicYear, term) {
+  const t = Number(term) === 2 ? 2 : 1;
+  const arr = (schoolTerms?.[academicYear] ?? []).filter(x => x?.open && x?.close);
+  const hit = arr.find(x => String(x.label ?? '').match(/\d/)?.[0] === String(t)) ?? arr[t - 1];
+  if (hit) return { open: hit.open, close: hit.close };
+  const ce = (parseInt(String(academicYear || '2568'), 10) || 2568) - 543;
+  return t === 1
+    ? { open: `${ce}-05-01`, close: `${ce}-10-31` }
+    : { open: `${ce}-11-01`, close: `${ce + 1}-04-30` };
+}
+
+/**
+ * คะแนนกิจกรรมของภาคเรียน โดยดู "วันที่ประเมิน" (r{n}_date) เทียบกับช่วงวันของภาคเรียน
+ * รอบที่ไม่มีวันที่ ใช้ตามรอบ (ภาค 1 = r1,r2 · ภาค 2 = r3,r4)
+ */
+export function termScoresByRange(actData, range, term) {
+  if (!actData) return [];
+  const out = [];
+  [1, 2, 3, 4].forEach(r => {
+    const v = actData[`r${r}`];
+    if (v == null || !(v > 0)) return;
+    const d = String(actData[`r${r}_date`] ?? '').slice(0, 10);
+    if (d && range) { if (d >= range.open && d <= range.close) out.push(v); }
+    else if ((Number(term) === 1 ? r <= 2 : r >= 3)) out.push(v);
+  });
+  return out;
+}
+
+/** นักเรียนมีคะแนนประเมินกิจกรรมในภาคเรียนนั้นหรือไม่ */
+export function isAssessedInTerm(student, term, range = null) {
+  const inds = student?.assessments?.indicators;
+  if (!inds || typeof inds !== 'object') return false;
+  return Object.values(inds).some(acts =>
+    acts && typeof acts === 'object' &&
+    Object.values(acts).some(a => termScoresByRange(a, range, term).length > 0));
+}
+
+/**
+ * ระดับพัฒนาการเฉลี่ยรายด้านของนักเรียน 1 คน ในภาคเรียนที่เลือก — ที่มาเดียวกับสมุดรายงาน
+ * (ค่าที่ครูกรอก + ค่าที่ระบบคำนวณ: คะแนนกิจกรรม, น้ำหนัก/ส่วนสูง, แปรงฟัน/อาหารกลางวัน, ตรวจสุขภาพ)
+ * คืน { physical, emotional, citizen, cognitive } เฉพาะด้านที่มีค่า
+ */
+export function devAssessDomainAverages(student, savedDA, nutritionRecords, academicYear, recs, term) {
+  const saved = savedDA ?? {};
+  const upd = computeDevAssessFill(student, saved, nutritionRecords, academicYear, recs);
+  const merged = { ...saved, ...upd };
+  const out = {};
+  DEV_ASSESS_DOMAINS.forEach(d => {
+    const vals = domainAllComponents(d)
+      .map(c => (Number(term) === 2 ? merged[c.key]?.t2level : merged[c.key]?.t1level))
+      .filter(v => v > 0);
+    if (vals.length) out[d.id] = vals.reduce((a, b) => a + b, 0) / vals.length;
   });
   return out;
 }

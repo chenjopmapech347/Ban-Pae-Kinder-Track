@@ -2,21 +2,49 @@ import { useMemo, useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { AttendanceBarChart, ClassRadarChart } from '../DevelopmentChart';
 import { exportDailyAttendanceSummaryExcel } from '../../utils/exportExcel';
-import { isAssessed, compareClassNames } from '../../utils/helpers';
+import { compareClassNames } from '../../utils/helpers';
+import { termDateRange, isAssessedInTerm, devAssessDomainAverages } from '../../utils/reportHelpers';
 import { ui } from '../../ui/ui';
 
 
 export default function OverviewTab() {
   const {
     students, teachers, assessmentTopics, announcements, setAnnouncements, allClassNames,
-    dailyRecords, schoolName, academicYear,
+    dailyRecords: allDailyRecords, schoolName, academicYear, currentTerm, schoolTerms,
+    studentReportRecords, nutritionRecords, toothBrushRecords, lunchRecords, healthCheckRecords,
   } = useApp();
+
+  // ── กรองข้อมูลตามภาคเรียนที่เลือกในแถบบน ──────────────────────
+  const termNo = String(currentTerm) === '2' ? 2 : 1;
+  // ระดับพัฒนาการรายด้านของนักเรียนแต่ละคน (ที่มาเดียวกับสมุดรายงาน) ในภาคเรียนที่เลือก
+  const levelsByStudent = useMemo(() => {
+    const out = {};
+    const recs = { toothBrushRecords, lunchRecords, healthCheckRecords };
+    students.forEach(st => {
+      if (!st || String(st.name ?? '').startsWith('(ว่าง)')) return;
+      const saved = studentReportRecords?.[`${st.id}__${academicYear}`]?.devAssessment;
+      out[String(st.id)] = devAssessDomainAverages(st, saved, nutritionRecords, academicYear, recs, termNo);
+    });
+    return out;
+  }, [students, studentReportRecords, nutritionRecords, toothBrushRecords, lunchRecords, healthCheckRecords, academicYear, termNo]);
+  // มีข้อมูลพัฒนาการของภาคเรียนนี้อย่างน้อย 1 คนหรือไม่ — ถ้าไม่มี จะซ่อนการ์ดกราฟ
+  const hasDevData = useMemo(
+    () => Object.values(levelsByStudent).some(v => Object.keys(v ?? {}).length > 0),
+    [levelsByStudent],
+  );
+  const termRange = useMemo(() => termDateRange(schoolTerms, academicYear, termNo), [schoolTerms, academicYear, termNo]);
+  const dailyRecords = useMemo(() => {
+    const { open, close } = termRange;
+    const out = {};
+    Object.entries(allDailyRecords ?? {}).forEach(([d, v]) => { if (d >= open && d <= close) out[d] = v; });
+    return out;
+  }, [allDailyRecords, termRange]);
   const ALL_CLASSES = allClassNames;
 
   // ── สถิติการมาเรียนรายวัน ────────────────────────────────────────────────────
   const [attDate, setAttDate] = useState(() => new Date().toISOString().slice(0, 10));
   const dailySummary = useMemo(() => {
-    const dayData = dailyRecords?.[attDate] ?? {};
+    const dayData = allDailyRecords?.[attDate] ?? {};
     return ALL_CLASSES.map(cls => {
       const clsSt = students.filter(s => s.className === cls && !s.name.startsWith('(ว่าง)'));
       const boys  = clsSt.filter(s =>  s.name.includes('ชาย'));
@@ -33,7 +61,7 @@ export default function OverviewTab() {
         absentGirls: girls.filter(s => absent(s.id)).length,
       };
     }).filter(r => r.totalBoys + r.totalGirls > 0);
-  }, [ALL_CLASSES, students, dailyRecords, attDate]);
+  }, [ALL_CLASSES, students, allDailyRecords, attDate]);
 
   const dailyTotal = useMemo(() => dailySummary.reduce(
     (a, r) => ({
@@ -81,12 +109,21 @@ export default function OverviewTab() {
     total:    students.length,
     boys:     students.filter(s => s.name.includes('ชาย')).length,
     girls:    students.filter(s => s.name.includes('หญิง')).length,
-    assessed: students.filter(isAssessed).length,
-    pending:  students.filter(s => !isAssessed(s)).length,
+    assessed: students.filter(s => isAssessedInTerm(s, termNo, termRange)).length,
+    pending:  students.filter(s => !isAssessedInTerm(s, termNo, termRange)).length,
     teachers: teachers.length,
     rate: (() => {
-      const tot = students.reduce((a,s) => a + (s.attendance?.total || 0), 0);
-      const pre = students.reduce((a,s) => a + (s.attendance?.present || 0), 0);
+      // อัตรามาเรียนของภาคเรียนที่เลือก จากบันทึกรายวัน (ไม่นับวันที่ไม่มีบันทึก)
+      const ids = new Set(students.filter(s => !s.name.startsWith('(ว่าง)')).map(s => String(s.id)));
+      let pre = 0, tot = 0;
+      Object.values(dailyRecords).forEach(day => {
+        Object.entries(day ?? {}).forEach(([sid, rec]) => {
+          if (!ids.has(sid)) return;
+          const a = rec?.attendance;
+          if (a === 'มา') { pre++; tot++; }
+          else if (['ขาด', 'ลา', 'ป่วย'].includes(a)) tot++;
+        });
+      });
       return tot ? ((pre / tot) * 100).toFixed(1) : '0';
     })(),
   };
@@ -116,21 +153,21 @@ export default function OverviewTab() {
         <div {...ui('stat-card', { background: 'linear-gradient(135deg,#7c3aed,#a855f7)' })}>
           <span {...ui('stat-icon')}>📋</span>
           <div {...ui('stat-value')}>{stats.assessed}</div>
-          <div {...ui('stat-label')}>ประเมินแล้ว · รอ {stats.pending} คน</div>
+          <div {...ui('stat-label')}>ประเมินแล้ว ภาคเรียนที่ {termNo} · รอ {stats.pending} คน</div>
         </div>
         <div {...ui('stat-card', { background: 'linear-gradient(135deg,#f59e0b,#fbbf24)' })}>
           <span {...ui('stat-icon')}>📅</span>
           <div {...ui('stat-value')}>{stats.rate}%</div>
-          <div {...ui('stat-label')}>การมาเรียนภาพรวม</div>
+          <div {...ui('stat-label')}>การมาเรียนภาพรวม · ภาคเรียนที่ {termNo}</div>
         </div>
       </div>
 
       {/* Charts row */}
       <div {...ui('grid grid-2 mb-6', { gap: '1.25rem' })}>
-        <div {...ui('glass-card')}>
+        <div {...ui('glass-card', hasDevData ? {} : { gridColumn: '1 / -1' })}>
           {/* Header + class tabs */}
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'.6rem', flexWrap:'wrap', gap:'.4rem' }}>
-            <h4 style={{ margin:0 }}>📊 การมาเรียน</h4>
+            <h4 style={{ margin:0 }}>📊 การมาเรียน · ภาคเรียนที่ {termNo}</h4>
             <button
               onClick={() => setAutoPlay(p => !p)}
               title={autoPlay ? 'หยุดวนอัตโนมัติ' : 'เปิดวนอัตโนมัติ'}
@@ -167,10 +204,12 @@ export default function OverviewTab() {
             <div {...ui('text-center text-muted', { padding: '2rem' })}>ยังไม่มีข้อมูล</div>
           )}
         </div>
-        <div {...ui('glass-card')}>
-          <h4 {...ui('mb-3')}>🌱 พัฒนาการเฉลี่ยแต่ละชั้น</h4>
-          <ClassRadarChart students={students} topics={assessmentTopics} />
-        </div>
+        {hasDevData && (
+          <div {...ui('glass-card')}>
+            <h4 {...ui('mb-3')}>🌱 พัฒนาการเฉลี่ยแต่ละชั้น · ภาคเรียนที่ {termNo}</h4>
+            <ClassRadarChart students={students} topics={assessmentTopics} term={termNo} termRange={termRange} levelsByStudent={levelsByStudent} />
+          </div>
+        )}
       </div>
 
       {/* ── สถิติการมาเรียนรายวัน ── */}

@@ -74,7 +74,7 @@ export default function ActivityMappingTab() {
 
   return (
     <div>
-      <h2 style={{ margin: '0 0 .3rem', fontSize: '1.15rem', fontWeight: 800 }}>🧭 Mapping กิจกรรม ↔ ตัวบ่งชี้ ↔ ความสามารถผู้เรียน</h2>
+      <h2 style={{ margin: '0 0 .3rem', fontSize: '1.15rem', fontWeight: 800 }}>🧭 จัดการจับคู่ กิจกรรม ↔ ตัวบ่งชี้ ↔ ความสามารถผู้เรียน</h2>
       <p style={{ margin: '0 0 1rem', fontSize: '.8rem', color: '#6b7280' }}>
         ดูว่ากิจกรรมแต่ละรายการรองรับตัวบ่งชี้และความสามารถผู้เรียนข้อใด และข้อใดยังมีหลักฐานน้อย (อ่านจากข้อมูลกิจกรรมที่ใช้งานอยู่ในระบบ)
       </p>

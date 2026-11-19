@@ -299,16 +299,52 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
   const [imgFile, setImgFile]   = useState(null);   // File object รอ upload
   const [uploading, setUploading] = useState(false);
 
-  // อัปโหลดรูปไป ImgBB → คืน URL
+  // ย่อรูปก่อนอัปโหลด (รูปจากมือถือใหญ่ 3–8MB ทำให้ Safari "Load failed" บนเน็ตมือถือ)
+  async function shrinkImage(file, maxSide = 1600, quality = 0.82) {
+    try {
+      const url = URL.createObjectURL(file);
+      const img = await new Promise((res, rej) => {
+        const i = new Image();
+        i.onload = () => res(i);
+        i.onerror = () => rej(new Error('อ่านไฟล์รูปไม่ได้'));
+        i.src = url;
+      });
+      const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+      const w = Math.round(img.naturalWidth * scale), h = Math.round(img.naturalHeight * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', quality));
+      return blob && blob.size < file.size ? blob : file;
+    } catch {
+      return file;
+    }
+  }
+
+  // อัปโหลดรูปไป ImgBB → คืน URL (ย่อรูป + ลองใหม่ 3 ครั้ง)
   async function uploadToImgBB(file) {
     if (!imgbbApiKey) throw new Error('ยังไม่ได้ตั้งค่า ImgBB API Key (ตั้งค่าระบบ → ImgBB)');
-    const form = new FormData();
-    form.append('key', imgbbApiKey);
-    form.append('image', file);
-    const resp = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form });
-    const json = await resp.json();
-    if (!json.success) throw new Error(json.error?.message ?? 'ImgBB upload failed');
-    return json.data.url;
+    const small = await shrinkImage(file);
+    let lastErr;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const form = new FormData();
+        form.append('key', imgbbApiKey);
+        form.append('image', small, 'photo.jpg');
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 45000);
+        const resp = await fetch('https://api.imgbb.com/1/upload', { method: 'POST', body: form, signal: ctrl.signal });
+        clearTimeout(timer);
+        const json = await resp.json();
+        if (!json.success) throw new Error(json.error?.message ?? 'ImgBB upload failed');
+        return json.data.url;
+      } catch (err) {
+        lastErr = err;
+        if (attempt < 3) await new Promise(r => setTimeout(r, 1200 * attempt));
+      }
+    }
+    throw new Error(lastErr?.name === 'AbortError' ? 'หมดเวลา สัญญาณอินเทอร์เน็ตช้า' : (lastErr?.message || 'เครือข่ายมีปัญหา'));
   }
 
   function handleImageChange(e) {
@@ -405,7 +441,7 @@ export default function MediaTab({ teacherClassFilter = null, viewMode = 'entry'
       setImgFile(null);
       setShowForm(false);
     } catch (err) {
-      alert('อัปโหลดรูปภาพไม่สำเร็จ: ' + err.message);
+      alert('อัปโหลดรูปภาพไม่สำเร็จ: ' + err.message + '\nลองใหม่อีกครั้ง หรือสลับเป็น Wi-Fi แล้วกดบันทึกอีกที (ข้อมูลที่กรอกยังอยู่)');
     } finally {
       setUploading(false);
     }

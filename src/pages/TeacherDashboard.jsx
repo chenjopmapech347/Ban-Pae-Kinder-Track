@@ -23,6 +23,7 @@ const ToothBrushTab          = lazy(() => import('../components/admin/ToothBrush
 const LunchTab               = lazy(() => import('../components/admin/LunchTab'));
 const MilkTab                = lazy(() => import('../components/admin/MilkTab'));
 const NutritionTab           = lazy(() => import('../components/admin/NutritionTab'));
+const DspmTab                = lazy(() => import('../components/admin/DspmTab'));
 const DailyRoutineTab        = lazy(() => import('../components/admin/DailyRoutineTab'));
 const SpecialEventTab        = lazy(() => import('../components/admin/SpecialEventTab'));
 const StudentReportTab       = lazy(() => import('../components/admin/StudentReportTab'));
@@ -78,6 +79,7 @@ const TEACHER_TAB_GROUPS = [
     color: '#7c3aed',
     tabs: [
       { id: 'nutrition',    label: '⚖️ ภาวะโภชนาการ'   },  // ประเมินสุขภาพ
+      { id: 'dspm',         label: '🧩 คัดกรองพัฒนาการ DSPM' },
       { id: 'specialevent', label: '🎉 กิจกรรมวันสำคัญ' },  // กิจกรรมพิเศษ
     ],
   },
@@ -327,10 +329,27 @@ function buildDraft(students, dailyRecords, date) {
   return d;
 }
 
+/* ── อ่านไฟล์ CSV (UTF-8 → fallback Windows-874) ─────────────────────────── */
+function readCsvFile(file, cb) {
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const buf = ev.target.result;
+    let text;
+    try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); }
+    catch {
+      try { text = new TextDecoder('windows-874').decode(buf); }
+      catch { text = new TextDecoder('utf-8').decode(buf); }
+    }
+    cb(text.replace(/^\ufeff/, ''));
+  };
+  reader.readAsArrayBuffer(file);
+}
+
 /* ── StudentList — shared between main tab and students tab ─────────────────── */
 function StudentList({ myStudents, filtered, search, setSearch, myClass, today, dailyRecords,
   setSelectedStudent, setEvaluatingStudent, setEditingStudentLocal, handleDelete }) {
-  const { handleImport, setStudents } = useApp();
+  const { handleImport, setStudents, classMap } = useApp();
+  const classLevel = Object.keys(classMap ?? {}).find(k => (classMap[k] ?? []).includes(myClass)) || myStudents[0]?.level || undefined;
   const fileInputRef = useRef(null);
   const [dropOpen, setDropOpen] = useState(false);
   const dropRef = useRef(null);
@@ -345,16 +364,14 @@ function StudentList({ myStudents, filtered, search, setSearch, myClass, today, 
 
   const handleFileImport = (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const raw = ev.target.result.replace(/^\ufeff/, '');
-      const r = handleImport('students', raw);
-      alert(r.ok ? `✅ นำเข้าสำเร็จ! เพิ่มนักเรียน ${r.count ?? ''} คน` : r.message);
-    };
-    reader.readAsText(file, 'utf-8');
     e.target.value = '';
     setDropOpen(false);
+    if (!file) return;
+    if (!myClass) { alert('บัญชีนี้ยังไม่ได้กำหนดห้องประจำชั้น'); return; }
+    readCsvFile(file, raw => {
+      const r = handleImport('students', raw, { forceClassName: myClass, forceLevel: classLevel });
+      alert(r.ok ? `✅ นำเข้าสำเร็จ! เพิ่มนักเรียน ${r.count} คน เข้าห้อง ${myClass}${r.skipped ? `\n(ข้ามรายชื่อซ้ำ ${r.skipped} คน)` : ''}` : r.message);
+    });
   };
 
   const handleDownloadTemplate = () => {
@@ -583,6 +600,19 @@ export default function TeacherDashboard() {
 
   /* ── Students filtered to teacher's class ── */
   const myClass    = user?.className;
+  const mainFileRef = useRef(null);
+  const { classMap: classMapT } = useApp();
+  const handleMainFileImport = (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!myClass) { alert('บัญชีนี้ยังไม่ได้กำหนดห้องประจำชั้น'); return; }
+    const lvl = Object.keys(classMapT ?? {}).find(k => (classMapT[k] ?? []).includes(myClass)) || undefined;
+    readCsvFile(file, raw => {
+      const r = handleImport('students', raw, { forceClassName: myClass, forceLevel: lvl });
+      alert(r.ok ? `✅ นำเข้าสำเร็จ! เพิ่มนักเรียน ${r.count} คน เข้าห้อง ${myClass}${r.skipped ? `\n(ข้ามรายชื่อซ้ำ ${r.skipped} คน)` : ''}` : r.message);
+    });
+  };
   const myStudents = useMemo(
     () => students
       .filter(s => s.className === myClass && !s.name.startsWith('(ว่าง)'))
@@ -772,6 +802,7 @@ export default function TeacherDashboard() {
           {activeTab === 'lunch'        && <LunchTab teacherClassFilter={myClass} />}
           {activeTab === 'milk'         && <MilkTab teacherClassFilter={myClass} />}
           {activeTab === 'nutrition'     && <NutritionTab teacherClassFilter={myClass} />}
+          {activeTab === 'dspm'          && <DspmTab teacherClassFilter={myClass} />}
           {activeTab === 'dailyroutine'  && <DailyRoutineTab teacherClassFilter={myClass} />}
           {activeTab === 'specialevent'  && <SpecialEventTab teacherClassFilter={myClass} />}
 
@@ -906,15 +937,10 @@ export default function TeacherDashboard() {
           {activeTab === 'students' && (
             <>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: '.75rem', marginBottom: '1.25rem' }}>
+                <input ref={mainFileRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={handleMainFileImport} />
                 <button type="button" {...ui('btn', { background: '#dbeafe', color: '#1e40af', padding: '.85rem', fontSize: '.9rem', borderRadius: '14px' })}
-                  onClick={() => {
-                    const text = prompt('วางข้อมูล CSV (ชื่อ, ชั้น, อายุ, น้ำหนัก, ส่วนสูง)\nเช่น: เด็กชายดีใจ, K3, 5, 18.5, 110');
-                    if (text) {
-                      const r = handleImport('students', 'name,level,age,weight,height\n' + text);
-                      alert(r.ok ? 'นำเข้าข้อมูลสำเร็จ! ✅' : r.message);
-                    }
-                  }}>
-                  📥 นำเข้าข้อมูล
+                  onClick={() => mainFileRef.current?.click()}>
+                  📥 นำเข้าจากไฟล์ CSV
                 </button>
                 <button type="button" {...ui('btn btn-primary', { padding: '.85rem', fontSize: '.9rem', borderRadius: '14px' })}
                   onClick={() => setIsAddingLocal(true)}>
@@ -1236,15 +1262,10 @@ export default function TeacherDashboard() {
                   onClick={() => { loadDraft(today); setActiveView('attendance'); }}>
                   ✅ เช็คชื่อ
                 </button>
+                <input ref={mainFileRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={handleMainFileImport} />
                 <button type="button" {...ui('btn', { background: '#dbeafe', color: '#1e40af', padding: '.85rem', fontSize: '.9rem', borderRadius: '14px' })}
-                  onClick={() => {
-                    const text = prompt('วางข้อมูล CSV (ชื่อ, ชั้น, อายุ, น้ำหนัก, ส่วนสูง)\nเช่น: เด็กชายดีใจ, K3, 5, 18.5, 110');
-                    if (text) {
-                      const r = handleImport('students', 'name,level,age,weight,height\n' + text);
-                      alert(r.ok ? 'นำเข้าข้อมูลสำเร็จ! ✅' : r.message);
-                    }
-                  }}>
-                  📥 นำเข้าข้อมูล
+                  onClick={() => mainFileRef.current?.click()}>
+                  📥 นำเข้าจากไฟล์ CSV
                 </button>
                 <button type="button" {...ui('btn btn-primary', { padding: '.85rem', fontSize: '.9rem', borderRadius: '14px' })}
                   onClick={() => setIsAddingLocal(true)}>

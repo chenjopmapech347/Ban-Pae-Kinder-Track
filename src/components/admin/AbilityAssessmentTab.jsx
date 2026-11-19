@@ -100,42 +100,37 @@ function c68LevelLabel(key) {
 // ──────────────────────────────────────────────────────────────────────────────
 function recKey(sid, year, term) { return `${sid}||${year}||${term}`; }
 
-function ScoreBadge({ score, onClick, scale, auto }) {
-  const meta = scale[score];
-  if (!meta) {
-    // ยังไม่มีคะแนน → แสดง 3 (ดี) เป็น default พร้อม opacity จางลงเล็กน้อย
-    const def = scale[3];
-    return (
-      <button
-        onClick={onClick}
-        style={{ background: def.bg, color: def.color, borderColor: def.border, border: `1px solid ${def.border}`, opacity: 0.55, padding: '2px 8px', borderRadius: '4px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}
-        title="ยังไม่ได้ให้คะแนน (default = 3 ดี) — คลิกเพื่อเปลี่ยน"
-      >3 {def.label}</button>
-    );
-  }
+// ปุ่มให้คะแนนแบบกดเลือกทันที 3 / 2 / 1 (จุดสีเขียว–เหลือง–แดง) — กดซ้ำที่ค่าเดิมเพื่อล้างคะแนน
+const DOT_COLORS = { 3: '#22c55e', 2: '#facc15', 1: '#ef4444' };
+function ScoreTriplet({ score, onPick, scale, auto }) {
   return (
-    <button
-      onClick={onClick}
-      style={{ opacity: auto ? 0.7 : 1, background: meta.bg, color: meta.color, border: `1px ${auto ? 'dashed' : 'solid'} ${meta.border}`, padding: '2px 8px', borderRadius: '4px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}
-      title={auto ? `${meta.label} — ระบบคำนวณจากการประเมินพัฒนาการ (ยังไม่ได้บันทึก) คลิกเพื่อยืนยัน/เปลี่ยน` : `${meta.label} — คลิกเพื่อเปลี่ยน`}
-    >{score} {meta.label}</button>
-  );
-}
-
-function ScorePicker({ onPick, scale }) {
-  return (
-    <div style={{ display: 'flex', gap: '4px' }}>
-      {[3, 2, 1].map(s => (
-        <button
-          key={s}
-          onClick={() => onPick(s)}
-          style={{ background: scale[s].bg, color: scale[s].color, border: `1px solid ${scale[s].border}`, padding: '2px 8px', borderRadius: '4px', fontSize: '.75rem', fontWeight: 700, cursor: 'pointer' }}
-        >{s} {scale[s].label}</button>
-      ))}
-      <button
-        onClick={() => onPick(0)}
-        style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '.75rem', border: '1px solid #d1d5db', color: '#9ca3af', background: 'white', cursor: 'pointer' }}
-      >ล้าง</button>
+    <div style={{ display: 'inline-flex', gap: '4px', justifyContent: 'center' }}>
+      {[3, 2, 1].map(v => {
+        const meta = scale[v];
+        const selected = score === v;
+        const ghost = !score && v === 3; // ยังไม่ให้คะแนน → ค่าเริ่มต้นคือ 3 (แสดงจาง)
+        return (
+          <button
+            key={v}
+            type="button"
+            onClick={() => onPick(selected ? 0 : v)}
+            title={selected
+              ? `${meta.label} — คลิกอีกครั้งเพื่อล้างคะแนน`
+              : (ghost ? 'ยังไม่ได้ให้คะแนน (ค่าเริ่มต้น = 3 ดี) — คลิกเพื่อยืนยัน' : `ให้ ${v} ${meta.label}`)}
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1px',
+              width: '34px', padding: '4px 0', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit',
+              background: selected ? meta.bg : (ghost ? meta.bg : 'white'),
+              border: selected ? `2px ${auto ? 'dashed' : 'solid'} ${meta.border}` : `1px solid ${ghost ? meta.border : '#e5e7eb'}`,
+              opacity: selected ? (auto ? 0.75 : 1) : (ghost ? 0.5 : 1),
+              boxShadow: selected && !auto ? '0 0 0 2px ' + meta.border + '55' : 'none',
+            }}
+          >
+            <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: DOT_COLORS[v], display: 'block' }} />
+            <span style={{ fontSize: '.78rem', fontWeight: 700, color: selected || ghost ? meta.color : '#9ca3af' }}>{v}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -177,7 +172,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
     autoC68KeyFromClass(myClass ?? '')
   );
   const [activeDomain, setActiveDomain] = useState('d1');
-  const [picker, setPicker] = useState(null);
+  const [, setPicker] = useState(null);
   const [viewMode, setViewMode] = useState('input');
   const [selStudentId, setSelStudentId] = useState(null);  // สำหรับ view='student'
   // สำหรับ view='activity'
@@ -458,18 +453,11 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                         </td>
                         {domainIndicators.map(ind => (
                           <td key={String(ind.code).replace(/(\d)ข/g,'$1')} style={{ padding: '.5rem .5rem', textAlign: 'center' }}>
-                            {picker?.sid === s.id && picker?.code === ind.code ? (
-                              <ScorePicker
-                                scale={DS.scale}
-                                onPick={v => setScore(s.id, ind.code, v)}
-                              />
-                            ) : (
-                              <ScoreBadge
-                                scale={DS.scale}
-                                score={getScore(s.id, ind.code)} auto={isAuto(s.id, ind.code)}
-                                onClick={() => setPicker({ sid: s.id, code: ind.code })}
-                              />
-                            )}
+                            <ScoreTriplet
+                              scale={DS.scale}
+                              score={getScore(s.id, ind.code)} auto={isAuto(s.id, ind.code)}
+                              onPick={v => setScore(s.id, ind.code, v)}
+                            />
                           </td>
                         ))}
                       </tr>
@@ -481,7 +469,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
           })()}
 
           <p style={{ fontSize: '.78rem', color: '#94a3b8', textAlign: 'center', margin: 0 }}>
-            คลิกที่ช่องคะแนนเพื่อให้คะแนน · ข้อมูลบันทึกอัตโนมัติทันที
+            กดเลือก 3 / 2 / 1 ในแต่ละช่องเพื่อให้คะแนน (กดซ้ำที่ค่าเดิมเพื่อล้าง) · ข้อมูลบันทึกอัตโนมัติทันที
           </p>
         </div>
       )}
@@ -694,12 +682,8 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                           </div>
                           {/* score badge + picker */}
                           <div style={{ flexShrink: 0 }}>
-                            {picker?.sid === stu.id && picker?.code === ind.code ? (
-                              <ScorePicker scale={DS.scale} onPick={v => setScore(stu.id, ind.code, v)} />
-                            ) : (
-                              <ScoreBadge scale={DS.scale} score={sc}
-                                onClick={() => setPicker({ sid: stu.id, code: ind.code })} />
-                            )}
+                            <ScoreTriplet scale={DS.scale} score={sc}
+                              onPick={v => setScore(stu.id, ind.code, v)} />
                           </div>
                         </div>
                       );
@@ -710,7 +694,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
             })}
 
             <p style={{ fontSize: '.78rem', color: '#94a3b8', textAlign: 'center', margin: 0 }}>
-              ✓ = ผ่าน (คะแนน ≥ 2) · ✗ = ยังไม่ผ่าน (คะแนน 1) · คลิกที่คะแนนเพื่อเปลี่ยน
+              ✓ = ผ่าน (คะแนน ≥ 2) · ✗ = ยังไม่ผ่าน (คะแนน 1) · กดเลือก 3 / 2 / 1 เพื่อให้คะแนน
             </p>
           </div>
         );

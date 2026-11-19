@@ -7,6 +7,7 @@
 // - แก้เป็นขาด/ลา/ป่วย → ถูกถอดออกจาก p → ระดับกลับเป็น 0 (ลบเฉพาะที่ระบบเติมเอง คะแนนที่ครูให้ไม่ถูกแตะ)
 // - กิจกรรมที่ครูให้คะแนนเองในภาคนั้นแล้ว → ใช้ของครูก่อน (auto เติมเฉพาะที่ยังว่าง)
 import { INDICATORS_DATA_68 } from '../data/indicatorsData_68';
+import { SOURCE_ACTIVITY_NO } from '../data/evaluationConstants';
 
 export const AUTO_LEVEL = 3;
 
@@ -20,26 +21,9 @@ export function termOfISO(dateISO) {
   return m >= 5 && m <= 10 ? 1 : 2;
 }
 
-// แหล่งข้อมูล → รหัสกิจกรรม (no) ของหลักสูตร 2568 (indicatorsData_68.js) ที่ "เชื่อมโยงกัน"
-// หมายเหตุ: ฉบับร่างจากการอ่านชื่อกิจกรรม — ปรับได้ที่นี่ที่เดียว
-// (SOURCE_ACTIVITY_MAP เดิมใน evaluationConstants.js ใช้รหัสชุดเก่า ไม่ตรงกับ 49 กิจกรรมของ 2568)
-export const AUTO_SOURCE_ACTIVITY_NO = {
-  milk:     [2],        // อาหารดี ชีวีสดใส (โภชนาการเหมาะสมวัย)
-  lunch:    [5, 30],    // กินดี อยู่ดี (อาหาร 5 หมู่) · กิจวัตร รับประทานอาหาร/ล้างมือด้วยตนเอง
-  tooth:    [6],        // ฟันสะอาด ปากสดใส
-  illness:  [30],       // กิจวัตร ล้างมือ ดูแลตนเอง
-  attend:   [34, 26],   // ทำตามกติกาห้องเรียน · มีส่วนร่วมและมีความสุขในกิจกรรม
-  health_check: [30],   // ล้างมือ/ดูแลความสะอาดตนเอง (ชั่งน้ำหนัก-ส่วนสูง no.1/3 ใช้ข้อมูลภาวะโภชนาการ ไม่เติมจากเช็คชื่อ)
-  morning:  [49],       // ยืนตรงร้องเพลงชาติ ไหว้ กล่าวขอบคุณ-ขอโทษ
-  exercise: [4],        // ออกกำลังกายและเคลื่อนไหวประจำวัน
-  circle:   [39],       // สนทนาโต้ตอบกับครูและเพื่อน
-  story:    [38],       // เล่านิทาน
-  cleanup:  [31],       // ห้องเรียนสะอาด — รับผิดชอบพื้นที่ส่วนรวม
-  dressing: [30],       // แต่งตัวด้วยตนเอง
-  dance:    [17],       // เต้นตามจังหวะ
-  outdoor:  [36],       // แหล่งเรียนรู้นอกห้อง — โลกสีเขียว
-  corner:   [26],       // มุมประสบการณ์ในห้อง — เล่นอิสระตามความสนใจ
-};
+// แหล่งข้อมูล → รหัสกิจกรรม (no) ของหลักสูตร 2568 ใช้ตารางเดียวกับปุ่ม "บันทึกกิจกรรมที่เชื่อมโยง": SOURCE_ACTIVITY_NO (data/evaluationConstants.js)
+const AUTO_SOURCES = [...AUTO_BASE_SOURCES, ...AUTO_ROUTINE_SOURCES, 'health_check', 'outdoor', 'corner'];
+export const AUTO_SOURCE_ACTIVITY_NO = Object.fromEntries(AUTO_SOURCES.map(k => [k, SOURCE_ACTIVITY_NO[k] ?? []]));
 
 let _ACT_SOURCES = null; // actId (หลักสูตร 2568) → [sourceKey]
 function actSources() {

@@ -1,8 +1,9 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../../context/AppContext';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
+import { INDICATORS_DATA_68 } from '../../data/indicatorsData_68';
 
 import { compareStudents, compareClassNames, compareByClassThenCode } from '../../utils/helpers';
 import { useTermRange, OUT_OF_TERM_MSG } from '../../hooks/useTermRange';
@@ -139,6 +140,15 @@ const blankForm = (type = 'school') => ({
   description: '', activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES[type] ?? [],
 });
 
+// รหัสกิจกรรมหลักสูตร 2568 ทั้งหมด (49 ข้อ) → ชื่อกิจกรรม/ตัวบ่งชี้ — ใช้ตรวจรหัสที่เชื่อมโยงและแสดงชื่อแทนรหัสดิบ
+const ACT68 = (() => {
+  const m = {};
+  INDICATORS_DATA_68.forEach(d => d.standards.forEach(st => st.indicators.forEach(ind => ind.items.forEach(it => it.activities.forEach(a => {
+    m[`${d.id}__${st.id}__${ind.id}__${it.id}__${a.no}`] = { label: a.label, indCode: ind.id, domain: d.id };
+  })))));
+  return m;
+})();
+
 // ── Indicator selector sub-component ─────────────────────────────────────────
 function IndicatorSelector({ assessmentTopics, indicators, activities, linked, onChange }) {
   const [topic,     setTopic]     = useState('');
@@ -157,7 +167,10 @@ function IndicatorSelector({ assessmentTopics, indicators, activities, linked, o
   // Build label from actId for display
   function actLabel(actId) {
     const act = activities.find(a => a.id === actId);
-    if (!act) return actId;
+    if (!act) {
+      const a68 = ACT68[actId];
+      return a68 ? `${a68.indCode} — ${a68.label}` : `⚠️ กิจกรรมเดิมที่ไม่มีในหลักสูตร 2568 (${actId.split('__').pop()})`;
+    }
     const ind = indicators.find(i => i.id === act.indicatorId);
     const dom = assessmentTopics.find(t => t.id === ind?.domainId);
     return `[${dom?.label ?? '?'}] ${ind?.indicatorCode ?? '?'} — ${act.label}`;
@@ -585,6 +598,22 @@ export default function SpecialEventTab({ teacherClassFilter }) {
   } = useApp();
 
   const isTeacher = role === 'teacher';
+
+  // ย้ายข้อมูลเดิม: กิจกรรมที่บันทึกไว้ด้วยรหัสชุดเก่า (qa-4, std-5 ฯลฯ ซึ่งไม่มีในหลักสูตร 2568) → ตัดรหัสที่ไม่มีอยู่จริงออก
+  // ถ้าไม่เหลือรหัสที่ใช้ได้เลย ใช้ค่าเริ่มต้นชุด 2568 ตามประเภทกิจกรรม (ทำซ้ำได้ ไม่เปลี่ยนอะไรถ้าถูกต้องแล้ว)
+  useEffect(() => {
+    if (!specialEvents || (role !== 'admin' && role !== 'teacher')) return;
+    let changed = false;
+    const next = {};
+    Object.entries(specialEvents).forEach(([k, ev]) => {
+      const ids = ev?.activityIds ?? [];
+      const kept = ids.filter(id => ACT68[id]);
+      if (kept.length === ids.length) { next[k] = ev; return; }
+      changed = true;
+      next[k] = { ...ev, activityIds: kept.length ? kept : (EVENT_TYPE_DEFAULT_ACTIVITIES[ev.type] ?? []) };
+    });
+    if (changed) setSpecialEvents(next);
+  }, [specialEvents, role, setSpecialEvents]);
 
   // Filters
   const [search,     setSearch]     = useState('');

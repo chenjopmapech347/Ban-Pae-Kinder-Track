@@ -112,6 +112,49 @@ export async function pullAllClassAssessments() {
   }
 }
 
+// ── พัฒนาการ/ความสามารถที่ระบบเติมจากเช็คชื่อ (autoDevLedger) — แยก 1 เอกสารต่อห้อง ──
+// classAssessments/autoDev__{ห้อง} = { className, ledger: { [วันที่]: { p, s, e? } } }
+// เขียนทีละวัน (merge ระดับ key) → ครูคนละห้อง/คนละเครื่องไม่ทับกัน และห้องหนึ่งไม่ทำให้ห้องอื่นหาย
+const AUTODEV_PREFIX = 'autoDev__';
+function autoDevRef(className) {
+  return doc(db, 'schools', SCHOOL_ID, 'classAssessments', AUTODEV_PREFIX + classKey(className));
+}
+/** บันทึกข้อมูลของ "วันเดียว" ของห้องหนึ่ง (entry = null → ลบวันนั้น) */
+export async function pushAutoDevDay(className, date, entry) {
+  if (!isFirebaseConfigured || !db) return { ok: false };
+  try {
+    await setDoc(autoDevRef(className), {
+      className,
+      updatedAt: serverTimestamp(),
+      ledger: { [date]: entry ?? deleteField() },
+    }, { merge: true });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, message: e.message };
+  }
+}
+/** ดึง ledger ของห้องเดียว หรือทุกห้อง (className = null) → { ok, ledger: { [className]: { [date]: entry } } } */
+export async function pullAutoDevLedgers(className = null) {
+  if (!isFirebaseConfigured || !db) return { ok: false, ledger: {} };
+  try {
+    const out = {};
+    if (className) {
+      const snap = await getDoc(autoDevRef(className));
+      if (snap.exists()) out[className] = snap.data().ledger ?? {};
+    } else {
+      const col = await getDocs(classAssessColRef());
+      col.forEach(d => {
+        if (!d.id.startsWith(AUTODEV_PREFIX)) return;
+        const data = d.data();
+        if (data.className) out[data.className] = data.ledger ?? {};
+      });
+    }
+    return { ok: true, ledger: out };
+  } catch (e) {
+    return { ok: false, ledger: {}, message: e.message };
+  }
+}
+
 // ความลับที่ห้ามอยู่บน Firebase (เอกสารอ่านได้สาธารณะ) — เก็บเฉพาะในเครื่อง
 const LOCAL_ONLY_KEYS = ['authConfig', 'imgbbApiKey'];
 function stripSecrets(obj) {

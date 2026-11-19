@@ -46,7 +46,7 @@ const LOGGED_SETTERS = {
 };
 const _lastLogged = {};
 import { AUTO_BASE_SOURCES, AUTO_ROUTINE_SOURCES } from '../utils/autoDevelopment';
-import { scheduleParentViewPush, pushSnapshotToFirebase, pullSnapshotFromFirebase, pullClassAssessments, pullAllClassAssessments, pushClassAssessments, listDailyBackups, pullDailyBackupById, pushDailyDataToFirebase, pullDailyDataFromFirebase, seedDailyBaseline } from '../lib/firebaseSync';
+import { scheduleParentViewPush, pushSnapshotToFirebase, pullSnapshotFromFirebase, pullClassAssessments, pullAllClassAssessments, pushClassAssessments, pushAutoDevDay, pullAutoDevLedgers, listDailyBackups, pullDailyBackupById, pushDailyDataToFirebase, pullDailyDataFromFirebase, seedDailyBaseline } from '../lib/firebaseSync';
 
 import { firebaseLogin, firebaseLogout, onFirebaseAuthChange } from '../lib/firebaseAuth';
 import { SERVER_AUTH, parentLoginServer, fetchMyChild, currentClaims } from '../lib/serverAuth';
@@ -385,7 +385,6 @@ export function AppProvider({ children }) {
       mediaBorrowRecords,
       imgbbApiKey,
       abilityAssessments,
-      autoDevLedger,
       cornerDefs,
       innerCornerDefs,
       classInnerCornerKeys,
@@ -424,7 +423,6 @@ export function AppProvider({ children }) {
       mediaBorrowRecords,
       imgbbApiKey,
       abilityAssessments,
-      autoDevLedger,
       cornerDefs,
       innerCornerDefs,
       classInnerCornerKeys,
@@ -495,7 +493,6 @@ export function AppProvider({ children }) {
     if (payload.mediaBorrowRecords) setMediaBorrowRecords(payload.mediaBorrowRecords);
     if (payload.imgbbApiKey) setImgbbApiKey(payload.imgbbApiKey);
     if (payload.abilityAssessments) setAbilityAssessments(payload.abilityAssessments);
-    if (payload.autoDevLedger) setAutoDevLedger(payload.autoDevLedger);
     // บันทึกรายเดือน/รายวัน
     if (payload.nutritionRecords) setNutritionRecords(mergeDaily ? (prev) => deepMergeObjects(prev, payload.nutritionRecords) : payload.nutritionRecords);
     if (payload.milkRecords) setMilkRecords(mergeDaily ? (prev) => deepMergeObjects(prev, payload.milkRecords) : payload.milkRecords);
@@ -546,7 +543,6 @@ export function AppProvider({ children }) {
     setMediaBorrowRecords,
     setImgbbApiKey,
     setAbilityAssessments,
-    setAutoDevLedger,
     setNutritionRecords,
     setMilkRecords,
     setLunchRecords,
@@ -877,6 +873,17 @@ export function AppProvider({ children }) {
     }
     const incoming = res.students ?? {};
     const count = Object.keys(incoming).length;
+    // พัฒนาการ/ความสามารถที่ระบบเติมจากเช็คชื่อ (เอกสารแยกต่อห้อง) — รวมเข้าเครื่อง (ค่าจากระบบชนะในวันเดียวกัน)
+    try {
+      const ad = await pullAutoDevLedgers(className);
+      if (ad.ok && Object.keys(ad.ledger).length) {
+        setAutoDevLedger(prev => {
+          const next = { ...prev };
+          Object.entries(ad.ledger).forEach(([cls, days]) => { next[cls] = { ...(next[cls] ?? {}), ...days }; });
+          return next;
+        });
+      }
+    } catch { /* ข้ามได้ */ }
     if (count > 0) {
       setStudents(prev => prev.map(s => {
         const sa = incoming[String(s.id)];
@@ -1172,7 +1179,7 @@ export function AppProvider({ children }) {
     pickupRecords, mediaRecords, cornerRecords, innerCornerRecords,
     healthCheckRecords, illnessCheckRecords, toothBrushRecords,
     lunchRecords, milkRecords, nutritionRecords, dailyRoutineRecords, studentReportRecords,
-    specialEvents, specialHolidays, abilityAssessments, autoDevLedger,
+    specialEvents, specialHolidays, abilityAssessments,
     cornerDefs, innerCornerDefs,
     // ตั้งค่าที่ต้องมีผลกับทุกเครื่องทันที (เดิมไม่ได้ watch → แก้แล้วไม่ถูกส่งขึ้น Firebase จนกว่าจะมีข้อมูลอื่นเปลี่ยน)
     schoolTerms, lockedTerms, currentTerm, classInnerCornerKeys, classOuterCornerKeys,
@@ -1859,27 +1866,32 @@ export function AppProvider({ children }) {
       // เก็บแยกจากคะแนน r1–r4 ของครู จึงไม่ทับ/ไม่ลบคะแนนที่ครูให้เอง
       {
         const touched = new Set([...Object.keys(byClass), ...Object.keys(byClassAllAbsent)]);
-        setAutoDevLedger(prev => {
-          const next = { ...prev };
-          touched.forEach(cls => {
-            const presentIds = (byClass[cls] ?? []).map(String);
-            const absentIds  = new Set((byClassAllAbsent[cls] ?? []).map(String));
-            const oldDay     = next[cls]?.[date];
-            const keep       = (oldDay?.p ?? []).map(String).filter(id => !absentIds.has(id) && !presentIds.includes(id));
-            const p          = [...keep, ...presentIds];
-            const days       = { ...(next[cls] ?? {}) };
-            if (!p.length) { delete days[date]; }
-            else {
-              const sources = [...AUTO_BASE_SOURCES, ...AUTO_ROUTINE_SOURCES];
-              if (isHealthCheckDay) sources.push('health_check');
-              if ((getKeysForDay(classOuterCornerKeys[cls], thaiDay) ?? []).length) sources.push('outdoor');
-              if ((getKeysForDay(classInnerCornerKeys[cls], thaiDay) ?? []).length) sources.push('corner');
-              days[date] = { p, s: sources };
-            }
-            next[cls] = days;
-          });
-          return next;
+        const next = { ...autoDevLedger };
+        const pushes = [];
+        touched.forEach(cls => {
+          const presentIds = (byClass[cls] ?? []).map(String);
+          const absentIds  = new Set((byClassAllAbsent[cls] ?? []).map(String));
+          const oldDay     = next[cls]?.[date];
+          const keep       = (oldDay?.p ?? []).map(String).filter(id => !absentIds.has(id) && !presentIds.includes(id));
+          const p          = [...keep, ...presentIds];
+          const days       = { ...(next[cls] ?? {}) };
+          let entry = null;
+          if (!p.length) { delete days[date]; }
+          else {
+            const sources = [...AUTO_BASE_SOURCES, ...AUTO_ROUTINE_SOURCES];
+            if (isHealthCheckDay) sources.push('health_check');
+            if ((getKeysForDay(classOuterCornerKeys[cls], thaiDay) ?? []).length) sources.push('outdoor');
+            if ((getKeysForDay(classInnerCornerKeys[cls], thaiDay) ?? []).length) sources.push('corner');
+            const e = oldDay?.e ? Object.fromEntries(Object.entries(oldDay.e).filter(([id]) => !absentIds.has(String(id)))) : null;
+            entry = { p, s: sources, ...(e && Object.keys(e).length ? { e } : {}) };
+            days[date] = entry;
+          }
+          next[cls] = days;
+          pushes.push([cls, entry]);
         });
+        setAutoDevLedger(next);
+        // ส่งขึ้นระบบแยกเอกสารต่อห้อง ทีละวัน (ไม่ทับห้องอื่น/วันอื่น)
+        pushes.forEach(([cls, entry]) => { pushAutoDevDay(cls, date, entry).catch(() => {}); });
       }
 
       return { ok: true };
@@ -1890,7 +1902,7 @@ export function AppProvider({ children }) {
       milkRecords,       setMilkRecords,
       lunchRecords,      setLunchRecords,
       toothBrushRecords, setToothBrushRecords,
-      setDailyRoutineRecords, setAutoDevLedger,
+      setDailyRoutineRecords, autoDevLedger, setAutoDevLedger,
       setIllnessCheckRecords,
       healthCheckRecords, setHealthCheckRecords,
       cornerRecords,      setCornerRecords,      cornerDefs,      classOuterCornerKeys,

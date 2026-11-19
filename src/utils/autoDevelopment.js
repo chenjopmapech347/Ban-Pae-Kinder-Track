@@ -1,7 +1,8 @@
 // autoDevelopment.js — คะแนนพัฒนาการ/ความสามารถที่ "เติมอัตโนมัติจากการเช็คชื่อ"
 //
 // เก็บเป็นบันทึกรายวัน (ledger) แยกจากคะแนน r1–r4 ของครู จึงไม่ทับของเดิม:
-//   autoDevLedger[className][dateISO] = { p: [studentId,...] (ผู้ที่มาเรียน), s: [sourceKey,...] (แหล่งข้อมูลที่ระบบเติมในวันนั้น) }
+//   autoDevLedger[className][dateISO] = { p: [studentId,...] (ผู้ที่มาเรียน), s: [sourceKey,...] (แหล่งข้อมูลที่ระบบเติมในวันนั้น),
+//                                         e?: { [studentId]: [sourceKey,...] } (ข้อยกเว้นรายคน — สคริปต์ย้อนหลังใช้เมื่อข้อมูลจริงบอกว่าเด็กไม่ได้ทำ เช่น ไม่ดื่มนม) }
 // - นักเรียนมา → กิจกรรมพัฒนาการที่เชื่อมกับ s ได้ระดับ 3 (ของวันนั้น)
 // - แก้เป็นขาด/ลา/ป่วย → ถูกถอดออกจาก p → ระดับกลับเป็น 0 (ลบเฉพาะที่ระบบเติมเอง คะแนนที่ครูให้ไม่ถูกแตะ)
 // - กิจกรรมที่ครูให้คะแนนเองในภาคนั้นแล้ว → ใช้ของครูก่อน (auto เติมเฉพาะที่ยังว่าง)
@@ -65,7 +66,8 @@ export function studentAutoSources(studentId, className, ledger) {
   Object.entries(days).forEach(([date, d]) => {
     if (!d?.p?.some(x => String(x) === sid)) return;
     const t = termOfISO(date);
-    (d.s ?? []).forEach(src => out[t].add(src));
+    const skip = d.e?.[sid];
+    (d.s ?? []).forEach(src => { if (!skip?.includes(src)) out[t].add(src); });
   });
   return out;
 }

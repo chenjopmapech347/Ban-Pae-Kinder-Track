@@ -584,7 +584,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
               </div>
 
               <div style={{ marginTop: '1rem', padding: '.75rem 1rem', background: '#fefce8', border: '1px solid #fde047', borderRadius: '8px', fontSize: '.78rem', color: '#713f12' }}>
-                <strong>หมายเหตุ:</strong> ระดับคุณภาพอ้างอิงเกณฑ์มาตรฐานน้ำหนักและส่วนสูงกรมอนามัย กระทรวงสาธารณสุข พ.ศ. 2543
+                <strong>หมายเหตุ:</strong> ระดับคุณภาพอ้างอิงเกณฑ์มาตรฐานการเจริญเติบโตขององค์การอนามัยโลก (WHO 2006) ตามคู่มือกรมอนามัย กระทรวงสาธารณสุข
                 — อายุ 3–6 ปี · ระบบจะคำนวณอัตโนมัติเมื่อกรอกวันที่วัดและมีวันเกิดของนักเรียน
               </div>
 
@@ -1216,7 +1216,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
           )}
 
           {/* ══════════════════════════════════════════════════════════
-              SECTION 8: Growth Standard Table (กรมอนามัย พ.ศ. 2543)
+              SECTION 8: Growth Standard Table (WHO 2006)
           ══════════════════════════════════════════════════════════ */}
           {activeSection === 'growthtable' && (
             <div>
@@ -1224,7 +1224,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                 ตารางแสดงการเจริญเติบโตของเพศชายและหญิง อายุ 3–6 ปี
               </div>
               <div style={{ fontSize: '.72rem', color: '#6b7280', marginBottom: '.75rem' }}>
-                กองโภชนาการ กรมอนามัย กระทรวงสาธารณสุข พ.ศ. 2543 · ตั้งแต่ = –2SD · จนถึง = +2SD
+                มาตรฐานการเจริญเติบโตองค์การอนามัยโลก WHO 2006 (อายุ 5 ปี 1 เดือนขึ้นไปใช้ WHO 2007) · ตั้งแต่ = –2SD · จนถึง = +2SD
               </div>
 
               <div style={{ overflowX: 'auto' }}>

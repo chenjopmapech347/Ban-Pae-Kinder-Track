@@ -473,7 +473,7 @@ export function printReport({ student, physData, growthRecords, devAssessment, a
         ตารางแสดงการเจริญเติบโตของเพศชายและหญิง อายุ 3–6 ปี
       </h2>
       <p style="text-align:center;font-size:.67rem;color:#666;margin-bottom:3px">
-        กองโภชนาการ กรมอนามัย กระทรวงสาธารณสุข พ.ศ. 2543 · ตั้งแต่ = –2SD · จนถึง = +2SD
+        มาตรฐานการเจริญเติบโตองค์การอนามัยโลก WHO 2006 (อายุ 5 ปี 1 เดือนขึ้นไปใช้ WHO 2007) · ตั้งแต่ = –2SD · จนถึง = +2SD
       </p>
       <table style="font-size:.67rem;line-height:1.2">
         <thead>

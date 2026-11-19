@@ -569,20 +569,9 @@ export function printReport({ student, physData, growthRecords, devAssessment, a
       <tr>
         <th style="width:36px;padding:3px 5px;border:1px solid #d1d5db;background:#f3f4f6">ลำดับ</th>
         <th style="padding:3px 5px;border:1px solid #d1d5db;background:#f3f4f6">มาตรฐานคุณลักษณะที่พึงประสงค์</th>
-        <th colspan="3" style="text-align:center;padding:3px 5px;border:1px solid #d1d5db;background:#f3f4f6">ภาคเรียน 1</th>
-        <th colspan="3" style="text-align:center;padding:3px 5px;border:1px solid #d1d5db;background:#f3f4f6">ภาคเรียน 2</th>
-        <th style="padding:3px 5px;border:1px solid #d1d5db;background:#f3f4f6">สรุปตลอดปี</th>
-      </tr>
-      <tr>
-        <th style="padding:2px 5px;border:1px solid #d1d5db;background:#f3f4f6"></th>
-        <th style="padding:2px 5px;border:1px solid #d1d5db;background:#f3f4f6"></th>
-        <th style="padding:2px 5px;border:1px solid #d1d5db;background:#f3f4f6">3</th>
-        <th style="padding:2px 5px;border:1px solid #d1d5db;background:#f3f4f6">2</th>
-        <th style="padding:2px 5px;border:1px solid #d1d5db;background:#f3f4f6">1</th>
-        <th style="padding:2px 5px;border:1px solid #d1d5db;background:#f3f4f6">3</th>
-        <th style="padding:2px 5px;border:1px solid #d1d5db;background:#f3f4f6">2</th>
-        <th style="padding:2px 5px;border:1px solid #d1d5db;background:#f3f4f6">1</th>
-        <th style="padding:2px 5px;border:1px solid #d1d5db;background:#f3f4f6"></th>
+        <th style="width:70px;text-align:center;padding:3px 5px;border:1px solid #d1d5db;background:#f3f4f6">ภาคเรียน 1</th>
+        <th style="width:70px;text-align:center;padding:3px 5px;border:1px solid #d1d5db;background:#f3f4f6">ภาคเรียน 2</th>
+        <th style="width:70px;padding:3px 5px;border:1px solid #d1d5db;background:#f3f4f6">สรุปตลอดปี</th>
       </tr>
       ${devDomains.map(domain => {
         const domainRows = domain.standards.map((std, si) => {
@@ -594,12 +583,8 @@ export function printReport({ student, physData, growthRecords, devAssessment, a
           return `<tr>
             <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center">${std.stdNo ?? (si+1)}</td>
             <td style="padding:3px 5px;border:1px solid #d1d5db">${std.title}</td>
-            <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center">${t1 === 3 ? '✓' : ''}</td>
-            <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center">${t1 === 2 ? '✓' : ''}</td>
-            <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center">${t1 === 1 ? '✓' : ''}</td>
-            <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center">${t2 === 3 ? '✓' : ''}</td>
-            <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center">${t2 === 2 ? '✓' : ''}</td>
-            <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center">${t2 === 1 ? '✓' : ''}</td>
+            <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center;font-weight:700">${t1 !== null ? t1 : '—'}</td>
+            <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center;font-weight:700">${t2 !== null ? t2 : '—'}</td>
             <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center;font-weight:700">${yearly !== null ? yearly : '—'}</td>
           </tr>`;
         }).join('');
@@ -609,7 +594,7 @@ export function printReport({ student, physData, growthRecords, devAssessment, a
         const allDomainT2 = _dom('term2').length ? _dom('term2') : _dom('term1');
         const domainYearly = allDomainT2.length ? Math.round(allDomainT2.reduce((a,b)=>a+b,0)/allDomainT2.length) : null;
         return `<tr style="background:#f0f0f0">
-          <td colspan="8" style="padding:4px 8px;border:1px solid #d1d5db;font-weight:800">${domain.emoji} ด้าน${domain.label}</td>
+          <td colspan="4" style="padding:4px 8px;border:1px solid #d1d5db;font-weight:800">${domain.emoji} ด้าน${domain.label}</td>
           <td style="padding:4px 8px;border:1px solid #d1d5db;text-align:center;font-weight:800">${domainYearly !== null ? domainYearly : '—'}</td>
         </tr>${domainRows}`;
       }).join('')}

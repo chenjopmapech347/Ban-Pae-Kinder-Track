@@ -224,7 +224,7 @@ export function growthLevelsForTerm(student, nutritionRecords, academicYear, ter
 //  - 1.1.3 นิสัยการกินและดูแลสุขภาพ  ← บันทึกแปรงฟัน + อาหารกลางวัน (สัดส่วนวันที่ทำ √)
 //  - 1.4.2 ช่วยเหลือตนเองในกิจวัตร    ← ตรวจสุขภาพรายสัปดาห์ (ผม ปาก เล็บ หู ร่างกาย เสื้อผ้า)
 const TERM_MONTH_NUMS = { 1: [5, 6, 7, 8, 9, 10], 2: [12, 1, 2, 3, 4] };
-const ratioToLevel = (ratio) => (ratio >= 0.8 ? 3 : ratio >= 0.5 ? 2 : 1);
+const ratioToLevel = (ratio) => (ratio >= 0.8 ? 3 : ratio >= 0.6 ? 2 : 1);   // ≥80% ดี · ≥60% พอใช้ (ตรงกับ pctToScore/สีในตาราง)
 const avgToLevel = (avg) => (avg >= 2.5 ? 3 : avg >= 1.5 ? 2 : 1);
 
 function dailyCheckLevel(records, sid, academicYear, term) {

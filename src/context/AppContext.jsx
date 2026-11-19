@@ -14,7 +14,7 @@ import {
 } from '../data/initialData';
 import { INITIAL_INDICATORS, INITIAL_ACTIVITIES } from '../data/flatIndicators';
 import { mergeById, indexById, MERGE_FIELDS, stableStringify } from '../lib/mergeById';
-import { mergeDayRecords, recomputeAttendanceFromDailyRecords } from '../utils/attendance';
+import { mergeDayRecords, recomputeAllAttendanceBySchoolDays } from '../utils/attendance';
 import { getMondayOf, compareStudents, compareClassNames, registerMakeupDates } from '../utils/helpers';
 import { buildAppSnapshot, validateSnapshot } from '../utils/appSnapshot';
 import { pullSnapshotFromCloud, pushSnapshotToCloud } from '../lib/cloudSync';
@@ -1507,16 +1507,22 @@ export function AppProvider({ children }) {
     [evaluatingStudent, setStudents, logSystem],
   );
 
+  // รีเฟรชสถิติมาเรียนของนักเรียน เมื่อบันทึกเช็คชื่อ/ปฏิทินวันหยุด/ช่วงเปิด–ปิดเรียน/ปีการศึกษาเปลี่ยน
+  // (ไม่มีอะไรเปลี่ยน → คืนค่าเดิม จึงไม่เกิดการซิงค์ซ้ำ; ข้ามถ้ายังไม่มีบันทึกรายวันเลย)
+  useEffect(() => {
+    setStudents((prev) =>
+      recomputeAllAttendanceBySchoolDays(prev, dailyRecords, schoolTerms?.[academicYear] ?? [], holidaysEffective),
+    );
+  }, [dailyRecords, schoolTerms, academicYear, holidaysEffective, setStudents]);
+
   const saveDailyAttendance = useCallback(
     (date, recordsByStudentId) => {
       logSystem({ action: 'save', detail: `บันทึกเช็คชื่อ ${date} (${Object.keys(recordsByStudentId ?? {}).length} คน)` });
       const merged = mergeDayRecords(dailyRecords, date, recordsByStudentId);
       setDailyRecords(merged);
+      // สถิติมาเรียน = วันเรียนจริงของห้อง (นิยามเดียวกับสมุดรายงานประจำตัว)
       setStudents((prev) =>
-        prev.map((s) => ({
-          ...s,
-          attendance: recomputeAttendanceFromDailyRecords(merged, s.id),
-        })),
+        recomputeAllAttendanceBySchoolDays(prev, merged, schoolTerms?.[academicYear] ?? [], holidaysEffective),
       );
 
       // ── Auto-sync: เมื่อครูบันทึกการมาเรียน → เช็คอัตโนมัติในทุก tab ──
@@ -1785,7 +1791,7 @@ export function AppProvider({ children }) {
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      dailyRecords, setDailyRecords, setStudents, students, academicYear, logSystem,
+      dailyRecords, setDailyRecords, setStudents, students, academicYear, schoolTerms, logSystem,
       milkRecords,       setMilkRecords,
       lunchRecords,      setLunchRecords,
       toothBrushRecords, setToothBrushRecords,

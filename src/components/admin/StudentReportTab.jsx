@@ -879,9 +879,10 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                   </thead>
                   <tbody>
                     {devDomains.map(domain => {
-                      const domainT2Scores = domain.standards.flatMap(std =>
-                        std.indicators.map(ind => ind.indScores.term2).filter(v => v !== null)
+                      const _ds = (term) => domain.standards.flatMap(std =>
+                        std.indicators.map(ind => ind.indScores[term]).filter(v => v !== null)
                       );
+                      const domainT2Scores = _ds('term2').length ? _ds('term2') : _ds('term1');
                       const domainYearly = domainT2Scores.length
                         ? Math.round(domainT2Scores.reduce((a,b)=>a+b,0)/domainT2Scores.length)
                         : null;
@@ -909,8 +910,8 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                               <td style={{ padding: '6px 8px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 800, ...(t2 ? levelColor(t2) : {}) }}>
                                 {t2 ?? '—'}
                               </td>
-                              <td style={{ padding: '6px 8px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 800, ...(t2 ? levelColor(t2) : {}) }}>
-                                {t2 ?? '—'}
+                              <td style={{ padding: '6px 8px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 800, ...((t2 ?? t1) ? levelColor(t2 ?? t1) : {}) }}>
+                                {t2 ?? t1 ?? '—'}
                               </td>
                             </tr>
                           );

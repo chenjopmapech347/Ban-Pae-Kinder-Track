@@ -10,12 +10,11 @@ import { COMPETENCY_ACTIVITY_MAP } from '../data/competencyActivityMap';
 export function getGrowthLevel(value, low, high) {
   const v = parseFloat(value);
   if (!v || !low || !high) return 0;
-  if (v >= low && v <= high) return 3;
-  // ±1SD approximation: midpoint ±15% of range
-  const mid = (low + high) / 2;
-  const sd1low  = mid - (mid - low) * 0.5;
-  const sd1high = mid + (high - mid) * 0.5;
-  if (v >= sd1low * 0.93 && v <= sd1high * 1.07) return 2;
+  if (v >= low && v <= high) return 3;          // อยู่ในเกณฑ์ (−2SD ถึง +2SD)
+  // ตารางให้เฉพาะ −2SD / +2SD → ช่วงกว้าง 4SD, 1SD = (high − low) / 4
+  // ระดับ 2 = เกินเกณฑ์ไม่ถึง 1SD (ราว ±2SD ถึง ±3SD) · เกินกว่านั้น = ระดับ 1
+  const sd = (high - low) / 4;
+  if (v >= low - sd && v <= high + sd) return 2;
   return 1;
 }
 
@@ -23,6 +22,7 @@ export function calcGrowthLevels(ageYear, ageMonth, weight, height, gender) {
   const key = `${ageYear}-${ageMonth}`;
   const row = GROWTH_TABLE[key];
   if (!row) return { weightLevel: 0, heightLevel: 0 };
+  if (gender !== 'male' && gender !== 'female') return { weightLevel: 0, heightLevel: 0 };  // ไม่ทราบเพศ → ไม่ตัดสิน
   const isMale = gender === 'male';
   const wl = isMale ? row.bwl : row.gwl;
   const wh = isMale ? row.bwh : row.gwh;
@@ -136,12 +136,12 @@ export function genderOf(student) {
 // ── age in years/months at a given date ───────────────────────────────────────
 export function ageAt(birthISO, dateISO) {
   if (!birthISO || !dateISO) return { ageYear: 0, ageMonth: 0 };
-  const birth = new Date(birthISO);
-  const at    = new Date(dateISO);
-  let years   = at.getFullYear() - birth.getFullYear();
-  let months  = at.getMonth() - birth.getMonth();
-  if (months < 0) { years--; months += 12; }
-  return { ageYear: years, ageMonth: months };
+  const p = (s) => String(s).slice(0, 10).split('-').map(Number);   // แยกจากข้อความโดยตรง ไม่พึ่งเขตเวลา
+  const [by, bm, bd] = p(birthISO), [ay, am, ad] = p(dateISO);
+  let total = (ay - by) * 12 + (am - bm);
+  if (ad < bd) total -= 1;                       // ยังไม่ครบเดือนเต็ม
+  if (!(total >= 0)) return { ageYear: 0, ageMonth: 0 };
+  return { ageYear: Math.floor(total / 12), ageMonth: total % 12 };
 }
 
 // ── default physical record ───────────────────────────────────────────────────

@@ -8,18 +8,20 @@ import {
   PHILOSOPHY_TEXT, VISION_TEXT, AIMS, GROWTH_ROWS,
   DEV_ASSESS_DOMAINS, INTRO_LETTER,
 } from '../data/reportConstants';
-import { levelLabel, PHYS_KEYS, PHYS_LABELS, GROWTH_MONTHS_T1, GROWTH_MONTHS_T2, monthRefDate, ageAt } from './reportHelpers';
+import { levelLabel, PHYS_KEYS, PHYS_LABELS, GROWTH_MONTHS_T1, GROWTH_MONTHS_T2, monthRefDate, ageAt, genderOf } from './reportHelpers';
 
 export function printReport({ student, physData, growthRecords, devAssessment, attendanceSummary,
                        devDomains, teacherComments, parentComments, directorsComment,
                        academicYear, schoolName, schoolPhilosophy, schoolVision, schoolLogo,
                        teacherName, directorName }) {
   // ── Compute overall yearly level from all term2 indicator scores ──────────
-  const allT2 = devDomains.flatMap(d =>
+  // สรุปตลอดปี = ผลภาคเรียนที่ 2 ถ้ายังไม่มีผลภาคเรียนที่ 2 ใช้ผลภาคเรียนที่ 1
+  const _scoresOf = (term) => devDomains.flatMap(d =>
     d.standards.flatMap(std =>
-      std.indicators.map(ind => ind.indScores?.term2).filter(v => v !== null && v !== undefined)
+      std.indicators.map(ind => ind.indScores?.[term]).filter(v => v !== null && v !== undefined)
     )
   );
+  const allT2 = _scoresOf('term2').length ? _scoresOf('term2') : _scoresOf('term1');
   const overallLevel = allT2.length ? Math.round(allT2.reduce((a, b) => a + b, 0) / allT2.length) : null;
   const overallLevelLabel = overallLevel === 3 ? 'ดี' : overallLevel === 2 ? 'พอใช้' : overallLevel === 1 ? 'ควรส่งเสริม' : '—';
   const levelBg    = overallLevel === 3 ? '#16a34a' : overallLevel === 2 ? '#ca8a04' : '#dc2626';
@@ -31,7 +33,10 @@ export function printReport({ student, physData, growthRecords, devAssessment, a
     : 'ระดับถัดไป';
 
   // ── Gender ────────────────────────────────────────────────────────────────
-  const genderPrefix = student?.gender === 'F' ? 'เด็กหญิง' : 'เด็กชาย';
+  // ชื่อที่มีคำนำหน้าอยู่แล้ว (เด็กชาย…/เด็กหญิง…/ด.ช./ด.ญ.) ไม่ต้องเติมซ้ำ
+  const _hasTitle = /^(เด็กชาย|เด็กหญิง|ด\.?\s?ช\.?|ด\.?\s?ญ\.?)/.test(String(student?.name ?? '').trim());
+  const _g = genderOf(student);
+  const genderPrefix = _hasTitle ? '' : _g === 'female' ? 'เด็กหญิง' : _g === 'male' ? 'เด็กชาย' : 'เด็ก';
 
   const _philosophy = schoolPhilosophy?.trim() || PHILOSOPHY_TEXT;
   const _vision     = schoolVision?.trim()     || VISION_TEXT;
@@ -585,7 +590,7 @@ export function printReport({ student, physData, growthRecords, devAssessment, a
           const allIndScores2 = std.indicators.map(ind => ind.indScores.term2).filter(v => v !== null);
           const t1 = allIndScores1.length ? Math.round(allIndScores1.reduce((a,b)=>a+b,0)/allIndScores1.length) : null;
           const t2 = allIndScores2.length ? Math.round(allIndScores2.reduce((a,b)=>a+b,0)/allIndScores2.length) : null;
-          const yearly = t2;
+          const yearly = t2 !== null ? t2 : t1;   // ไม่มีผลภาค 2 → ใช้ภาค 1
           return `<tr>
             <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center">${std.stdNo ?? (si+1)}</td>
             <td style="padding:3px 5px;border:1px solid #d1d5db">${std.title}</td>
@@ -598,9 +603,10 @@ export function printReport({ student, physData, growthRecords, devAssessment, a
             <td style="padding:3px 5px;border:1px solid #d1d5db;text-align:center;font-weight:700">${yearly !== null ? yearly : '—'}</td>
           </tr>`;
         }).join('');
-        const allDomainT2 = domain.standards.flatMap(std =>
-          std.indicators.map(ind => ind.indScores.term2).filter(v => v !== null)
+        const _dom = (term) => domain.standards.flatMap(std =>
+          std.indicators.map(ind => ind.indScores[term]).filter(v => v !== null)
         );
+        const allDomainT2 = _dom('term2').length ? _dom('term2') : _dom('term1');
         const domainYearly = allDomainT2.length ? Math.round(allDomainT2.reduce((a,b)=>a+b,0)/allDomainT2.length) : null;
         return `<tr style="background:#f0f0f0">
           <td colspan="8" style="padding:4px 8px;border:1px solid #d1d5db;font-weight:800">${domain.emoji} ด้าน${domain.label}</td>
@@ -608,7 +614,7 @@ export function printReport({ student, physData, growthRecords, devAssessment, a
         </tr>${domainRows}`;
       }).join('')}
     </table>
-    <p style="font-size:.7rem;color:#666">หมายเหตุ: สรุปตลอดปีการศึกษา นำผลการประเมินภาคเรียนที่ 2 มารวมกัน แล้วหารด้วยจำนวนมาตรฐานในด้านพัฒนาการนั้น</p>
+    <p style="font-size:.7rem;color:#666">หมายเหตุ: สรุปตลอดปีการศึกษา นำผลการประเมินภาคเรียนที่ 2 มารวมกัน แล้วหารด้วยจำนวนมาตรฐานในด้านพัฒนาการนั้น (ถ้ายังไม่มีผลภาคเรียนที่ 2 ใช้ผลภาคเรียนที่ 1)</p>
     </div>
 
     <!-- ══ หน้า: สมรรถนะผู้เรียน (bar chart) ══ -->

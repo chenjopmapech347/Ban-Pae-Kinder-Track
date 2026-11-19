@@ -76,6 +76,7 @@ function calcWeightHeight(weight, height, gender = 'ชาย') {
 }
 
 function autoCalc(row, gender) {
+  if (gender !== 'ชาย' && gender !== 'หญิง') return { weightForAge: '', heightForAge: '', weightForHeight: '' };
   return {
     weightForAge:    calcWeightAge(row.weight, row.ageYear, row.ageMonth, gender),
     heightForAge:    calcHeightAge(row.height, row.ageYear, row.ageMonth, gender),
@@ -105,18 +106,18 @@ function genderOf(student) {
   // fallback: อ่านจากชื่อตามธรรมเนียมไทย
   if (student.name?.includes('ชาย')) return 'ชาย';
   if (student.name?.includes('หญิง')) return 'หญิง';
-  return 'ชาย';
+  return '';   // ไม่ทราบเพศ — ไม่คำนวณผลอัตโนมัติ (ให้ครูระบุเพศก่อน)
 }
 
 // ── ageAt — คำนวณอายุจากวันเกิด ณ วันที่ประเมิน ─────────────────────────────
 function ageAt(birthISO, dateISO) {
   if (!birthISO || !dateISO) return null;
-  const birth = new Date(birthISO);
-  const at    = new Date(dateISO);
-  let years   = at.getFullYear() - birth.getFullYear();
-  let months  = at.getMonth()    - birth.getMonth();
-  if (months < 0) { years--; months += 12; }
-  return { ageYear: years, ageMonth: months };
+  const p = (s) => String(s).slice(0, 10).split('-').map(Number);   // แยกจากข้อความโดยตรง ไม่พึ่งเขตเวลา
+  const [by, bm, bd] = p(birthISO), [ay, am, ad] = p(dateISO);
+  let total = (ay - by) * 12 + (am - bm);
+  if (ad < bd) total -= 1;                       // ยังไม่ครบเดือนเต็ม
+  if (!(total >= 0)) return { ageYear: 0, ageMonth: 0 };
+  return { ageYear: Math.floor(total / 12), ageMonth: total % 12 };
 }
 
 // ── NutritionTab ──────────────────────────────────────────────────────────────

@@ -222,19 +222,21 @@ export default function EvaluationTab() {
   };
 
   // บันทึกคะแนนไปยัง activityId ทั้งหมดที่เชื่อมโยงกับ source (tooth/milk/lunch/nutrition)
-  const handleSuggestAll = (source, suggestedScores) => {
-    const targetActIds = SOURCE_ACTIVITY_MAP[source];
+  // perActivity (ไม่บังคับ): { [actId]: { [studentId]: score } } — ใช้กับ "วันสำคัญ" ที่แต่ละกิจกรรมผูกกับตัวบ่งชี้ต่างกัน
+  const handleSuggestAll = (source, suggestedScores, perActivity = null) => {
+    const targetActIds = perActivity ? Object.keys(perActivity) : SOURCE_ACTIVITY_MAP[source];
     if (!targetActIds?.length) return;
 
     const now = new Date().toISOString();
     const updated = students.map(s => {
       if (!classStudents.find(cs => cs.id === s.id)) return s;
-      const score = suggestedScores[s.id] ?? 0;
+      const defaultScore = suggestedScores[s.id] ?? 0;
 
       // ใช้ immutable pattern — สำเนา indicators แล้ว apply ทุก actId
       let prevIndicators = { ...(s.assessments?.indicators ?? {}) };
 
       targetActIds.forEach(actId => {
+        const score = perActivity ? (perActivity[actId]?.[s.id] ?? 0) : defaultScore;
         // indicatorId = 3 segments แรกของ actId (domainId__stdId__indId)
         const indId = actId.split('__').slice(0, 3).join('__');
         const prevIndGroup = prevIndicators[indId] ?? {};

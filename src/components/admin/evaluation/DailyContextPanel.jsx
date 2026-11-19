@@ -56,6 +56,29 @@ export default function DailyContextPanel({
       pickupRecords, healthCheckRecords, illnessCheckRecords, cornerRecords, innerCornerRecords,
       dailyRoutineRecords, specialEvents, selClass]);
 
+  // วันสำคัญ: ใช้ตัวบ่งชี้ที่ "เชื่อมโยงไว้ในแต่ละกิจกรรม" (หน้ากิจกรรมวันสำคัญ) — คะแนนแต่ละกิจกรรมคิดจาก
+  // สัดส่วนการเข้าร่วม "เฉพาะกิจกรรมวันสำคัญของห้องนี้ที่ผูกกับกิจกรรมนั้น" ถ้ายังไม่ได้เชื่อมโยงเลยใช้ตารางกลาง
+  const eventLinks = useMemo(() => {
+    const evs = Object.values(specialEvents ?? {}).filter(ev => ev && (ev.scope === 'all' || ev.scope === selClass));
+    const byAct = {};
+    evs.forEach(ev => (ev.activityIds ?? []).forEach(id => { (byAct[id] ??= []).push(ev); }));
+    return byAct;
+  }, [specialEvents, selClass]);
+  const eventActIds = Object.keys(eventLinks);
+  function eventPerActivity() {
+    const per = {};
+    eventActIds.forEach(id => {
+      per[id] = {};
+      const evs = eventLinks[id];
+      classStudents.forEach(s => {
+        const done = evs.filter(ev => ev.participants?.[String(s.id)] === true).length;
+        per[id][s.id] = pctToScore(Math.round(done / evs.length * 100));
+      });
+    });
+    return per;
+  }
+  const targetCount = from === 'events' && eventActIds.length ? eventActIds.length : SOURCE_ACTIVITY_MAP[from]?.length;
+
   const SOURCES = [
     { key: 'attend',       label: '✅ มาเรียน' },
     { key: 'tooth',        label: '🪥 แปรงฟัน' },
@@ -135,13 +158,14 @@ export default function DailyContextPanel({
                   const st = stats[s.id]?.[from];
                   suggested[s.id] = pctToScore(st?.pct ?? null);
                 });
-                onSuggestAll(from, suggested);
+                if (from === 'events' && eventActIds.length) onSuggestAll(from, suggested, eventPerActivity());
+                else onSuggestAll(from, suggested);
               }} style={{
                 padding: '.28rem .9rem', borderRadius: '8px', border: 'none',
                 background: '#059669', color: 'white', fontFamily: 'inherit',
                 fontWeight: 700, fontSize: '.8rem', cursor: 'pointer',
               }}>
-                💾 บันทึก {SOURCE_ACTIVITY_MAP[from].length} กิจกรรมที่เชื่อมโยง
+                💾 บันทึก {targetCount} กิจกรรมที่เชื่อมโยง
               </button>
             )}
             <span style={{ fontSize: '.72rem', color: '#9ca3af' }}>≥80%→3 · 60-79%→2 · &lt;60%→1</span>

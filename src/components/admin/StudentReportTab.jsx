@@ -288,42 +288,47 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
   }, [dailyRecords, student, students, schoolTerms, academicYear, holidays]);
 
   // ── developmental domains (from indicators + student.assessments) ─────────
+  // รายการกิจกรรม/ตัวบ่งชี้ในสมุดรายงานยึดตาม "จัดการจับคู่ กิจกรรม ↔ ตัวบ่งชี้ ↔ ความสามารถผู้เรียน"
+  // (state activities/indicators — เพิ่ม ลบ ย้าย แก้ชื่อกิจกรรมแล้วสมุดรายงานตามทันที) ใช้ INDICATORS_DATA_68 เป็นโครงด้าน/มาตรฐานและค่าเริ่มต้นเท่านั้น
   const devDomains = useMemo(() => {
     if (!student) return [];
+    const hasStore = (activities?.length ?? 0) > 0;
+    const actsByInd = {};
+    (activities ?? []).forEach(a => { (actsByInd[a.indicatorId] ??= []).push(a); });
+    const buildInd = (domainId, indKey, base) => {
+      const indData = student.assessments?.indicators?.[indKey] ?? {};
+      let list;
+      if (hasStore) {
+        list = (actsByInd[indKey] ?? []).slice().sort((x, y) => Number(x.no) - Number(y.no)).map(a => ({ id: a.id, label: a.label }));
+      } else {
+        list = (base.items ?? []).flatMap(item => item.activities.map(act => ({ id: `${indKey}__${item.id}__${act.no}`, label: act.label })));
+      }
+      const actIds = list.map(x => x.id);
+      const actLabels = Object.fromEntries(list.map(x => [x.id, x.label]));
+      const scores = {};
+      actIds.forEach(id => {
+        scores[id] = { term1: getActivityTermScore(indData[id], 1), term2: getActivityTermScore(indData[id], 2) };
+      });
+      const indScores = { term1: getIndicatorTermScore(indData, actIds, 1), term2: getIndicatorTermScore(indData, actIds, 2) };
+      return { ...base, indKey, actIds, actLabels, scores, indScores };
+    };
     return INDICATORS_DATA_68.map(domain => ({
       ...domain,
-      standards: domain.standards.map(std => ({
-        ...std,
-        indicators: std.indicators.map(ind => {
-          const indKey  = `${domain.id}__${std.id}__${ind.id}`;
-          const indData = student.assessments?.indicators?.[indKey] ?? {};
-          const actIds  = [];
-          const actLabels = {};
-          ind.items.forEach(item => {
-            item.activities.forEach(act => {
-              const actKey = `${indKey}__${item.id}__${act.no}`;
-              // find in activities store (may have been renamed)
-              const stored = activities.find(a => a.id === actKey);
-              actIds.push(actKey);
-              actLabels[actKey] = stored?.label ?? act.label;
-            });
-          });
-          const scores = {};
-          actIds.forEach(id => {
-            scores[id] = {
-              term1: getActivityTermScore(indData[id], 1),
-              term2: getActivityTermScore(indData[id], 2),
-            };
-          });
-          const indScores = {
-            term1: getIndicatorTermScore(indData, actIds, 1),
-            term2: getIndicatorTermScore(indData, actIds, 2),
-          };
-          return { ...ind, indKey, actIds, actLabels, scores, indScores };
-        }),
-      })),
+      standards: domain.standards.map(std => {
+        const known = new Set(std.indicators.map(i => i.id));
+        const fromData = std.indicators.map(ind => {
+          const indKey = `${domain.id}__${std.id}__${ind.id}`;
+          const stored = (indicators ?? []).find(i => i.id === indKey);
+          return buildInd(domain.id, indKey, { ...ind, label: stored?.label ?? ind.label });
+        });
+        // ตัวบ่งชี้ที่เพิ่มเองในระบบ (ไม่อยู่ในไฟล์หลักสูตร) ภายในมาตรฐานเดียวกัน
+        const extras = (indicators ?? [])
+          .filter(i => i.domainId === domain.id && i.standardId === std.id && !known.has(i.indicatorCode))
+          .map(i => buildInd(domain.id, i.id, { id: i.indicatorCode, label: i.label, items: [] }));
+        return { ...std, indicators: [...fromData, ...extras] };
+      }),
     }));
-  }, [student, activities]);
+  }, [student, activities, indicators]);
 
   // ── section tabs ──────────────────────────────────────────────────────────
   const SECTIONS = [

@@ -18,7 +18,7 @@ import {
   DEV_ASSESS_DOMAINS,
 } from '../../data/reportConstants';
 import { calcGrowthLevels, levelColor, getActivityTermScore, getIndicatorTermScore, gradeLabelOf, suggestLevelFromIndicator, genderOf, ageAt, PHYS_KEYS, PHYS_LABELS, PHYS_MONTH_HINTS, emptyPhys, GROWTH_MONTHS_T1, GROWTH_MONTHS_T2, GROWTH_MONTHS_ALL, monthRefDate, buildNutritionIndex, emptyGrowth, domainAllComponents, emptyDevAssess, devAssessDomainAvg, computeDevAssessFill, derivedAbilityLevels } from '../../utils/reportHelpers';
-import { withAutoDev } from '../../utils/autoDevelopment';
+import { withAutoDev, withNutritionDev } from '../../utils/autoDevelopment';
 import { printReport } from '../../utils/printReport';
 import { ui } from '../../ui/ui';
 
@@ -66,12 +66,12 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
 
   // นักเรียน + คะแนนพัฒนาการที่ระบบเติมจากเช็คชื่อ (เฉพาะกิจกรรมที่ครูยังไม่ให้คะแนน)
   const student = useMemo(() =>
-    withAutoDev((() => {
+    withNutritionDev(withAutoDev((() => {
       const st = students.find(s => String(s.id) === String(selStudentId)) ?? null;
       // ลาออกแล้ว: ไม่แสดง เว้นแต่เปิดตัวเลือก "แสดงนักเรียนที่ลาออก" (ผู้ปกครองที่เปิดจากหน้าบุตรไม่เกี่ยว)
       return st && !initialStudentId && !showWithdrawn && isWithdrawnNow(st) ? null : st;
-    })(), autoDevLedger)
-  , [students, selStudentId, autoDevLedger, showWithdrawn, initialStudentId]);
+    })(), autoDevLedger), nutritionRecords, academicYear)
+  , [students, selStudentId, autoDevLedger, showWithdrawn, initialStudentId, nutritionRecords, academicYear]);
 
   // ── record key ────────────────────────────────────────────────────────────
   const recKey = selStudentId ? `${selStudentId}__${academicYear}` : null;

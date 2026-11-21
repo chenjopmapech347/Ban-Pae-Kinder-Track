@@ -7,7 +7,8 @@
 // - แก้เป็นขาด/ลา/ป่วย → ถูกถอดออกจาก p → ระดับกลับเป็น 0 (ลบเฉพาะที่ระบบเติมเอง คะแนนที่ครูให้ไม่ถูกแตะ)
 // - กิจกรรมที่ครูให้คะแนนเองในภาคนั้นแล้ว → ใช้ของครูก่อน (auto เติมเฉพาะที่ยังว่าง)
 import { INDICATORS_DATA_68 } from '../data/indicatorsData_68';
-import { SOURCE_ACTIVITY_NO } from '../data/evaluationConstants';
+import { SOURCE_ACTIVITY_NO, SOURCE_ACTIVITY_MAP } from '../data/evaluationConstants';
+import { growthLevelsForTerm } from './reportHelpers';
 
 export const AUTO_LEVEL = 3;
 
@@ -76,4 +77,28 @@ export function withAutoDev(student, ledger) {
     next[indId] = group;
   });
   return { ...student, assessments: { ...(student.assessments ?? {}), indicators: next } };
+}
+
+/**
+ * เติมคะแนนกิจกรรมชั่งน้ำหนัก (no.1) / วัดส่วนสูง (no.3) จากข้อมูลภาวะโภชนาการ (nutritionRecords) ตามภาคเรียน
+ * ระดับ = ผลเทียบเกณฑ์ที่คำนวณจากน้ำหนัก/ส่วนสูงจริง (1–3) ไม่ใช่ค่าคงที่ — ไม่แตะคะแนนที่ครูให้ (r1–r4)
+ */
+export function withNutritionDev(student, nutritionRecords, academicYear) {
+  if (!student || !nutritionRecords) return student;
+  const [weightAct, heightAct] = SOURCE_ACTIVITY_MAP.nutrition ?? [];
+  if (!weightAct && !heightAct) return student;
+  const next = { ...(student.assessments?.indicators ?? {}) };
+  let changed = false;
+  [1, 2].forEach(t => {
+    const lv = growthLevelsForTerm(student, nutritionRecords, academicYear, t);
+    [[weightAct, lv.weightLevel], [heightAct, lv.heightLevel]].forEach(([actId, level]) => {
+      if (!actId || !(level > 0)) return;
+      const indId = actId.split('__').slice(0, 3).join('__');
+      const group = { ...(next[indId] ?? {}) };
+      group[actId] = { ...(group[actId] ?? {}), [`autoT${t}`]: level };
+      next[indId] = group;
+      changed = true;
+    });
+  });
+  return changed ? { ...student, assessments: { ...(student.assessments ?? {}), indicators: next } } : student;
 }

@@ -310,7 +310,9 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
         scores[id] = { term1: getActivityTermScore(indData[id], 1), term2: getActivityTermScore(indData[id], 2) };
       });
       const indScores = { term1: getIndicatorTermScore(indData, actIds, 1), term2: getIndicatorTermScore(indData, actIds, 2) };
-      return { ...base, indKey, actIds, actLabels, scores, indScores };
+      // ตัดตัวอักษร "ข" ท้ายเลขตัวบ่งชี้ (1.1ข → 1.1) ทั้งในหน้าจอและตอนพิมพ์
+      const label = String(base.label ?? '').replace(/(\d)ข/g, '$1');
+      return { ...base, label, indKey, actIds, actLabels, scores, indScores };
     };
     return INDICATORS_DATA_68.map(domain => ({
       ...domain,
@@ -959,7 +961,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                           return (
                             <tr key={`ind-${domain.id}-${ind.id}`} style={{ background: si % 2 === 0 ? 'white' : '#fafafa' }}>
                               <td style={{ padding: '6px 8px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 700, color: '#6b7280' }}>{String(ind.id).replace(/(\d)ข/g,'$1')}</td>
-                              <td style={{ padding: '6px 8px', border: '1px solid #e5e7eb', fontSize: '.78rem' }}>{String(ind.label).replace(/^ตัวบ่งชี้\s*[\d.]+\s*/, '')}</td>
+                              <td style={{ padding: '6px 8px', border: '1px solid #e5e7eb', fontSize: '.78rem' }}>{String(ind.label).replace(/^ตัวบ่งชี้\s*[\d.ข]+\s*/, '')}</td>
                               <td style={{ padding: '6px 8px', border: '1px solid #e5e7eb', textAlign: 'center', fontWeight: 800, ...(t1 ? levelColor(t1) : {}) }}>
                                 {t1 ?? '—'}
                               </td>

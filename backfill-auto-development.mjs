@@ -192,7 +192,12 @@ if (isMain) {
   const snapDoc = await getDoc(doc(db, 'schools', 'default', 'snapshots', 'latest'));
   const dailyDoc = await getDoc(doc(db, 'schools', 'default', 'dailyData', 'latest'));
   if (!snapDoc.exists() || !dailyDoc.exists()) { console.log('❌ ไม่พบ snapshots/latest หรือ dailyData/latest'); process.exit(1); }
-  const snap = snapDoc.data(), daily = dailyDoc.data();
+  const snap = snapDoc.data(), daily = { ...dailyDoc.data() };
+  // ข้อมูลรายวันที่บันทึกหลังแบ่ง shard อยู่ในเอกสาร dailyData/{field}__{bucket} — ต้องรวมด้วย (shard ทับค่าเดิมระดับ key เหมือนที่แอปทำ)
+  (await getDocs(collection(db, 'schools', 'default', 'dailyData'))).forEach(d => {
+    const x = d.data();
+    if (x?.field && x.data) daily[x.field] = { ...(daily[x.field] ?? {}), ...x.data };
+  });
 
   const { ledger, stats } = buildLedger({
     students: snap.students ?? [],

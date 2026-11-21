@@ -13,7 +13,7 @@
 //   otherName/otherPhone/otherId: string [backward compat กรณีผู้รับอื่นๆ]
 import { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
-import { todayISO, formatDateThai, compareStudents, compareClassNames } from '../../utils/helpers';
+import { todayISO, formatDateThai, compareStudents, compareClassNames, isClosedAfterWithdraw } from '../../utils/helpers';
 import { useTermRange, OUT_OF_TERM_MSG } from '../../hooks/useTermRange';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
@@ -147,8 +147,8 @@ export default function PickupTab({ defaultClass }) {
   const teacher = teachers?.find(t => t.className === filterClass);
 
   const classStudents = useMemo(
-    () => students.filter(s => s.className === filterClass && !s.name.startsWith('(ว่าง)')).sort(compareStudents),
-    [students, filterClass]
+    () => students.filter(s => s.className === filterClass && !s.name.startsWith('(ว่าง)') && !isClosedAfterWithdraw(s, selectedDate)).sort(compareStudents), // ลาออกแล้ว ณ วันที่เลือก → ไม่แสดง (ข้อมูลเดิมยังอยู่)
+    [students, filterClass, selectedDate]
   );
 
   const dayRecords = useMemo(() => pickupRecords[selectedDate] ?? {}, [pickupRecords, selectedDate]);

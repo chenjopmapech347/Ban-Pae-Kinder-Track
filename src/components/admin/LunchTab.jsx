@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 import { useTermRange } from '../../hooks/useTermRange';
-import { daysInMonth, getDow, isWeekendDay, compareStudents } from '../../utils/helpers';
+import { daysInMonth, getDow, isWeekendDay, compareStudents, isCellClosed } from '../../utils/helpers';
 import { ui } from '../../ui/ui';
 
 // ── สัญลักษณ์ ────────────────────────────────────────────────────────────────
@@ -94,11 +94,12 @@ export default function LunchTab({ teacherClassFilter = null }) {
   const numDays = useMemo(() => daysInMonth(selYear, selMonth), [selYear, selMonth]);
   const dayArr  = useMemo(() => Array.from({ length: numDays }, (_, i) => i + 1), [numDays]);
 
+  // นักเรียนที่ลาออกก่อนเดือนนี้ทั้งเดือน → ไม่แสดงชื่อ (ข้อมูลเดิมยังอยู่ ไม่ถูกลบ) / ลาออกกลางเดือน → แสดงถึงวันก่อนลาออก
   const classStudents = useMemo(() =>
     students
-      .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
+      .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)') && !isCellClosed(s, selYear, selMonth, 1))
       .sort(compareStudents),
-    [students, selClass]
+    [students, selClass, selYear, selMonth]
   );
 
   const [draft, setDraft] = useState(() => {
@@ -160,6 +161,8 @@ export default function LunchTab({ teacherClassFilter = null }) {
   }
 
   function cycleCell(studentId, day) {
+    const stu = classStudents.find(x => x.id === studentId);
+    if (stu && isCellClosed(stu, selYear, selMonth, day)) return; // ลาออกแล้ว → ปิดการบันทึกตั้งแต่วันลาออก
     setSaved(false);
     setDraft(prev => {
       const cur  = prev.students[studentId]?.days?.[day] ?? '';
@@ -177,12 +180,13 @@ export default function LunchTab({ teacherClassFilter = null }) {
 
   function toggleAllH(day) {
     if (isSchoolOff(selYear, selMonth, day)) return;
-    const allH = classStudents.length > 0 &&
-      classStudents.every(s => isDone(draft.students[s.id]?.days?.[day]));
+    const openStudents = classStudents.filter(s => !isCellClosed(s, selYear, selMonth, day)); // ข้ามคนที่ลาออกแล้ว
+    const allH = openStudents.length > 0 &&
+      openStudents.every(s => isDone(draft.students[s.id]?.days?.[day]));
     setSaved(false);
     setDraft(prev => {
       const updated = { ...prev.students };
-      classStudents.forEach(s => {
+      openStudents.forEach(s => {
         const sData = updated[s.id] ?? { days: {} };
         updated[s.id] = { ...sData, days: { ...(sData.days ?? {}), [day]: allH ? 'X' : DONE_SYM } };
       });
@@ -436,20 +440,23 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                     {dayArr.map(d => {
                       const v    = sData.days?.[d] ?? '';
                       const wknd = isSchoolOff(selYear, selMonth, d);
+                      const closed = !wknd && isCellClosed(s, selYear, selMonth, d); // หลังวันลาออก
                       const st   = CELL_STYLE[v] ?? CELL_STYLE[''];
                       return (
                         <td key={d}
-                          onClick={() => !wknd && cycleCell(s.id, d)}
+                          title={closed ? `ลาออกแล้ว (ตั้งแต่ ${s.withdrawDate}) — ปิดการบันทึก` : undefined}
+                          onClick={() => !wknd && !closed && cycleCell(s.id, d)}
                           style={{
                             textAlign:'center', border:'1px solid #e5e7eb',
                             minWidth:'22px', maxWidth:'26px', padding:'3px 1px',
-                            background: wknd ? '#e5e7eb' : st.bg,
-                            color: wknd ? '#d1d5db' : st.color,
+                            background: wknd ? '#e5e7eb' : closed ? '#f3f4f6' : st.bg,
+                            color: wknd ? '#d1d5db' : closed ? '#9ca3af' : st.color,
                             fontWeight: st.fw, fontSize:'.72rem',
-                            cursor: wknd ? 'default' : 'pointer',
+                            cursor: wknd ? 'default' : closed ? 'not-allowed' : 'pointer',
                             userSelect: 'none',
+                            opacity: closed ? 0.6 : 1,
                           }}>
-                          {wknd ? '' : (v || '·')}
+                          {wknd ? '' : (v || (closed ? '' : '·'))}
                         </td>
                       );
                     })}

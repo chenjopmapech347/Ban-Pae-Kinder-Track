@@ -14,6 +14,27 @@ export function isStudentActive(student, dateISO) {
   return true; // ปกติ
 }
 
+/**
+ * นักเรียนที่ลาออก: "ปิดการบันทึก" ตั้งแต่วันลาออกเป็นต้นไป (ข้อมูลเดิมยังอยู่ ดูได้ ไม่ถูกลบ)
+ * - true เมื่อ status = ลาออก และมี withdrawDate และ dateISO >= withdrawDate
+ * - ลาออกแต่ไม่ระบุวันที่ → false (ไม่ปิด เพื่อไม่ให้ล็อกข้อมูลเก่า — ให้กรอกวันที่ลาออกในหน้านักเรียน)
+ */
+export function isClosedAfterWithdraw(student, dateISO) {
+  return (student?.status ?? 'ปกติ') === 'ลาออก' && !!student?.withdrawDate && dateISO >= student.withdrawDate;
+}
+
+/** นักเรียนลาออกแล้ว ณ วันนี้ (ไม่แสดงในรายชื่อสมุดรายงาน/พิมพ์รายงานไม่ได้) — ลาออกแต่ไม่มีวันที่ ถือว่าลาออกแล้ว */
+export function isWithdrawnNow(student) {
+  if ((student?.status ?? 'ปกติ') !== 'ลาออก') return false;
+  return !student.withdrawDate || todayISO() >= student.withdrawDate;
+}
+
+/** เหมือน isClosedAfterWithdraw แต่รับ ปี พ.ศ./เดือน/วัน (ใช้ในตารางรายเดือน) */
+export function isCellClosed(student, buddhistYear, month, day) {
+  const iso = `${buddhistYear - 543}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  return isClosedAfterWithdraw(student, iso);
+}
+
 export function getLevelColor(level) {
   switch (level) {
     case 'K1':

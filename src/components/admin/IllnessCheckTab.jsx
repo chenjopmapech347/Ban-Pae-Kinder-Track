@@ -5,7 +5,7 @@ import { useTermRange } from '../../hooks/useTermRange';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { ui } from '../../ui/ui';
 
-import { compareStudents, isWeekendISO } from '../../utils/helpers';
+import { compareStudents, isWeekendISO, isCellClosed } from '../../utils/helpers';
 // ── ฟังก์ชันคำนวณโภชนาการ (กรมอนามัย ±1.5SD) ────────────────────────────────
 
 // ── สัญลักษณ์การบันทึก ────────────────────────────────────────────────────────
@@ -72,25 +72,25 @@ function countPresent(days) {
 }
 
 // ── DayCell ───────────────────────────────────────────────────────────────────
-function DayCell({ value, onCycle, onDetail, isWeekend }) {
+function DayCell({ value, onCycle, onDetail, isWeekend, closed }) {
   const sym = value?.v ?? '';
   const style = SYM_STYLE[sym] ?? SYM_STYLE[''];
   return (
     <td
-      onClick={onCycle}
-      onContextMenu={e => { e.preventDefault(); onDetail(); }}
-      title={sym ? `${sym} — คลิกขวาเพื่อแก้ไขรายละเอียด` : 'คลิกเพื่อบันทึก'}
+      onClick={closed ? undefined : onCycle}
+      onContextMenu={e => { e.preventDefault(); if (!closed) onDetail(); }}
+      title={closed ? 'ลาออกแล้ว — ปิดการบันทึกตั้งแต่วันลาออก' : sym ? `${sym} — คลิกขวาเพื่อแก้ไขรายละเอียด` : 'คลิกเพื่อบันทึก'}
       style={{
-        textAlign: 'center', cursor: 'pointer', userSelect: 'none',
+        textAlign: 'center', cursor: closed ? 'not-allowed' : 'pointer', userSelect: 'none', opacity: closed ? 0.6 : 1,
         border: '1px solid #e5e7eb',
         minWidth: '24px', maxWidth: '28px', padding: '3px 1px',
-        background: isWeekend ? '#f9fafb' : (style.bg),
-        color: isWeekend ? '#d1d5db' : style.color,
+        background: isWeekend ? '#f9fafb' : closed ? '#f3f4f6' : (style.bg),
+        color: isWeekend ? '#d1d5db' : closed ? '#9ca3af' : style.color,
         fontWeight: style.fw, fontSize: '.72rem',
         position: 'relative',
       }}
     >
-      {sym || (isWeekend ? '' : '·')}
+      {sym || (isWeekend || closed ? '' : '·')}
       {value?.fam  && <span style={{ position:'absolute', top:0, right:'1px', fontSize:'.55rem', color:'#e11d48' }}>*</span>}
       {value?.home && <span style={{ position:'absolute', bottom:0, right:'1px', fontSize:'.55rem', color:'#0891b2' }}>○</span>}
     </td>
@@ -222,11 +222,12 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
     return isWeekendISO(`${selYear - 543}-${String(selMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
   };
 
+  // นักเรียนที่ลาออกก่อนเดือนนี้ทั้งเดือน → ไม่แสดงชื่อ (ข้อมูลเดิมยังอยู่ ไม่ถูกลบ) / ลาออกกลางเดือน → แสดงถึงวันก่อนลาออก
   const classStudents = useMemo(() =>
     students
-      .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
+      .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)') && !isCellClosed(s, selYear, selMonth, 1))
       .sort(compareStudents),
-    [students, selClass]
+    [students, selClass, selYear, selMonth]
   );
 
   // ── ดึงน้ำหนัก/ส่วนสูงของแต่ละคนจาก nutritionRecords ──
@@ -284,6 +285,8 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
 
   // คลิก cell วน symbol
   function cycleCell(studentId, day) {
+    const stu = classStudents.find(x => x.id === studentId);
+    if (stu && isCellClosed(stu, selYear, selMonth, day)) return; // ลาออกแล้ว
     if (outOfTerm(day)) return; // นอกช่วงเปิด–ปิดเรียน บันทึกไม่ได้
     setSaved(false);
     setDraft(prev => {
@@ -303,12 +306,13 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
   // กด checkbox บนหัวตาราง → เลือก/ยกเลิก √ ทุกคนในคอลัมน์วันนั้น
   function toggleDayColumn(day) {
     if (isWeekend(day)) return;
-    const allChecked = classStudents.length > 0 &&
-      classStudents.every(s => draft.students[s.id]?.days?.[day]?.v === '√');
+    const openStudents = classStudents.filter(s => !isCellClosed(s, selYear, selMonth, day)); // ข้ามคนที่ลาออกแล้ว
+    const allChecked = openStudents.length > 0 &&
+      openStudents.every(s => draft.students[s.id]?.days?.[day]?.v === '√');
     setSaved(false);
     setDraft(prev => {
       const newStudents = { ...prev.students };
-      classStudents.forEach(s => {
+      openStudents.forEach(s => {
         const sData = newStudents[s.id] ?? { days: {}, weight: 0, height: 0 };
         const days = { ...(sData.days ?? {}) };
         days[day] = allChecked ? emptyDay() : defaultDay();
@@ -320,6 +324,8 @@ export default function IllnessCheckTab({ teacherClassFilter = null }) {
 
   // บันทึกจาก modal
   function saveDetail(studentId, day, entry) {
+    const stu = classStudents.find(x => x.id === studentId);
+    if (stu && isCellClosed(stu, selYear, selMonth, day)) return; // ลาออกแล้ว
     if (outOfTerm(day)) return;
     setSaved(false);
     setDraft(prev => {
@@ -599,6 +605,7 @@ ${schoolLogo ? `<div style="text-align:center;margin-bottom:4px"><img src="${sch
                         key={d}
                         value={sData.days?.[d]}
                         isWeekend={isWeekend(d)}
+                        closed={!isWeekend(d) && isCellClosed(s, selYear, selMonth, d)}
                         onCycle={() => cycleCell(s.id, d)}
                         onDetail={() => !outOfTerm(d) && setModal({ studentId: s.id, day: d })}
                       />

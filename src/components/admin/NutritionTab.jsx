@@ -8,7 +8,7 @@ import {
 } from 'docx';
 import { ui } from '../../ui/ui';
 
-import { compareStudents, todayISO as _localTodayISO } from '../../utils/helpers';
+import { compareStudents, todayISO as _localTodayISO, isClosedAfterWithdraw } from '../../utils/helpers';
 import { useTermRange, OUT_OF_TERM_MSG } from '../../hooks/useTermRange';
 // ── ตัวเลือกผลประเมิน ────────────────────────────────────────────────────────
 const WEIGHT_AGE_OPTS = [
@@ -138,11 +138,12 @@ export default function NutritionTab({ teacherClassFilter = null }) {
 
   const key = useMemo(() => recKey(selClass, academicYear, selDate), [selClass, academicYear, selDate]);
 
+  // ลาออกแล้ว ณ วันที่เลือก → ไม่แสดงชื่อ (ข้อมูลเดิมยังอยู่)
   const classStudents = useMemo(() =>
     students
-      .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
+      .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)') && !isClosedAfterWithdraw(s, selDate))
       .sort(compareStudents),
-    [students, selClass]
+    [students, selClass, selDate]
   );
 
   // draft: { [studentId]: { ageYear, ageMonth, weight, height, weightForAge, heightForAge, weightForHeight } }

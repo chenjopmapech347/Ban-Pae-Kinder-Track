@@ -12,7 +12,7 @@ import SubDomainSummaryBox from './report/SubDomainSummaryBox';
 import DomainSummaryBox from './report/DomainSummaryBox';
 import DomainSummarySection from './report/DomainSummarySection';
 import HighlightsSection from './report/HighlightsSection';
-import { isoToThai, compareStudents, compareClassNames, compareByClassThenCode, getClassSchoolDays, holidayISOSet } from '../../utils/helpers';
+import { isWithdrawnNow, isoToThai, compareStudents, compareClassNames, compareByClassThenCode, getClassSchoolDays, holidayISOSet } from '../../utils/helpers';
 import {
   GROWTH_ROWS, PHILOSOPHY_TEXT, VISION_TEXT,
   DEV_ASSESS_DOMAINS,
@@ -48,6 +48,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
   const [aiDomainError,    setAiDomainError]    = useState({});
 
   const [selStudentId, setSelStudentId] = useState(initialStudentId ? String(initialStudentId) : null);
+  const [showWithdrawn, setShowWithdrawn] = useState(false); // แสดงนักเรียนที่ลาออก (ดูอย่างเดียว พิมพ์ไม่ได้)
   const [activeSection, setActiveSection] = useState('physical');
   const [devAssessTab, setDevAssessTab] = useState('physical');
 
@@ -65,8 +66,12 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
 
   // นักเรียน + คะแนนพัฒนาการที่ระบบเติมจากเช็คชื่อ (เฉพาะกิจกรรมที่ครูยังไม่ให้คะแนน)
   const student = useMemo(() =>
-    withAutoDev(students.find(s => String(s.id) === String(selStudentId)) ?? null, autoDevLedger)
-  , [students, selStudentId, autoDevLedger]);
+    withAutoDev((() => {
+      const st = students.find(s => String(s.id) === String(selStudentId)) ?? null;
+      // ลาออกแล้ว: ไม่แสดง เว้นแต่เปิดตัวเลือก "แสดงนักเรียนที่ลาออก" (ผู้ปกครองที่เปิดจากหน้าบุตรไม่เกี่ยว)
+      return st && !initialStudentId && !showWithdrawn && isWithdrawnNow(st) ? null : st;
+    })(), autoDevLedger)
+  , [students, selStudentId, autoDevLedger, showWithdrawn, initialStudentId]);
 
   // ── record key ────────────────────────────────────────────────────────────
   const recKey = selStudentId ? `${selStudentId}__${academicYear}` : null;
@@ -343,18 +348,22 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
 
   const [selClass, setSelClass] = useState(classNames[0] ?? '');
   const studentsInClass = useMemo(() =>
-    sortedStudents.filter(s => s.className === selClass),
+    sortedStudents.filter(s => s.className === selClass && (showWithdrawn || !isWithdrawnNow(s))),
+  [sortedStudents, selClass, showWithdrawn]);
+  const withdrawnCount = useMemo(() =>
+    sortedStudents.filter(s => s.className === selClass && isWithdrawnNow(s)).length,
   [sortedStudents, selClass]);
 
   // ── เติมระดับพัฒนาการให้ทั้งห้อง (เฉพาะช่องที่ยังว่าง) ───────────────────────────
   const [bulkMsg, setBulkMsg] = useState('');
   const [abilityTerm, setAbilityTerm] = useState(null); // null = เลือกภาคที่มีข้อมูลให้อัตโนมัติ
+  const bulkStudents = studentsInClass.filter(s => !isWithdrawnNow(s)); // ไม่เติมให้นักเรียนที่ลาออก
   const handleBulkFill = () => {
-    if (!studentsInClass.length) return;
-    if (!window.confirm(`เติมระดับพัฒนาการอัตโนมัติให้นักเรียน ${studentsInClass.length} คน ห้อง ${selClass}\n\n• เติมเฉพาะช่องที่ยังว่าง ไม่ทับค่าที่ครูกรอกไว้\n• ใช้คะแนนประเมินรายกิจกรรม และข้อมูลภาวะโภชนาการ (น้ำหนัก/ส่วนสูง)\n\nดำเนินการต่อหรือไม่?`)) return;
+    if (!bulkStudents.length) return;
+    if (!window.confirm(`เติมระดับพัฒนาการอัตโนมัติให้นักเรียน ${bulkStudents.length} คน ห้อง ${selClass}\n\n• เติมเฉพาะช่องที่ยังว่าง ไม่ทับค่าที่ครูกรอกไว้\n• ใช้คะแนนประเมินรายกิจกรรม และข้อมูลภาวะโภชนาการ (น้ำหนัก/ส่วนสูง)\n\nดำเนินการต่อหรือไม่?`)) return;
     const next = { ...studentReportRecords };
     let nStudents = 0, nCells = 0;
-    studentsInClass.forEach(st => {
+    bulkStudents.forEach(st => {
       const key = `${st.id}__${academicYear}`;
       const base = next[key] ?? {
         studentId: String(st.id), academicYear,
@@ -373,7 +382,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
     });
     if (nStudents) setStudentReportRecords(next);
     setBulkMsg(nStudents
-      ? `✅ เติมแล้ว ${nStudents}/${studentsInClass.length} คน (${nCells} ตัวบ่งชี้) — คนที่เหลือไม่มีข้อมูลให้คำนวณ หรือกรอกครบแล้ว`
+      ? `✅ เติมแล้ว ${nStudents}/${bulkStudents.length} คน (${nCells} ตัวบ่งชี้) — คนที่เหลือไม่มีข้อมูลให้คำนวณ หรือกรอกครบแล้ว`
       : 'ℹ️ ไม่มีช่องที่เติมได้ — ยังไม่มีคะแนนประเมินรายกิจกรรม/ข้อมูลโภชนาการ หรือกรอกครบแล้ว');
   };
 
@@ -411,6 +420,12 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
         <div style={{ flex: 1, minWidth: '200px' }}>
           <div style={{ fontSize: '.72rem', fontWeight: 700, color: '#6b7280', marginBottom: '.25rem' }}>
             นักเรียน ({studentsInClass.length} คน)
+            {withdrawnCount > 0 && (
+              <label style={{ marginLeft: '.75rem', fontWeight: 500, cursor: 'pointer' }}>
+                <input type="checkbox" checked={showWithdrawn} onChange={e => { setShowWithdrawn(e.target.checked); if (!e.target.checked) setSelStudentId(null); }} />
+                {' '}แสดงนักเรียนที่ลาออก ({withdrawnCount}) — ดูอย่างเดียว
+              </label>
+            )}
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.3rem', maxHeight: '120px', overflowY: 'auto' }}>
             {studentsInClass.map(s => {
@@ -424,7 +439,7 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
                     background: isActive ? BG : 'white', color: isActive ? ACCENT : '#4b5563',
                     fontFamily: 'inherit', fontWeight: isActive ? 700 : 500, fontSize: '.8rem', cursor: 'pointer',
                   }}>
-                  {s.name}
+                  {s.name}{isWithdrawnNow(s) ? ' (ลาออก)' : ''}
                 </button>
               );
             })}
@@ -466,16 +481,20 @@ export default function StudentReportTab({ teacherClassFilter = null, initialStu
               <span style={{ fontSize: '.82rem', color: '#6b7280' }}>ผู้ปกครอง: {student.guardianName || student.parentName}</span>
             )}
             <button type="button"
+              disabled={isWithdrawnNow(student)}
+              title={isWithdrawnNow(student) ? 'นักเรียนลาออกแล้ว — พิมพ์รายงานไม่ได้' : undefined}
               onClick={() => {
+                if (isWithdrawnNow(student)) return; // ลาออกแล้ว: ห้ามพิมพ์
                 const classTeacher = teachers?.find(t => t.className === (student?.className ?? student?.level));
                 addSystemLog?.('report', `พิมพ์สมุดรายงาน ${student?.name ?? ''} ปี ${academicYear}`);
                 printReport({ student, physData, growthRecords: growthData, devAssessment: devAssessData, attendanceSummary, healthServices, devDomains, teacherComments, parentComments, directorsComment, highlights, academicYear, schoolName, schoolPhilosophy, schoolVision, schoolLogo, teacherName: classTeacher?.name ?? '', directorName: yearDirectors?.[academicYear] || schoolDirectorName || schools?.[0]?.principal || '' });
               }}
               style={{
                 marginLeft: 'auto', padding: '.35rem 1rem', borderRadius: '8px', border: 'none',
-                background: ACCENT, color: 'white', fontFamily: 'inherit', fontWeight: 700, fontSize: '.82rem', cursor: 'pointer',
+                background: isWithdrawnNow(student) ? '#9ca3af' : ACCENT, color: 'white', fontFamily: 'inherit', fontWeight: 700, fontSize: '.82rem',
+                cursor: isWithdrawnNow(student) ? 'not-allowed' : 'pointer',
               }}>
-              🖨️ พิมพ์รายงาน
+              {isWithdrawnNow(student) ? '🚫 ลาออกแล้ว — พิมพ์ไม่ได้' : '🖨️ พิมพ์รายงาน'}
             </button>
           </div>
 

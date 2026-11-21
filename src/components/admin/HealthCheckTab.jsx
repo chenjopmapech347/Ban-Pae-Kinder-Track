@@ -4,7 +4,7 @@ import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 import { useTermRange, OUT_OF_TERM_MSG } from '../../hooks/useTermRange';
 import { ui } from '../../ui/ui';
 
-import { compareStudents, todayISO } from '../../utils/helpers';
+import { compareStudents, todayISO, isClosedAfterWithdraw } from '../../utils/helpers';
 // ── รายการตรวจสุขภาพ 6 หมวด ──────────────────────────────────────────────────
 const CHECK_ITEMS = [
   { id: 'body',  label: 'ร่างกาย',  emoji: '🧍' },
@@ -107,11 +107,12 @@ export default function HealthCheckTab({ teacherClassFilter = null }) {
 
   const key = useMemo(() => recordKey(selClass, academicYear, selDate), [selClass, academicYear, selDate]);
 
+  // ลาออกแล้ว ณ วันที่เลือก → ไม่แสดงชื่อ (ข้อมูลเดิมยังอยู่)
   const classStudents = useMemo(() =>
     students
-      .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)'))
+      .filter(s => s.className === selClass && !s.name.startsWith('(ว่าง)') && !isClosedAfterWithdraw(s, selDate))
       .sort(compareStudents),
-    [students, selClass]
+    [students, selClass, selDate]
   );
 
   const [draft, setDraft] = useState(() => {

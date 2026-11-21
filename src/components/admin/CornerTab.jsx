@@ -1,7 +1,7 @@
 // CornerTab.jsx — แบบบันทึกการใช้แหล่งเรียนรู้นอกห้องเรียนรายสัปดาห์
 import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { todayISO, getMondayOf, getWeekLabel, genUniqueKey, compareStudents, compareClassNames } from '../../utils/helpers';
+import { todayISO, getMondayOf, getWeekLabel, genUniqueKey, compareStudents, compareClassNames, isClosedAfterWithdraw } from '../../utils/helpers';
 import Modal, { ModalCancelBtn, ModalConfirmBtn } from '../Modal';
 import { useIsTermLocked } from '../../hooks/useIsTermLocked';
 import { useTermRange, OUT_OF_TERM_MSG } from '../../hooks/useTermRange';
@@ -178,8 +178,8 @@ export default function CornerTab({ teacherClassFilter = null }) {
   );
 
   const classStudents = useMemo(
-    () => (students ?? []).filter(s => s.className === cn && !s.name.startsWith('(ว่าง)')).sort(compareStudents),
-    [students, cn]
+    () => (students ?? []).filter(s => s.className === cn && !s.name.startsWith('(ว่าง)') && !isClosedAfterWithdraw(s, monday)).sort(compareStudents), // ลาออกก่อนสัปดาห์นี้ → ไม่แสดง (ข้อมูลเดิมยังอยู่)
+    [students, cn, monday]
   );
 
   const weekData = cornerRecords[weekKey] ?? {};

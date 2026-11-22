@@ -136,6 +136,24 @@ function ScoreTriplet({ score, onPick, scale, auto }) {
   );
 }
 
+// แบบกะทัดรัด: ช่องเดียวต่อความสามารถ แตะวน ว่าง → 3 → 2 → 1 → ล้าง (ให้ตารางพอดีหน้าจอ ไม่ต้องเลื่อนซ้ายขวา)
+function CompactScore({ score, onPick, scale, auto }) {
+  const next = score === 3 ? 2 : score === 2 ? 1 : score === 1 ? 0 : 3;
+  const meta = score ? scale[score] : null;
+  return (
+    <button type="button" onClick={() => onPick(next)}
+      title={score ? `${meta.label}${auto ? ' (ระบบคำนวณ — ยังไม่บันทึก)' : ''} — แตะเพื่อเปลี่ยน (3→2→1→ล้าง)` : 'ยังไม่ได้ให้คะแนน — แตะเพื่อให้ 3'}
+      style={{
+        width: '100%', maxWidth: '38px', height: '30px', borderRadius: '7px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: '.82rem', padding: 0,
+        background: meta ? meta.bg : '#fff', color: meta ? meta.color : '#d1d5db',
+        border: meta ? `2px ${auto ? 'dashed' : 'solid'} ${meta.border}` : '1px solid #e5e7eb',
+        opacity: auto ? 0.8 : 1,
+      }}>
+      {score || '·'}
+    </button>
+  );
+}
+
 function AvgBar({ avg }) {
   if (!avg) return <span style={{ color: '#d1d5db', fontSize: '.75rem' }}>—</span>;
   const pct = ((avg - 1) / 2) * 100;
@@ -175,6 +193,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
   const [activeDomain, setActiveDomain] = useState('d1');
   const [, setPicker] = useState(null);
   const [lastSavedAt, setLastSavedAt] = useState(null);
+  const [compact, setCompact] = useState(true);
   const [viewMode, setViewMode] = useState('input');
   const [selStudentId, setSelStudentId] = useState(null);  // สำหรับ view='student'
   // สำหรับ view='activity'
@@ -465,6 +484,10 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                 color: pendingAuto ? '#065f46' : '#9ca3af', fontWeight: 700, fontSize: '.8rem', cursor: pendingAuto ? 'pointer' : 'default', fontFamily: 'inherit' }}>
               💾 บันทึกค่าที่ระบบคำนวณ ({pendingAuto} ช่อง)
             </button>
+            <button type="button" onClick={() => setCompact(c => !c)}
+              style={{ padding: '.4rem .9rem', borderRadius: '8px', border: '1px solid #c7d2fe', background: '#eef2ff', color: '#4338ca', fontWeight: 700, fontSize: '.8rem', cursor: 'pointer', fontFamily: 'inherit' }}>
+              {compact ? '↔️ แสดงแบบละเอียด (3 ปุ่ม)' : '🗜 แสดงแบบกะทัดรัด (พอดีหน้า)'}
+            </button>
             <span style={{ fontSize: '.72rem', color: '#6b7280' }}>ช่องขอบประ = คำนวณจากกิจกรรมที่เช็คชื่อ/บันทึกอัตโนมัติ · ไม่ทับคะแนนที่ครูให้</span>
           </div>
 
@@ -478,25 +501,25 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                     {domain.icon} {domain.label}
                   </span>
                 </div>
-                <table style={{ width: '100%', fontSize: '.82rem', minWidth: '700px', borderCollapse: 'collapse' }}>
+                <table style={{ width: '100%', fontSize: '.82rem', minWidth: compact ? 0 : '700px', borderCollapse: 'collapse' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
                       <th style={{ textAlign: 'left', padding: '.5rem .75rem', color: '#64748b', fontWeight: 600, width: '2rem' }}>#</th>
                       <th style={{ textAlign: 'left', padding: '.5rem .75rem', color: '#64748b', fontWeight: 600, minWidth: '140px' }}>ชื่อ-สกุล</th>
                       {domainIndicators.map(ind => (
-                        <th key={String(ind.code).replace(/(\d)ข/g,'$1')} style={{ padding: '.5rem .5rem', textAlign: 'center', color: '#64748b', fontWeight: 600, minWidth: '110px' }}>
+                        <th key={String(ind.code).replace(/(\d)ข/g,'$1')} title={`${String(ind.code).replace(/(\d)ข/g,'$1')} ${ind.label}\n${DS.descriptorRow(ind) ?? ''}`} style={{ padding: compact ? '.4rem .15rem' : '.5rem .5rem', textAlign: 'center', color: '#64748b', fontWeight: 600, minWidth: compact ? 0 : '110px', verticalAlign: 'top' }}>
                           <div style={{ fontSize: '.78rem', fontWeight: 700, color: '#374151' }}>{String(ind.code).replace(/(\d)ข/g,'$1')}</div>
-                          <div style={{ fontSize: '.7rem', color: '#94a3b8', lineHeight: 1.3, maxWidth: '100px', margin: '0 auto' }}>
+                          <div style={{ fontSize: compact ? '.6rem' : '.7rem', color: '#94a3b8', lineHeight: 1.2, maxWidth: compact ? '52px' : '100px', margin: '0 auto', ...(compact ? { display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' } : {}) }}>
                             {ind.label}
                           </div>
-                          {evidenceNote(ind.code) && (
+                          {!compact && evidenceNote(ind.code) && (
                             <div style={{ fontSize: '.64rem', color: '#b45309', lineHeight: 1.2, marginTop: '2px' }}>{evidenceNote(ind.code)}</div>
                           )}
                         </th>
                       ))}
                     </tr>
                     {/* descriptor row */}
-                    <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#eff6ff' }}>
+                    {!compact && <tr style={{ borderBottom: '1px solid #e2e8f0', background: '#eff6ff' }}>
                       <td colSpan={2} style={{ padding: '.25rem .75rem', fontSize: '.72rem', color: '#2563eb', fontWeight: 600 }}>
                         {DS.descriptorLabel(selClass)}
                       </td>
@@ -505,7 +528,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                           {DS.descriptorRow(ind)}
                         </td>
                       ))}
-                    </tr>
+                    </tr>}
                   </thead>
                   <tbody>
                     {classStudents.map((s, idx) => (
@@ -516,12 +539,19 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                           <div style={{ fontSize: '.72rem', color: '#94a3b8' }}>{s.studentCode || s.studentId || ''}</div>
                         </td>
                         {domainIndicators.map(ind => (
-                          <td key={String(ind.code).replace(/(\d)ข/g,'$1')} style={{ padding: '.5rem .5rem', textAlign: 'center' }}>
+                          <td key={String(ind.code).replace(/(\d)ข/g,'$1')} style={{ padding: compact ? '.25rem .1rem' : '.5rem .5rem', textAlign: 'center' }}>
+                            {compact ? (
+                              <CompactScore
+                                scale={DS.scale}
+                                score={getScore(s.id, ind.code)} auto={isAuto(s.id, ind.code)}
+                                onPick={v => setScore(s.id, ind.code, v)}
+                              />
+                            ) : (
                             <ScoreTriplet
                               scale={DS.scale}
                               score={getScore(s.id, ind.code)} auto={isAuto(s.id, ind.code)}
                               onPick={v => setScore(s.id, ind.code, v)}
-                            />
+                            />)}
                           </td>
                         ))}
                       </tr>

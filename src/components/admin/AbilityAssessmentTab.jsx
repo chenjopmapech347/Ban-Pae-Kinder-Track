@@ -248,6 +248,35 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
     addActivityLog?.(`[${DS.label}] ให้คะแนน ${code} นักเรียน ${students.find(s => s.id === sid)?.name ?? sid} = ${score || 'ล้าง'}`);
   }
 
+  // บันทึกค่าที่ระบบคำนวณ (ขอบเส้นประ) ของห้องนี้ เป็นคะแนนจริง — เฉพาะช่องที่ครูยังไม่ได้ให้ ไม่ทับของครู
+  const pendingAuto = useMemo(() => {
+    let n = 0;
+    classStudents.forEach(s => DS.indicators.forEach(i => {
+      if (!abilityAssessments?.[dsKey(s.id)]?.[i.code] && (derivedMap[s.id]?.[i.code] ?? 0) > 0) n++;
+    }));
+    return n;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classStudents, DS, abilityAssessments, derivedMap, selYear, selTerm, datasetKey]);
+  function persistAutoLevels() {
+    if (!pendingAuto) return;
+    if (!window.confirm(`บันทึกค่าที่ระบบคำนวณ ${pendingAuto} ช่อง (ภาคเรียน ${selTerm}) เป็นคะแนนจริง?\nเฉพาะช่องที่ครูยังไม่ได้ให้คะแนน — ไม่ทับคะแนนของครู\nหลังบันทึกแล้วค่าจะไม่เปลี่ยนตามการเช็คชื่อ`)) return;
+    setAbilityAssessments(prev => {
+      const next = { ...prev };
+      classStudents.forEach(s => {
+        const k = dsKey(s.id);
+        const cur = { ...(next[k] ?? {}) };
+        let changed = false;
+        DS.indicators.forEach(i => {
+          const v = derivedMap[s.id]?.[i.code] ?? 0;
+          if (!cur[i.code] && v > 0) { cur[i.code] = v; changed = true; }
+        });
+        if (changed) { cur._assessDate = TODAY; cur._assessBy = `${user?.name ?? ''} (ระบบคำนวณ)`.trim(); next[k] = cur; }
+      });
+      return next;
+    });
+    addActivityLog?.(`[${DS.label}] บันทึกค่าที่ระบบคำนวณ ${pendingAuto} ช่อง ห้อง ${selClass} ภาคเรียน ${selTerm}`);
+  }
+
   // ─── summary ─────────────────────────────────────────────────────────────
   const summaryRows = useMemo(() => classStudents.map(s => {
     const base = recKey(s.id, selYear, selTerm);
@@ -403,6 +432,16 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                 </button>
               );
             })}
+          </div>
+
+          {/* บันทึกค่าที่ระบบคำนวณ */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', flexWrap: 'wrap', margin: '0 0 .6rem' }}>
+            <button type="button" onClick={persistAutoLevels} disabled={!pendingAuto}
+              style={{ padding: '.4rem .9rem', borderRadius: '8px', border: '1px solid #6ee7b7', background: pendingAuto ? '#ecfdf5' : '#f3f4f6',
+                color: pendingAuto ? '#065f46' : '#9ca3af', fontWeight: 700, fontSize: '.8rem', cursor: pendingAuto ? 'pointer' : 'default', fontFamily: 'inherit' }}>
+              💾 บันทึกค่าที่ระบบคำนวณ ({pendingAuto} ช่อง)
+            </button>
+            <span style={{ fontSize: '.72rem', color: '#6b7280' }}>ช่องขอบประ = คำนวณจากกิจกรรมที่เช็คชื่อ/บันทึกอัตโนมัติ · ไม่ทับคะแนนที่ครูให้</span>
           </div>
 
           {/* Assessment table */}

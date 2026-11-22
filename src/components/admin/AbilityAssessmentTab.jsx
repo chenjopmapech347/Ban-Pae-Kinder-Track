@@ -158,7 +158,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
     students, allClassNames, role, user,
     academicYear, currentTerm,
     abilityAssessments, setAbilityAssessments, autoDevLedger,
-    addActivityLog,
+    addActivityLog, autoSyncStatus, lastSyncFailed,
   } = useApp();
 
   const isTeacher = role === 'teacher';
@@ -174,6 +174,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
   );
   const [activeDomain, setActiveDomain] = useState('d1');
   const [, setPicker] = useState(null);
+  const [lastSavedAt, setLastSavedAt] = useState(null);
   const [viewMode, setViewMode] = useState('input');
   const [selStudentId, setSelStudentId] = useState(null);  // สำหรับ view='student'
   // สำหรับ view='activity'
@@ -245,6 +246,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
       },
     }));
     setPicker(null);
+    setLastSavedAt(new Date());
     addActivityLog?.(`[${DS.label}] ให้คะแนน ${code} นักเรียน ${students.find(s => s.id === sid)?.name ?? sid} = ${score || 'ล้าง'}`);
   }
 
@@ -257,6 +259,19 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
     return n;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classStudents, DS, abilityAssessments, derivedMap, selYear, selTerm, datasetKey]);
+  const savedCount = useMemo(() => {
+    let n = 0;
+    classStudents.forEach(s => DS.indicators.forEach(i => { if (abilityAssessments?.[dsKey(s.id)]?.[i.code]) n++; }));
+    return n;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classStudents, DS, abilityAssessments, selYear, selTerm, datasetKey]);
+  const totalCells = classStudents.length * DS.indicators.length;
+  const timeStr = lastSavedAt ? lastSavedAt.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
+  const syncView = lastSyncFailed || autoSyncStatus === 'error'
+    ? { t: '⚠️ บันทึกในเครื่องแล้ว แต่ยังส่งขึ้นคลาวด์ไม่สำเร็จ', bg: '#fef2f2', c: '#991b1b', b: '#fca5a5' }
+    : autoSyncStatus === 'pending' || autoSyncStatus === 'syncing'
+      ? { t: '⏳ กำลังส่งขึ้นคลาวด์…', bg: '#fffbeb', c: '#92400e', b: '#fde68a' }
+      : { t: lastSavedAt ? '☁️ บันทึกและส่งขึ้นคลาวด์แล้ว' : '☁️ ข้อมูลล่าสุดตรงกับคลาวด์', bg: '#ecfdf5', c: '#065f46', b: '#6ee7b7' };
   function persistAutoLevels() {
     if (!pendingAuto) return;
     if (!window.confirm(`บันทึกค่าที่ระบบคำนวณ ${pendingAuto} ช่อง (ภาคเรียน ${selTerm}) เป็นคะแนนจริง?\nเฉพาะช่องที่ครูยังไม่ได้ให้คะแนน — ไม่ทับคะแนนของครู\nหลังบันทึกแล้วค่าจะไม่เปลี่ยนตามการเช็คชื่อ`)) return;
@@ -274,6 +289,7 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
       });
       return next;
     });
+    setLastSavedAt(new Date());
     addActivityLog?.(`[${DS.label}] บันทึกค่าที่ระบบคำนวณ ${pendingAuto} ช่อง ห้อง ${selClass} ภาคเรียน ${selTerm}`);
   }
 
@@ -408,20 +424,21 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
           {/* Domain tabs */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.5rem' }}>
+          <div style={{ display: 'flex', flexWrap: 'nowrap', gap: '.4rem' }}>
             {DS.domains.map(d => {
               const active = activeDomain === d.id;
               const avg = domainAvgs[d.id];
               return (
                 <button
                   key={d.id}
+                  title={d.label}
                   onClick={() => { setActiveDomain(d.id); setPicker(null); }}
                   style={active
-                    ? { display: 'flex', alignItems: 'center', gap: '6px', padding: '.4rem .9rem', borderRadius: '20px', border: `2px solid ${d.border}`, background: d.bg, color: d.color, boxShadow: `0 2px 8px ${d.border}55`, cursor: 'pointer', fontSize: '.82rem' }
-                    : { display: 'flex', alignItems: 'center', gap: '6px', padding: '.4rem .9rem', borderRadius: '20px', border: '2px solid #e5e7eb', background: 'white', color: '#6b7280', cursor: 'pointer', fontSize: '.82rem' }}
+                    ? { flex: '1 1 0', minWidth: 0, justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '4px', padding: '.4rem .5rem', borderRadius: '20px', border: `2px solid ${d.border}`, background: d.bg, color: d.color, boxShadow: `0 2px 8px ${d.border}55`, cursor: 'pointer', fontSize: '.82rem' }
+                    : { flex: '1 1 0', minWidth: 0, justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '4px', padding: '.4rem .5rem', borderRadius: '20px', border: '2px solid #e5e7eb', background: 'white', color: '#6b7280', cursor: 'pointer', fontSize: '.82rem' }}
                 >
                   <span style={{ fontSize: '1rem', lineHeight: 1 }}>{d.icon}</span>
-                  <span style={{ fontWeight: active ? 700 : 500 }}>{d.label}</span>
+                  <span style={{ fontWeight: active ? 700 : 500, fontSize: '.78rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>{d.label}</span>
                   {avg > 0 && (
                     <span
                       style={active
@@ -432,6 +449,13 @@ export default function AbilityAssessmentTab({ teacherClassFilter }) {
                 </button>
               );
             })}
+          </div>
+
+          {/* สถานะการบันทึก */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', flexWrap: 'wrap', padding: '.45rem .75rem', borderRadius: '8px', border: `1px solid ${syncView.b}`, background: syncView.bg, color: syncView.c, fontSize: '.78rem', fontWeight: 600 }}>
+            <span>{syncView.t}</span>
+            {timeStr && <span style={{ fontWeight: 400 }}>· บันทึกล่าสุด {timeStr}</span>}
+            <span style={{ marginLeft: 'auto', fontWeight: 400 }}>มีคะแนนที่บันทึกแล้ว {savedCount}/{totalCells} ช่อง (ห้องนี้ ภาคเรียน {selTerm})</span>
           </div>
 
           {/* บันทึกค่าที่ระบบคำนวณ */}

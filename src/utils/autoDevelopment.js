@@ -7,7 +7,7 @@
 // - แก้เป็นขาด/ลา/ป่วย → ถูกถอดออกจาก p → ระดับกลับเป็น 0 (ลบเฉพาะที่ระบบเติมเอง คะแนนที่ครูให้ไม่ถูกแตะ)
 // - กิจกรรมที่ครูให้คะแนนเองในภาคนั้นแล้ว → ใช้ของครูก่อน (auto เติมเฉพาะที่ยังว่าง)
 import { INDICATORS_DATA_68 } from '../data/indicatorsData_68';
-import { SOURCE_ACTIVITY_NO, SOURCE_ACTIVITY_MAP } from '../data/evaluationConstants';
+import { SOURCE_ACTIVITY_NO, SOURCE_ACTIVITY_MAP, CORNER_KEY_ACTIVITY_NO, OUTDOOR_KEY_ACTIVITY_NO } from '../data/evaluationConstants';
 import { growthLevelsForTerm } from './reportHelpers';
 
 export const AUTO_LEVEL = 3;
@@ -24,7 +24,19 @@ export function termOfISO(dateISO) {
 
 // แหล่งข้อมูล → รหัสกิจกรรม (no) ของหลักสูตร 2568 ใช้ตารางเดียวกับปุ่ม "บันทึกกิจกรรมที่เชื่อมโยง": SOURCE_ACTIVITY_NO (data/evaluationConstants.js)
 const AUTO_SOURCES = [...AUTO_BASE_SOURCES, ...AUTO_ROUTINE_SOURCES, 'health_check', 'outdoor', 'corner'];
-export const AUTO_SOURCE_ACTIVITY_NO = Object.fromEntries(AUTO_SOURCES.map(k => [k, SOURCE_ACTIVITY_NO[k] ?? []]));
+export const AUTO_SOURCE_ACTIVITY_NO = {
+  ...Object.fromEntries(AUTO_SOURCES.map(k => [k, SOURCE_ACTIVITY_NO[k] ?? []])),
+  ...Object.fromEntries(Object.entries(CORNER_KEY_ACTIVITY_NO).map(([k, v]) => [`corner:${k}`, v])),
+  ...Object.fromEntries(Object.entries(OUTDOOR_KEY_ACTIVITY_NO).map(([k, v]) => [`outdoor:${k}`, v])),
+};
+
+/** แหล่งข้อมูลของมุม/แหล่งเรียนรู้ตามรหัสที่ตั้งไว้ในวันนั้น — รหัสที่ไม่มีในตารางใช้ค่ากลาง ('corner'/'outdoor') */
+export function cornerSourcesFor(prefix, keys) {
+  const table = prefix === 'corner' ? CORNER_KEY_ACTIVITY_NO : OUTDOOR_KEY_ACTIVITY_NO;
+  const out = new Set();
+  (keys ?? []).forEach(k => out.add(table[k] ? `${prefix}:${k}` : prefix));
+  return [...out];
+}
 
 let _ACT_SOURCES = null; // actId (หลักสูตร 2568) → [sourceKey]
 function actSources() {

@@ -45,7 +45,7 @@ const LOGGED_SETTERS = {
   setAiApiKey: 'ค่า API key', setImgbbApiKey: 'ค่า API key',
 };
 const _lastLogged = {};
-import { AUTO_BASE_SOURCES, AUTO_ROUTINE_SOURCES } from '../utils/autoDevelopment';
+import { AUTO_BASE_SOURCES, AUTO_ROUTINE_SOURCES, cornerSourcesFor } from '../utils/autoDevelopment';
 import { scheduleParentViewPush, pushSnapshotToFirebase, pullSnapshotFromFirebase, pullClassAssessments, pullAllClassAssessments, pushClassAssessments, pushAutoDevDay, pullAutoDevLedgers, listDailyBackups, pullDailyBackupById, pushDailyDataToFirebase, pullDailyDataFromFirebase, seedDailyBaseline } from '../lib/firebaseSync';
 
 import { firebaseLogin, firebaseLogout, onFirebaseAuthChange } from '../lib/firebaseAuth';
@@ -1880,8 +1880,8 @@ export function AppProvider({ children }) {
           else {
             const sources = [...AUTO_BASE_SOURCES, ...AUTO_ROUTINE_SOURCES];
             if (isHealthCheckDay) sources.push('health_check');
-            if ((getKeysForDay(classOuterCornerKeys[cls], thaiDay) ?? []).length) sources.push('outdoor');
-            if ((getKeysForDay(classInnerCornerKeys[cls], thaiDay) ?? []).length) sources.push('corner');
+            sources.push(...cornerSourcesFor('outdoor', getKeysForDay(classOuterCornerKeys[cls], thaiDay)));
+            sources.push(...cornerSourcesFor('corner', getKeysForDay(classInnerCornerKeys[cls], thaiDay)));
             const e = oldDay?.e ? Object.fromEntries(Object.entries(oldDay.e).filter(([id]) => !absentIds.has(String(id)))) : null;
             entry = { p, s: sources, ...(e && Object.keys(e).length ? { e } : {}) };
             days[date] = entry;

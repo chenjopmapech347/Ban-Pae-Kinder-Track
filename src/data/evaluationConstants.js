@@ -56,3 +56,25 @@ const ACT_ID_BY_NO = buildActIdByNo();
 export const SOURCE_ACTIVITY_MAP = Object.fromEntries(
   Object.entries(SOURCE_ACTIVITY_NO).map(([src, nos]) => [src, nos.map(n => ACT_ID_BY_NO[n]).filter(Boolean)]),
 );
+
+// ── แยกตามมุม/แหล่งเรียนรู้ (รหัสมุม → เลขกิจกรรมหลักสูตร 2568) ───────────────
+// แก้ตารางนี้เพื่อเพิ่มรหัสมุมใหม่/เปลี่ยนข้อที่เชื่อมโยง — คีย์ที่ไม่อยู่ในตารางใช้ค่ากลาง corner[26] / outdoor[36,27]
+export const CORNER_KEY_ACTIVITY_NO = {   // มุมประสบการณ์ในห้องเรียน → แหล่งข้อมูล `corner:<key>`
+  block: [14, 42, 28], lego: [14, 42, 28],
+  story: [38, 40, 39],
+  science: [43, 27], sci: [43, 27],
+  creative: [44, 12, 13, 23],
+  roleplay: [45, 29, 28],
+  media: [39],
+  eng: [39],
+};
+export const OUTDOOR_KEY_ACTIVITY_NO = {  // แหล่งเรียนรู้นอกห้องเรียน → แหล่งข้อมูล `outdoor:<key>`
+  wasteSort: [36, 46, 42], wst: [36, 46, 42],
+  organicWaste: [36, 46, 43],
+  garden: [36, 43, 47], gar: [36, 43, 47],
+  learningRoom: [27, 43, 40], res: [27, 43, 40],
+  ef: [42, 28, 34, 24],
+  computerRoom: [42], com: [42],
+  trafficSign: [20, 18],
+  pe: [4, 8, 9, 10, 16],
+};

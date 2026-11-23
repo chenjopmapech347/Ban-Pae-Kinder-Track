@@ -23,6 +23,9 @@
 
 // ── ค่าคงที่ (ต้องตรงกับ src/utils/autoDevelopment.js) ───────────────────────────
 export const BASE_SOURCES    = ['attend', 'milk', 'lunch', 'tooth', 'illness'];
+// รหัสมุมที่มีตารางเชื่อมโยงเฉพาะ (ต้องตรงกับ CORNER_KEY_ACTIVITY_NO / OUTDOOR_KEY_ACTIVITY_NO ใน src/data/evaluationConstants.js)
+const CORNER_KEYS  = new Set(['block', 'lego', 'story', 'science', 'sci', 'creative', 'roleplay', 'media', 'eng']);
+const OUTDOOR_KEYS = new Set(['wasteSort', 'wst', 'organicWaste', 'garden', 'gar', 'learningRoom', 'res', 'ef', 'computerRoom', 'com', 'trafficSign', 'pe']);
 export const ROUTINE_SOURCES = ['morning', 'exercise', 'circle', 'story', 'cleanup', 'dressing', 'dance'];
 // กิจกรรมประจำวัน (dailyRoutineRecords) ใช้ key เดียวกับชื่อแหล่งข้อมูล
 const THAI_DAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
@@ -139,16 +142,22 @@ export function buildLedger(data, onlyClass = null) {
       // แหล่งเรียนรู้นอกห้อง / มุมในห้อง: วันนั้นมีกิจกรรมตามตาราง + สัปดาห์นั้นนักเรียนถูกติ๊ก
       const thaiDay = THAI_DAYS[dowOf(date)];
       const mon = mondayOf(date);
-      [['outdoor', data.classOuterCornerKeys, outer], ['corner', data.classInnerCornerKeys, inner]].forEach(([src, cfg, weeks]) => {
+      [['outdoor', data.classOuterCornerKeys, outer], ['corner', data.classInnerCornerKeys, inner]].forEach(([prefix, cfg, weeks]) => {
         const dayKeys = getKeysForDay(cfg?.[cls], thaiDay);
         if (!dayKeys || !dayKeys.length) return;
         const week = weeks[`${cls}|${mon}`];
-        let any = false;
-        ids.forEach(sid => {
-          const w = week?.[sid];
-          if (w && dayKeys.some(k => w[k] === true)) any = true; else exc(sid, src);
+        const table = prefix === 'corner' ? CORNER_KEYS : OUTDOOR_KEYS;
+        // แหล่งข้อมูลต่อมุม: มุมที่มีในตาราง → `${prefix}:${key}` / ไม่มี → ค่ากลาง prefix (รวมกัน)
+        const groups = {};
+        dayKeys.forEach(k => { (groups[table.has(k) ? `${prefix}:${k}` : prefix] ??= []).push(k); });
+        Object.entries(groups).forEach(([src, ks]) => {
+          let any = false;
+          ids.forEach(sid => {
+            const w = week?.[sid];
+            if (w && ks.some(k => w[k] === true)) any = true; else exc(sid, src);
+          });
+          if (any) sources.add(src);
         });
-        if (any) sources.add(src);
       });
 
       // ตัดข้อยกเว้นของแหล่งข้อมูลที่ไม่ได้อยู่ใน s ออก

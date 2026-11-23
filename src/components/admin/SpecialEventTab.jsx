@@ -46,7 +46,7 @@ const EVENT_TYPE_DEFAULT_ACTIVITIES = {
   ],
 };
 
-// ── Preset events สำหรับปีการศึกษา 2569 ──────────────────────────────────────
+// ── Preset events สำหรับปีการศึกษา 2569 (ถึง 31 มี.ค. 2570 — สิ้นสุดภาคเรียนที่ 2) ──────────────────────────────────────
 const PRESET_EVENTS = [
   // ── กิจกรรมโรงเรียน ──────────────────────────────────────────────────────
   {
@@ -73,12 +73,6 @@ const PRESET_EVENTS = [
     id: 'preset_makha_2570', name: 'วันมาฆบูชา 2570', date: '2027-02-21',
     type: 'national', scope: 'all',
     description: 'กิจกรรมเวียนเทียน เรียนรู้หลักธรรมและคุณธรรมพื้นฐาน',
-    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
-  },
-  {
-    id: 'preset_songkran_2570', name: 'วันสงกรานต์ 2570', date: '2027-04-13',
-    type: 'national', scope: 'all',
-    description: 'กิจกรรมสืบสานวัฒนธรรมไทย รดน้ำดำหัว และแต่งกายชุดไทย',
     activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
   },
   {
@@ -110,6 +104,44 @@ const PRESET_EVENTS = [
     type: 'national', scope: 'all',
     description: 'กิจกรรมวันพ่อ ทำของขวัญและแสดงความกตัญญูต่อพ่อ',
     activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+  },
+
+  // ── ปี 2570 (ม.ค.–มี.ค.) ────────────────────────────────────────────────
+  {
+    id: 'preset_newyear_2570', name: 'วันขึ้นปีใหม่ 2570', date: '2027-01-01',
+    type: 'national', scope: 'all',
+    description: 'กิจกรรมต้อนรับปีใหม่ อวยพรครูและเพื่อน ทำความดีเริ่มต้นปี',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+  },
+  {
+    id: 'preset_childrensday_2570', name: 'วันเด็กแห่งชาติ 2570', date: '2027-01-09',
+    type: 'school', scope: 'all',
+    description: 'กิจกรรมวันเด็ก เกมและการแสดง ส่งเสริมความสนุกสนานและการเล่นร่วมกัน (เสาร์ที่ 2 ของเดือนมกราคม)',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.school, participants: {},
+  },
+  {
+    id: 'preset_teachersday_2570', name: 'วันครู 2570', date: '2027-01-16',
+    type: 'national', scope: 'all',
+    description: 'กิจกรรมวันครู แสดงความกตัญญูต่อครู มอบการ์ดและกล่าวคำขอบคุณ',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+  },
+  {
+    id: 'preset_chinesenewyear_2570', name: 'วันตรุษจีน 2570', date: '2027-02-06',
+    type: 'national', scope: 'all',
+    description: 'กิจกรรมเรียนรู้วัฒนธรรมจีน แต่งกายสีแดง ประดิษฐ์โคมและซองอั่งเปา',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+  },
+  {
+    id: 'preset_water_2570', name: 'วันน้ำโลก 2570', date: '2027-03-22',
+    type: 'project', scope: 'all',
+    description: 'กิจกรรมเรียนรู้คุณค่าของน้ำ ประหยัดน้ำ และดูแลสิ่งแวดล้อม',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.project, participants: {},
+  },
+  {
+    id: 'preset_graduation_2570', name: 'พิธีปัจฉิมนิเทศ ปีการศึกษา 2569', date: '2027-03-26',
+    type: 'school', scope: 'all',
+    description: 'พิธีมอบวุฒิบัตรและแสดงความยินดีนักเรียนที่จบการศึกษา (วันที่โดยประมาณ — ปรับตามกำหนดการของโรงเรียน)',
+    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.school, participants: {},
   },
 
   // ── โครงการ/กิจกรรมพิเศษ ─────────────────────────────────────────────────

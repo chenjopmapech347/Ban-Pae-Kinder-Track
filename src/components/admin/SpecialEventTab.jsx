@@ -640,7 +640,7 @@ export default function SpecialEventTab({ teacherClassFilter }) {
         }
         return true;
       })
-      .sort((a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')));
+      .sort((a, b) => String(a.date ?? '').localeCompare(String(b.date ?? '')) || String(a.name ?? '').localeCompare(String(b.name ?? ''), 'th'));
   }, [specialEvents, search, filterType, filterClass, isTeacher, teacherClassFilter]);
 
   const handleSave = useCallback((formData, existingId) => {

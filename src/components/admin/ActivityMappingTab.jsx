@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { INDICATORS_DATA_68 } from '../../data/indicatorsData_68';
 import { COMPETENCY_ACTIVITY_MAP } from '../../data/competencyActivityMap';
 import { COMPETENCIES_C68_อ1 } from '../../data/competenciesData_อ1_68';
+import { SOURCE_ACTIVITY_NO, CORNER_KEY_ACTIVITY_NO, OUTDOOR_KEY_ACTIVITY_NO } from '../../data/evaluationConstants';
 
 const noKor = x => String(x ?? '').replace(/(\d)ข/g, '$1'); // แสดงผลเท่านั้น
 
@@ -35,6 +36,62 @@ function Bar({ label, sub, value, max, color }) {
 }
 
 const heat = (n) => (n >= 3 ? '#059669' : n === 2 ? '#34d399' : n === 1 ? '#a7f3d0' : 'transparent');
+
+const SOURCE_LABELS = {
+  attend: 'การมาเรียน', milk: 'ดื่มนม', lunch: 'อาหารกลางวัน', tooth: 'แปรงฟัน', illness: 'คัดกรองผู้ป่วย', health_check: 'ตรวจสุขภาพ',
+  nutrition: 'ภาวะโภชนาการ', pickup: 'รับ-ส่ง', morning: 'กิจกรรมเช้า (เข้าแถว)', exercise: 'ออกกำลังกาย', circle: 'กิจกรรมวงกลม',
+  story: 'เล่านิทาน', cleanup: 'เก็บของ/ทำความสะอาด', dressing: 'แต่งตัว/เปลี่ยนชุด', dance: 'เต้น/โยคะ', art: 'ศิลปะ', events: 'กิจกรรมวันสำคัญ',
+  outdoor: 'แหล่งเรียนรู้นอกห้อง (ค่ากลาง — มุมที่ไม่อยู่ในตาราง)', corner: 'มุมในห้อง (ค่ากลาง — มุมที่ไม่อยู่ในตาราง)',
+};
+const CORNER_LABELS = { block: 'มุมบล็อก', lego: 'มุมเลโก้', story: 'มุมนิทาน', science: 'มุมวิทยาศาสตร์', sci: 'มุมวิทยาศาสตร์', creative: 'มุมสร้างสรรค์', roleplay: 'มุมบทบาทสมมติ', media: 'มุมสื่อ', eng: 'มุมภาษาอังกฤษ' };
+const OUTDOOR_LABELS = { wasteSort: 'คัดแยกขยะ', wst: 'คัดแยกขยะ', organicWaste: 'ขยะอินทรีย์', garden: 'แปลงปลูกผัก', gar: 'แปลงปลูกผัก', learningRoom: 'ห้องแหล่งเรียนรู้', res: 'ห้องแหล่งเรียนรู้', ef: 'ห้องสื่อ EF', computerRoom: 'ห้องคอมพิวเตอร์', com: 'ห้องคอมพิวเตอร์', trafficSign: 'เครื่องหมายจราจร', pe: 'พละศึกษา' };
+
+// ตารางแหล่งข้อมูลอัตโนมัติ → ข้อกิจกรรม (แสดงอย่างเดียว — แก้ที่ src/data/evaluationConstants.js)
+function SourceMapCard() {
+  const actLabel = useMemo(() => {
+    const m = {};
+    INDICATORS_DATA_68.forEach(d => d.standards.forEach(st => st.indicators.forEach(ind => ind.items.forEach(it => it.activities.forEach(a => { m[Number(a.no)] = a.label; })))));
+    return m;
+  }, []);
+  const rowsOf = (label, nos, extra) => (
+    <tr key={label + (extra ?? '')}>
+      <td style={{ ...td, fontWeight: 700, whiteSpace: 'nowrap' }}>{label}</td>
+      <td style={td}>{nos.length ? nos.map(n => (
+        <div key={n}><strong>ข้อ {n}</strong> <span style={{ color: '#4b5563' }}>{actLabel[n] ?? '(ไม่พบกิจกรรม)'}</span></div>
+      )) : <span style={{ color: '#9ca3af' }}>ไม่ผูกกับกิจกรรมใด</span>}</td>
+    </tr>
+  );
+  // รวมรหัสที่ชื่อเดียวกัน (เช่น wasteSort/wst) เป็นแถวเดียว
+  const group = (table, labels) => {
+    const by = {};
+    Object.entries(table).forEach(([k, nos]) => { const l = labels[k] ?? k; (by[l] ??= { nos, keys: [] }).keys.push(k); });
+    return Object.entries(by).map(([l, v]) => rowsOf(`${l} (${v.keys.join(' / ')})`, v.nos));
+  };
+  const head = t => <tr><td colSpan={2} style={{ ...td, background: '#eef2ff', fontWeight: 800, color: '#3730a3' }}>{t}</td></tr>;
+  return (
+    <div style={card}>
+      <h3 style={h3}>🔗 แหล่งข้อมูลที่ระบบเติมอัตโนมัติ → กิจกรรม</h3>
+      <p style={{ margin: '0 0 .6rem', fontSize: '.76rem', color: '#6b7280' }}>
+        ใช้กับการเติมคะแนนจากเช็คชื่อและปุ่ม "บันทึกกิจกรรมที่เชื่อมโยง" · แสดงอย่างเดียว แก้ที่ตาราง SOURCE_ACTIVITY_NO / CORNER_KEY_ACTIVITY_NO / OUTDOOR_KEY_ACTIVITY_NO ใน src/data/evaluationConstants.js
+      </p>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+          <thead><tr><th style={th}>แหล่งข้อมูล</th><th style={{ ...th, textAlign: 'left' }}>กิจกรรมที่เชื่อมโยง</th></tr></thead>
+          <tbody>
+            {head('ข้อมูลรายวัน / กิจกรรมประจำวัน / วันสำคัญ')}
+            {Object.entries(SOURCE_ACTIVITY_NO).filter(([k]) => k !== 'outdoor' && k !== 'corner').map(([k, nos]) => rowsOf(`${SOURCE_LABELS[k] ?? k} (${k})`, nos))}
+            {head('มุมประสบการณ์ในห้องเรียน (แยกตามมุม)')}
+            {group(CORNER_KEY_ACTIVITY_NO, CORNER_LABELS)}
+            {rowsOf(SOURCE_LABELS.corner, SOURCE_ACTIVITY_NO.corner)}
+            {head('แหล่งเรียนรู้นอกห้องเรียน (แยกตามแหล่ง)')}
+            {group(OUTDOOR_KEY_ACTIVITY_NO, OUTDOOR_LABELS)}
+            {rowsOf(SOURCE_LABELS.outdoor, SOURCE_ACTIVITY_NO.outdoor)}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 export default function ActivityMappingTab() {
   const { indicators, activities } = useApp();
@@ -188,6 +245,8 @@ export default function ActivityMappingTab() {
           </tbody>
         </table>
       </div>
+
+      <SourceMapCard />
     </div>
   );
 }

@@ -151,7 +151,7 @@ export default function DailyContextPanel({
               background: '#7c3aed', color: 'white', fontFamily: 'inherit',
               fontWeight: 700, fontSize: '.8rem', cursor: 'pointer',
             }}>✨ เสนอคะแนนทั้งห้อง</button>
-            {SOURCE_ACTIVITY_MAP[from] && (
+            {SOURCE_ACTIVITY_MAP[from]?.length > 0 && (
               <button type="button" onClick={() => {
                 const suggested = {};
                 classStudents.forEach(s => {

@@ -46,6 +46,16 @@ const EVENT_TYPE_DEFAULT_ACTIVITIES = {
   ],
 };
 
+// รหัสกิจกรรมหลักสูตร 2568 จากเลขกิจกรรม (no) — ใช้กำหนดตัวบ่งชี้เฉพาะของแต่ละวันสำคัญใน PRESET_EVENTS
+const ACT_ID_BY_NO = (() => {
+  const m = {};
+  INDICATORS_DATA_68.forEach(d => d.standards.forEach(st => st.indicators.forEach(ind => ind.items.forEach(it => it.activities.forEach(a => {
+    m[Number(a.no)] = `${d.id}__${st.id}__${ind.id}__${it.id}__${a.no}`;
+  })))));
+  return m;
+})();
+const A = (...nos) => nos.map(n => ACT_ID_BY_NO[n]).filter(Boolean);
+
 // ── Preset events สำหรับปีการศึกษา 2569 (ถึง 31 มี.ค. 2570 — สิ้นสุดภาคเรียนที่ 2) ──────────────────────────────────────
 const PRESET_EVENTS = [
   // ── กิจกรรมโรงเรียน ──────────────────────────────────────────────────────
@@ -53,19 +63,22 @@ const PRESET_EVENTS = [
     id: 'preset_waikhru_2569', name: 'วันไหว้ครู 2569', date: '2026-07-02',
     type: 'school', scope: 'all',
     description: 'กิจกรรมไหว้ครูประจำปี นักเรียนนำพานดอกไม้มาไหว้ครู',
-    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.school, participants: {},
+    // ไหว้/กล่าวขอบคุณ(49) มารยาทไทย(37) กล้าแสดงออก(22) ทำพานร่วมกัน(28) ร้อยมาลัย-กล้ามเนื้อเล็ก(14) ปฏิบัติตามข้อตกลง(34)
+    activityIds: A(49, 37, 22, 28, 14, 34), participants: {},
   },
   {
     id: 'preset_sports_2569', name: 'วันกีฬาสี 2569', date: '2026-11-27',
     type: 'school', scope: 'all',
     description: 'กิจกรรมกีฬาสีประจำปี ส่งเสริมความสามัคคีและสุขภาพที่ดี',
-    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.school, participants: {},
+    // ออกกำลังกาย(4) กระโดด(8) วิ่งเปลี่ยนทิศ(9) รับ-โยนบอล(10) เกมทีม(32) ตามกติกา(34)
+    activityIds: A(4, 8, 9, 10, 32, 34), participants: {},
   },
   {
     id: 'preset_openhouse_2569', name: 'วันเปิดบ้าน (Open House) 2569', date: '2027-02-26',
     type: 'school', scope: 'all',
     description: 'เปิดโอกาสให้ผู้ปกครองเข้าเยี่ยมชมการเรียนการสอนและผลงานนักเรียน',
-    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.school, participants: {},
+    // นำเสนอ(22) แสดงออกศิลปะดนตรี(23) ศิลปะสร้างสรรค์(44) สนทนากับผู้ปกครอง(39) เต้นตามจังหวะ(17) ทำงานกลุ่ม(28)
+    activityIds: A(22, 23, 44, 39, 17, 28), participants: {},
   },
 
   // ── วันสำคัญของชาติ/ศาสนา ────────────────────────────────────────────────
@@ -73,37 +86,43 @@ const PRESET_EVENTS = [
     id: 'preset_makha_2570', name: 'วันมาฆบูชา 2570', date: '2027-02-21',
     type: 'national', scope: 'all',
     description: 'กิจกรรมเวียนเทียน เรียนรู้หลักธรรมและคุณธรรมพื้นฐาน',
-    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+    // ร่วมกิจกรรมวันสำคัญ(49) วัฒนธรรมไทย(37) ปฏิบัติตามกติกา(34) เคารพผู้อื่น(29) จัดการอารมณ์/สงบ(24)
+    activityIds: A(49, 37, 34, 29, 24), participants: {},
   },
   {
     id: 'preset_visakha_2569', name: 'วันวิสาขบูชา 2569', date: '2026-06-01',
     type: 'national', scope: 'all',
     description: 'กิจกรรมเรียนรู้ประวัติวันวิสาขบูชา และปฏิบัติตนเป็นพุทธศาสนิกชนที่ดี',
-    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+    // ร่วมกิจกรรมวันสำคัญ(49) วัฒนธรรมไทย(37) กติกา(34) เล่าเรื่องประวัติ(38) เคารพผู้อื่น(29)
+    activityIds: A(49, 37, 34, 38, 29), participants: {},
   },
   {
     id: 'preset_khao_phansa_2569', name: 'วันเข้าพรรษา 2569', date: '2026-07-29',
     type: 'national', scope: 'all',
     description: 'กิจกรรมถวายเทียนพรรษาและปลูกฝังค่านิยมทางพุทธศาสนา',
-    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+    // ร่วมกิจกรรมวันสำคัญ(49) วัฒนธรรมไทย(37) กติกา(34) ตกแต่งเทียน-ศิลปะ(44) ใช้ซ้ำ/ประหยัด(46)
+    activityIds: A(49, 37, 34, 44, 46), participants: {},
   },
   {
     id: 'preset_mothersday_2569', name: 'วันแม่แห่งชาติ 2569', date: '2026-08-12',
     type: 'national', scope: 'all',
     description: 'กิจกรรมวันแม่ ทำการ์ดอวยพร แสดงความกตัญญูต่อแม่',
-    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+    // ไหว้-ขอบคุณ(49) อารมณ์ความรัก(24) การ์ด-ศิลปะ(44) เขียนตามแบบ(12) เขียนชื่อ(41) กล่าวคำขอบคุณ(22)
+    activityIds: A(49, 24, 44, 12, 41, 22), participants: {},
   },
   {
     id: 'preset_loykrathong_2569', name: 'วันลอยกระทง 2569', date: '2026-11-24',
     type: 'national', scope: 'all',
     description: 'กิจกรรมลอยกระทง ประดิษฐ์กระทงจากวัสดุธรรมชาติ เรียนรู้ประเพณีไทย',
-    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+    // ประเพณีไทย(37) ดูแลสิ่งแวดล้อม(36) วัสดุธรรมชาติ/ใช้ซ้ำ(46) ประดิษฐ์กระทง(44) ใช้กรรไกร(13) ปลอดภัย/กติกา(34)
+    activityIds: A(37, 36, 46, 44, 13, 34), participants: {},
   },
   {
     id: 'preset_fathersday_2569', name: 'วันพ่อแห่งชาติ 2569', date: '2026-12-05',
     type: 'national', scope: 'all',
     description: 'กิจกรรมวันพ่อ ทำของขวัญและแสดงความกตัญญูต่อพ่อ',
-    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+    // ไหว้-ขอบคุณ(49) อารมณ์ความรัก(24) การ์ด-ศิลปะ(44) เขียนตามแบบ(12) เขียนชื่อ(41) กล่าวคำขอบคุณ(22)
+    activityIds: A(49, 24, 44, 12, 41, 22), participants: {},
   },
 
   // ── ปี 2570 (ม.ค.–มี.ค.) ────────────────────────────────────────────────
@@ -111,19 +130,22 @@ const PRESET_EVENTS = [
     id: 'preset_newyear_2570', name: 'วันขึ้นปีใหม่ 2570', date: '2027-01-01',
     type: 'national', scope: 'all',
     description: 'กิจกรรมต้อนรับปีใหม่ อวยพรครูและเพื่อน ทำความดีเริ่มต้นปี',
-    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+    // อวยพร-ขอบคุณ(49) เพื่อนรัก(29) ความสุข(24) การ์ดอวยพร(44) สนทนา(39) ทำงานกลุ่ม(28)
+    activityIds: A(49, 29, 24, 44, 39, 28), participants: {},
   },
   {
     id: 'preset_childrensday_2570', name: 'วันเด็กแห่งชาติ 2570', date: '2027-01-09',
     type: 'school', scope: 'all',
     description: 'กิจกรรมวันเด็ก เกมและการแสดง ส่งเสริมความสนุกสนานและการเล่นร่วมกัน (เสาร์ที่ 2 ของเดือนมกราคม)',
-    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.school, participants: {},
+    // เล่นอิสระ/ความสุข(26) เกมทีม(32) เต้น(17) วิ่ง(9) รับ-โยนบอล(10) เล่นสมมติ(45)
+    activityIds: A(26, 32, 17, 9, 10, 45), participants: {},
   },
   {
     id: 'preset_teachersday_2570', name: 'วันครู 2570', date: '2027-01-16',
     type: 'national', scope: 'all',
     description: 'กิจกรรมวันครู แสดงความกตัญญูต่อครู มอบการ์ดและกล่าวคำขอบคุณ',
-    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
+    // ขอบคุณ-ไหว้(49) มารยาทไทย(37) กล้าแสดงออก(22) การ์ด-ศิลปะ(44) เขียนชื่อ(41) สนทนากับครู(39)
+    activityIds: A(49, 37, 22, 44, 41, 39), participants: {},
   },
 
   // ── โครงการ/กิจกรรมพิเศษ ─────────────────────────────────────────────────
@@ -131,21 +153,26 @@ const PRESET_EVENTS = [
     id: 'preset_garden_2569', name: 'โครงการปลูกผักสวนครัว', date: '2026-08-14',
     type: 'project', scope: 'all',
     description: 'โครงการเกษตรพอเพียง เรียนรู้การปลูกและดูแลต้นไม้ ฝึกความรับผิดชอบ',
-    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.project, participants: {},
+    // ดูแลต้นไม้(36) สังเกต-ทดลอง(43) อาสาช่วยงาน(33) ประหยัด/ใช้ซ้ำ(46) นับจำนวน(47) รับผิดชอบพื้นที่ส่วนรวม(31)
+    activityIds: A(36, 43, 33, 46, 47, 31), participants: {},
   },
   {
     id: 'preset_science_2569', name: 'กิจกรรมวิทยาศาสตร์สนุก', date: '2026-09-04',
     type: 'project', scope: 'all',
     description: 'การทดลองวิทยาศาสตร์ง่ายๆ ส่งเสริมความคิดสร้างสรรค์และการตั้งคำถาม',
-    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.project, participants: {},
+    // นักวิทยาศาสตร์น้อย(43) ทดลองสนุก(27) เกมคิด(42) สนทนา-สรุปผล(39) ทำงานกลุ่ม(28) นับ/วัด(47)
+    activityIds: A(43, 27, 42, 39, 28, 47), participants: {},
   },
   {
     id: 'preset_reading_2569', name: 'โครงการรักการอ่าน', date: '2026-08-01',
     type: 'project', scope: 'all',
     description: 'กิจกรรมนิทานและห้องสมุด ส่งเสริมนิสัยรักการอ่านตั้งแต่ปฐมวัย',
-    activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.project, participants: {},
+    // ชวนอ่าน(40) เล่านิทาน(38) เขียนตามใจ(41) สนทนา(39) นิทานเกี่ยวกับอารมณ์(25)
+    activityIds: A(40, 38, 41, 39, 25), participants: {},
   },
 ];
+
+const PRESET_ACTIVITY_BY_ID = Object.fromEntries(PRESET_EVENTS.map(e => [e.id, e.activityIds]));
 
 function todayISO() { return new Date().toISOString().split('T')[0]; }
 
@@ -621,6 +648,14 @@ export default function SpecialEventTab({ teacherClassFilter }) {
     const next = {};
     Object.entries(specialEvents).forEach(([k, ev]) => {
       const ids = ev?.activityIds ?? [];
+      // วันสำคัญสำเร็จรูปที่ยังใช้ตัวบ่งชี้ "ค่าเริ่มต้นตามประเภท" (ครูไม่ได้แก้เอง) → ใช้ชุดตัวบ่งชี้เฉพาะของวันนั้น
+      const presetIds = PRESET_ACTIVITY_BY_ID[ev?.id ?? k];
+      const typeDef = EVENT_TYPE_DEFAULT_ACTIVITIES[ev?.type] ?? [];
+      if (presetIds && ids.length === typeDef.length && typeDef.every(x => ids.includes(x))) {
+        changed = true;
+        next[k] = { ...ev, activityIds: presetIds };
+        return;
+      }
       const kept = ids.filter(id => ACT68[id]);
       if (kept.length === ids.length) { next[k] = ev; return; }
       changed = true;

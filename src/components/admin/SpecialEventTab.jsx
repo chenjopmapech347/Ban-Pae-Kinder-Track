@@ -70,13 +70,13 @@ const PRESET_EVENTS = [
 
   // ── วันสำคัญของชาติ/ศาสนา ────────────────────────────────────────────────
   {
-    id: 'preset_makha_2569', name: 'วันมาฆบูชา 2569', date: '2026-03-03',
+    id: 'preset_makha_2570', name: 'วันมาฆบูชา 2570', date: '2027-02-21',
     type: 'national', scope: 'all',
     description: 'กิจกรรมเวียนเทียน เรียนรู้หลักธรรมและคุณธรรมพื้นฐาน',
     activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},
   },
   {
-    id: 'preset_songkran_2569', name: 'วันสงกรานต์ 2569', date: '2026-04-13',
+    id: 'preset_songkran_2570', name: 'วันสงกรานต์ 2570', date: '2027-04-13',
     type: 'national', scope: 'all',
     description: 'กิจกรรมสืบสานวัฒนธรรมไทย รดน้ำดำหัว และแต่งกายชุดไทย',
     activityIds: EVENT_TYPE_DEFAULT_ACTIVITIES.national, participants: {},

@@ -8,6 +8,7 @@ import { ui } from '../../ui/ui';
 export default function SystemSettingsTab() {
   const {
     academicYears, setAcademicYears,
+    schoolTerms, setSchoolTerms,
     yearDirectors, setYearDirectors,
     resetAllData, authConfig, updateAuthConfig,
     exportBackupJson, importBackupJson,
@@ -32,6 +33,31 @@ export default function SystemSettingsTab() {
   const [syncMsg, setSyncMsg]         = useState('');
   const [syncing, setSyncing]         = useState(false);
   const [fbMsg, setFbMsg]             = useState('');
+
+  // ── เตรียมปีการศึกษาถัดไป: สร้างปี + ภาคเรียนเริ่มต้น (ถอดจากปีล่าสุด เลื่อน 52 สัปดาห์ให้ตรงวันจันทร์) ──
+  const [prepMsg, setPrepMsg] = useState('');
+  const latestYear = [...academicYears].map(Number).filter(Boolean).sort((a, b) => b - a)[0];
+  const nextYear   = latestYear ? String(latestYear + 1) : '';
+  const addDays = (iso, n) => { const d = new Date(`${iso}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+  const addYearsSame = (iso, n) => `${Number(iso.slice(0, 4)) + n}${iso.slice(4)}`;
+  const prepareNextYear = () => {
+    if (!nextYear || academicYears.includes(nextYear)) return;
+    const base = (schoolTerms?.[String(latestYear)] ?? []).filter(t => t?.open && t?.close);
+    const terms = [0, 1].map(i => {
+      const t = base[i];
+      if (!t) return { label: `ภาคเรียนที่ ${i + 1}`, open: '', close: '' };
+      // เปิดเรียน/ปิดภาค 1 เลื่อน 52 สัปดาห์ (คงวันจันทร์) · ปิดภาค 2 ใช้วัน-เดือนเดิมของปีถัดไป (เช่น 31 มี.ค.)
+      return {
+        label: t.label ?? `ภาคเรียนที่ ${i + 1}`,
+        open: addDays(t.open, 364),
+        close: i === 1 ? addYearsSame(t.close, 1) : addDays(t.close, 364),
+      };
+    });
+    if (!window.confirm(`สร้างปีการศึกษา ${nextYear} พร้อมวันเปิด-ปิดเรียนเบื้องต้น (ประมาณการจากปี ${latestYear})?\nสลับไปใช้ปีนั้นภายหลังได้ และแก้วันที่ได้ที่เมนู "ภาคเรียน"`)) return;
+    setAcademicYears([...academicYears, nextYear].sort());
+    if (base.length) setSchoolTerms(prev => ({ ...(prev ?? {}), [nextYear]: terms }));
+    setPrepMsg(`✅ สร้างปีการศึกษา ${nextYear} แล้ว${base.length ? ' (ภาคเรียนเป็นวันที่ประมาณการ — ตรวจและแก้ที่เมนู "ภาคเรียน" เมื่อมีปฏิทินจริง)' : ' — ยังไม่มีวันเปิด-ปิดเรียนของปีก่อนให้อ้างอิง ตั้งที่เมนู "ภาคเรียน"'}`);
+  };
 
   const addYear = () => {
     if (newYear && !academicYears.includes(newYear)) {
@@ -128,6 +154,15 @@ export default function SystemSettingsTab() {
               value={newYear} onChange={e=>setNewYear(e.target.value)} />
             <button type="button" {...ui('btn btn-primary')} onClick={addYear}>เพิ่ม</button>
           </div>
+          {nextYear && !academicYears.includes(nextYear) && (
+            <div style={{ marginBottom: '1rem', padding: '.7rem .9rem', borderRadius: '10px', border: '1.5px dashed #a78bfa', background: '#f5f3ff' }}>
+              <button type="button" {...ui('btn btn-primary')} onClick={prepareNextYear}>
+                ⚡ เตรียมปีการศึกษา {nextYear} (สร้างปี + ภาคเรียนเริ่มต้น)
+              </button>
+              <p {...ui('text-xs text-muted mt-2')}>วันเปิด-ปิดเรียนจะถอดจากปี {latestYear} เป็นค่าประมาณการ แก้ได้ที่เมนู "ภาคเรียน" ไม่สลับปีที่ใช้งานอยู่</p>
+            </div>
+          )}
+          {prepMsg && <p style={{ fontSize: '.8rem', color: '#059669', margin: '0 0 1rem' }}>{prepMsg}</p>}
           <div style={{ display:'flex', flexDirection:'column', gap:'.75rem' }}>
             {academicYears.map(y => (
               <div key={y} style={{ border:'1.5px solid #e9d5ff', borderRadius:'12px', padding:'.75rem 1rem', background:'#faf5ff' }}>
